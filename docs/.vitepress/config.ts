@@ -90,7 +90,7 @@ export default withMermaid(defineConfig({
           collapsed: false,
           items: [
             { text: '专题概览', link: '/robot-learning/act/' },
-            { text: '01 · 为什么需要 Action Chunking', link: '/robot-learning/act/why-action-chunking' },
+            { text: '01 · ACT 解决什么问题？', link: '/robot-learning/act/why-action-chunking' },
             { text: '02 · Transformer 在做什么', link: '/robot-learning/act/transformer' },
             { text: '03 · CVAE 与 latent z', link: '/robot-learning/act/cvae' },
             { text: '04 · Temporal Ensemble', link: '/robot-learning/act/temporal-ensemble' }

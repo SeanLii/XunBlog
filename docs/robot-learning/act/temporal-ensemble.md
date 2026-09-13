@@ -1,11 +1,16 @@
 ---
 title: Temporal Ensemble
 description: 合并多个重叠 action chunks，得到稳定的当前动作。
+status: draft
+pageType: application
+canonical: /robot-learning/act/temporal-ensemble
+difficulty: intermediate
+updated: "2026-09"
 ---
 
 # Temporal Ensemble
 
-<NoteMeta status="Draft" difficulty="Intermediate" updated="2026-09" />
+<NoteMeta />
 
 ## 为什么会有多个当前动作
 
@@ -34,4 +39,3 @@ $$
 - Chunking 让模型预测连贯的动作片段。
 - Receding prediction 让策略持续看见新观测。
 - Temporal ensemble 平滑重叠片段之间的差异。
-

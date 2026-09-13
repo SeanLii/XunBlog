@@ -1,11 +1,16 @@
 ---
 title: CVAE 与 latent z
 description: 为什么 ACT 用条件潜变量表示示范动作的风格与多样性。
+status: learning
+pageType: application
+canonical: /robot-learning/act/cvae
+difficulty: intermediate
+updated: "2026-09"
 ---
 
 # 为什么需要 CVAE 与 latent z？
 
-<NoteMeta status="Learning" difficulty="Intermediate" updated="2026-09" />
+<NoteMeta />
 
 ## 一种观测，多种合理动作
 
@@ -36,4 +41,3 @@ $$
 ::: info 当前理解
 “$z=0$”不是说 latent 没有用。正是训练阶段使用 latent 建模多样性，并通过 KL 让空间结构靠近先验，才让先验均值在推理时成为可用选择。
 :::
-

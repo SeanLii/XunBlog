@@ -1,11 +1,16 @@
 ---
 title: Transformer
 description: Transformer 如何建模序列内的依赖关系。
+status: learning
+pageType: concept
+canonical: /deep-learning/transformer
+difficulty: intermediate
+updated: "2026-09"
 ---
 
 # Transformer
 
-<NoteMeta status="Learning" difficulty="Intermediate" updated="2026-09" />
+<NoteMeta />
 
 ## 核心问题
 
@@ -20,4 +25,3 @@ $$
 ## 与 ACT 的连接
 
 ACT 使用 Transformer 不是为了生成文本，而是为了同时读取当前观测，并一次解码未来一段动作。
-

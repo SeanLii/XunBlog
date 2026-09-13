@@ -1,11 +1,16 @@
 ---
 title: Transformer 在 ACT 中做什么
 description: 理解 Transformer 如何读取多模态观测并解码动作序列。
+status: draft
+pageType: application
+canonical: /robot-learning/act/transformer
+difficulty: intermediate
+updated: "2026-09"
 ---
 
 # Transformer 在 ACT 中做什么？
 
-<NoteMeta status="Draft" difficulty="Intermediate" updated="2026-09" />
+<NoteMeta />
 
 ## 先给结论
 
@@ -30,4 +35,3 @@ Attention 允许每个 action query 根据任务上下文读取不同信息，�
 - 不同 ACT 实现中 encoder / decoder token 的具体组织方式
 - action query 的数量与 chunk size 的关系
 - 视觉 backbone 输出如何进入 Transformer
-

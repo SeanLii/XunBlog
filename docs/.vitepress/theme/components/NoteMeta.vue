@@ -1,9 +1,17 @@
 <script setup lang="ts">
-defineProps<{
+import { computed } from 'vue'
+import { useData } from 'vitepress'
+
+const props = defineProps<{
   status?: string
   difficulty?: string
   updated?: string
 }>()
+
+const { frontmatter } = useData()
+const status = computed(() => props.status ?? frontmatter.value.status)
+const difficulty = computed(() => props.difficulty ?? frontmatter.value.difficulty)
+const updated = computed(() => props.updated ?? frontmatter.value.updated)
 </script>
 
 <template>
@@ -13,4 +21,3 @@ defineProps<{
     <span v-if="updated"><b>Updated</b>{{ updated }}</span>
   </div>
 </template>
-

@@ -1,11 +1,16 @@
 ---
 title: Imitation Learning
 description: 从专家示范中学习机器人策略。
+status: seed
+pageType: concept
+canonical: /robot-learning/imitation-learning
+difficulty: foundation
+updated: "2026-09"
 ---
 
 # Imitation Learning
 
-<NoteMeta status="Seed" difficulty="Foundation" updated="2026-09" />
+<NoteMeta />
 
 ## 问题定义
 
@@ -16,4 +21,3 @@ description: 从专家示范中学习机器人策略。
 ## 核心困难
 
 训练数据来自专家访问过的状态；部署时，模型的小错误会把机器人带到专家数据之外。新的状态导致更不可靠的预测，误差因此不断累积。这正是理解 ACT 的起点。
-
