@@ -12,47 +12,59 @@ related:
 
 # Causal Mask
 
-Causal Mask 是自回归 attention 中限制信息流的掩码：位置 $t$ 只能读取当前位置及之前允许的信息，不能读取未来位置。
+Causal Mask 用来阻止一个序列位置在 attention 中读取“未来位置”。
 
-## Score Masking
-
-在 self-attention score matrix
+对于 autoregressive sequence，位置 $i$ 只允许读取
 
 \[
-S=\frac{QK^\top}{\sqrt{d_k}}
+j\le i.
 \]
 
-上，令
+## Mask 怎样进入 Attention
+
+在 softmax 前有 score matrix：
 
 \[
-M_{ij}=
-\begin{cases}
-0,& j\le i,\\
--\infty,& j>i.
-\end{cases}
+S=\frac{QK^\top}{\sqrt{d_k}}.
 \]
 
-再计算
+加入 mask $M$：
 
 \[
-A=\operatorname{softmax}(S+M).
+S'=S+M.
 \]
 
-被加上 $-\infty$ 的未来位置在 softmax 后权重为 0，因此当前 query 无法使用未来 key/value。
+对未来位置设置
 
-## Causality 的任务含义
+\[
+M_{ij}=-\infty,
+\qquad j>i.
+\]
 
-在语言模型训练中，模型预测当前位置时不应该偷看未来目标 token。Causal mask 通过网络结构保证这一约束。
+于是 softmax 后这些位置权重为 0。
 
-## 与 Padding Mask 的区别
+## 一个四位置例子
 
-Padding mask 屏蔽的是“这不是有效数据”的位置；causal mask 屏蔽的是“这个位置虽然有效，但当前时间上不允许访问”。两种 mask 可以同时存在，但含义不同。
+允许读取关系为：
 
-## ACT 并不依赖标准自回归 Causal Mask
+```text
+position 1: [1]
+position 2: [1,2]
+position 3: [1,2,3]
+position 4: [1,2,3,4]
+```
 
-ACT 预测的是整个 future action chunk，并使用 DETR-style learned queries。其核心不是把 action $a_t,a_{t+1},\ldots$ 当成语言 token 逐个自回归生成。因此理解原始 Transformer Decoder 时需要知道 causal mask，而理解 ACT 时还必须知道它没有简单照搬文本生成的 decoder 使用方式。
+矩阵上是下三角结构。
+
+## Causal Mask 与 Padding Mask
+
+两者都可以通过把某些 attention scores 屏蔽掉实现，但语义不同：
+
+- causal mask：因为时间因果关系，未来信息不应该被看见；
+- padding mask：某些位置只是为了 batch shape 补齐，不代表真实数据。
+
+ACT 的 training-only action-sequence encoder 需要处理 padded future action positions，但它并不是为了做 autoregressive action generation，因此不要把 padding mask 自动解释成 causal mask。
 
 ## Sources
 
-- [Attention Is All You Need — Vaswani et al., 2017](https://arxiv.org/abs/1706.03762)
-- [ACT official implementation](https://github.com/tonyzhaozh/act)
+- Vaswani et al., **Attention Is All You Need**, 2017. https://arxiv.org/abs/1706.03762

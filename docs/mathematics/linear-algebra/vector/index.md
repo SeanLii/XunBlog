@@ -13,44 +13,105 @@ related:
 
 # Vector
 
-向量（vector）是一组有顺序的数。它既可以表示几何空间中的方向与长度，也可以表示机器学习中的一组特征。两种解释使用的是同一个数学对象。
-
-## 定义
-
-一个 $d$ 维实向量写作
+Vector 是一组有顺序的数。在线性代数中常写成
 
 \[
-\mathbf{x}=(x_1,x_2,\ldots,x_d)^\top\in\mathbb{R}^d.
+x=
+\begin{bmatrix}
+x_1\\x_2\\\vdots\\x_d
+\end{bmatrix}
+\in\mathbb R^d.
 \]
 
-这里 $d$ 是维数，$x_i$ 是第 $i$ 个分量，$\mathbb{R}^d$ 表示由 $d$ 个实数组成的向量空间。上标 $\top$ 表示转置，因此这里把 $\mathbf{x}$ 写成列向量。
+它可以表示空间中的方向和长度，也可以更一般地表示一组 features。
 
-在 AI 中，一个 token 的 hidden state、机器人 14 个关节的位置、VAE 的 latent $z$，都可以由向量表示。向量本身并不规定每个分量的物理含义；含义来自建模方式。
+## Vector 在 AI 中的表示角色
 
-## 基本运算
+一个向量的每个维度可以存一个数值特征。例如：
 
-同维向量可以逐分量相加：
+```text
+机器人关节状态：
+q = [q1, q2, ..., q14]
+
+一个 token hidden state：
+h ∈ R^512
+
+VAE latent：
+z ∈ R^32
+```
+
+它们都叫 vector，但每一维的语义取决于具体模型。
+
+## 向量加法
+
+两个同维 vectors：
 
 \[
-\mathbf{x}+\mathbf{y}=(x_1+y_1,\ldots,x_d+y_d)^\top.
+x,y\in\mathbb R^d
 \]
 
-标量 $c$ 与向量相乘时，每个分量都乘以 $c$：
+可以逐维相加：
 
 \[
-c\mathbf{x}=(cx_1,\ldots,cx_d)^\top.
+x+y=
+[x_1+y_1,\ldots,x_d+y_d].
 \]
 
-向量的二范数为
+Transformer 的 residual connection
 
 \[
-\lVert\mathbf{x}\rVert_2=\sqrt{\sum_{i=1}^{d}x_i^2}.
+y=x+F(x)
 \]
 
-它在几何上对应向量长度，在模型中也常用来衡量向量的大小。
+就是对相同 hidden dimension 的 vectors / tensors 做这种逐元素加法。
 
-## 向量与表示
+## 标量乘法
 
-神经网络经常把离散对象或连续状态转换成固定维数的向量。此时“一个概念被表示成向量”不意味着某一个分量天然对应某种人类可解释属性。模型学习的是整个向量空间中的结构。
+一个 scalar $c$ 乘 vector：
 
-后续的 [Dot Product](/mathematics/linear-algebra/dot-product/) 会利用两个向量的分量共同计算相似方向上的重合程度；Transformer 的 attention score 正是建立在这个运算之上。
+\[
+cx=[cx_1,\ldots,cx_d].
+\]
+
+这会统一缩放整个向量。
+
+Attention 中的 weighted sum
+
+\[
+y=\sum_j\alpha_jv_j
+\]
+
+就是把多个 value vectors 分别乘 scalar weights，再相加。
+
+## 长度
+
+Euclidean norm：
+
+\[
+\|x\|_2
+=\sqrt{\sum_i x_i^2}.
+\]
+
+它给出向量在欧氏空间中的长度。
+
+## Vector 与 Matrix
+
+Vector 是一维有序数列；[Matrix](/mathematics/linear-algebra/matrix/) 可以看成很多 vectors 按行或列排在一起。
+
+例如 Transformer 一组 $n$ 个 token vectors：
+
+\[
+X\in\mathbb R^{n\times d}.
+\]
+
+每一行就是一个 $d$ 维 vector。
+
+## 与 Dot Product 的连接
+
+两个同维 vectors 可以通过 [Dot Product](/mathematics/linear-algebra/dot-product/) 变成一个 scalar：
+
+\[
+x^\top y=\sum_i x_iy_i.
+\]
+
+Transformer attention 使用的 query-key score 正是这种运算。

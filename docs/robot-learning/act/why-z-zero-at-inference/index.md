@@ -13,122 +13,113 @@ related:
 
 # 为什么 ACT 推理时令 z = 0？
 
-ACT 训练时从 approximate posterior 中采样 latent $z$，推理时却直接令 $z=0$。这不是因为“训练时的 $z$ 没有用”，也不是因为 $z=0$ 等于“没有 latent”。它来自 ACT 对 CVAE prior 和 deterministic policy 的具体选择。
-
-## Training-Time Distribution
-
-训练时 ACT encoder 得到
+ACT 的训练阶段会从 demonstration action chunk 推断 latent $z$，但推理阶段直接令
 
 \[
-q_\phi(z|A_t,q_t)
+z=0.
+\]
+
+这看起来反直觉，是因为 training-time posterior 和 inference-time prior 很容易被混成同一个东西。
+
+## 训练时 z 从哪里来
+
+训练时知道真实 action chunk $A_t$。Latent encoder 学习
+
+\[
+q_\phi(z\mid q_t,A_t)
 =
-\mathcal N
-(\mu,\operatorname{diag}(\sigma^2)).
+\mathcal N(\mu,\operatorname{diag}(\sigma^2)).
 \]
 
-并用
+然后 sample
 
 \[
-z=\mu+\sigma\odot\epsilon,
-\qquad
-\epsilon\sim\mathcal N(0,I)
+z=\mu+\sigma\odot\epsilon.
 \]
 
-产生 sample。
+因此这个 $z$ 可以携带“这条 demonstration 具体采用了哪种细节”的信息。
 
-与此同时，KL term 推动这个 posterior 接近 prior：
+## 但部署时没有 A_t
+
+机器人在真正执行时只知道当前 observation。未来正确动作正是模型要预测的东西，所以不可能先把它送进 latent encoder。
+
+因此
+
+```text
+q_t + true future actions → latent encoder → z
+```
+
+这整条路径只能属于 training。
+
+## KL 把 posterior 拉向哪里
+
+ACT 选择 prior
 
 \[
 p(z)=\mathcal N(0,I).
 \]
 
-因此 decoder 训练时不能只适应任意散乱的 latent codes；它被鼓励在与 standard normal prior 兼容的 latent region 中工作。
-
-## Inference-Time Constraint
-
-推理时只有当前 observation $o_t$，没有真实 future action chunk $A_t$。因此 training-time encoder
+训练时 KL loss 约束
 
 \[
-q_\phi(z|A_t,q_t)
+q_\phi(z\mid q_t,A_t)
 \]
 
-缺少必要输入，无法继续使用。
+不要离这个 prior 太远。
 
-CVAE 的一般做法是在 inference 时从 prior 获得 latent：
+Standard normal 的均值是
 
 \[
-z\sim p(z).
+\mathbb E[z]=0.
 \]
 
-ACT 进一步选择不随机采样，而是取 prior 的均值：
+因此 inference 直接使用 $z=0$，相当于选择 prior 的中心位置，而不是随机采一个 demonstration style。
+
+## z=0 不是“latent 没有作用”
+
+一个常见误解是：既然部署时永远是 0，那训练 latent branch 岂不是没用？
+
+不是。训练期间，decoder 在不同 $z$ 下学习重建不同 demonstrations；与此同时 KL 让这些 latent codes 围绕 standard normal 形成受约束的空间。$z=0$ 是这个训练过程中的一个有意义输入位置，而不是一个“把 latent 删除掉”的操作。
+
+而且 zero vector 进入 policy 前还会经过 learned linear projection：
 
 \[
-\mathbb E_{p(z)}[z]=0.
+e_z=W_z 0+b_z=b_z.
 \]
 
-所以
+所以即使 raw latent 为 0，进入 Transformer 的 latent feature 也不一定是全零向量。
+
+## 固定 prior mean 与随机采样的区别
+
+从 CVAE 理论上完全可以：
 
 \[
-\boxed{z=0}
+z\sim\mathcal N(0,I).
 \]
 
-是“使用 prior mean 做 deterministic decoding”，不是“把 latent module 删除”。Zero vector 仍然经过 learned latent projection，并进入 policy network。
+这样每次 inference 可能产生不同 action chunk。
 
-## Zero 不表示“所有训练因素被消除”
+但机器人控制通常希望同一 observation 下的执行具有稳定性。ACT 论文选择 prior mean 来得到 deterministic policy，避免 deployment 时额外的 latent sampling variability。
 
-一种容易产生的直觉是：encoder 把睡眠、手抖等额外因素编码进 $z$，推理时令 $z=0$ 就把这些因素全部消除。这个说法可以帮助初步理解“选择中性 style”，但不能当作正式定义。
+所以“CVAE 是生成模型”与“ACT inference 是确定性的”并不矛盾。
 
-训练没有告诉模型某一维 latent 对应“睡眠好坏”或“手抖”。$z$ 只是在 loss 约束下学到的 hidden random variable。它可能编码 demonstration variation，也可能以不可解释的方式组合多个因素。
+## 一个直观例子
 
-因此更准确的表述是：
+假设不同 demonstrations 在“抬起杯子”的微小姿态上有差异：
 
-> $z$ 为训练提供一个 latent channel，用来帮助解释在 current observation 之外仍存在的 action-sequence variation；推理时 ACT 选择 prior mean 作为统一 deterministic latent condition。
+```text
+style A: 稍微向左
+style B: 几乎垂直
+style C: 稍微向右
+```
 
-## Zero 的可用条件
+训练 latent 可以帮助模型不要被迫把这些差异全部解释成 observation 的确定函数。
 
-有三个相互配合的条件。
+部署时使用 $z=0$ 可以理解成选择 latent prior 的中心，而不是明确指定“style A/B/C”中的某一个极端样本。
 
-第一，policy decoder 本身已经获得强条件信息：多视角 images 与 current joint positions。它不是只依赖 $z$ 决定动作。
-
-第二，KL regularization 把 training posterior 拉向
-
-\[
-\mathcal N(0,I),
-\]
-
-使 latent codes 不应长期远离 prior structure。Zero 是这个 prior 的 mean，也是 density mode。
-
-第三，ACT 的目标不是在推理时展示 demonstration style diversity，而是稳定执行 manipulation policy。固定 $z$ 去掉了每次 rollout 主动采样 latent 带来的随机 variation。
-
-这些条件解释了这种设计为什么合理，但它不是数学定理：VAE objective 本身并不保证“令 $z=0$ 一定得到任务最优动作”。ACT 论文用实验验证了这一具体设计在其任务中的效果。
-
-## High-Dimensional Gaussian 的一个细节
-
-Released ACT latent dimension 为 32。对高维 standard normal，$z=0$ 虽然是 density 最大的点和均值，但典型随机 sample 的范数并不接近 0；其尺度大约在
-
-\[
-\sqrt{d_z}
-\]
-
-附近。
-
-因此不能用“训练时经常采样到接近全零向量，所以推理用 0”来解释。精确的零向量在连续分布下概率为 0，而且高维 Gaussian samples 通常位于离原点有一定半径的区域。
-
-更可靠的解释仍然是：prior mean 是一个确定、对称、任务无额外 style preference 的 reference latent；KL regularization 与 decoder continuity 使模型有机会在这一区域形成可用输出，而 ACT 实际选择并验证了这个 deterministic decode rule。
-
-## 与随机 Prior Sampling 的区别
-
-若改为
-
-\[
-z\sim\mathcal N(0,I)
-\]
-
-每次 inference，模型就可能从同一 observation 产生不同 action chunks。对于需要探索多种输出的生成任务，这种 diversity 可能有价值；对于 precise closed-loop robot control，额外随机 variation 可能降低重复性。
-
-ACT 因而没有把 CVAE 的“可随机生成”能力直接用于 deployment，而主要利用 CVAE objective 改善对 human demonstration distribution 的训练建模。
+这只是帮助理解的直觉；正式定义仍然是：released ACT inference 把 latent sample 设为 zero vector，而 training objective 用 KL 将 approximate posterior 约束到 standard normal prior。
 
 ## Sources
 
-- [Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware — Zhao et al., 2023](https://arxiv.org/abs/2304.13705)
-- [ACT official implementation — tonyzhaozh/act](https://github.com/tonyzhaozh/act)
+- Zhao et al., **Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware**, 2023. https://arxiv.org/abs/2304.13705
+- Official implementation: https://github.com/tonyzhaozh/act/blob/main/detr/models/detr_vae.py

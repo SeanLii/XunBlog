@@ -13,79 +13,157 @@ related:
 
 # Conditional Variational Autoencoder
 
-Conditional Variational Autoencoder（CVAE）把 VAE 扩展到条件生成：模型不是只学习 $y$ 的整体分布，而是学习在给定条件 $x$ 后，输出 $y$ 的条件分布。
+Conditional Variational Autoencoder（CVAE）可以先理解成：**在已知条件 $x$ 的情况下，对可能输出 $y$ 的分布进行 latent-variable modeling。**
 
-## Conditional Generative Model
-
-一个一般的 CVAE 可以写成
+普通确定性模型通常学习
 
 \[
-p_\theta(y,z|x)
-=
-p_\theta(y|x,z)p_\theta(z|x).
+y=f(x).
 \]
 
-这里：
+它隐含地把一个输入对应成一个主要答案。但很多任务天然存在“一对多”：同一个 $x$ 可能对应多个都合理的 $y$。
 
-- $x$ 是条件；
-- $y$ 是希望建模或生成的输出；
-- $z$ 是 latent variable；
-- $p_\theta(z|x)$ 是 conditional prior；
-- $p_\theta(y|x,z)$ 是 conditional decoder。
-
-原始 CVAE 论文的核心目标是处理“同一个输入条件可以对应多个合理输出”的 structured prediction 问题。
-
-## Recognition Model
-
-训练时同时知道 $x$ 和真实 $y$，因此可以定义 approximate posterior / recognition model
+CVAE 希望学习的不是单一映射，而是
 
 \[
-q_\phi(z|x,y).
+p_\theta(y\mid x).
 \]
 
-它利用目标 $y$ 帮助推断这一个训练样本可能对应怎样的 latent factor。
+它通过额外的 latent variable $z$ 表示那些没有被条件 $x$ 完全决定的变化：
+
+```text
+condition x ───────────────┐
+                           ↓
+latent z ─────────→ decoder pθ(y|x,z)
+                           │
+                           ↓
+                           y
+```
+
+## Latent z 表示条件未决定的变化
+
+假设 $x$ 只提供了部分信息。对于同一个 $x$，数据中可能出现 $y_1,y_2,y_3$ 三种不同但都合理的输出。
+
+如果模型只有
+
+\[
+y=f(x),
+\]
+
+它必须把这些差异全部压进同一个确定性答案里。
+
+加入 $z$ 后，模型可以写成
+
+\[
+y\sim p_\theta(y\mid x,z),
+\qquad z\sim p_\theta(z\mid x).
+\]
+
+于是 $x$ 表示已经知道的条件，$z$ 表示在这个条件下仍然需要补充的潜在变化。
+
+## Training：看到 x 和 y以后推断 z
+
+训练时我们同时知道条件 $x$ 和真实输出 $y$。因此可以训练 recognition / inference model：
+
+\[
+q_\phi(z\mid x,y).
+\]
+
+它回答的是：
+
+> 已经看到这组 $(x,y)$ 以后，什么样的 latent $z$ 可以解释这个输出为什么是这样？
+
+数据流为：
+
+```text
+x ─────────────┐
+               ├→ qφ(z|x,y) → z ──┐
+y ─────────────┘                   │
+                                   ↓
+x ───────────────────────→ pθ(y|x,z)
+                                   │
+                                   ↓
+                                  y_hat
+```
+
+然后模型要求 $\hat y$ 能解释真实 $y$。
+
+## Generation：没有真实 y 时从 prior 得到 z
+
+真正生成时，真实 $y$ 当然还不存在，因此不能再使用 $q_\phi(z\mid x,y)$。模型需要从 conditional prior
+
+\[
+p_\theta(z\mid x)
+\]
+
+得到 $z$，再通过
+
+\[
+p_\theta(y\mid x,z)
+\]
+
+生成输出。
+
+因此 CVAE 的核心不是“encoder 和 decoder”这两个神经网络名词，而是三种概率关系：
+
+\[
+q_\phi(z\mid x,y),\qquad
+p_\theta(z\mid x),\qquad
+p_\theta(y\mid x,z).
+\]
 
 ## Conditional ELBO
 
-条件 log-likelihood 的下界为
+对 conditional likelihood $\log p_\theta(y\mid x)$，CVAE 使用 variational lower bound：
 
 \[
-\log p_\theta(y|x)
+\log p_\theta(y\mid x)
 \ge
-\mathbb E_{q_\phi(z|x,y)}
-[\log p_\theta(y|x,z)]
+\mathbb E_{q_\phi(z\mid x,y)}
+[\log p_\theta(y\mid x,z)]
 -
-D_{\mathrm{KL}}
-\left(
-q_\phi(z|x,y)\|p_\theta(z|x)
+D_{KL}\left(
+q_\phi(z\mid x,y)
+\|p_\theta(z\mid x)
 \right).
 \]
 
-第一项要求 decoder 在给定条件 $x$ 和 latent $z$ 时能解释真实输出 $y$。第二项要求 training-time recognition distribution 与 inference-time prior 保持兼容。
+第一项要求 sampled latent 与 condition 一起能生成正确输出；第二项让 training-time posterior approximation 靠近 generation-time prior。
 
-## Prior 不一定固定
+这样做的原因非常直接：训练时 encoder 看得到 $y$，推理时看不到。如果两边的 latent distribution 完全不相干，那么训练好的 decoder 到真正生成时就会接收到完全陌生的 $z$。
 
-CVAE 的“conditional”并不意味着 prior 必须是 $\mathcal N(0,I)$。原始 CVAE formulation 可以让 prior 本身依赖 $x$：
+## 原始 CVAE 与 ACT 中 CVAE 的区别
 
-\[
-p_\theta(z|x).
-\]
-
-一些实际模型为了简化，会使用固定 standard normal prior。那是具体设计选择，不是 CVAE 定义本身。
-
-## Inference
-
-推理时没有真实 $y$ 可供 recognition model 使用，因此不能依赖
+通用 CVAE 并不要求 prior 一定是 $\mathcal N(0,I)$，也不要求推理一定取 $z=0$。原始 CVAE formulation 可以学习 conditional prior
 
 \[
-q_\phi(z|x,y).
+p_\theta(z\mid x).
 \]
 
-应从 prior $p_\theta(z|x)$ 得到 $z$，再通过 $p_\theta(y|x,z)$ 生成输出。可以随机采样以得到多样结果，也可以在某些任务中选择 prior mean 得到 deterministic output。
+ACT 做了更具体的设计：它把 prior 固定为 standard normal，并在部署时取其均值 $z=0$。
 
-ACT 属于后者：它使用 standard normal prior，并在推理时固定 $z=0$。这种用法属于 [CVAE in ACT](/robot-learning/act/cvae-in-act/)，不应反过来改写 CVAE 的通用定义。
+因此：
+
+- “CVAE 可以有 conditional prior”属于这个页面；
+- “ACT 为什么固定 standard normal，以及为什么 inference 用 $z=0$”属于 [CVAE in ACT](/robot-learning/act/cvae-in-act/) 与 [为什么 ACT 推理时令 z = 0？](/robot-learning/act/why-z-zero-at-inference/)。
+
+## 一个最小 mental model
+
+把 CVAE 压缩成一张图：
+
+```text
+TRAIN
+x + y ──→ infer z ──→ x + z ──→ reconstruct y
+             │
+             └── kept close to prior p(z|x)
+
+GENERATE
+x ──→ prior z ──→ x + z ──→ generate y
+```
+
+只要这张图清楚，后面的 ELBO、reparameterization、Gaussian latent 才有落脚点。
 
 ## Sources
 
-- [Learning Structured Output Representation using Deep Conditional Generative Models — Sohn, Lee, Yan, 2015](https://proceedings.neurips.cc/paper/2015/hash/8d55a249e6baa5c06772297520da2051-Abstract.html)
-- [Auto-Encoding Variational Bayes — Kingma & Welling, 2013](https://arxiv.org/abs/1312.6114)
+- Sohn, Lee & Yan, **Learning Structured Output Representation using Deep Conditional Generative Models**, NeurIPS 2015. https://papers.nips.cc/paper/5775-learning-structured-output-representation-using-deep-conditional-generative-models
+- Kingma & Welling, **Auto-Encoding Variational Bayes**. https://arxiv.org/abs/1312.6114

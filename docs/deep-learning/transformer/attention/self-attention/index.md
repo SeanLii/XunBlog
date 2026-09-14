@@ -13,54 +13,93 @@ related:
 
 # Self-Attention
 
-Self-Attention 指 query、key 和 value 都来自同一组输入表示。它让序列中的每个位置根据当前内容动态读取同一序列中的其他位置。
-
-## 计算
+Self-Attention 是“同一组表示内部彼此读取信息”的 attention。
 
 给定
 
 \[
-X\in\mathbb R^{n\times d_{model}},
+X=[x_1,x_2,\ldots,x_n],
 \]
 
-先计算
+Q、K、V 都从同一个 $X$ 得到：
 
 \[
-Q=XW_Q,\qquad K=XW_K,\qquad V=XW_V.
+Q=XW_Q,
+\qquad
+K=XW_K,
+\qquad
+V=XW_V.
 \]
 
-然后
+因此每个位置既可以作为读取者，也可以作为被读取的 memory。
+
+## 单个位置的信息读取
+
+以第 3 个位置为例：
+
+```text
+x1 ──┐
+x2 ──┤
+x3 ──┼──→ x3 的 Query 与所有 Keys 比较
+x4 ──┤              │
+x5 ──┘              ↓
+               attention weights
+                      │
+                      ↓
+               weighted Values
+                      │
+                      ↓
+                     y3
+```
+
+输出 $y_3$ 因此可以包含来自 $x_1,x_2,x_4,x_5$ 的信息。
+
+## Self-Attention 的 shape
+
+若
 
 \[
-O=
-\operatorname{softmax}
-\left(
-\frac{QK^\top}{\sqrt{d_k}}
-\right)V.
+X\in\mathbb R^{n\times d},
 \]
 
-因为 $Q$ 与 $K$ 都有 $n$ 个位置，score matrix 的 shape 是
+通常输出仍有 $n$ 个位置：
 
 \[
-n\times n.
+Y\in\mathbb R^{n\times d}.
 \]
 
-第 $i$ 行说明第 $i$ 个位置如何从整个输入序列读取信息。
+数量没变，但每个位置从“局部表示”变成“contextual representation”。
 
-## “Self” 的含义
+## Self-Attention 与顺序
 
-Self 并不意味着每个位置只看自己。它表示查询者与被查询的信息来自同一个 sequence。是否可以访问未来位置，则由 mask 决定。
+标准 self-attention 公式本身主要依赖内容关系。若没有 [Positional Encoding](/deep-learning/transformer/positional-encoding/) 或其他位置机制，交换输入位置会相应交换输出，并不会凭空得到序列顺序。
 
-Encoder self-attention 通常允许任意位置互相读取。自回归 decoder 的 masked self-attention 会用 [Causal Mask](/deep-learning/transformer/causal-mask/) 阻止当前位置读取未来 token。
+所以“Attention 能看全局”与“Attention 自动知道先后顺序”不是同一件事。
 
-## 顺序信息
+## 双向与因果 Self-Attention
 
-如果不额外加入位置信息，纯 self-attention 对输入位置的排列没有足够的顺序感知能力。Transformer 因此结合 [Positional Encoding](/deep-learning/transformer/positional-encoding/) 或其他位置表示，让模型知道各 token 的位置关系。
+如果所有位置都可以互相读取，就是 full / bidirectional self-attention。
 
-## ACT 中的使用
+如果位置 $i$ 只能读取 $j\le i$ 的内容，则通过 [Causal Mask](/deep-learning/transformer/causal-mask/) 得到 causal self-attention。
 
-ACT 的 CVAE encoder 和 observation Transformer encoder 都使用 self-attention 来融合各自输入序列中的信息。但 ACT 的 action generation 不是标准语言模型式的逐 token 自回归生成；其 decoder queries 同时代表多个 action slots，这一点属于 ACT 的具体架构，而不是 Self-Attention 的定义。
+两者使用的 QKV 公式相同，区别是允许建立哪些连接。
+
+## 在 Transformer Encoder 中
+
+原始 Transformer encoder layer 使用 full self-attention，让每个 input position 读取整个输入序列。
+
+在多层堆叠后，表示会反复更新：
+
+```text
+X
+↓ self-attention
+H1
+↓ self-attention
+H2
+↓ ...
+context-rich representations
+```
 
 ## Sources
 
-- [Attention Is All You Need — Vaswani et al., 2017](https://arxiv.org/abs/1706.03762)
+- Vaswani et al., **Attention Is All You Need**, 2017. https://arxiv.org/abs/1706.03762

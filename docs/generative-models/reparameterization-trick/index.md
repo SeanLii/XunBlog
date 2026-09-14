@@ -13,25 +13,17 @@ related:
 
 # Reparameterization Trick
 
-Reparameterization Trick 把“从一个由网络参数决定的分布中采样”改写成“从固定噪声分布采样，再通过可微函数变换”。这样 Monte Carlo sample 仍可以用于普通反向传播。
+Reparameterization Trick 把“从一个依赖模型参数的 distribution 中随机采样”改写成“先从固定噪声分布采样，再通过可微函数得到目标样本”。
 
-## Gaussian 情形
+VAE 中最常见的 Gaussian 情况是：
 
-设 encoder 给出
-
-\[
-q_\phi(z|x)
-=
-\mathcal N(\mu,\sigma^2).
-\]
-
-与其直接写
+原本：
 
 \[
-z\sim\mathcal N(\mu,\sigma^2),
+z\sim\mathcal N(\mu,\sigma^2).
 \]
 
-改写为
+改写为：
 
 \[
 \epsilon\sim\mathcal N(0,1),
@@ -41,59 +33,98 @@ z\sim\mathcal N(\mu,\sigma^2),
 z=\mu+\sigma\epsilon.
 \]
 
-这两个过程产生相同的 $z$ 分布。
-
-多维 diagonal Gaussian 对应
+多维情况：
 
 \[
-\boldsymbol\epsilon\sim\mathcal N(0,I),
+z=\mu+\sigma\odot\epsilon,
 \qquad
-\mathbf z=\boldsymbol\mu+\boldsymbol\sigma\odot\boldsymbol\epsilon.
+\epsilon\sim\mathcal N(0,I).
 \]
 
-## 梯度路径
+## 随机性被移到了哪里
 
-随机节点 $\epsilon$ 与 encoder parameters $\phi$ 无关。对一次固定采样而言，
+改写前，采样操作直接依赖 $\mu,\sigma$。
+
+改写后：
+
+```text
+fixed random noise ε
+       │
+       ├──── μ
+       ├──── σ
+       ↓
+z = μ + σ ⊙ ε
+```
+
+随机节点 $\epsilon$ 与 encoder parameters 无关；给定某次 sampled $\epsilon$ 后，$z$ 是 $\mu,\sigma$ 的普通可微函数。
+
+## Gradient 可以怎样传播
+
+若 downstream loss 为 $L(z)$，则
 
 \[
-z=g_\phi(x,\epsilon)
+\frac{\partial L}{\partial \mu}
+=
+\frac{\partial L}{\partial z}
+\frac{\partial z}{\partial \mu}
+=
+\frac{\partial L}{\partial z},
 \]
 
-就是普通 differentiable computation。Loss 对 $z$ 的梯度可以继续传到 $\mu_\phi(x)$ 和 $\sigma_\phi(x)$。
-
-这就是 reparameterization 真正解决的问题：它不是“让随机性消失”，而是把随机性移动到参数无关的外部噪声变量上。
-
-## Log-Variance 参数化
-
-网络实现常输出
+而
 
 \[
-\log\sigma^2
+\frac{\partial z}{\partial \sigma}=\epsilon.
 \]
 
-而不是直接输出 $\sigma$。如果记
+所以 reconstruction objective 的 gradient 可以通过 sampled $z$ 回到产生 $\mu,\sigma$ 的 encoder。
+
+## Distribution 没有被改变
+
+如果
 
 \[
-\ell=\log\sigma^2,
+\epsilon\sim\mathcal N(0,1),
 \]
 
 则
 
 \[
-\sigma=\exp(\ell/2)>0.
+\mu+\sigma\epsilon
+\sim
+\mathcal N(\mu,\sigma^2).
 \]
 
-这样网络可以无约束地输出任意实数 $\ell$，再通过指数保证标准差为正。
+因此这不是近似另一个 distribution，而只是同一随机变量的另一种构造方式。
 
-ACT 官方实现的 `reparametrize(mu, logvar)` 正是先计算
+## Log Variance 参数化
+
+Encoder 常输出
 
 \[
-\sigma=\exp(\tfrac12\log\sigma^2)
+\log\sigma^2
 \]
 
-再采样 standard normal noise，并返回 $\mu+\sigma\epsilon$。
+而不是直接输出 $\sigma$。这样无需强制 raw network output 为正。
+
+恢复标准差：
+
+\[
+\sigma
+=
+\exp\left(\frac12\log\sigma^2\right).
+\]
+
+然后：
+
+\[
+z=\mu+
+\exp\left(\frac12\log\sigma^2\right)
+\odot\epsilon.
+\]
+
+ACT released latent encoder 也采用 $\mu,\log variance$ 这种参数化。
 
 ## Sources
 
-- [Auto-Encoding Variational Bayes — Kingma & Welling, 2013](https://arxiv.org/abs/1312.6114)
-- [ACT official implementation](https://github.com/tonyzhaozh/act)
+- Kingma & Welling, **Auto-Encoding Variational Bayes**, 2013/2014. https://arxiv.org/abs/1312.6114

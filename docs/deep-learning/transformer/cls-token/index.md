@@ -13,25 +13,59 @@ related:
 
 # CLS Token
 
-CLS Token 是放在序列中特定位置的可学习特殊 token，其输出 hidden state 可以被用作整个输入序列的聚合表示。这个用法最广为人知地来自 BERT。
+CLS Token 是人为加入序列中的一个特殊 learnable token，用来通过 self-attention 聚合整组输入信息，并把它的最终 hidden state 作为 sequence-level representation。
 
-## BERT 中的结构
+它并不是 Transformer 原始论文的必备组件，而是在 BERT 等后续架构中被广泛采用的一种设计。
 
-BERT 把特殊 token `[CLS]` 放在输入序列最前面。经过多层 bidirectional Transformer encoder 后，最终 `[CLS]` 位置的 hidden state 被用于 sequence-level classification tasks。
+## 聚合发生在哪里
 
-重要的是，`[CLS]` 一开始并不“包含整句话”。它只是一个有独立 embedding 的特殊位置。经过 self-attention layers 后，它能够从其他 tokens 读取信息；训练目标再推动这个位置的最终表示对任务有用。
+把输入写成：
 
-## 聚合不是平均
+```text
+[CLS], x1, x2, x3, ..., xn
+```
 
-CLS representation 不是简单平均所有 token。其更新由多层 learned self-attention、residual paths 和 feed-forward transformations 决定。因此它可以学习非均匀地使用不同位置的信息。
+经过 self-attention 后，CLS 位置也像普通 token 一样拥有 Query，可以读取其他 tokens 的 Keys/Values：
 
-## ACT 中的借用
+```text
+x1 ─┐
+x2 ─┤
+x3 ─┼→ [CLS] reads them through attention
+... │
+xn ─┘
+```
 
-ACT 论文把 CVAE encoder 描述为 BERT-like Transformer encoder：输入序列由一个 learned `[CLS]` token、当前 joint positions 和 demonstration action chunk 构成。经过 encoder 后，只取 `[CLS]` 对应的 output feature，并用它预测 latent distribution 的参数。
+因此最后的
 
-所以 ACT 借用的是“设置一个聚合槽位，让它通过 Transformer 读取整个序列，再从该槽位读出全局表示”的结构思想，而不是使用预训练 BERT 模型。
+\[
+h_{CLS}
+\]
+
+可以包含整段 sequence 的信息。
+
+## CLS Token 不是自动平均
+
+它不是把其他 token vectors 直接求平均。CLS representation 经过多层 self-attention 和 FFN，具体读哪些位置、读多少都由模型学习。
+
+## ACT 中的 CLS Token
+
+ACT training-only latent encoder 构造：
+
+```text
+[CLS], current qpos, action_1, ..., action_k
+```
+
+Transformer encoder 输出后，只取 CLS position 的 hidden state，再映射成
+
+\[
+\mu,\\log\sigma^2.
+\]
+
+所以在 ACT 中，CLS token 的职责非常具体：**把 current qpos 与整段 demonstration action chunk 汇总成一个 fixed-size representation，用来参数化 latent posterior。**
+
+它不属于 ACT 独创机制；ACT 只是把这种 sequence summarization design 用在 CVAE encoder 中。
 
 ## Sources
 
-- [BERT — Devlin et al., 2018](https://arxiv.org/abs/1810.04805)
-- [Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware — Zhao et al., 2023](https://arxiv.org/abs/2304.13705)
+- Devlin et al., **BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding**, 2018. https://arxiv.org/abs/1810.04805
+- Zhao et al., **ACT**, 2023. https://arxiv.org/abs/2304.13705

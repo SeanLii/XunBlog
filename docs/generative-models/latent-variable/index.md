@@ -13,40 +13,103 @@ related:
 
 # Latent Variable
 
-Latent Variable 是概率模型中没有被数据直接观测到、但被模型用来解释观测数据结构的随机变量。
+Latent Variable 是概率模型中**没有被直接观测到，但被假设参与生成观测数据**的随机变量。
 
-## 定义
+如果我们直接观察到 $x$，而模型认为背后还有一个隐藏因素 $z$，可以写成：
 
-设观测变量为 $x$，latent variable 为 $z$。一个 latent-variable generative model 可以写成联合分布
+```text
+latent z
+   │
+   ↓
+observed x
+```
+
+概率上常写成
 
 \[
-p_\theta(x,z)=p_\theta(x|z)p(z).
+p(x,z)=p(z)p(x\mid z).
 \]
 
-这里 $z$ 没有直接出现在训练数据的观测列中，但模型假设数据生成过程受到 $z$ 的影响。
+这里 $z$ 是 latent variable，$x$ 是 observed variable。
 
-观测数据的概率需要把 latent variable 积分或求和掉：
+## “隐藏”不等于“神秘语义”
+
+Latent variable 不一定天然对应“风格”“姿态”“情绪”这类人类可命名因素。它首先只是模型中的未观测随机变量。
+
+训练后某些 latent dimensions 可能与可解释因素相关，也可能形成分布式 representation，无法给每一维一个简单名称。
+
+所以正式定义应保持概率意义：
+
+> $z$ 没有直接出现在观测数据中，但模型通过它描述数据的生成过程或隐藏结构。
+
+## Marginalizing latent variable
+
+如果只关心 observed data $x$，需要把所有可能的 $z$ 汇总掉：
+
+离散情形：
 
 \[
-p_\theta(x)=\int p_\theta(x|z)p(z)\,dz.
+p(x)=\sum_z p(x,z).
 \]
 
-这就是“latent”的正式含义：$z$ 存在于模型中，却没有直接被观测。
+连续情形：
 
-## 直觉
+\[
+p(x)=\int p(x,z)\,dz.
+\]
 
-可以把 $z$ 理解成模型内部用于表示未直接观测因素的变量。这只是理解方式，不是说某一维 $z_i$ 必然自动对应一个清晰的人类概念。
+这一步叫 marginalization。
 
-例如同一个机器人观测下，人类 demonstrator 可能采用略有不同的动作风格。一个生成模型可以让 latent variable 表示这些不能仅由当前 observation 唯一确定的变化因素。但是否真的形成可解释“风格维度”，取决于训练目标、数据和模型容量。
+Latent-variable models 的困难往往正来自这里：对高维 $z$ 的积分可能无法解析计算。
 
-## Latent Code 与确定性 Feature
+## Posterior 表示“看到 x 后 z 可能是什么”
 
-神经网络中的 hidden feature 不一定是 latent variable。关键区别在于概率建模：VAE 中 $z$ 被当作随机变量，有 prior、posterior/approximate posterior，并参与概率目标；普通 deterministic encoder 输出的 feature vector 可以没有这些概率结构。
+生成方向是
+
+\[
+p(z)p(x\mid z).
+\]
+
+但当数据 $x$ 已经观测到时，我们更想知道
+
+\[
+p(z\mid x).
+\]
+
+这叫 posterior distribution。它回答：**在已经看到 $x$ 的条件下，哪些 latent values 更可能解释这个样本。**
+
+根据 Bayes rule：
+
+\[
+p(z\mid x)=\frac{p(x\mid z)p(z)}{p(x)}.
+\]
+
+问题是分母 $p(x)$ 往往包含难算的积分，所以 posterior 也可能难以直接求得。
+
+这会自然引出 [Variational Inference](/generative-models/variational-inference/)。
 
 ## 在 VAE 中的位置
 
-VAE 设定 prior $p(z)$，用 encoder 近似看到 $x$ 之后的 posterior $q_\phi(z|x)$，再用 decoder $p_\theta(x|z)$ 解释或生成数据。这样 latent variable 同时连接了生成过程和 inference process。
+VAE 假设：
 
-## Sources
+\[
+z\sim p(z),
+\]
 
-- [Auto-Encoding Variational Bayes — Kingma & Welling, 2013](https://arxiv.org/abs/1312.6114)
+\[
+x\sim p_\theta(x\mid z).
+\]
+
+因为真实 posterior $p_\theta(z\mid x)$ 难算，再训练一个近似 distribution：
+
+\[
+q_\phi(z\mid x).
+\]
+
+因此 VAE 的 encoder 不是在“生成 latent variable 的定义”，而是在近似观察到 $x$ 后的 latent posterior。
+
+## 在 ACT 中的位置
+
+ACT training 把 future action chunk 中未被当前 observation 完全决定的变化交给 latent $z$ 表示。它仍然是概率模型中的 latent variable；“style”只是帮助理解它可能承载什么信息的直觉。
+
+ACT inference 固定 $z=0$，属于 ACT-specific deployment choice，不改变 latent variable 的通用定义。

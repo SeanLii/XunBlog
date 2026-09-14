@@ -13,30 +13,58 @@ related:
 
 # Embedding
 
-Embedding 是把离散索引或可学习槽位映射成连续向量的机制。它让模型可以通过梯度下降学习每个离散对象对应的向量表示。
+Embedding 是把离散 ID 或离散位置映射成可学习向量的机制。
 
-## 查表形式
-
-设 embedding table 为
+最典型的形式是一张参数表：
 
 \[
-E\in\mathbb R^{N\times d},
+E\in\mathbb R^{N\times d}.
 \]
 
-其中 $N$ 是可用索引数，$d$ 是 embedding dimension。给定索引 $i$，输出就是第 $i$ 行：
+输入一个 index $i$，就取第 $i$ 行：
 
 \[
-\mathbf e_i=E[i]\in\mathbb R^d.
+e_i=E[i]\in\mathbb R^d.
 \]
 
-从前向计算看，它像查表；从训练角度看，$E$ 是可学习参数，使用到的行会接收梯度更新。
+## 从 ID 到连续向量
 
-## Embedding 与 Linear Layer
+离散 ID 本身没有适合神经网络计算的几何结构。例如 token id 17 与 18 数字上相邻，并不表示两个词语语义接近。
 
-对 one-hot 向量 $\mathbf x\in\mathbb R^N$，embedding lookup 等价于某种矩阵乘法。直接使用索引查表更高效，不需要显式构造绝大多数位置为 0 的 one-hot vector。
+Embedding 把每个 ID 变成 learned vector：
 
-## 不只有“词向量”
+```text
+ID 17 → [ ... d values ... ]
+ID 18 → [ ... d values ... ]
+```
 
-Embedding 并不局限于自然语言。只要有一组离散身份或一组需要学习的固定槽位，都可以用 embedding 参数化。
+向量内容通过训练目标学习，而不是由 ID 数字大小决定。
 
-BERT 的 `[CLS]` token 有可学习 embedding；DETR 和 ACT 的 decoder query 也使用 `nn.Embedding` 创建一组可学习 query slots。它们的语义不同，但数学上都属于“学习一组固定向量参数”。
+## Embedding 与 Linear Layer 的关系
+
+如果离散 ID 先写成 one-hot vector $e_i$，再乘 embedding matrix，本质上也能得到同一行参数。
+
+但实际实现直接做 table lookup 更高效，不需要显式构造巨大 one-hot vector。
+
+## Positional / Query Embedding
+
+Embedding 不只用于词。
+
+Transformer 中常见：
+
+- learned positional embeddings；
+- segment/type embeddings；
+- CLS token embedding；
+- DETR / ACT 的 learnable query embeddings。
+
+例如 ACT 有 $k$ 个 action query embeddings：
+
+\[
+E_q\in\mathbb R^{k\times d}.
+\]
+
+它们不是从输入查询表里取出的 token meanings，而是直接训练的一组 model parameters。
+
+## Embedding 表示的是可学习身份
+
+可以把 embedding 理解为：给一个离散身份配一个可训练向量接口，让后续 neural network 能在连续向量空间中使用这个身份。

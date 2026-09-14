@@ -14,37 +14,70 @@ related:
 
 # Learnable Query Embedding
 
-Learnable Query Embedding 是一组直接作为模型参数学习的 query slots。它们不必由当前输入 token 经过 projection 得到，而可以作为固定数量的可学习向量，在每次前向计算中用于向 encoder memory 发起查询。
+Learnable Query Embedding 是一组由训练直接学习的 query vectors。它们不必来自输入 token，而可以作为固定数量的“输出槽位”送入 Transformer decoder。
 
-## 参数化
+DETR 是理解这种设计的典型例子：模型设置一组 learned object queries，每个 query 通过 decoder 从 image memory 中读取信息，并产生一个 object prediction slot。
 
-设需要 $K$ 个 query slots，hidden dimension 为 $d$，可以定义
+## Query 不需要先对应真实对象
 
-\[
-E_q\in\mathbb R^{K\times d}.
-\]
-
-$E_q$ 的每一行都是可学习参数。训练过程中，梯度会根据每个 slot 最终承担的输出任务更新这些向量。
-
-它们在不同样本之间共享参数，但 cross-attention 读取的 memory 会随样本变化，所以 decoder output 仍然依赖当前输入。
-
-## DETR 中的来源
-
-DETR 使用 fixed set of learned object queries。每个 query 通过 Transformer decoder 从 image features 中读取信息，最终产生一个 object prediction slot。Query 自己不是一个检测到的物体；它是一个可学习输出槽位。
-
-## ACT 中的改造
-
-ACT 的官方实现定义
+假设有 $N$ 个 query parameters：
 
 \[
-K=\text{num\_queries}=\text{chunk size}
+Q_{learned}\in\mathbb R^{N\times d}.
 \]
 
-个 query embeddings。它们不再代表“可能的物体槽位”，而对应 action chunk 中的一组输出 slots。Decoder 让这些 queries 读取当前视觉、proprioception 和 latent-conditioned memory，最后每个 slot 投影成一个 14 维 action。
+训练开始时它们只是随机初始化的 vectors。通过任务 loss，模型逐渐学会怎样利用这些 queries 从 memory 中取信息。
 
-因此 query embedding 的数学机制可以从 DETR 理解，但其任务语义由 ACT 重新定义。不能把 ACT 的 query 继续解释成 object query。
+因此它们不是“把第 1 个物体的坐标编码进去”，而是 neural network parameters。
+
+## 输出数量与 Query 数量
+
+Cross-attention 的输出位置数由 Query 数量决定。
+
+所以如果有 100 个 learned queries，decoder 可以并行产生 100 个 output representations：
+
+\[
+H\in\mathbb R^{100\times d}.
+\]
+
+后面的 prediction head 再把每个 representation 变成任务需要的输出。
+
+## ACT 的 Action Queries
+
+ACT 把 DETR-style queries 改成 future action slots。
+
+如果 chunk size 为 $k$：
+
+\[
+Q_{action}\in\mathbb R^{k\times d}.
+\]
+
+Decoder 输出：
+
+\[
+H_{action}\in\mathbb R^{k\times d},
+\]
+
+再映射成：
+
+\[
+\hat A\in\mathbb R^{k\times d_a}.
+\]
+
+第 $i$ 个 query 对应 future chunk 中第 $i$ 个 action position。
+
+这意味着 action sequence 不是 autoregressively 一步一步生成，而是由一组 queries **并行形成多个未来动作槽位**。
+
+## Query Embedding 与 Q 矩阵
+
+术语上要区分：
+
+- learnable query embedding：decoder 输入的一组 learned states / parameters；
+- attention 中的 Query matrix $Q$：这些 states 经过 $W_Q$ projection 后真正用于 dot-product attention 的矩阵。
+
+两者相关，但不是同一个数学对象。
 
 ## Sources
 
-- [DETR — Carion et al., 2020](https://arxiv.org/abs/2005.12872)
-- [ACT official implementation](https://github.com/tonyzhaozh/act)
+- Carion et al., **End-to-End Object Detection with Transformers**, 2020. https://arxiv.org/abs/2005.12872
+- Zhao et al., **ACT**, 2023. https://arxiv.org/abs/2304.13705

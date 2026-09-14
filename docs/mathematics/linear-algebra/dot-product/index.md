@@ -12,70 +12,82 @@ related:
 
 # Dot Product
 
-点积（dot product，也称 inner product 在欧氏空间中的标准形式）把两个同维向量映射成一个标量。Transformer 用它比较 query 与 key；几何上，它同时受两个向量的长度和夹角影响。
-
-## 定义
-
-对于
+Dot Product 把两个同维向量变成一个 scalar：
 
 \[
-\mathbf{x},\mathbf{y}\in\mathbb{R}^d,
+x\cdot y
+=x^\top y
+=
+\sum_{i=1}^{d}x_i y_i.
 \]
-
-点积定义为
-
-\[
-\mathbf{x}\cdot\mathbf{y}
-=\mathbf{x}^\top\mathbf{y}
-=\sum_{i=1}^{d}x_i y_i.
-\]
-
-输入是两个 $d$ 维向量，输出是一个实数。
 
 例如
 
 \[
-\mathbf{x}=(1,2),\qquad \mathbf{y}=(3,4),
+x=[1,2],\qquad y=[3,4],
 \]
 
 则
 
 \[
-\mathbf{x}\cdot\mathbf{y}=1\times3+2\times4=11.
+x\cdot y=1\times3+2\times4=11.
 \]
 
 ## 几何意义
 
-点积也可以写成
+Dot product 也可以写成
 
 \[
-\mathbf{x}\cdot\mathbf{y}
-=\lVert\mathbf{x}\rVert_2\lVert\mathbf{y}\rVert_2\cos\theta,
+x\cdot y
+=\|x\|\|y\|\cos\theta.
 \]
 
-其中 $\theta$ 是两个向量的夹角。因此，当向量长度固定时，方向越接近，点积越大；方向相反时点积可以为负；正交时点积为零。
+其中 $\theta$ 是两个 vectors 的夹角。
 
-这给 attention 提供了一个重要直觉：query 和 key 经过学习得到的投影后，较大的点积可以表示它们在模型学到的特征空间中更匹配。但“点积大”不是天然语义相似，而是由训练出来的表示和投影决定的。
+所以它同时受两件事影响：
 
-## 从一个点积到一张分数矩阵
+- vectors 的长度；
+- vectors 的方向是否一致。
 
-如果把多个 query 和 key 分别堆成矩阵
+若两个 unit vectors 完全同方向，dot product 为 1；垂直时为 0；反方向时为 -1。
+
+## Dot Product 不是纯粹的“相似度”
+
+因为长度也会影响结果，一个 norm 很大的向量即使角度没有特别接近，也可能产生较大 dot product。
+
+如果只想比较方向，常使用 cosine similarity：
 
 \[
-Q\in\mathbb{R}^{n_q\times d_k},\qquad
-K\in\mathbb{R}^{n_k\times d_k},
+\cos\theta
+=\frac{x\cdot y}{\|x\|\|y\|}.
 \]
 
-那么
+Transformer attention 使用的是 learned Q/K vectors 的 dot product，而不是自动归一化后的 cosine similarity。
+
+## QKᵀ 作为并行 Pairwise Dot Products
+
+把 queries 按行组成矩阵 $Q$，keys 按行组成 $K$：
 
 \[
-QK^\top\in\mathbb{R}^{n_q\times n_k}.
+QK^\top.
 \]
 
-其中
+其中第 $(i,j)$ 个元素正好是
 
 \[
-(QK^\top)_{ij}=q_i\cdot k_j.
+q_i\cdot k_j.
 \]
 
-这一步同时计算所有 query-key pair 的点积。后续的 [Scaled Dot-Product Attention](/deep-learning/transformer/attention/scaled-dot-product-attention/) 会再除以 $\sqrt{d_k}$，并通过 softmax 把这些分数变成权重。
+因此一个 matrix multiplication 就得到所有 query-key pairs 的 scores。
+
+## 高维下的尺度问题
+
+如果 vector 各维独立、均值 0、方差约 1，那么 $d$ 个乘积相加后，dot-product variance 会随 $d$ 增大。
+
+这就是 Transformer [Scaled Dot-Product Attention](/deep-learning/transformer/attention/scaled-dot-product-attention/) 再除以
+
+\[
+\sqrt{d_k}
+\]
+
+的原因之一：控制 logits 的尺度，避免 softmax 过早进入非常尖锐的区域。

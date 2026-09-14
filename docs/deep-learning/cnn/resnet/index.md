@@ -13,42 +13,116 @@ related:
 
 # ResNet
 
-ResNet（Residual Network）是一类用 residual blocks 构建的卷积神经网络。它的核心不是单纯“把网络加深”，而是把每个 block 要学习的映射改写为 residual form。
+ResNet（Residual Network）是一类通过 residual connection 构建深层神经网络的架构。它最重要的变化可以只看一条式子：
 
-## Residual Block
-
-设理想映射为 $H(x)$。ResNet 让一组 layers 学习
+普通 block 想直接学习
 
 \[
-F(x)=H(x)-x,
+y=H(x),
 \]
 
-并输出
+而 residual block 改成
 
 \[
-y=F(x)+x.
+y=x+F(x).
 \]
 
-这条 identity shortcut 为输入提供直接路径。ResNet 论文的主要动机来自 degradation problem：普通深层网络增加层数后，训练误差反而可能变差；residual formulation 让更深网络更容易优化。
+这里 $F(x)$ 不是最终输出，而是“在输入 $x$ 基础上还需要补充什么变化”。
 
-## Basic Block
+## 一个 residual block 的形状
 
-ResNet18 使用 basic blocks。典型 basic block 包含两层 $3\times3$ convolution，并把 block 输入通过 shortcut 加到输出上。
+```text
+x ────────────────┐
+│                 │
+↓                 │
+Conv → ... → Conv │
+│                 │
+↓                 │
+F(x)              │
+│                 │
+└────── + ←───────┘
+        │
+        ↓
+      y=x+F(x)
+```
 
-如果空间尺寸或 channel dimension 改变，shortcut 不能直接使用 identity，需要 projection 使 shape 匹配。
+右边这条直接把输入送到后面的路径通常称为 shortcut / skip connection。
 
-## ResNet18
+如果最合适的变换接近 identity mapping，网络不需要重新学习完整的 $H(x)=x$；只需要让
 
-“18”指论文定义下计入的带权重层数配置。它由初始 convolution、四个 residual stages 和最终分类头构成。作为视觉 backbone 使用时，通常移除或绕过最终分类用途，而取中间或最后卷积 feature map。
+\[
+F(x)\approx 0.
+\]
 
-## ACT 中的角色
+这使很深的网络更容易优化，也是原始 ResNet 论文的核心动机。
 
-ACT 论文使用 ResNet18 对每个 $480\times640$ RGB image 提取 $15\times20\times512$ feature map。空间网格 flatten 后变为 300 个 512 维视觉 features；再加二维 sinusoidal position encoding。
+## ResNet 仍然是 CNN
 
-论文描述四个相机各自产生这样的 features，合计 1200 个 visual features。Released implementation 在相机循环里复用同一个 `backbones[0]`，把各相机 feature maps 沿 width dimension 拼接后送给 Transformer。这个实现细节属于 [Paper and Released Implementation](/robot-learning/act/paper-and-released-implementation/)，不改变 ResNet 本身的定义。
+ResNet 没有替代 convolution。它的视觉 feature extraction 仍主要由 convolutional blocks 组成。Residual connection 改变的是这些 layers 的组织方式。
+
+所以知识关系是：
+
+```text
+Convolution
+    ↓
+Convolutional Neural Network
+    ↓
+ResNet
+```
+
+[Convolution](/deep-learning/cnn/convolution/) 负责在图像局部区域提取模式；ResNet 则解决“怎样把很多 convolutional layers 组织成更深、仍然能有效训练的网络”。
+
+## Feature map 会逐渐改变
+
+一张 RGB 图像输入 ResNet 后，会经历多层 convolution 和下采样。空间尺寸通常逐渐减小，而 channel 数增加：
+
+```text
+H × W × 3
+   ↓
+H/4 × W/4 × C1
+   ↓
+H/8 × W/8 × C2
+   ↓
+H/16 × W/16 × C3
+   ↓
+...
+```
+
+后面的 feature map 不再直接表示像素颜色，而是学习到更高层的视觉 patterns。
+
+具体任务可以选择：
+
+- 最终 global feature vector；
+- 中间 spatial feature map；
+- 多尺度 features。
+
+因此“使用 ResNet”并不意味着一定拿 ImageNet classification 的最终 logits。
+
+## ResNet 在 ACT 中的作用
+
+ACT 要从多路相机图像中提取视觉信息，但 Transformer 本身不会直接替代所有图像特征提取步骤。官方 ACT architecture 使用 ResNet backbone 先把每个 camera image 变成 spatial visual features，再把这些 features 投影到 Transformer hidden dimension。
+
+可以先看成：
+
+```text
+RGB image
+   │
+   ↓
+ResNet backbone
+   │
+   ↓
+spatial feature map
+   │
+   ↓
+1×1 projection
+   │
+   ↓
+Transformer tokens
+```
+
+因此 ACT 使用的是 ResNet 的**视觉表征能力**，不是它原本的 image-classification head。
 
 ## Sources
 
-- [Deep Residual Learning for Image Recognition — He et al., 2015](https://arxiv.org/abs/1512.03385)
-- [Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware — Zhao et al., 2023](https://arxiv.org/abs/2304.13705)
-- [ACT official implementation](https://github.com/tonyzhaozh/act)
+- He et al., **Deep Residual Learning for Image Recognition**, 2015/2016. https://arxiv.org/abs/1512.03385
+- Official ACT implementation. https://github.com/tonyzhaozh/act

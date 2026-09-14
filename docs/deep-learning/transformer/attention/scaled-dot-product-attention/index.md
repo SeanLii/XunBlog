@@ -14,92 +14,128 @@ related:
 
 # Scaled Dot-Product Attention
 
-Scaled Dot-Product Attention 是原始 Transformer 使用的基础 attention 运算。它用 query-key dot product 产生分数，除以 $\sqrt{d_k}$ 控制数值尺度，再用 softmax 得到 value 的聚合权重。
+Scaled Dot-Product Attention 是 Transformer 中最基本的一次 attention 计算：
 
-## 公式
+\[
+\operatorname{Attention}(Q,K,V)
+=
+\operatorname{softmax}\left(
+\frac{QK^\top}{\sqrt{d_k}}
+\right)V.
+\]
+
+理解这条式子时，最好按数据流从左到右走，而不是一次记住整条公式。
+
+## 第一步：QKᵀ 产生匹配分数
 
 设
 
 \[
 Q\in\mathbb R^{n_q\times d_k},
 \qquad
-K\in\mathbb R^{n_k\times d_k},
-\qquad
-V\in\mathbb R^{n_k\times d_v}.
+K\in\mathbb R^{n_k\times d_k}.
 \]
 
-attention 定义为
+矩阵乘法得到
 
 \[
-\operatorname{Attention}(Q,K,V)
-=\operatorname{softmax}
-\left(
-\frac{QK^\top}{\sqrt{d_k}}
-\right)V.
+QK^\top\in\mathbb R^{n_q\times n_k}.
 \]
 
-计算可以拆成四步。
-
-### Compatibility scores
+其中元素
 
 \[
-S=QK^\top
-\in\mathbb R^{n_q\times n_k}.
+(QK^\top)_{ij}=q_i^\top k_j
 \]
 
-$S_{ij}=q_i\cdot k_j$，表示第 $i$ 个 query 与第 $j$ 个 key 的匹配分数。
+表示 query $i$ 与 key $j$ 的 dot-product score。
 
-### Scaling
+每一行对应“一个 query 看所有 keys”。
+
+## 第二步：除以 √d_k
+
+如果 $q_i$ 与 $k_j$ 的各维分量近似独立、均值为 0、方差为 1，那么 dot product
 
 \[
-\tilde S=\frac{S}{\sqrt{d_k}}.
+q_i^\top k_j=\sum_{r=1}^{d_k}q_{ir}k_{jr}
 \]
 
-假设 query 和 key 各分量独立、均值为 0、方差为 1，则点积
+的方差会随 $d_k$ 增大到大约 $d_k$ 的量级。
+
+因此维度越高，score 的绝对值更容易变大。进入 softmax 后，过大的 logits 会让分布非常尖锐，gradient 变小。
+
+Transformer 用
 
 \[
-q\cdot k=\sum_{r=1}^{d_k}q_rk_r
+\frac{1}{\sqrt{d_k}}
 \]
 
-的方差会随 $d_k$ 增长到约 $d_k$。除以 $\sqrt{d_k}$ 后，尺度被拉回到更稳定的量级。
+把 score 的尺度拉回更稳定的范围。
 
-原论文给出的动机是：当 $d_k$ 较大时，未缩放点积可能变得很大，使 softmax 进入梯度很小的区域。Scaling 的目的不是改变排序，而是控制送入 softmax 的数值尺度。
+这就是 “scaled” 的来源。
 
-### Normalization
+## 第三步：Softmax 变成读取权重
 
-沿 key dimension 做 softmax：
+对每个 query 的整行 scores 做 softmax：
 
 \[
-A=\operatorname{softmax}(\tilde S).
+A_{ij}
+=
+\frac{
+\exp(S_{ij})
+}{
+\sum_l\exp(S_{il})
+}.
 \]
 
-于是
+于是每一行满足
 
 \[
-A\in\mathbb R^{n_q\times n_k},
+\sum_j A_{ij}=1.
 \]
 
-每一行是一组针对某个 query 的归一化权重。
+可以把 $A_{ij}$ 看成 query $i$ 从 value $j$ 读取多少比例的信息。
 
-### Value aggregation
+## 第四步：AV 汇总 Values
 
 \[
-O=AV
-\in\mathbb R^{n_q\times d_v}.
+Y=AV.
 \]
 
-对第 $i$ 个 query，输出是
+第 $i$ 行为
 
 \[
-o_i=\sum_{j=1}^{n_k}A_{ij}v_j.
+y_i=\sum_jA_{ij}v_j.
 \]
 
-所以 score matrix 决定“从哪里取”，$V$ 决定“取到什么”。
+这一步才真正把信息拿回来。
 
-## Mask 的位置
+所以完整计算可以压缩成：
 
-如果某些 key 不允许被关注，通常在 softmax 前把对应 score 设成一个非常大的负数。这样 softmax 后对应权重接近 0。Padding mask 与 causal mask 都可以利用这一步实现，但它们屏蔽位置的原因不同。
+```text
+Q × K^T
+  ↓
+matching scores
+  ↓ divide √d_k
+scaled scores
+  ↓ softmax
+attention weights
+  ↓ × V
+weighted information
+```
+
+## Mask 加在哪里
+
+某些位置不允许被读取时，可以在 softmax 前对对应 score 加上一个极大的负数：
+
+\[
+S'_{ij}=S_{ij}+M_{ij}.
+\]
+
+若 $M_{ij}=-\infty$，softmax 后该位置权重变成 0。
+
+[Causal Mask](/deep-learning/transformer/causal-mask/) 与 padding mask 都可以通过这个机制实现，但它们表达的语义不同。
 
 ## Sources
 
-- [Attention Is All You Need — Vaswani et al., 2017](https://arxiv.org/abs/1706.03762)
+- Vaswani et al., **Attention Is All You Need**, 2017. https://arxiv.org/abs/1706.03762

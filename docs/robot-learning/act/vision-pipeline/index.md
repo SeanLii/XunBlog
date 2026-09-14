@@ -13,93 +13,106 @@ related:
 
 # Vision Pipeline
 
-ACT 的 Vision Pipeline 把多个 camera RGB images 转换成带二维位置的 visual feature sequence，再交给 observation Transformer。它的作用是保留足够的空间视觉信息，同时把二维 feature maps 转成 attention 可以处理的 token sequence。
+ACT 的视觉部分负责把多路 RGB images 转成 Transformer 可以处理的 spatial features。
 
-## Paper Input
+它不是“把整张图压成一个向量再交给 Transformer”，而是保留 feature map 的空间结构，让后续 attention 仍能读取不同图像位置。
 
-原论文 ALOHA observation 使用四个 RGB cameras：front、top 和两个 wrist cameras。每张图像分辨率为
+## 从一张 RGB 图像开始
 
-\[
-480\times640\times3.
-\]
-
-控制与数据记录频率为 50 Hz。
-
-## ResNet18 Feature Extraction
-
-论文使用 [ResNet](/deep-learning/cnn/resnet/)18 把每张图像转换为
+输入图像可写成
 
 \[
-15\times20\times512
+I\in\mathbb R^{3\times H\times W}.
 \]
 
-feature map。
-
-这里 $15\times20$ 仍是二维空间网格，512 是每个网格位置的 feature dimension。
-
-Flatten spatial dimensions 后：
+先经过 [ResNet](/deep-learning/cnn/resnet/) backbone：
 
 \[
-15\times20=300,
+I\rightarrow F,
+\qquad
+F\in\mathbb R^{C_b\times H'\times W'}.
 \]
 
-所以单 camera 变成
+这里 $F$ 是 feature map。每个 spatial location 都对应一个 feature vector，而不是一个最终分类结果。
+
+## 投影到 Transformer hidden dimension
+
+ResNet 输出 channel 数 $C_b$ 不一定等于 Transformer hidden dimension $d$。官方实现使用 $1\times1$ convolution 做 channel projection：
 
 \[
-300\times512.
+F' = \operatorname{Conv}_{1\times1}(F),
+\qquad
+F'\in\mathbb R^{d\times H'\times W'}.
 \]
 
-四个 cameras 合计
+这一步主要改变 channel dimension，不需要把 spatial grid 混在一起。
 
-\[
-1200\times512.
-\]
+## 位置表示
 
-## 2D Positional Encoding
+Transformer attention 只看 feature 内容时，不天然知道 feature 来自图像哪个位置。因此 backbone 同时提供 positional representation。
 
-如果只把 feature map flatten，Transformer 会得到一组 visual vectors，但需要额外知道这些 vectors 原本位于图像哪里。论文因此加入二维 sinusoidal position encoding。
+可以把每个视觉 token 想成：
 
-位置编码与 feature vector 相加或在 attention 中共同使用，使视觉内容与空间坐标同时进入 Transformer。其一般原理属于 [Positional Encoding](/deep-learning/transformer/positional-encoding/)。
+```text
+视觉内容 feature
++
+它在 feature map 中的位置
+```
 
-## Joining Other Modalities
+这样 attention 才能区分左上角和右下角即使视觉 feature 相似的两个位置。
 
-Current joint positions 与 latent $z$ 分别投影到 512 维，再作为两个额外 features 加入 visual sequence：
+## 多相机怎样合并
 
-\[
-1200+2=1202.
-\]
+假设有多个 camera：
 
-论文因此得到 observation encoder input
+```text
+cam 1 → feature map F1
+cam 2 → feature map F2
+cam 3 → feature map F3
+cam 4 → feature map F4
+```
 
-\[
-1202\times512.
-\]
+released code 对每个 camera 使用同一个 backbone module，然后把得到的 features 收集起来，并沿 width 维拼接：
 
-视觉 feature 不需要先被压缩成一个全局 image vector。Transformer 可以直接在 1200 个空间位置与两个 non-visual features 之间做信息融合。
+```text
+F1 | F2 | F3 | F4
+```
 
-## Released Implementation
+对应 positional features 也按同样方式拼接。
 
-当前官方代码先把 image tensor 变为 `[batch, num_cam, channel, height, width]`，像素除以 255。进入 `ACTPolicy` 后再使用 ImageNet-style normalization：
+所以从 Transformer 的角度，它接收到的是一个更宽的 spatial feature grid；不同 camera 的内容被放进同一个 memory source 中。
 
-\[
-\text{mean}=(0.485,0.456,0.406),
-\]
+## ResNet 与 Transformer 的视觉分工
 
-\[
-\text{std}=(0.229,0.224,0.225).
-\]
+原始 RGB pixels 维度高，而且局部结构非常强。CNN/ResNet 已经擅长把边缘、纹理、物体局部等视觉信息逐层提取成更紧凑的 representations。
 
-模型只构建一个 ACT backbone，并在 camera loop 中对每个 camera 都调用 `self.backbones[0]`，因此各 camera 共享同一 backbone weights。各 camera feature maps 随后沿 width dimension concatenate；Transformer 内部再 flatten spatial dimensions。
+ACT 的分工因此是：
 
-如果每个 camera 的 feature shape 相同，这种 concatenate-then-flatten 仍产生与把所有 camera spatial tokens 放入同一 sequence 等价的 token count，但代码层面的布局与论文的概念描述不同。
+```text
+ResNet:
+raw image → useful visual features
 
-## End-to-End Training
+Transformer:
+visual features + robot state + latent
+→ global information interaction
+→ action representations
+```
 
-ACT 不是先离线提取固定视觉 features 再训练控制头。论文把 ResNet visual encoder 与 policy 作为整体训练，因此 perception representation 可以针对 action prediction objective 调整。
+这不是说 Transformer 不能直接处理 image patches，而是 ACT 的具体架构选择了 CNN backbone + Transformer 的组合。
 
-这也是 ACT 与论文中一些使用 separately trained/frozen visual encoder 的 baselines 的重要区别之一。
+## 视觉 feature 最终怎样影响 action query
+
+视觉 features 进入 Transformer 后成为 encoder memory 的一部分。Decoder 中每个 action query 可以通过 attention 从这份 memory 中读取与当前未来动作槽位有关的视觉信息。
+
+例如同一个 action chunk 中：
+
+- 较早动作可能主要依赖当前 gripper 与物体位置；
+- 较后动作可能读取另一片区域的信息。
+
+模型并没有人为指定哪个 query 必须看哪里，这些 attention patterns 由训练学习。
 
 ## Sources
 
-- [Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware — Zhao et al., 2023](https://arxiv.org/abs/2304.13705)
-- [ACT official implementation — tonyzhaozh/act](https://github.com/tonyzhaozh/act)
+- Zhao et al., **Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware**, 2023. https://arxiv.org/abs/2304.13705
+- Official ACT model: https://github.com/tonyzhaozh/act/blob/main/detr/models/detr_vae.py
+- He et al., **Deep Residual Learning for Image Recognition**, 2015/2016. https://arxiv.org/abs/1512.03385

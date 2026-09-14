@@ -14,79 +14,151 @@ related:
 
 # KL Divergence
 
-KL Divergence（Kullback–Leibler divergence）衡量：如果数据实际上按分布 $q$ 出现，却用分布 $p$ 来描述它，会产生多大的对数概率差异。它是两个分布之间的非对称差异量，不是距离度量。
+KL Divergence（Kullback–Leibler Divergence）衡量一个 probability distribution $Q$ 与另一个 distribution $P$ 的差异。
 
-## 定义
-
-离散情形中，
+离散形式：
 
 \[
-D_{\mathrm{KL}}(q\|p)
-=\sum_x q(x)\log\frac{q(x)}{p(x)}.
+D_{KL}(Q\|P)
+=
+\sum_x Q(x)
+\log\frac{Q(x)}{P(x)}.
 \]
 
-连续情形中，
+连续形式：
 
 \[
-D_{\mathrm{KL}}(q\|p)
-=\int q(x)\log\frac{q(x)}{p(x)}\,dx.
+D_{KL}(Q\|P)
+=
+\int q(x)
+\log\frac{q(x)}{p(x)}\,dx.
 \]
 
-也可以写成对 $q$ 的期望：
+它也可以写成 expectation：
 
 \[
-D_{\mathrm{KL}}(q\|p)
-=\mathbb E_{x\sim q}
-\left[\log q(x)-\log p(x)\right].
+D_{KL}(Q\|P)
+=
+\mathbb E_{x\sim Q}
+\left[
+\log\frac{Q(x)}{P(x)}
+\right].
 \]
 
-这里第一个参数 $q$ 决定“在哪些地方取平均”。因此交换顺序一般会改变结果：
+## KL Divergence 的比较方向
 
-\[
-D_{\mathrm{KL}}(q\|p)\ne D_{\mathrm{KL}}(p\|q).
-\]
+从 $Q$ 中经常出现的区域出发，如果 $P$ 也给这些区域较高 probability，log ratio 不大；如果 $Q$ 认为很常见而 $P$ 认为非常罕见，贡献就会变大。
 
-## 基本性质
+所以 $D_{KL}(Q\|P)$ 可以理解成：**以 Q 的视角，看 P 与 Q 有多不匹配。**
+
+## 非负性
 
 KL divergence 满足
 
 \[
-D_{\mathrm{KL}}(q\|p)\ge0,
+D_{KL}(Q\|P)\ge0.
 \]
 
-并且在通常条件下，仅当两个分布几乎处处相同时取 0。它不满足对称性，也不满足一般的三角不等式，所以不能当作普通欧氏距离理解。
-
-## VAE 中的方向
-
-VAE 使用的典型项是
+当两 distributions 几乎处处相同时：
 
 \[
-D_{\mathrm{KL}}
-\left(q_\phi(z|x)\|p(z)\right).
+D_{KL}(Q\|P)=0.
 \]
 
-$q_\phi(z|x)$ 是看到数据 $x$ 后 encoder 给出的 approximate posterior，$p(z)$ 是预先规定的 prior。这个项推动 approximate posterior 不要偏离 prior 太远，从而让 latent space 保持可采样的整体结构。
+这也是 ELBO 能成为 lower bound 的关键数学性质。
 
-它并不是要求每个输入都产生完全相同的 $q_\phi(z|x)$。如果 KL 权重有限，reconstruction term 仍然可以让不同输入使用不同的 latent 分布；训练目标是在信息保留和 prior regularization 之间取得由目标函数决定的折中。
+## KL 不是距离 metric
 
-## 对角高斯与标准正态
-
-若
+一般情况下：
 
 \[
-q(z|x)=\mathcal N(\mu,\operatorname{diag}(\sigma^2)),
-\qquad
+D_{KL}(Q\|P)\neq D_{KL}(P\|Q).
+\]
+
+而且它不满足普通 metric 的所有性质。
+
+所以不能把 KL 当成 Euclidean distance 使用。
+
+顺序很重要：
+
+\[
+D_{KL}(q(z\mid x)\|p(z))
+\]
+
+与反过来不是同一个目标。
+
+## VAE 中的 KL
+
+VAE 训练中：
+
+\[
+D_{KL}\big(q_\phi(z\mid x)\|p(z)\big)
+\]
+
+让 encoder 给某个样本产生的 approximate posterior 不要任意远离 prior。
+
+当
+
+\[
+q_\phi(z\mid x)
+=
+\mathcal N(\mu,\operatorname{diag}(\sigma^2))
+\]
+
+且
+
+\[
 p(z)=\mathcal N(0,I),
 \]
 
-则 KL 有闭式形式
+KL 有解析形式：
 
 \[
-D_{\mathrm{KL}}(q\|p)
-=\frac12\sum_{j=1}^{d}
+D_{KL}
+=
+\frac12
+\sum_{j=1}^{d}
 \left(
-\mu_j^2+\sigma_j^2-1-\log\sigma_j^2
+\mu_j^2+
+\sigma_j^2-
+\log\sigma_j^2-
+1
 \right).
 \]
 
-每个 latent dimension 都贡献一项。$\mu_j$ 远离 0、$\sigma_j^2$ 远离 1，都会增加 KL。ACT 官方实现正是利用这个对角高斯闭式计算 latent regularization。
+因此不需要 Monte Carlo 才能计算这一项。
+
+## 公式每一项的意义
+
+如果 $\mu_j$ 离 0 很远，$\mu_j^2$ 让 KL 变大。
+
+如果 $\sigma_j^2$ 远离 1，
+
+\[
+\sigma_j^2-
+\log\sigma_j^2-1
+\]
+
+也会增大。
+
+所以最小值出现在
+
+\[
+\mu=0,
+\qquad
+\sigma^2=1,
+\]
+
+也就是 approximate posterior 正好等于 standard normal prior。
+
+## KL 在 ACT 中的作用
+
+ACT training 使用
+
+\[
+D_{KL}(q_\phi(z\mid q_t,A_t)\|\mathcal N(0,I)).
+\]
+
+这让 training-time latent posterior 被约束在 standard normal prior 附近，使 inference 能够使用 prior mean $z=0$ 作为稳定输入。
+
+但 KL 权重过强也可能让 latent 携带的信息过少，这与 [Posterior Collapse](/generative-models/posterior-collapse/) 有关。

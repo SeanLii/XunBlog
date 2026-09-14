@@ -12,60 +12,79 @@ related:
 
 # Softmax
 
-Softmax 把一组任意实数转换成非负且总和为 1 的数。它常被用来把一组相对分数变成归一化权重。
-
-## 定义
-
-给定
+Softmax 把一组任意实数 scores 转换成一组非负、总和为 1 的数：
 
 \[
-\mathbf s=(s_1,\ldots,s_n),
+\operatorname{softmax}(z_i)
+=
+\frac{e^{z_i}}{\sum_j e^{z_j}}.
 \]
 
-softmax 的第 $i$ 个输出为
+因此输出可以被当作 categorical probabilities，也可以被当作一组 normalized weights。
+
+## 一个数值例子
+
+设 scores 为
 
 \[
-\operatorname{softmax}(\mathbf s)_i
-=\frac{e^{s_i}}{\sum_{j=1}^{n}e^{s_j}}.
+[1,2,3].
 \]
 
-因此
+指数后约为
 
 \[
-0<\operatorname{softmax}(\mathbf s)_i<1,
+[e^1,e^2,e^3]
+\approx[2.72,7.39,20.09].
+\]
+
+除以总和约 30.20：
+
+\[
+[0.09,0.24,0.67].
+\]
+
+最大的 score 得到最大权重，但其他位置仍保留非零值。
+
+## Softmax 看的是相对差异
+
+如果所有 logits 同时加同一个常数 $c$：
+
+\[
+\operatorname{softmax}(z+c)=\operatorname{softmax}(z).
+\]
+
+因为分子分母都会多出同一个因子 $e^c$。
+
+所以 Softmax 关心的是 logits 之间的差，而不是它们的绝对基准。
+
+## 数值稳定形式
+
+直接计算很大的 $e^{z_i}$ 可能 overflow。实现通常先减去最大值：
+
+\[
+\operatorname{softmax}(z_i)
+=
+\frac{e^{z_i-m}}{\sum_j e^{z_j-m}},
 \qquad
-\sum_i\operatorname{softmax}(\mathbf s)_i=1.
+m=\max_j z_j.
 \]
 
-## 相对差异
-
-Softmax 对所有输入同时加上同一个常数不敏感：
-
-\[
-\operatorname{softmax}(\mathbf s+c)=
-\operatorname{softmax}(\mathbf s).
-\]
-
-所以它真正利用的是分数之间的相对差异，而不是绝对零点。
-
-指数函数会放大分数差异。若一个 score 比另一个大很多，它获得的权重会迅速接近 1；反过来，较小 score 的权重会接近 0。
-
-## 数值稳定性
-
-直接计算 $e^{s_i}$ 可能溢出。实现中通常先减去最大值 $m=\max_i s_i$：
-
-\[
-\frac{e^{s_i-m}}{\sum_j e^{s_j-m}}.
-\]
-
-由于所有分数都减去同一个常数，结果不变，但指数输入不会出现不必要的大正数。
+由于所有 logits 同时减去 $m$，结果不变，但数值更稳定。
 
 ## 在 Attention 中的作用
 
-[Scaled Dot-Product Attention](/deep-learning/transformer/attention/scaled-dot-product-attention/) 先用 query 与 key 得到 compatibility scores，再沿 key 维度使用 softmax：
+Attention 先计算 query-key scores：
 
 \[
-A=\operatorname{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}\right).
+s_{ij}=\frac{q_i^\top k_j}{\sqrt{d_k}}.
 \]
 
-矩阵 $A$ 的每一行总和为 1。随后用 $AV$ 对 value 做加权和。Softmax 在这里不是判断“对或错”，而是在多个 value 之间分配相对权重。
+然后对固定 query 的所有 keys 做 softmax：
+
+\[
+\alpha_{ij}=\operatorname{softmax}_j(s_{ij}).
+\]
+
+于是 $\alpha_{ij}$ 成为一组总和为 1 的读取权重，再用它们加权 Values。
+
+所以 Softmax 在 Attention 中不是“分类器”，而是把任意匹配 scores 归一化为可用于 weighted sum 的权重。

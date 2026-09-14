@@ -15,45 +15,75 @@ related:
 
 # Transformer Encoder
 
-Transformer Encoder 是一组重复堆叠的 encoder layers。每层用 self-attention 让各输入位置交换信息，再用 position-wise feed-forward network 独立处理每个位置的特征。
+Transformer Encoder 把一组输入 representations 反复进行“相互读取 + 各自变换”，得到带有上下文的信息表示。
 
-## 单层结构
-
-原始 Transformer encoder layer 包含两个主要子层：
-
-1. Multi-Head Self-Attention；
-2. Position-wise Feed-Forward Network。
-
-每个子层外都有 residual connection，并在原始论文中采用 post-norm：
+输入和输出通常保持相同的位置数量：
 
 \[
-y=\operatorname{LayerNorm}(x+\operatorname{Sublayer}(x)).
+X\in\mathbb R^{n\times d}
+\rightarrow
+H\in\mathbb R^{n\times d}.
 \]
 
-后续模型常见 pre-norm 变体，因此“encoder”这个概念应与某一具体 normalization ordering 区分开。
+改变的是每个位置包含的信息，而不是必须把序列压缩成一个向量。
 
-## Self-Attention 的信息融合
+## 一个 Encoder Layer
 
-若输入有 $N$ 个 tokens，self-attention 会产生 $N\times N$ 的 attention score structure。第 $i$ 个 token 可以从其他 tokens 的 values 中得到加权信息，因此经过一层后，每个位置的表示都可能依赖整个可见序列。
+原始 Transformer encoder layer 由两个核心 sublayers 组成：
 
-## Feed-Forward 的局部变换
+```text
+X
+│
+├─ Multi-Head Self-Attention
+│
+├─ Residual + LayerNorm
+│
+├─ Feed-Forward Network
+│
+└─ Residual + LayerNorm
+↓
+H
+```
 
-Attention 负责 token 间的信息交换，feed-forward network 则对每个 token 分别应用相同的非线性映射。两者承担不同角色。
+[Self-Attention](/deep-learning/transformer/attention/self-attention/) 让位置之间交换信息；[Feed-Forward Network](/deep-learning/transformer/feed-forward-network/) 对每个位置独立做非线性变换。
 
-## Stack
+## 多层堆叠
 
-将 encoder layer 重复 $L$ 次后，得到更深的 contextualization。层数 $L$ 是模型超参数，不属于 Transformer Encoder 的定义。
+Encoder 通常堆叠多个相同结构的 layers：
 
-## ACT 中的两套 Encoder
+\[
+H^{(0)}=X,
+\]
 
-ACT 内部有两个不同用途的 Transformer encoders：
+\[
+H^{(l+1)}=\operatorname{EncoderLayer}(H^{(l)}).
+\]
 
-- CVAE encoder：训练时读取 `[CLS]`、当前 joint positions 与 demonstration action chunk，生成 latent posterior parameters；
-- Policy observation encoder：读取经过 ResNet 处理的多相机视觉 features，再与 proprioception 和 latent information 一起形成 observation memory。
+每一层都可以重新计算 attention，因此“谁读取谁”不是第一层确定后就固定不变。
 
-这两者都使用 Transformer Encoder 的通用机制，但输入语义和训练角色不同。
+## Encoder Memory
+
+在 encoder-decoder 架构中，最后一层输出常称为 encoder memory：
+
+```text
+input → encoder stack → memory
+                          ↑
+                          │
+                  decoder reads it
+```
+
+memory 不是一个特殊的数据类型，只是“encoder 已经处理好的 representations”，供后续 decoder cross-attention 读取。
+
+## ACT 中的两种 Encoder
+
+ACT 有两个容易混淆的 encoder 角色：
+
+1. policy Transformer 中对 observation features 的 encoder；
+2. training-only CVAE branch 中对 `[CLS, qpos, action sequence]` 的 Transformer encoder。
+
+它们都使用 Transformer encoder 机制，但输入、目标和生命周期不同。
 
 ## Sources
 
-- [Attention Is All You Need — Vaswani et al., 2017](https://arxiv.org/abs/1706.03762)
-- [Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware — Zhao et al., 2023](https://arxiv.org/abs/2304.13705)
+- Vaswani et al., **Attention Is All You Need**, 2017. https://arxiv.org/abs/1706.03762
+- Zhao et al., **Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware**, 2023. https://arxiv.org/abs/2304.13705

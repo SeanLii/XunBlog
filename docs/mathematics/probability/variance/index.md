@@ -12,62 +12,86 @@ related:
 
 # Variance
 
-方差（variance）衡量随机变量围绕均值的离散程度。均值说明分布大致位于哪里，方差说明取值通常离这个中心有多分散。
+Variance 描述 random variable 围绕其 mean 的分散程度。
 
-## 定义
-
-设
+若
 
 \[
-\mu=\mathbb E[X].
+\mu=\mathbb E[X],
 \]
 
-方差定义为
+则
 
 \[
 \operatorname{Var}(X)
-=\mathbb E[(X-\mu)^2].
+=
+\mathbb E[(X-\mu)^2].
 \]
 
-平方使正负偏差不会互相抵消，也让较大的偏差受到更大的惩罚。
+## 先减去均值
 
-等价地，
+$X-\mu$ 表示一次取值距离中心有多远。
+
+如果不减 mean，而直接看 $X^2$，结果会同时受到“整体数值基准”和“分散程度”影响。Variance 只想描述 spread，所以先把中心移到 0。
+
+## 再平方
+
+如果直接平均偏差：
 
 \[
-\operatorname{Var}(X)
-=\mathbb E[X^2]-\bigl(\mathbb E[X]\bigr)^2.
+\mathbb E[X-\mu]=0.
 \]
 
-标准差定义为
+正负偏差会抵消。因此用平方：
+
+\[
+(X-\mu)^2.
+\]
+
+它同时让偏差非负，并让较大偏差贡献更大。
+
+## Standard Deviation
+
+Variance 的单位被平方了。例如身高单位是 cm，variance 单位是 cm²。
+
+Standard deviation 定义为
 
 \[
 \sigma=\sqrt{\operatorname{Var}(X)}.
 \]
 
-因此方差的单位是原变量单位的平方，而标准差与原变量单位一致。
+它恢复到和原变量相同的单位，因此更容易直接解释。
 
-## 尺度变化
+## 等价形式
 
-如果
-
-\[
-Y=aX+b,
-\]
-
-那么
+展开平方可以得到
 
 \[
-\operatorname{Var}(Y)=a^2\operatorname{Var}(X).
+\operatorname{Var}(X)
+=
+\mathbb E[X^2]-\mathbb E[X]^2.
 \]
 
-加上常数 $b$ 只平移整个分布，不改变离散程度；乘以 $a$ 会把所有偏差放大 $|a|$ 倍，因此方差放大 $a^2$ 倍。
+这在推导中很常用。
 
-## 在高斯分布中的作用
-
-[Normal Distribution](/mathematics/probability/normal-distribution/) 用 $\mu$ 和 $\sigma^2$ 完整确定一维分布：
+## Normal Distribution 中的角色
 
 \[
-X\sim\mathcal N(\mu,\sigma^2).
+X\sim\mathcal N(\mu,\sigma^2)
 \]
 
-VAE 常不直接预测 $\sigma$，而预测 $\log\sigma^2$。这既方便网络输出任意实数，也能通过指数变换得到严格为正的方差。
+的第二个参数是 variance $\sigma^2$，不是 standard deviation $\sigma$。
+
+$\sigma$ 越大，distribution 越宽；$\sigma$ 越小，越集中在 mean 附近。
+
+## Standardization 中除以 σ 的作用
+
+对
+
+\[
+Z=\frac{X-\mu}{\sigma},
+\]
+
+先减 $\mu$ 把中心移到 0；再除 $\sigma$ 把“一份标准差”重新定义成 1 个单位。
+
+只有减均值，没有除标准差时，不同 distributions 虽然中心都在 0，但 spread 仍然不同，仍不能直接比较“离自己群体中心有多异常”。

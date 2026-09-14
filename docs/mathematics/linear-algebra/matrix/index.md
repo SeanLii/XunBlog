@@ -13,83 +13,118 @@ related:
 
 # Matrix
 
-矩阵（matrix）是按行和列排列的数值数组。在线性代数中，它可以表示线性变换；在神经网络中，权重、一个 batch 的特征以及 attention 中的 $Q,K,V$ 都经常写成矩阵。
-
-## 定义
-
-一个 $m\times n$ 的实矩阵写作
+Matrix 是按行和列排列的一组数：
 
 \[
-A\in\mathbb{R}^{m\times n}.
+A=
+\begin{bmatrix}
+a_{11}&a_{12}&\cdots\\
+a_{21}&a_{22}&\cdots\\
+\vdots&\vdots&
+\end{bmatrix}
+\in\mathbb R^{m\times n}.
 \]
 
-$m$ 是行数，$n$ 是列数。元素 $A_{ij}$ 位于第 $i$ 行、第 $j$ 列。
+在深度学习里，Matrix 最常见的两个角色是：**装一批 vectors**，以及**表示 linear transformation**。
 
-如果
+## 一批 vectors
+
+如果有 $m$ 个 $n$ 维 vectors，把它们按行排列：
 
 \[
-\mathbf{x}\in\mathbb{R}^{n},\qquad A\in\mathbb{R}^{m\times n},
+X\in\mathbb R^{m\times n}.
 \]
 
-那么矩阵向量乘法得到
+Transformer 的 token matrix 就是这种形式：
 
-\[
-A\mathbf{x}\in\mathbb{R}^{m}.
-\]
+```text
+row 1 = token 1 hidden vector
+row 2 = token 2 hidden vector
+...
+row m = token m hidden vector
+```
 
-第 $i$ 个输出分量是
-
-\[
-(A\mathbf{x})_i=\sum_{j=1}^{n}A_{ij}x_j.
-\]
-
-也就是说，每个输出分量都是输入向量各分量的加权和。
-
-## 矩阵乘法
+## Matrix 作为线性变换
 
 若
 
 \[
-A\in\mathbb{R}^{m\times n},\qquad B\in\mathbb{R}^{n\times p},
+x\in\mathbb R^n,
+\qquad
+W\in\mathbb R^{m\times n},
 \]
 
 则
 
 \[
-C=AB\in\mathbb{R}^{m\times p},
+y=Wx\in\mathbb R^m.
 \]
 
-并且
+矩阵 $W$ 把 $n$ 维向量映射到 $m$ 维空间。
+
+神经网络中的 Linear Layer、Q/K/V projections 都使用这类矩阵乘法。
+
+## Matrix Multiplication
+
+若
 
 \[
-C_{ij}=\sum_{k=1}^{n}A_{ik}B_{kj}.
+A\in\mathbb R^{m\times n},
+\qquad
+B\in\mathbb R^{n\times p},
 \]
 
-中间维度必须一致，因为 $A$ 的每一行要与 $B$ 的每一列做一次 [Dot Product](/mathematics/linear-algebra/dot-product/)。
-
-## 转置
-
-矩阵转置 $A^\top$ 会交换行和列：
+则
 
 \[
-(A^\top)_{ij}=A_{ji}.
+C=AB\in\mathbb R^{m\times p}.
 \]
 
-Transformer 中的 $QK^\top$ 正是利用转置，让每个 query 与每个 key 两两计算内积，从而一次得到完整的 attention score matrix。
-
-## Shape 是公式的一部分
-
-在深度学习里，只看符号而不看 shape 很容易误解计算。例如
+元素
 
 \[
-Q\in\mathbb{R}^{n_q\times d_k},\qquad
-K\in\mathbb{R}^{n_k\times d_k}
+C_{ij}
+=
+\sum_{k=1}^{n}A_{ik}B_{kj}.
 \]
 
-意味着
+内侧 dimension $n$ 必须相同。
+
+## Attention 中的 QKᵀ
+
+如果
 
 \[
-QK^\top\in\mathbb{R}^{n_q\times n_k}.
+Q\in\mathbb R^{n_q\times d_k},
+\qquad
+K\in\mathbb R^{n_k\times d_k},
 \]
 
-输出的第 $(i,j)$ 个元素表示第 $i$ 个 query 与第 $j$ 个 key 的匹配分数。这个 shape 关系是理解 attention 的关键部分，而不是实现细节。
+则
+
+\[
+K^\top\in\mathbb R^{d_k\times n_k},
+\]
+
+于是
+
+\[
+QK^\top
+\in\mathbb R^{n_q\times n_k}.
+\]
+
+结果的每一个元素都是一个 query vector 与一个 key vector 的 dot product。
+
+因此 Matrix Multiplication 可以一次并行完成所有 query-key pairs 的相似度计算。
+
+## Shape 是理解 Matrix 的核心工具
+
+在 AI 模型中，看懂矩阵往往不是先问“每个数字是多少”，而是先问：
+
+```text
+这个 axis 表示 batch？
+这个 axis 表示 token？
+这个 axis 表示 hidden dimension？
+```
+
+只要 shape 与每个 axis 的语义清楚，很多复杂 tensor 运算就能还原成普通 matrix/vector operations。

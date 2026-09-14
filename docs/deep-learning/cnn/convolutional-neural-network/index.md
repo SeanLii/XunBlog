@@ -13,50 +13,77 @@ related:
 
 # Convolutional Neural Network
 
-Convolutional Neural Network（CNN）是以 convolution 为核心处理网格数据的神经网络。图像是最典型的二维网格，因此 CNN 长期作为视觉特征提取器使用。
+Convolutional Neural Network（CNN）是一类特别适合处理网格数据的神经网络。对图像来说，最重要的特点是：**同一个小型 filter 会在整张图像上重复使用，从局部区域提取模式。**
 
-## 特征层级
-
-一层 convolution 只直接读取局部邻域。随着多层堆叠，后层单元对应到原图上的 receptive field 逐渐扩大，因此网络可以从局部边缘、纹理逐步组合出更大范围的视觉结构。
-
-这不是说每一层都必然对应固定的人类语义。层级结构来自局部计算与深度堆叠，具体特征由训练目标决定。
-
-## Feature Map
-
-对输入图像
+先看一张图像：
 
 \[
-X\in\mathbb R^{C\times H\times W},
+X\in\mathbb R^{H\times W\times C}.
 \]
 
-CNN 某一层输出可以写成
+普通 fully-connected layer 如果直接连接所有像素，会忽略“附近像素之间有强局部关系”这一结构。CNN 使用 [Convolution](/deep-learning/cnn/convolution/) 只观察局部窗口，并共享参数。
+
+## 从像素到 feature map
+
+一个卷积层可以先想成很多个可学习 detector：
+
+```text
+image
+  │
+  ├─ filter 1 → feature map 1
+  ├─ filter 2 → feature map 2
+  ├─ filter 3 → feature map 3
+  └─ ...
+```
+
+某个 filter 可以逐渐学会响应边缘、纹理或其他局部模式。多层 CNN 继续在前一层 feature maps 上做 convolution，于是 receptive field 逐渐变大，表示也逐渐从像素级模式变成更高层结构。
+
+## 参数共享
+
+如果“检测竖直边缘”在图像左上角有意义，那么在右下角通常也有意义。CNN 不需要为每个位置单独学习一套完全不同的权重，而是把同一 kernel 滑过不同位置。
+
+这带来两个结果：
+
+- 参数量显著小于把所有像素完全连接；
+- 学到的局部 pattern 可以在不同位置复用。
+
+## 多层 CNN 的表征层级
+
+一层 convolution 的感受野很小。多层叠加后，后面的一个 feature 会间接依赖更大的图像区域：
+
+```text
+pixels
+  ↓
+local edges / textures
+  ↓
+larger motifs
+  ↓
+object parts / semantic features
+```
+
+这不是每层都有人为规定“这一层必须检测什么”，而是训练目标通过 gradient 让网络自动形成有用的层级 features。
+
+## CNN 与 ResNet
+
+当 CNN 变得非常深时，优化会变困难。[ResNet](/deep-learning/cnn/resnet/) 在 CNN blocks 之间加入 residual connections：
 
 \[
-F\in\mathbb R^{C'\times H'\times W'}.
+y=x+F(x),
 \]
 
-$C'$ 是 feature channels；$H',W'$ 是新的空间尺寸。每个空间位置不再直接存 RGB，而是存模型学习到的 feature vector。
+使深层 convolutional network 更容易训练。
 
-## 下采样
+## 在 ACT 中的位置
 
-CNN 常通过 stride、pooling 等方式降低 $H,W$，同时增加 channel dimension。这减少后续计算，也扩大高层特征对应的感受范围。
+ACT 的相机图像先经过 ResNet backbone 得到 spatial features，然后这些 features 才进入 Transformer。也就是说：
 
-## 从 Feature Map 到 Transformer Tokens
+```text
+image → CNN/ResNet → visual tokens → Transformer → action chunk
+```
 
-如果一个 feature map 为
+CNN 负责把原始像素转成更适合后续推理的视觉表示；Transformer 再负责跨位置、跨相机、与机器人状态之间的信息融合。
 
-\[
-F\in\mathbb R^{C\times H\times W},
-\]
+## Sources
 
-可以把空间维 flatten 成
-
-\[
-HW\times C
-\]
-
-个 token-like features，再加入二维位置编码交给 Transformer。ACT 的 vision pipeline 正是这种 CNN-to-Transformer 接口。
-
-## ResNet
-
-[ResNet](/deep-learning/cnn/resnet/) 不是“另一种非 CNN 模型”，而是一类加入 residual connections 的深层 CNN。ACT 论文使用 ResNet18 将每个相机图像压缩成较低分辨率的 feature map，再让 Transformer 处理多视角信息。
+- LeCun et al., **Gradient-Based Learning Applied to Document Recognition**, 1998.
+- He et al., **Deep Residual Learning for Image Recognition**, 2015/2016. https://arxiv.org/abs/1512.03385

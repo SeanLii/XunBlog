@@ -13,41 +13,83 @@ related:
 
 # Residual Connection
 
-Residual Connection 把某个模块的输入直接加到模块输出上。它让网络学习“在原表示上应该增加怎样的修正”，而不必让每一层从头重建完整表示。
-
-## 定义
-
-若一个子网络为 $F$，输入为 $x$，最基本的 residual form 是
+Residual Connection 把一个子网络的输入直接加回它的输出：
 
 \[
-y=F(x)+x.
+y=x+F(x).
 \]
 
-如果 $F(x)$ 与 $x$ 的 shape 不一致，就不能直接相加，需要先通过投影或其他变换让维度匹配。
+图上就是一条绕过中间变换的 shortcut：
 
-## Residual Learning
+```text
+x ──────────────┐
+│               │
+↓               │
+F(x)            │
+│               │
+└────── + ←─────┘
+        │
+        ↓
+        y
+```
 
-ResNet 原论文把期望映射记作 $H(x)$，并令网络学习
+## 它改变了学习目标
+
+如果目标映射是 $H(x)$，普通 block 直接学习
+
+\[
+H(x).
+\]
+
+Residual block 等价于学习
 
 \[
 F(x)=H(x)-x.
 \]
 
-于是最终输出为
+如果最合适的变换接近 identity，那么只需要让 $F(x)$ 接近 0，就可以得到
 
 \[
-H(x)=F(x)+x.
+y\approx x.
 \]
 
-这不是说网络一定只学很小的修正，而是改变了参数化方式。论文的核心经验结论是，这种 residual formulation 能让更深网络更容易优化。
+这是 ResNet 论文提出 residual learning 时的重要动机。
 
-## Transformer 中的使用
+## Gradient 也有直接路径
 
-原始 Transformer 在 attention 子层和 feed-forward 子层周围都使用 residual connection，再结合 Layer Normalization。这样每个子层处理的是当前表示的增量，同时原输入保留一条直接路径。
+对
 
-Residual connection 只负责信息与梯度的直接通路；它不等同于 normalization，也不替代 attention 或 convolution。
+\[
+y=x+F(x)
+\]
 
-## Sources
+求导：
 
-- [Deep Residual Learning for Image Recognition — He et al., 2015](https://arxiv.org/abs/1512.03385)
-- [Attention Is All You Need — Vaswani et al., 2017](https://arxiv.org/abs/1706.03762)
+\[
+\frac{\partial y}{\partial x}
+=I+\frac{\partial F}{\partial x}.
+\]
+
+identity 路径意味着 gradient 不必完全穿过复杂的 $F$ 才能回到前面。这有助于非常深的网络优化。
+
+## Shape 必须兼容
+
+直接相加要求两边 shape 一致。如果 $F(x)$ 改变了 channel/dimension，就需要 projection shortcut 先把 $x$ 变到兼容 shape。
+
+## 在 Transformer 中
+
+Transformer 每个 attention/FFN sublayer 周围都使用 residual path。抽象写成：
+
+\[
+x' = x + \operatorname{Attention}(x),
+\]
+
+\[
+y = x' + \operatorname{FFN}(x').
+\]
+
+具体 LayerNorm 是放在相加前还是相加后取决于 pre-norm / post-norm 架构。
+
+## 与 ResNet 的关系
+
+Residual connection 是通用机制；ResNet 是大量使用这种连接构建的 CNN architecture。Transformer 也使用 residual connection，但不因此成为 ResNet。

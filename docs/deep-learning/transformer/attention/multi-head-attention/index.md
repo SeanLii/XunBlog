@@ -12,68 +12,81 @@ related:
 
 # Multi-Head Attention
 
-Multi-Head Attention 把模型维度分成多个 attention heads。每个 head 拥有自己的 $Q,K,V$ projections，可以在不同的投影子空间中独立计算 attention，再把结果拼接起来。
+Multi-Head Attention 把一次 attention 拆成多个并行 heads。每个 head 有自己的一组 Q/K/V projections，因此可以在不同 learned subspaces 中建立不同关系。
 
-## 定义
+## 从单头到多头
 
-第 $h$ 个 head 为
-
-\[
-\operatorname{head}_h
-=
-\operatorname{Attention}
-(QW_h^Q,KW_h^K,VW_h^V).
-\]
-
-所有 heads 的输出沿特征维拼接：
+单头 attention：
 
 \[
-H=\operatorname{Concat}
-(\operatorname{head}_1,\ldots,\operatorname{head}_H),
+\operatorname{Attn}(Q,K,V).
 \]
 
-再通过输出投影
+多头结构为每个 head $h$ 使用不同参数：
 
 \[
-\operatorname{MultiHead}(Q,K,V)=HW^O.
+Q_h=XW_Q^{(h)},
+\quad
+K_h=XW_K^{(h)},
+\quad
+V_h=XW_V^{(h)}.
 \]
 
-原始 Transformer 中通常令每个 head 的维度约为
+然后：
+
+\[
+head_h=
+\operatorname{Attention}(Q_h,K_h,V_h).
+\]
+
+所有 heads 拼接：
+
+\[
+H=\operatorname{Concat}(head_1,\ldots,head_H),
+\]
+
+最后再做输出 projection：
+
+\[
+Y=HW_O.
+\]
+
+## Dimension 怎样分配
+
+原始 Transformer 常把 model dimension $d_{model}$ 分给 $H$ 个 heads：
 
 \[
 d_k=d_v=\frac{d_{model}}{H}.
 \]
 
-因此增加 head 数并不必然把总 hidden dimension 乘上 $H$；常见做法是把固定的 $d_{model}$ 分给多个 heads。
-
-## 多个 Head 带来的结构
-
-如果只有一个 head，所有匹配关系都必须在同一个投影空间中完成。多个 heads 允许模型学习多组不同的 compatibility functions 与 value projections。
-
-不能预先断言“head 1 一定负责位置、head 2 一定负责语义”。某些 head 可能在训练后表现出可解释模式，但 head 的功能是数据和目标共同学习出来的。
-
-## Shape
-
-设 batch size 为 $B$、sequence length 为 $N$、model dimension 为 $d_{model}$、head 数为 $H$。常见实现会把
+例如
 
 \[
-(B,N,d_{model})
+d_{model}=512,
+\quad H=8,
 \]
 
-reshape 成
+则每个 head 的 key/query/value dimension 通常为 64。
 
-\[
-(B,H,N,d_k),
-\]
+拼接 8 个 heads 后又回到 512 维。
 
-分别计算各 head 的 attention，然后再合并回
+## 多个 heads 带来的不是简单重复
 
-\[
-(B,N,d_{model}).
-\]
+如果所有 heads 使用完全相同 projections，它们没有增加有意义的多样性。真正的作用来自每个 head 有独立 learned matrices。
 
-ACT 官方配置使用 8 个 attention heads。这个数值属于具体实现超参数，不是 Multi-Head Attention 定义的一部分。
+因此某些 heads 可以更关注局部关系，另一些关注远距离依赖；在视觉或机器人场景中，也可能形成不同空间区域或状态变量之间的读取模式。
+
+这些语义不是人为固定的，只是模型可能通过训练形成的功能分工。
+
+## Multi-Head 与并行输出不同
+
+“100 个 action queries”与“8 个 attention heads”是两个不同维度。
+
+- action queries：决定有多少 output slots；
+- attention heads：决定每个 slot 在一次 attention 中有多少套并行关系建模。
+
+ACT 可以同时有 100 queries 和 8 heads，两者不能互相替代。
 
 ## Sources
 
-- [Attention Is All You Need — Vaswani et al., 2017](https://arxiv.org/abs/1706.03762)
+- Vaswani et al., **Attention Is All You Need**, 2017. https://arxiv.org/abs/1706.03762

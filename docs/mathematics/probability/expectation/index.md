@@ -14,51 +14,82 @@ related:
 
 # Expectation
 
-期望（expectation）是随机变量在其概率分布下的加权平均。它描述的是分布的平均位置，而不是一次随机采样一定会得到的值。
+Expectation 描述一个 random variable 在其 probability distribution 下的平均位置。
+
+它不是“一次采样最可能得到的值”，而是如果重复采样很多次，样本平均值趋向的量。
 
 ## 离散随机变量
 
-若 $X$ 的可能取值为 $x$，概率质量函数为 $p(x)$，则
-
 \[
-\mathbb E[X]=\sum_x x\,p(x).
+\mathbb E[X]
+=
+\sum_x xP(X=x).
 \]
 
-每个取值按其出现概率参与平均。
+例如公平骰子：
+
+\[
+\mathbb E[X]
+=\frac{1+2+3+4+5+6}{6}
+=3.5.
+\]
+
+但骰子永远不会掷出 3.5。Expectation 是 distribution 的平均，不要求本身是可取值。
 
 ## 连续随机变量
 
-若 $X$ 具有概率密度 $p(x)$，则
+若 density 为 $p(x)$：
 
 \[
-\mathbb E[X]=\int_{-\infty}^{\infty}x\,p(x)\,dx.
+\mathbb E[X]
+=
+\int x p(x)\,dx.
 \]
 
-更一般地，对任意合适的函数 $f$，
+更一般地，对函数 $f(X)$：
 
 \[
-\mathbb E_{X\sim p}[f(X)]
-=\int f(x)p(x)\,dx.
+\mathbb E[f(X)]
+=
+\int f(x)p(x)\,dx.
 \]
 
-这个写法在机器学习里非常常见：先说明 $X$ 服从哪个分布，再对某个量求平均。
+## Linearity of Expectation
 
-## 线性性质
-
-对常数 $a,b$ 和随机变量 $X,Y$，
+无论 variables 是否独立：
 
 \[
-\mathbb E[aX+bY]=a\mathbb E[X]+b\mathbb E[Y].
+\mathbb E[aX+bY]
+=a\mathbb E[X]+b\mathbb E[Y].
 \]
 
-这个性质不要求 $X$ 与 $Y$ 独立。
+这是概率计算中非常常用的性质。
 
-## 在生成模型中的位置
+## 与 Mean 的关系
 
-VAE 的 ELBO 中包含
+Distribution 的理论 mean 通常就是 expectation：
 
 \[
-\mathbb E_{q_\phi(z|x)}[\log p_\theta(x|z)].
+\mu=\mathbb E[X].
 \]
 
-它表示：让 $z$ 按 encoder 给出的分布 $q_\phi(z|x)$ 变化，并平均评估 decoder 对 $x$ 的解释能力。训练时通常用有限次 sample 近似这个期望，而不是对所有可能的 $z$ 做解析积分。
+而 dataset 的 sample mean
+
+\[
+\bar x=\frac1n\sum_i x_i
+\]
+
+是用有限样本估计这个 population quantity。
+
+## VAE 中的 Expectation
+
+ELBO 中有：
+
+\[
+\mathbb E_{q_\phi(z\mid x)}
+[\log p_\theta(x\mid z)].
+\]
+
+意思是：对 $z$ 按 approximate posterior 分布取值时，decoder 对真实 $x$ 的 log-likelihood 平均是多少。
+
+实际训练往往用少量 Monte Carlo samples 来估计这个 expectation。

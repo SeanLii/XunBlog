@@ -14,55 +14,58 @@ related:
 
 # Layer Normalization
 
-Layer Normalization 对一个样本内部选定的特征维度进行标准化，再用可学习参数恢复模型需要的尺度与偏移。Transformer 广泛使用它来稳定深层网络中的表示。
+Layer Normalization 对一个样本内部的 feature dimensions 做标准化，再用可学习参数恢复合适的尺度与偏移。
 
-## 定义
-
-对一个 $d$ 维 hidden vector
+对一个 hidden vector
 
 \[
-\mathbf x=(x_1,\ldots,x_d),
+x=(x_1,\ldots,x_d),
 \]
 
-先计算特征维度上的均值与方差：
+先计算该向量自己的均值与方差：
 
 \[
-\mu=\frac1d\sum_{i=1}^{d}x_i,
+\mu=\frac1d\sum_i x_i,
 \]
 
 \[
-\sigma^2=\frac1d\sum_{i=1}^{d}(x_i-\mu)^2.
+\sigma^2=\frac1d\sum_i(x_i-\mu)^2.
 \]
 
-标准化后
+标准化：
 
 \[
-\hat x_i=\frac{x_i-\mu}{\sqrt{\sigma^2+\epsilon}},
+\hat x_i=\frac{x_i-\mu}{\sqrt{\sigma^2+\epsilon}}.
 \]
 
-再得到
+最后：
 
 \[
 y_i=\gamma_i\hat x_i+\beta_i,
 \]
 
-其中 $\gamma_i$ 和 $\beta_i$ 是可学习参数，$\epsilon$ 是防止数值不稳定的小常数。
+其中 $\gamma,\beta$ 是可学习参数。
 
-## 与 Batch Normalization 的区别
+## 它在什么维度上计算
 
-Layer Normalization 的统计量通常来自单个样本内部的 feature dimensions，不依赖同一个 mini-batch 中其他样本。因而 sequence length 或 batch size 变化时，它仍可以按相同规则工作。
+LayerNorm 的关键是对**同一个样本/位置的 features**做 normalization，而不是依赖整个 batch 的统计量。
 
-## Transformer 中的位置
-
-原始 Transformer 论文使用 residual connection 后再做 LayerNorm，也就是常被称为 post-norm 的形式：
+对于 Transformer hidden states
 
 \[
-\operatorname{LayerNorm}(x+\operatorname{Sublayer}(x)).
+X\in\mathbb R^{B\times n\times d},
 \]
 
-后来的 Transformer 也常采用 pre-norm，但那是架构变体。理解 ACT 官方 Transformer 时应以实际实现配置为准，而不是把所有 Transformer 都默认成同一种 normalization 顺序。
+常见做法是对最后一个 hidden dimension $d$ 独立归一化每个 $(b,i)$ 位置。
 
-## Sources
+## 与 Batch Normalization 的差别
 
-- [Layer Normalization — Ba, Kiros, Hinton, 2016](https://arxiv.org/abs/1607.06450)
-- [Attention Is All You Need — Vaswani et al., 2017](https://arxiv.org/abs/1706.03762)
+BatchNorm 统计通常依赖 batch dimension；LayerNorm 不需要用其他样本来算当前样本的均值/方差，因此对可变序列长度和小 batch 更自然。
+
+## 在 Transformer 中的位置
+
+原始 Transformer 采用 post-norm 形式：sublayer + residual 后再 LayerNorm。后续很多模型改成 pre-norm：先 LayerNorm，再进入 sublayer。
+
+两者都使用 LayerNorm，但 gradient behavior 与训练稳定性不同。
+
+ACT released Transformer code也保留了这一类 Transformer normalization 结构；具体是否 pre-norm 由实现配置决定。

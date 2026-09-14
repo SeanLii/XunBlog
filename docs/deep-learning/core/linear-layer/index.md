@@ -14,58 +14,89 @@ related:
 
 # Linear Layer
 
-Linear Layer 是神经网络中最基本的可学习变换之一。它把输入向量乘以权重矩阵，再加上偏置，从一个特征空间映射到另一个特征空间。
-
-## 定义
-
-对输入
+Linear Layer 把一个输入向量通过可学习的矩阵和偏置映射到另一个向量空间：
 
 \[
-\mathbf x\in\mathbb R^{d_{in}},
+y=Wx+b.
 \]
 
-线性层通常写成
+这是神经网络中最基础的可学习变换之一。
+
+## 输入和输出
+
+若
 
 \[
-\mathbf y=W\mathbf x+\mathbf b,
+x\in\mathbb R^{d_{in}},
 \]
 
-其中
+希望输出
+
+\[
+y\in\mathbb R^{d_{out}},
+\]
+
+则参数 shape 为
 
 \[
 W\in\mathbb R^{d_{out}\times d_{in}},
 \qquad
-\mathbf b\in\mathbb R^{d_{out}}.
+b\in\mathbb R^{d_{out}}.
 \]
 
-因此输出
+每个输出维度都是输入所有维度的加权和再加偏置。
+
+## 线性变换的作用
+
+矩阵 $W$ 可以改变表示的维度、旋转/拉伸表示空间，并重新组合已有 features。
+
+例如一个 14 维机器人 joint vector 可以被映射成 512 维 hidden representation：
 
 \[
-\mathbf y\in\mathbb R^{d_{out}}.
+\mathbb R^{14}\rightarrow\mathbb R^{512}.
 \]
 
-严格来说，只要包含非零偏置 $\mathbf b$，这个变换在数学上是 affine transformation；深度学习库仍普遍把它命名为 Linear layer。
+这不意味着凭空增加了 498 个独立信息源，而是把原来的信息重新编码到一个更适合后续网络使用的 learned feature space 中。
 
-## 可学习参数
+## Batch 形式
 
-$W$ 和 $\mathbf b$ 都由训练数据学习。网络不是提前规定“第 17 个输出维度应该代表什么”，而是通过损失函数调整整个映射，使输出表示对任务有用。
-
-如果一批 token 写成矩阵
+如果有 batch：
 
 \[
 X\in\mathbb R^{B\times d_{in}},
 \]
 
-常见实现形式是
+则输出
 
 \[
-Y=XW^\top+b,
+Y=XW^\top+b
+\in\mathbb R^{B\times d_{out}}.
 \]
 
-得到 $B\times d_{out}$ 的输出。
+深度学习框架中的 `Linear(in_features, out_features)` 本质就是这类运算。
 
-## 在 Transformer 与 ACT 中的作用
+## Linear Layer 本身不能表示任意非线性关系
 
-Transformer 用不同的 linear projection 生成 $Q,K,V$。ACT 还用 linear layer 把 14 维 joint position、32 维 latent $z$ 等不同来源的数据投影到统一的 hidden dimension，再交给 Transformer 处理。
+连续堆很多纯 linear layers：
 
-“投影到同一维度”并不意味着这些输入变成同一种数据；它只是让它们能够在同一个向量空间里参与后续 attention 和 feature fusion。
+\[
+W_3(W_2(W_1x))
+\]
+
+仍可以合并成一个大矩阵乘法，因此仍是线性变换。
+
+神经网络通常在 linear layers 之间加入 ReLU、GELU 等非线性 activation，才能表示更复杂函数。
+
+## 在 Transformer 与 ACT 中的位置
+
+Transformer 中 Q/K/V 都通过 linear projections 得到：
+
+\[
+Q=XW_Q,
+K=XW_K,
+V=XW_V.
+\]
+
+ACT 也大量使用 linear layers：把 qpos 投影到 hidden dimension、把 latent $z$ 投影到 hidden dimension、把 decoder hidden states 映射为 14 维 actions。
+
+所以很多“模块连接”本质上就是在不同 representation spaces 之间做 learned linear projection。

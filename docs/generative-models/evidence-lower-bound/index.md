@@ -14,93 +14,158 @@ related:
 
 # Evidence Lower Bound
 
-Evidence Lower Bound（ELBO）是对 log evidence $\log p_\theta(x)$ 的一个可优化下界。VAE 通过最大化 ELBO，在无法直接计算 marginal likelihood 的情况下同时训练 generative model 和 approximate posterior。
+Evidence Lower Bound（ELBO）是对数据 log-likelihood $\log p(x)$ 的一个下界，也是 VAE 训练目标的数学来源。
 
-## 从 Log Evidence 开始
-
-引入任意满足条件的 approximate posterior $q_\phi(z|x)$：
+它最重要的关系是：
 
 \[
-\log p_\theta(x)
+\log p(x)
 =
-\mathbb E_{q_\phi(z|x)}
+\mathcal L_{ELBO}(x)
++
+D_{KL}(q(z\mid x)\|p(z\mid x)).
+\]
+
+因为 KL divergence 非负：
+
+\[
+D_{KL}\ge0,
+\]
+
+所以
+
+\[
+\mathcal L_{ELBO}(x)\le\log p(x).
+\]
+
+这就是 “lower bound”。
+
+## 从 log p(x) 开始
+
+引入任意 approximate posterior $q(z\mid x)$：
+
+\[
+\log p(x)
+=
+\log\int p(x,z)\,dz.
+\]
+
+乘除 $q(z\mid x)$：
+
+\[
+\log p(x)
+=
+\log\int q(z\mid x)
+\frac{p(x,z)}{q(z\mid x)}\,dz.
+\]
+
+写成 expectation：
+
+\[
+\log p(x)
+=
+\log
+\mathbb E_{q(z\mid x)}
 \left[
-\log p_\theta(x)
+\frac{p(x,z)}{q(z\mid x)}
 \right].
 \]
 
-利用 Bayes 关系
+由于 $\log$ 是 concave function，Jensen inequality 给出：
 
 \[
-p_\theta(z|x)=\frac{p_\theta(x,z)}{p_\theta(x)},
+\log\mathbb E[X]
+\ge
+\mathbb E[\log X].
 \]
 
-可以得到分解
+因此
 
 \[
-\log p_\theta(x)
+\log p(x)
+\ge
+\mathbb E_q
+\left[
+\log p(x,z)-\log q(z\mid x)
+\right].
+\]
+
+右边定义为 ELBO。
+
+## VAE 中的常用形式
+
+把 joint distribution 分解：
+
+\[
+p(x,z)=p(z)p_\theta(x\mid z).
+\]
+
+得到
+
+\[
+\mathcal L_{ELBO}
 =
-\mathcal L(\theta,\phi;x)
-+
-D_{\mathrm{KL}}
-\left(
-q_\phi(z|x)\|p_\theta(z|x)
-\right).
-\]
-
-因为 KL divergence 非负，
-
-\[
-\mathcal L(\theta,\phi;x)
-\le \log p_\theta(x).
-\]
-
-因此 $\mathcal L$ 就是 evidence lower bound。
-
-## ELBO 的常用形式
-
-把联合分布分解为
-
-\[
-p_\theta(x,z)=p_\theta(x|z)p(z),
-\]
-
-ELBO 可以写为
-
-\[
-\boxed{
-\mathcal L
-=
-\mathbb E_{q_\phi(z|x)}
-[\log p_\theta(x|z)]
+\mathbb E_{q_\phi(z\mid x)}
+[\log p_\theta(x\mid z)]
 -
-D_{\mathrm{KL}}
-(q_\phi(z|x)\|p(z))
-}
+D_{KL}(q_\phi(z\mid x)\|p(z)).
 \]
 
-第一项鼓励 decoder 在 sampled $z$ 下给真实 $x$ 较高概率；第二项约束 approximate posterior 不要任意偏离 prior。
+这就是常见的 “reconstruction term - KL term”。
 
-## 两个目标的关系
+## 两个目标项的作用
 
-Reconstruction/log-likelihood term 希望 $z$ 保留对解释 $x$ 有帮助的信息。KL term 则会把 $q_\phi(z|x)$ 拉向共同 prior。如果 KL 权重过强，encoder 可能减少通过 $z$ 传递的信息；如果完全没有这项，latent distributions 又可能失去统一 prior 所提供的可采样结构。
-
-这不是把两个目标粗略说成“一个对一个错”，而是同一个 probabilistic objective 中两个必要部分承担不同约束。
-
-## Negative ELBO
-
-训练代码通常最小化 loss，因此会使用 ELBO 的负数：
+第一项：
 
 \[
-\mathcal J
-=
--\mathbb E_q[\log p_\theta(x|z)]
-+
-D_{\mathrm{KL}}(q\|p).
+\mathbb E_q[\log p_\theta(x\mid z)]
 \]
 
-当 decoder likelihood 选择不同分布时，第一项会对应不同 reconstruction loss。比如 Gaussian likelihood 在固定方差假设下可导出与 squared error 相关的目标；实际工程代码也可能直接采用 L1 等 surrogate loss。ACT 的 paper/code 差异就在这里出现。
+要求 decoder 在 sampled latent 下给真实 $x$ 较高 likelihood。
+
+第二项：
+
+\[
+D_{KL}(q_\phi(z\mid x)\|p(z))
+\]
+
+限制 approximate posterior 不要任意偏离 prior。
+
+所以训练不是简单追求“重建越精确越好”，而是在数据拟合与 latent distribution regularization 之间共同优化。
+
+## 下界什么时候等于真实 log-likelihood
+
+由
+
+\[
+\log p(x)-\mathcal L_{ELBO}
+=
+D_{KL}(q(z\mid x)\|p(z\mid x))
+\]
+
+可知，只有当
+
+\[
+q(z\mid x)=p(z\mid x)
+\]
+
+时 gap 为 0。
+
+所以 ELBO 的松紧程度直接由 approximate posterior 和 true posterior 的差异决定。
+
+## Conditional ELBO
+
+CVAE 中目标变成 conditional likelihood $\log p(y\mid x)$。对应下界为
+
+\[
+\mathbb E_{q(z\mid x,y)}[\log p(y\mid x,z)]
+-
+D_{KL}(q(z\mid x,y)\|p(z\mid x)).
+\]
+
+结构没有变，只是所有分布都放在 condition $x$ 下。
 
 ## Sources
 
-- [Auto-Encoding Variational Bayes — Kingma & Welling, 2013](https://arxiv.org/abs/1312.6114)
+- Kingma & Welling, **Auto-Encoding Variational Bayes**, 2013/2014. https://arxiv.org/abs/1312.6114
+- Sohn, Lee & Yan, **Conditional Variational Autoencoder**, 2015. https://papers.nips.cc/paper/5775-learning-structured-output-representation-using-deep-conditional-generative-models

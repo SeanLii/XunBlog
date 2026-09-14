@@ -14,65 +14,114 @@ related:
 
 # Variational Inference
 
-Variational Inference 用一个较容易处理的分布族去近似难以直接计算的 posterior distribution。VAE 的 encoder 本质上就是一个 amortized variational inference model。
+Variational Inference 是用一个容易计算的 distribution $q(z)$ 去近似一个难以直接计算的 posterior distribution $p(z\mid x)$ 的方法。
 
-## Posterior Inference
-
-对 latent-variable model
+问题起点是 Bayes rule：
 
 \[
-p_\theta(x,z)=p_\theta(x|z)p(z),
+p(z\mid x)=\frac{p(x,z)}{p(x)}.
 \]
 
-看到 $x$ 后，我们关心
+其中
 
 \[
-p_\theta(z|x)
-=\frac{p_\theta(x,z)}{p_\theta(x)}.
+p(x)=\int p(x,z)\,dz.
 \]
 
-困难在分母
+如果这个积分难以计算，那么 posterior 的归一化常数也难以得到。
+
+## 把推断变成优化
+
+Variational inference 选择一族容易处理的 distributions：
 
 \[
-p_\theta(x)=\int p_\theta(x,z)\,dz.
+q_\phi(z).
 \]
 
-高维神经生成模型中，这个积分通常无法直接精确计算。
-
-## Approximate Posterior
-
-Variational inference 引入一个可处理的分布
+然后调整参数 $\phi$，让它尽量接近真实 posterior：
 
 \[
-q_\phi(z|x)
+q_\phi(z)\approx p(z\mid x).
 \]
 
-去近似真实 posterior $p_\theta(z|x)$。理想目标可以写成最小化
+“接近”通常通过 [KL Divergence](/mathematics/information-theory/kl-divergence/) 衡量：
 
 \[
-D_{\mathrm{KL}}
-\left(q_\phi(z|x)\|p_\theta(z|x)\right).
+D_{KL}(q_\phi(z)\|p(z\mid x)).
 \]
 
-但这个 KL 中仍然包含难算的 $p_\theta(x)$。通过概率恒等式，可以把问题改写为最大化 [Evidence Lower Bound](/generative-models/evidence-lower-bound/)（ELBO），从而得到可训练目标。
+于是原本的积分推断问题变成了 optimization problem。
 
-## Amortized Inference
+## 难点仍然存在
 
-传统 variational inference 可以为每个 datapoint 单独优化 variational parameters。VAE 则用一个共享 neural network 根据 $x$ 直接输出 $q_\phi(z|x)$ 的参数。
-
-例如 diagonal Gaussian：
+直接优化上面的 KL 看起来仍需要知道 $p(z\mid x)$。展开：
 
 \[
-q_\phi(z|x)
-=\mathcal N(\mu_\phi(x),\operatorname{diag}(\sigma_\phi^2(x))).
+D_{KL}(q\|p(z\mid x))
+=
+\mathbb E_q[
+\log q(z)-\log p(z\mid x)
+].
 \]
 
-所有 datapoints 共享网络参数 $\phi$，但不同输入会得到不同的 $\mu$ 与 $\sigma$。这就是 amortized inference：推断成本被“摊销”进 encoder 的训练中。
+代入
 
-## 与普通 Encoder 的差别
+\[
+\log p(z\mid x)
+=
+\log p(x,z)-\log p(x),
+\]
 
-普通 autoencoder encoder 输出一个确定向量。Variational encoder 输出的是一个分布的参数。训练目标也不只要求 reconstruction，还要求 approximate posterior 具有与 prior 兼容的概率结构。
+得到
+
+\[
+D_{KL}
+=
+\log p(x)
+-
+\left(
+\mathbb E_q[\log p(x,z)]
+-
+\mathbb E_q[\log q(z)]
+\right).
+\]
+
+括号中的量就是 [Evidence Lower Bound](/generative-models/evidence-lower-bound/)：
+
+\[
+\mathcal L_{ELBO}.
+\]
+
+因此
+
+\[
+\log p(x)
+=
+\mathcal L_{ELBO}
++
+D_{KL}(q(z)\|p(z\mid x)).
+\]
+
+因为 KL 非负，最大化 ELBO 会推动近似 posterior 靠近真实 posterior，同时提高对数据的解释能力。
+
+## Amortized Variational Inference
+
+传统 variational inference 可以为每个样本单独优化一组 $q$ 参数。VAE 进一步训练一个 neural network encoder：
+
+\[
+q_\phi(z\mid x).
+\]
+
+输入任何 $x$，一次 forward pass 就得到该样本的 approximate posterior parameters。
+
+这叫 amortized inference：很多样本共享同一个 inference network 参数 $\phi$。
+
+## Variational Inference 与 VAE 的关系
+
+VAE 不是“variational inference 的同义词”。
+
+Variational inference 是更广泛的 approximate inference 思想；VAE 把它与 neural generative model、amortized encoder 和 reparameterized stochastic optimization 组合起来。
 
 ## Sources
 
-- [Auto-Encoding Variational Bayes — Kingma & Welling, 2013](https://arxiv.org/abs/1312.6114)
+- Kingma & Welling, **Auto-Encoding Variational Bayes**, 2013/2014. https://arxiv.org/abs/1312.6114

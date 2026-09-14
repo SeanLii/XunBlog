@@ -13,68 +13,99 @@ related:
 
 # Cross-Attention
 
-Cross-Attention 指 query 与 key/value 来自不同的信息集合。它让一组表示主动读取另一组表示中的信息。
+Cross-Attention 是“Query 来自一组表示，而 Key/Value 来自另一组表示”的 attention。
 
-## 数学结构
+最清楚的结构是：
 
-设 query source 为
+```text
+query states ──→ Q
+
+memory states ─→ K
+memory states ─→ V
+```
+
+于是 query side 负责提出读取需求，memory side 负责提供可检索的信息。
+
+## 与 Self-Attention 的区别
+
+Self-attention：
 
 \[
-X_q\in\mathbb R^{n_q\times d_{model}},
+Q=XW_Q,
+K=XW_K,
+V=XW_V.
 \]
 
-memory source 为
-
-\[
-X_m\in\mathbb R^{n_m\times d_{model}}.
-\]
-
-常见计算为
+Cross-attention：
 
 \[
 Q=X_qW_Q,
-\qquad
 K=X_mW_K,
-\qquad
 V=X_mW_V.
 \]
 
-随后
+其中 $X_q$ 与 $X_m$ 是不同来源。
+
+计算公式仍然是
 
 \[
-O=\operatorname{softmax}
-\left(
-\frac{QK^\top}{\sqrt{d_k}}
-\right)V.
+\operatorname{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}\right)V.
 \]
 
-score matrix 的 shape 是
+## 输出数量由 Query 数量决定
+
+假设有 10 个 queries、300 个 memory tokens：
 
 \[
-n_q\times n_m.
+Q\in\mathbb R^{10\times d_k},
+\qquad
+K,V\in\mathbb R^{300\times d_k/d_v}.
 \]
 
-所以每个 query position 都可以独立决定如何读取 memory 中的 $n_m$ 个位置。
+score matrix 为
 
-## 与 Self-Attention 的差别
+\[
+10\times300.
+\]
 
-两者使用相同的 attention 公式。差别在数据来源：
+最后输出仍然有 10 个位置。
 
-- Self-Attention：$Q,K,V$ 来自同一组表示；
-- Cross-Attention：$Q$ 来自一组表示，$K,V$ 来自另一组表示。
+所以 cross-attention 可以理解为：**每个 query 生成一个“从整份 memory 读取后的新表示”。**
 
-因此 Cross-Attention 不是一种全新的数学运算，而是 attention 的输入组织方式不同。
+## 原始 Transformer Decoder
 
-## Transformer Decoder
+机器翻译中，decoder states 作为 queries，encoder outputs 作为 memory：
 
-原始 encoder-decoder Transformer 中，decoder 的 cross-attention 让 decoder state 读取 encoder output。这里 encoder output 同时生成 keys 与 values。
+```text
+decoder representations
+        │
+        ↓ Q
+   Cross-Attention
+        ↑ K,V
+        │
+encoder representations
+```
 
-## ACT 中的角色
+这样每个 target position 都可以读取 source sentence 中相关信息。
 
-ACT 延续 DETR 风格的 decoder：一组 learnable query embeddings 形成 action slots，decoder 通过 cross-attention 从 observation memory 中读取视觉特征、proprioception 与 latent style 信息。每个 query slot 最终对应 action chunk 中的一个位置。
+## DETR 与 ACT 中的意义
 
-这与语言生成中的“前一个 token 产生下一个 token”不同。ACT 的 query slots 本身就是一组并行的输出位置，因此不应把 ACT decoder 机械理解成自回归文本 decoder。
+DETR 把固定数量的 learnable object queries 送入 decoder，让每个 query 从 image memory 中读取信息并形成一个 object prediction slot。
+
+ACT 延续类似思路，把 learnable queries 解释为 future action slots：
+
+```text
+action query 1 ─┐
+action query 2 ─┤
+...              ├→ cross-attend observation memory
+query k ─────────┘
+```
+
+最终得到 $k$ 个 future action representations。
+
+所以 cross-attention 不只属于语言任务；它是一种通用的“query set 读取 memory set”的机制。
 
 ## Sources
 
-- [Attention Is All You Need — Vaswani et al., 2017](https://arxiv.org/abs/1706.03762)
+- Vaswani et al., **Attention Is All You Need**, 2017. https://arxiv.org/abs/1706.03762
+- Carion et al., **End-to-End Object Detection with Transformers**, 2020. https://arxiv.org/abs/2005.12872

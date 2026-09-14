@@ -14,17 +14,33 @@ related:
 
 # Query / Key / Value
 
-Query、Key、Value 是 attention 中三个不同角色的向量。它们都只是向量，但模型通过不同的可学习投影让这些向量承担不同功能。
+Query、Key、Value 不是三种神秘的数据结构，而是同一批表示经过不同 linear projections 后承担的三种计算角色。
 
-## 数学形式
+先看一次“检索”：
 
-给定输入表示矩阵
+```text
+我要找什么？        → Query
+你适不适合被我读取？ → Key
+如果读取你，拿走什么？→ Value
+```
+
+这个类比只帮助区分角色；正式计算仍然是向量与矩阵运算。
+
+## 从输入向量得到 Q、K、V
+
+设一组输入表示为
 
 \[
-X\in\mathbb R^{n\times d_{model}},
+X\in\mathbb R^{n\times d_{model}}.
 \]
 
-self-attention 中常通过三个独立的 linear projections 得到
+Transformer 学习三个矩阵：
+
+\[
+W_Q,\quad W_K,\quad W_V.
+\]
+
+然后
 
 \[
 Q=XW_Q,
@@ -34,48 +50,116 @@ K=XW_K,
 V=XW_V.
 \]
 
-若每个 head 的 query/key dimension 为 $d_k$，value dimension 为 $d_v$，则
+也就是说，Q/K/V 最开始都来自同一个 $X$，只是经过不同 learned linear transformations。
+
+## 一个位置的 Query 怎样读取所有 Key
+
+取第 $i$ 个 query $q_i$。它会和所有 keys 做 [Dot Product](/mathematics/linear-algebra/dot-product/)：
 
 \[
-W_Q,W_K\in\mathbb R^{d_{model}\times d_k},
+q_i^\top k_1,
+q_i^\top k_2,
+\ldots,
+q_i^\top k_n.
+\]
+
+这些分数回答的是：**按照当前学到的 Q/K 特征空间，第 $i$ 个读取者与哪些候选最匹配。**
+
+经过 scale 和 softmax 后得到权重 $\alpha_{ij}$。最后真正拿走的是 Values：
+
+\[
+y_i=\sum_j\alpha_{ij}v_j.
+\]
+
+因此 Key 主要参与“决定权重”，Value 主要参与“构造输出”。
+
+## Key 与 Value 不能混成一个概念
+
+一个位置的 Key 和 Value 都来自它自己的 representation，但职责不同。
+
+例如某个 token 可以学习到：
+
+- Key 中保留“我是一个地点词、现在处在句子前半段”等适合匹配的信息；
+- Value 中保留“如果别人关注我，我应该提供这些语义内容”。
+
+这不是人为规定某个维度必须是什么语义，而是训练过程中 learned projections 形成的功能分工。
+
+## Matrix form
+
+一次对所有 queries 同时计算：
+
+\[
+S=QK^\top.
+\]
+
+如果
+
+\[
+Q\in\mathbb R^{n_q\times d_k},
 \qquad
-W_V\in\mathbb R^{d_{model}\times d_v}.
+K\in\mathbb R^{n_k\times d_k},
 \]
 
-所以同一个输入 token 可以同时产生一个 query、一个 key 和一个 value，但它们经过不同参数变换，不是同一个向量复制三次。
-
-## Key 决定匹配，Value 提供内容
-
-对单个 query $q$，attention 先计算
+则
 
 \[
-s_i=q\cdot k_i.
+S\in\mathbb R^{n_q\times n_k}.
 \]
 
-这里参与“该不该关注第 $i$ 个位置”判断的是 key $k_i$。随后得到权重 $\alpha_i$ 后，真正进入输出的是
+第 $i$ 行就是 query $i$ 对所有 keys 的 scores。
+
+Softmax 后：
 
 \[
-\sum_i\alpha_i v_i.
+A=\operatorname{softmax}(S/\sqrt{d_k}),
 \]
 
-因此 key 和 value 不可简单合并成一个概念：一个负责被比较，一个负责被读取。
+再乘
 
-## 角色来自计算位置
+\[
+Y=AV.
+\]
 
-QKV 并没有人为规定的物理功能。功能来自计算图和训练目标：
+若
 
-- $W_Q$ 只通过 query 的使用路径接收梯度；
-- $W_K$ 通过 compatibility score 的 key 路径接收梯度；
-- $W_V$ 通过 weighted sum 的 value 路径接收梯度。
+\[
+V\in\mathbb R^{n_k\times d_v},
+\]
 
-长期训练后，这三个投影会学习适合各自计算位置的表示。也就是说，“这是 Query”首先是它在公式中的角色，然后才是模型学出的语义结构。
+则
 
-## Self-Attention 与 Cross-Attention
+\[
+Y\in\mathbb R^{n_q\times d_v}.
+\]
 
-在 [Self-Attention](/deep-learning/transformer/attention/self-attention/) 中，$Q,K,V$ 来自同一组输入表示。在 [Cross-Attention](/deep-learning/transformer/attention/cross-attention/) 中，query 与 key/value 来自不同序列。
+这个 shape 很重要：**输出数量由 Query 的数量决定。**
 
-ACT 的 Transformer decoder 使用后一种结构：learnable query slots 作为 decoder queries，而视觉、关节状态与 latent 表示构成被读取的 encoder memory。
+## 这个 shape 对 Cross-Attention 很关键
+
+如果有 100 个 action queries 去读取 500 个 observation tokens：
+
+\[
+Q\in\mathbb R^{100\times d_k},
+\qquad
+K,V\in\mathbb R^{500\times d_k/d_v},
+\]
+
+attention score matrix 大小就是
+
+\[
+100\times500.
+\]
+
+最终输出仍然有 100 个位置。每个 action query 得到一个从 observation memory 中读取出的表示。
+
+这正是理解 ACT / DETR decoder 的关键：**Query 数量决定输出 slots 数量，Key/Value 数量决定可读取的 memory positions 数量。**
+
+## QKV 是 learned roles，不是固定语义
+
+Q 不一定就是“问题句子”，K 不一定是“数据库索引”，V 也不一定是“答案文本”。这些只是帮助理解的比喻。
+
+正式上，它们是 learned vector projections；其功能由训练目标决定。
 
 ## Sources
 
-- [Attention Is All You Need — Vaswani et al., 2017](https://arxiv.org/abs/1706.03762)
+- Vaswani et al., **Attention Is All You Need**, 2017. https://arxiv.org/abs/1706.03762

@@ -9,7 +9,7 @@
 - Generative Models：Latent Variable、Variational Inference、ELBO、VAE、CVAE
 - Robot Learning：Imitation Learning、Behavior Cloning、ACT
 
-当前站点由 53 个独立 canonical knowledge pages 构成。知识归属由目录树决定，跨页面链接只负责导航。
+当前站点正文已完整更新为 XunBlog ACT Knowledge Corpus v2，由 53 个独立 canonical knowledge pages 构成。知识归属由目录树决定，跨页面链接只负责导航。
 
 ## Local development
 
@@ -44,3 +44,5 @@ docs/
 ## Deployment
 
 `.github/workflows/deploy.yml` 在每次推送到 `main` 后构建并发布 GitHub Pages。项目站点的 `/XunBlog/` base path 由工作流自动注入。
+
+第二版配套索引、知识树、来源说明和原包验收记录保存在 `research/act/corpus-v2/`。站点正文仅将行内公式分隔符转换为现有渲染器支持的 `$...$` 格式。

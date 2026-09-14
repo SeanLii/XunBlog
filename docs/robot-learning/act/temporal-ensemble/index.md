@@ -12,101 +12,131 @@ related:
 
 # Temporal Ensemble
 
-Temporal Ensemble 是 ACT 在推理阶段融合重叠 action chunks 的方法。它不是对相邻时间的已执行动作做普通平滑，而是把**不同 query 时刻对同一个目标 timestep 的预测**加权平均。
+Temporal Ensemble 是 ACT 在推理时融合 overlapping action chunks 的方法。
 
-## Overlapping Predictions
+它出现的前提是：ACT 虽然每次预测未来 $k$ 步，但仍然可以在**每个 timestep 都重新查询 policy**。于是同一个执行时刻会收到来自不同历史 query 的多个预测。
 
-设 chunk size 为 $k$。在 timestep $s$ query policy，会得到
+## Overlapping Chunks 产生重复预测
+
+假设 chunk size 为 4。
+
+在 $t=0$：
+
+```text
+P0 = [a_0^(0), a_1^(0), a_2^(0), a_3^(0)]
+```
+
+在 $t=1$：
+
+```text
+P1 = [a_1^(1), a_2^(1), a_3^(1), a_4^(1)]
+```
+
+在 $t=2$：
+
+```text
+P2 = [a_2^(2), a_3^(2), a_4^(2), a_5^(2)]
+```
+
+于是机器人真正要在 $t=2$ 执行动作时，至少已经有三份候选：
 
 \[
-\hat A_s
+a_2^{(0)},\quad a_2^{(1)},\quad a_2^{(2)}.
+\]
+
+上标表示“这份预测是在什么时候产生的”。
+
+## 最简单的选择并不理想
+
+可以永远只用最新预测 $a_t^{(t)}$。这样响应最新视觉最直接，但相邻 timestep 的输出可能发生明显跳动。
+
+也可以只执行最早 chunk 中的计划，直到它结束。这样动作连续，但会失去高频 closed-loop correction。
+
+Temporal Ensemble 试图同时保留两者：
+
+- 继续每一步看新 observation；
+- 不让执行动作完全被一次最新预测突然替换。
+
+## 指数加权融合
+
+ACT 对同一执行时刻的多个候选动作做加权平均。论文写成指数权重形式。若有 $m$ 个候选预测，可以抽象为
+
+\[
+\bar a_t
 =
-(\hat a_{s|s},\hat a_{s+1|s},\ldots,
-\hat a_{s+k-1|s}).
+\frac{\sum_i w_i a_t^{(i)}}{\sum_i w_i},
 \]
 
-如果每个 timestep 都 query，那么目标时刻 $t$ 可能同时拥有：
+其中
 
 \[
-\hat a_{t|t},
-\hat a_{t|t-1},
-\hat a_{t|t-2},
-\ldots
+w_i=\exp(-\lambda i)
 \]
 
-最多约 $k$ 个有效预测。它们预测的是同一个 $a_t$，但依据的是不同时间取得的 observations。
+一类指数衰减权重。
 
-## Weighted Ensemble
-
-把当前 timestep 的有效 predictions 按时间顺序记为
+具体“哪个候选对应较大权重”要结合实现中候选的排列顺序理解。官方代码把已填充的历史 predictions 取出后按数组顺序使用
 
 \[
-A_t[0],A_t[1],\ldots,A_t[n_t-1],
+\exp(-0.01\cdot[0,1,2,\ldots])
 \]
 
-论文规定 $A_t[0]$ 对应最老的预测，并使用
+归一化，再加权求和。
+
+因此阅读论文公式与代码时，不应只看一句“exponential weighting”，还要确认索引的时间方向。
+
+## 连续 Joint Targets 的加权融合
+
+在 ACT 的 ALOHA 设置中，action 是连续 joint-position target：
 
 \[
-w_i=\exp(-mi).
+a_t\in\mathbb R^{14}.
 \]
 
-最终执行动作是
+多个预测位于同一个连续向量空间中，因此可以逐维做 weighted average。
 
-\[
-a_t
-=
-\frac{\sum_i w_iA_t[i]}
-{\sum_i w_i}.
-\]
+如果 action 是离散符号或具有特殊几何约束，简单平均未必有意义。Temporal Ensemble 的形式与 action representation 有关。
 
-$m>0$ 时，索引越大的较新 prediction 权重越小，因此**较老 prediction 权重更高**。论文说明较小的 $m$ 会更快纳入新 observation；从公式看，$m$ 越小，权重衰减越慢，新 predictions 与旧 predictions 的权重差距越小。
+## 它和普通 ensemble 不一样
 
-## 与普通 Smoothing 的区别
+普通 model ensemble 往往是“多个不同模型对同一个输入预测，再平均”。
 
-普通 temporal smoothing 可能把
+ACT 的 temporal ensemble 可以只有**同一个模型**。差异来自不同时间的 observation：
 
-\[
-a_{t-1},a_t,a_{t+1}
-\]
+```text
+o_{t-2} → prediction for a_t
+o_{t-1} → prediction for a_t
+o_t     → prediction for a_t
+```
 
-这些不同目标时刻的动作混合。这样可能改变轨迹时序，引入 bias。
+所以这里 ensemble 的维度是时间，而不是模型数量。
 
-ACT 的 ensemble 只混合
+## 官方实现的数据结构
 
-\[
-\hat a_{t|s_1},\hat a_{t|s_2},\ldots
-\]
+官方 evaluation code 用一个大 tensor 保存所有历史 chunk 对所有未来时刻的预测：
 
-也就是所有“目标都是 timestep $t$”的预测。目标时刻不变，变化的只是 prediction 所依据的 observation time。
+```text
+query time ↓       target time →
 
-## Feedback 与 Consistency
+0   a0 a1 a2 a3 ...
+1      a1 a2 a3 ...
+2         a2 a3 ...
+3            a3 ...
+```
 
-较老 chunk 提供跨时间的一致计划；较新的 chunk 包含更新后的 visual feedback。Temporal ensemble 把两者连续混合，而不是在 chunk boundary 突然从旧计划跳到新计划。
+执行时刻 $t$ 到来后，就取这一列所有已经存在的预测并融合。
 
-因此它同时处理两个实际问题：
+这种二维视图非常适合理解 temporal ensemble：**每一行是一整个 chunk，每一列是同一个物理时刻的多次预测。**
 
-- action chunking 带来的 chunk-boundary discontinuity；
-- 只按 chunk 执行时 observation update 太慢的问题。
+## Temporal Ensemble 的能力边界
 
-## Released Implementation
+它可以平滑相邻预测并利用持续反馈，但它并不保证 policy 在 distribution shift 下恢复，也不等于 trajectory optimization。
 
-官方 `imitate_episodes.py` 在启用 `--temporal_agg` 后把 `query_frequency` 设为 1，也就是每个 timestep 都 query policy。代码为每个 query time 保存完整 action chunk，再抽取当前 timestep 的所有已填充 predictions。
+如果所有历史 chunks 都因为视觉误判而预测错，平均它们不会自动得到正确动作。
 
-当前代码把指数系数固定为
-
-\[
-m=0.01,
-\]
-
-对应 `np.exp(-0.01 * arange(...))`，随后归一化并求加权和。
-
-这个 $0.01$ 是 released implementation 的具体数值，不属于 Temporal Ensemble 的定义。
-
-## Computational Cost
-
-Temporal ensemble 不改变 training objective，也不需要额外训练分支。代价主要出现在 inference：如果不做 temporal ensemble，可以每 $k$ 步 query 一次 policy；启用后则每一步都运行 policy，因此计算量上升。
+它解决的是 overlapping chunk execution 的具体问题，而不是所有 long-horizon robot-control 问题。
 
 ## Sources
 
-- [Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware — Zhao et al., 2023](https://arxiv.org/abs/2304.13705)
-- [ACT official implementation — tonyzhaozh/act](https://github.com/tonyzhaozh/act)
+- Zhao et al., **Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware**, 2023. https://arxiv.org/abs/2304.13705
+- Official evaluation implementation: https://github.com/tonyzhaozh/act/blob/main/imitate_episodes.py

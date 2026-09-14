@@ -13,47 +13,66 @@ related:
 
 # Posterior Collapse
 
-Posterior Collapse 指 VAE 类模型训练后，approximate posterior 退化得接近 prior，使 latent $z$ 对 decoder 几乎不再携带输入相关信息。
+Posterior Collapse 是 latent-variable generative model 中的一种训练现象：approximate posterior 变得非常接近 prior，并且 decoder 基本不再使用 latent $z$ 中的信息。
 
-## 典型状态
-
-理想情况下，不同数据 $x$ 可以产生不同的
+典型表现是
 
 \[
-q_\phi(z|x).
+q_\phi(z\mid x)\approx p(z),
 \]
 
-Posterior collapse 时可能出现
+于是
 
 \[
-q_\phi(z|x)\approx p(z)
+D_{KL}(q_\phi(z\mid x)\|p(z))\approx0.
 \]
 
-对大量 $x$ 都成立。于是 $z$ 的分布几乎不再依赖输入。
+这看起来像 KL objective 完成得很好，但如果同时 $z$ 与 $x$ 几乎无关，latent representation 就失去了原本要承担的信息作用。
 
-对应的 KL term 会接近 0：
+## 从 VAE 目标看这个现象
+
+VAE ELBO：
 
 \[
-D_{\mathrm{KL}}(q_\phi(z|x)\|p(z))\approx0.
+\mathcal L
+=
+\mathbb E_q[\log p_\theta(x\mid z)]
+-
+D_{KL}(q_\phi(z\mid x)\|p(z)).
 \]
 
-## 形成条件
+KL 项偏好 posterior 接近 prior。
 
-ELBO 同时包含 reconstruction/log-likelihood 与 KL regularization。若 decoder 足够强，即使忽略 $z$ 也能很好预测数据，那么降低 KL 最简单的方式之一就是让 posterior 靠近 prior。
+Reconstruction / likelihood 项则只有在 decoder **需要 $z$** 时，才会推动 encoder 往 $z$ 中放信息。
 
-因此问题不是“KL 本身错误”，而是模型可能找到一种高 ELBO 解：decoder 承担大部分建模工作，latent channel 被闲置。
+如果 decoder 本身已经非常强，能够主要依靠其他上下文预测 $x$，那么最省事的解可能是：
 
-## 信息角度
+```text
+q(z|x) ≈ p(z)
+       ↓
+z carries little information
+       ↓
+decoder mostly ignores z
+```
 
-当 $q_\phi(z|x)$ 对不同 $x$ 几乎相同，看到 $z$ 就很难判断它来自哪个输入。换句话说，$z$ 携带的 input-specific information 很少。
+## Collapse 不等于“所有 KL 小都是坏的”
 
-## 与 Beta 的关系
+KL 较小本身不是正式判定条件。我们真正关心的是 latent 是否仍然影响 reconstruction / generation，是否携带关于输入的有用信息。
 
-把 KL term 乘以更大的权重会更强地推动 posterior 接近 prior，通常会减少通过 latent channel 传递的信息。但实际是否发生 posterior collapse 还取决于 decoder capacity、训练过程、数据和其他设计，不能只由一个 $\beta$ 数值单独判断。
+因此需要结合 KL、latent usage、decoder sensitivity、mutual-information style measurements 或生成行为一起判断。
 
-ACT 论文说明更高的 $\beta$ 会使 $z$ 传递更少信息，但并没有把 ACT 的设计问题直接等同于 posterior collapse。因此在 ACT 页面中只把这里作为相关生成模型概念，而不把它当作论文明确报告的失败模式。
+## 与条件模型的关系
 
-## Sources
+CVAE 中 decoder 还拿到 condition $x$：
 
-- [Generating Sentences from a Continuous Space — Bowman et al., 2015](https://arxiv.org/abs/1511.06349)
-- [Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware — Zhao et al., 2023](https://arxiv.org/abs/2304.13705)
+\[
+p(y\mid x,z).
+\]
+
+如果 $x$ 已经足以很好预测 $y$，decoder 更容易忽略 $z$。因此 conditional models 同样可能出现 posterior collapse。
+
+## 与 ACT 的连接
+
+ACT 的 action predictor 有强 observation condition（视觉 + proprioception）。理论上 latent 也可能被弱化，因此 KL weight、model capacity 与 training dynamics 都会影响 $z$ 实际被使用多少。
+
+但不能仅凭“ACT inference 使用 $z=0$”就宣称发生 posterior collapse。Inference 固定 prior mean 是设计选择；posterior collapse 是训练后 latent 是否失去信息作用的现象，两者不是同一个概念。

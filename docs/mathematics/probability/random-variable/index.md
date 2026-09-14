@@ -13,36 +13,67 @@ related:
 
 # Random Variable
 
-随机变量（random variable）把随机试验的结果映射成数值。它的“随机”来自结果在观测前不确定，而不是变量自己随意改变。
+Random Variable 是把随机实验的每一种可能结果映射成一个数的函数。
 
-## 定义
+例如掷一枚骰子，结果空间是
 
-设样本空间为 $\Omega$。随机变量 $X$ 是一个映射
+```text
+{点数1, 点数2, ..., 点数6}
+```
+
+定义随机变量 $X$ 为“掷出的点数”，那么
 
 \[
-X:\Omega\rightarrow\mathbb{R}.
+X\in\{1,2,3,4,5,6\}.
 \]
 
-对于每个可能结果 $\omega\in\Omega$，$X(\omega)$ 给出一个数值。
-
-例如掷一次骰子时，样本结果可以直接由 $1$ 到 $6$ 表示，于是 $X$ 的取值集合就是 $\{1,2,3,4,5,6\}$。更复杂的情况下，样本本身可以是图像、轨迹或其他对象，而随机变量只抽取其中某个数值属性。
+随机性来自实验结果不确定；Random Variable 让我们可以用数学数值描述这种不确定性。
 
 ## 离散与连续
 
-离散随机变量的可能取值可以逐个列举，并用概率质量函数描述：
+离散随机变量只取离散值，例如骰子点数。
+
+连续随机变量可以在连续区间取值，例如人的身高、传感器噪声、VAE latent 中某一维的 Gaussian sample。
+
+## Random Variable 与普通变量的区别
+
+普通代数变量 $x=3$ 只是一个确定数。
+
+随机变量 $X$ 在实验发生前不是一个固定结果，而由概率规律决定。真正观测到一次结果后，可以得到一个 realization，例如
 
 \[
-p_X(x)=P(X=x).
+X=3.
 \]
 
-连续随机变量通常用概率密度函数 $p_X(x)$ 描述。对连续变量，单个精确点的概率通常为零；区间概率由积分得到：
+因此通常用大写 $X$ 表示 random variable，小写 $x$ 表示它的一次具体取值。
+
+## Distribution 描述它怎样随机
+
+只知道“$X$ 是随机变量”还不够。还需要 [Probability Distribution](/mathematics/probability/probability-distribution/) 描述每个可能值出现的概率。
+
+例如公平骰子：
 
 \[
-P(a\le X\le b)=\int_a^b p_X(x)\,dx.
+P(X=i)=\frac16,
+\qquad i=1,\ldots,6.
 \]
 
-## 在生成模型中的位置
+连续变量则通过 probability density 等方式描述。
 
-VAE 中的 $z$ 是随机变量，而不是一个固定编码。encoder 给出的不是单一 $z$，而是一个条件分布 $q_\phi(z|x)$；随后从这个分布中得到具体的 latent sample。理解这一点需要把“随机变量”和“它的一次取值”区分开。
+## 在生成模型中
 
-[Latent Variable](/generative-models/latent-variable/) 进一步要求这个随机变量没有被数据直接观测到，而是作为概率模型内部的隐藏因素出现。
+VAE 的 latent $Z$ 是 random variable：
+
+\[
+Z\sim\mathcal N(0,I).
+\]
+
+这句话不是说 $Z$ 永远等于 0，而是说它的取值按一个 Normal Distribution 随机产生。
+
+看到数据 $x$ 后，posterior
+
+\[
+p(z\mid x)
+\]
+
+又会描述“在这个观测条件下 latent variable 可能取哪些值”。

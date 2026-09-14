@@ -13,47 +13,75 @@ related:
 
 # Feed-Forward Network
 
-Transformer 的 Feed-Forward Network（FFN）是对每个序列位置独立应用的两层非线性网络。Attention 在位置之间交换信息，FFN 则在每个位置内部重新组合特征维度。
+Transformer 中的 Feed-Forward Network（FFN）是在每个位置上独立应用的两层非线性网络。
 
-## 原始 Transformer 形式
-
-对单个 hidden vector $x\in\mathbb R^{d_{model}}$，原论文写为
+原始 Transformer 写成
 
 \[
 \operatorname{FFN}(x)
-=\max(0,xW_1+b_1)W_2+b_2.
+=
+\max(0,xW_1+b_1)W_2+b_2.
 \]
 
 也就是：
 
-1. 从 $d_{model}$ 投影到更大的中间维度 $d_{ff}$；
-2. 使用 ReLU；
-3. 再投影回 $d_{model}$。
+```text
+hidden vector d_model
+      │
+      ↓ Linear
+larger intermediate dimension
+      │
+      ↓ activation
+      │
+      ↓ Linear
+hidden vector d_model
+```
 
-同一层中的所有 token 使用相同的 $W_1,W_2,b_1,b_2$，但每个 token 独立计算。
+## Attention 与 FFN 的职责不同
+
+Attention 允许位置之间交换信息：
+
+\[
+y_i\text{ can depend on }x_j.
+\]
+
+FFN 对每个位置使用同一套网络，但位置之间不互相混合：
+
+\[
+y_i=\operatorname{FFN}(x_i).
+\]
+
+因此可以把一个 Transformer layer 的主节奏记成：
+
+```text
+Attention: 从别人那里读信息
+FFN:       对读完后的自己做变换
+```
 
 ## Position-wise 的含义
 
-如果输入 shape 为
+“position-wise”不是说每个位置有独立参数。恰恰相反，同一个 FFN 参数会被共享到所有 positions。
+
+如果 $X\in\mathbb R^{n\times d}$，FFN 相当于对每一行使用同一个函数 $f$：
 
 \[
-(B,N,d_{model}),
+Y_i=f(X_i).
 \]
 
-FFN 不在 $N$ 个 positions 之间做混合；它只对最后的 feature dimension 做变换，输出 shape 仍是
+## Intermediate Dimension
+
+原始 Transformer Base 使用
 
 \[
-(B,N,d_{model}).
+d_{model}=512,
+\qquad
+d_{ff}=2048.
 \]
 
-位置之间的信息交换已经由 attention 完成。
+所以第一层先扩维，再压回 model dimension。
 
-## 与普通 MLP 的关系
-
-从单个 token 看，它就是一个小型 MLP。称为 Feed-Forward Network 是 Transformer 文献中的惯用名称。后续架构可以替换 activation、增加 gating 或改变中间维度，但这些变体不改变原始 FFN 的基本角色。
-
-ACT 使用的 Transformer 继承了这一结构。具体 `dim_feedforward` 是实现超参数，不应写进 FFN 的概念定义。
+这些数值是具体架构配置，不是 FFN 的定义。ACT 论文使用自己的 hidden / feed-forward dimensions。
 
 ## Sources
 
-- [Attention Is All You Need — Vaswani et al., 2017](https://arxiv.org/abs/1706.03762)
+- Vaswani et al., **Attention Is All You Need**, 2017. https://arxiv.org/abs/1706.03762

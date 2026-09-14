@@ -16,46 +16,74 @@ related:
 
 # Transformer Decoder
 
-Transformer Decoder 是一组以 query representations 为中心、能够读取 encoder memory 的 decoder layers。原始 Transformer 用它做自回归序列生成；后续模型也可以保留 decoder 的 cross-attention 结构而采用非自回归 queries。
+Transformer Decoder 可以理解成：**用一组 decoder states / queries 去读取 memory，并逐层更新这些 queries。**
 
-## 原始结构
+在原始机器翻译 Transformer 中，它还需要 masked self-attention 来处理已生成 target tokens；在 DETR、ACT 等模型里，decoder 的使用方式会改变。
 
-原始 Transformer decoder layer 包含：
+## 原始 Decoder Layer
 
-1. masked multi-head self-attention；
-2. encoder-decoder cross-attention；
-3. position-wise feed-forward network。
+原始 Transformer decoder layer 有三个主要 sublayers：
 
-第一步在语言生成中只允许读取已经出现的位置；第二步让 decoder state 从 encoder memory 中提取相关信息。
+```text
+decoder states
+     │
+     ↓
+masked self-attention
+     │
+     ↓
+cross-attention ← encoder memory
+     │
+     ↓
+feed-forward network
+     │
+     ↓
+updated decoder states
+```
 
-## Cross-Attention
+每个 sublayer 周围还有 residual connection 与 layer normalization。
 
-设 decoder states 为 $X_d$，encoder memory 为 $M$。Cross-attention 中常见来源是
+## Cross-Attention 是 encoder-decoder 连接点
+
+Decoder query $Q$ 来自 decoder states，而 $K,V$ 来自 encoder memory：
 
 \[
-Q=X_dW_Q,
-\qquad
-K=MW_K,
-\qquad
-V=MW_V.
+\operatorname{Attention}(Q_{dec},K_{mem},V_{mem}).
 \]
 
-因此 decoder 的每个 query 都能针对自己的需求读取同一份 encoder memory。
+所以 decoder 输出的数量由 query positions 数量决定。
 
-## Decoder 不等于自回归
+## Decoder 不等于 autoregressive generation
 
-Causal mask 是原始文本生成任务所需的约束，而不是所有 Transformer Decoder 的数学定义。DETR 使用 fixed number of learned object queries，同时读取 image memory；ACT 延续这种设计，把 queries 改成 action sequence slots。
+“Transformer decoder”常让人想到 GPT 或逐词生成，但这是某些架构的使用方式，不是 decoder 机制的唯一用途。
 
-因此在 ACT 中，不应该假设“decoder 第 3 个 action 必须先看到 decoder 第 2 个 action 的真实输出”。它预测的是一个并行 action chunk，并通过 decoder layers 在 query slots 和 memory 之间建立关系。
+DETR 使用固定数量 learned object queries，全部并行送入 decoder；ACT 使用 action queries，全部并行产生 future action representations。
 
-## ACT 的输出
+```text
+learned queries
+     │
+     ↓
+decoder reads memory
+     │
+     ↓
+parallel output slots
+```
 
-ACT 的 decoder 输出每个 action query 对应的 hidden representation，再经过输出 projection 得到 action dimension。论文中 action chunk 是 $k\times14$；released implementation 的 `action_head` 是从 hidden dimension 到 14 维的 linear layer。
+因此没有要求“第 2 个 query 必须等第 1 个输出生成完才开始”。
 
-这个具体 shape 属于 ACT，而不是 Transformer Decoder 的一般定义。
+## ACT 中的 Decoder
+
+如果 chunk size 是 $k$，ACT 有 $k$ 个 learnable action queries。Decoder 让这些 queries 从 observation memory 中读取信息，最后得到 $k$ 个 hidden states：
+
+\[
+H_{dec}\in\mathbb R^{k\times d}.
+\]
+
+每个 hidden state 再通过 action head 映射为一个 joint target。
+
+这就是“Transformer decoder 为什么可以一次输出整个 action chunk”的结构基础。
 
 ## Sources
 
-- [Attention Is All You Need — Vaswani et al., 2017](https://arxiv.org/abs/1706.03762)
-- [DETR — Carion et al., 2020](https://arxiv.org/abs/2005.12872)
-- [ACT official implementation](https://github.com/tonyzhaozh/act)
+- Vaswani et al., **Attention Is All You Need**, 2017. https://arxiv.org/abs/1706.03762
+- Carion et al., **DETR**, 2020. https://arxiv.org/abs/2005.12872
+- Zhao et al., **ACT**, 2023. https://arxiv.org/abs/2304.13705
