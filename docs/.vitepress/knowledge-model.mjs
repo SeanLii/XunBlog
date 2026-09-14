@@ -7,17 +7,27 @@ import { canonicalRoute } from './routes.mjs'
 
 const root = fileURLToPath(new URL('../../', import.meta.url))
 export const categories = {
-  '/mathematics/': { title: 'Mathematics', description: '数学为向量表示、概率分布与模型目标提供描述语言。这里按线性代数、概率与信息论组织已有概念。', focus: '/mathematics/probability/normal-distribution/' },
+  '/mathematics/calculus/': { title: 'Calculus', description: '微积分描述连续变化。当前内容通过常微分方程连接 Flow Matching 的连续时间过程。', focus: '/mathematics/calculus/ordinary-differential-equation/' },
+  '/mathematics/numerical-methods/': { title: 'Numerical Methods', description: '数值方法用有限计算近似连续问题。当前内容聚焦 Euler Method 与动作生成中的数值积分。', focus: '/mathematics/numerical-methods/euler-method/' },
+  '/deep-learning/multimodal/': { title: 'Multimodal Models', description: '多模态模型联合处理不同类型的输入。当前内容聚焦视觉语言模型及其在机器人策略中的使用。', focus: '/deep-learning/multimodal/vision-language-model/' },
+  '/mathematics/': { title: 'Mathematics', description: '数学为向量表示、概率分布与模型目标提供描述语言。这里按线性代数、概率、信息论、微积分与数值方法组织已有概念。', focus: '/mathematics/probability/normal-distribution/' },
   '/mathematics/linear-algebra/': { title: 'Linear Algebra', description: '线性代数描述向量及其变换。这里连接向量、矩阵与点积，以及它们在神经网络中的使用。', focus: '/mathematics/linear-algebra/dot-product/' },
   '/mathematics/probability/': { title: 'Probability', description: '概率描述随机对象与不确定性。这里包含随机变量、分布及其统计量，并连接潜变量模型。', focus: '/mathematics/probability/normal-distribution/' },
   '/mathematics/information-theory/': { title: 'Information Theory', description: '信息论为分布之间的差异提供度量语言。当前内容聚焦 KL Divergence 及其在变分模型中的使用。', focus: '/mathematics/information-theory/kl-divergence/' },
-  '/deep-learning/': { title: 'Deep Learning', description: '深度学习通过神经网络学习数据的表示与映射。这里组织基础网络运算、Transformer 与卷积网络，并连接它们在 ACT 中的使用。', focus: '/deep-learning/transformer/' },
+  '/deep-learning/': { title: 'Deep Learning', description: '深度学习通过神经网络学习数据的表示与映射。这里组织基础网络运算、Transformer、卷积网络与多模态模型，并连接它们在机器人策略中的使用。', focus: '/deep-learning/transformer/' },
   '/deep-learning/core/': { title: 'Core', description: '神经网络基础运算构成更大模型的模块。这里包含线性层、Softmax、Embedding、残差连接与层归一化。', focus: '/deep-learning/core/linear-layer/' },
   '/deep-learning/cnn/': { title: 'Convolutional Neural Networks', description: '卷积网络处理具有空间结构的输入。这里从卷积运算连接 CNN、ResNet 与 ACT 的视觉管线。', focus: '/deep-learning/cnn/resnet/' },
-  '/generative-models/': { title: 'Generative Models', description: '生成模型描述数据如何由分布与潜变量产生。当前内容围绕变分推断、VAE 与 CVAE，并连接 ACT 的训练支路。', focus: '/generative-models/variational-autoencoder/' },
-  '/robot-learning/': { title: 'Robot Learning', description: '机器人学习研究如何从数据中学习行为。当前内容覆盖模仿学习、行为克隆与 ACT，连接视觉观测、动作预测和训练推理过程。', focus: '/robot-learning/act/' }
+  '/generative-models/': { title: 'Generative Models', description: '生成模型描述数据如何由分布与潜变量产生。当前内容覆盖变分推断、VAE、CVAE 与 Flow Matching，连接 ACT 和 π0 的动作生成。', focus: '/generative-models/variational-autoencoder/' },
+  '/robot-learning/': { title: 'Robot Learning', description: '机器人学习研究如何从数据中学习行为。当前内容覆盖模仿学习、行为克隆、VLA、跨形态学习、ACT 与 π0，连接视觉观测、动作预测和训练推理过程。', focus: '/robot-learning/pi0/', focusDescription: 'Vision-Language-Action robot policy with Flow Matching.', focusLinks: ['architecture', 'action-expert', 'training', 'inference'] }
 }
 const aliases = {
+  pi0: ['pi0', 'pi 0', 'pi-zero', 'pi zero', 'π 0', 'π₀'],
+  'flow-matching': ['流匹配'],
+  'vision-language-model': ['VLM', '视觉语言模型'],
+  'vision-language-action-model': ['VLA', '视觉语言动作模型'],
+  'ordinary-differential-equation': ['ODE', '常微分方程'],
+  'euler-method': ['欧拉方法', '欧拉法'],
+  'cross-embodiment-learning': ['跨形态学习'],
   act: ['Action Chunking with Transformers', '动作分块'], qkv: ['QKV', 'Query Key Value', '查询 键 值'],
   'normal-distribution': ['Gaussian', '高斯分布', '正态分布'],
   'multivariate-normal-distribution': ['Multivariate Gaussian', '多元正态分布'],
@@ -32,6 +42,8 @@ const aliases = {
 }
 // Explicit component-use edges, already represented in the existing navigation graph.
 const uses = {
+  '/robot-learning/pi0/': ['/deep-learning/multimodal/vision-language-model/', '/generative-models/flow-matching/', '/robot-learning/act/action-chunking/'],
+  '/robot-learning/pi0/inference/': ['/mathematics/numerical-methods/euler-method/'],
   '/robot-learning/act/': ['/deep-learning/transformer/', '/generative-models/conditional-variational-autoencoder/', '/deep-learning/cnn/resnet/'],
   '/robot-learning/act/architecture/': navigationGraph['/robot-learning/act/architecture/'],
   '/robot-learning/act/cvae-in-act/': navigationGraph['/robot-learning/act/cvae-in-act/'],
@@ -75,7 +87,7 @@ export function buildKnowledgeModel() {
     const summary = body.split(/\n\s*\n/).find(p => /^[A-Za-z\u3400-\u9fff]/.test(p.trim()))?.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[*`]/g, '').slice(0, 180) || ''
     pages.push({ summary, route, title: field(fm, 'title'), kind: 'canonical', updated, minutes: Math.max(1, Math.ceil(units / 250)), aliases: aliases[slug] || [], prerequisites: links(fm, 'prerequisites'), related: links(fm, 'related') })
   }
-  if (pages.length !== 53) throw new Error(`Expected 53 canonical pages, found ${pages.length}`)
+  if (pages.length !== 69) throw new Error(`Expected 69 canonical pages, found ${pages.length}`)
   const nodes = Object.fromEntries(pages.map(p => [p.route, p]))
   for (const [route, category] of Object.entries(categories)) {
     if (nodes[route]) throw new Error(`Category conflicts with canonical: ${route}`)
@@ -94,7 +106,7 @@ export function buildKnowledgeModel() {
     if (node.parent) nodes[node.parent].children.push(node.route)
     else roots.push(node.route)
   }
-  const order = ['linear-algebra', 'probability', 'information-theory', 'core', 'transformer', 'cnn', 'imitation-learning', 'behavior-cloning', 'act']
+  const order = ['linear-algebra', 'probability', 'information-theory', 'calculus', 'numerical-methods', 'core', 'transformer', 'cnn', 'multimodal', 'imitation-learning', 'behavior-cloning', 'vision-language-action-model', 'cross-embodiment-learning', 'act', 'pi0']
   for (const node of Object.values(nodes)) node.children.sort((a,b) => {
     const rank = r => { const i = order.indexOf(r.split('/').filter(Boolean).at(-1)); return i < 0 ? 99 : i }
     return rank(a)-rank(b) || nodes[a].title.localeCompare(nodes[b].title)
@@ -117,5 +129,5 @@ export function buildKnowledgeModel() {
     page.searchText = [page.title, ...page.aliases, page.route.replaceAll('/', ' ').replaceAll('-', ' '), ...page.breadcrumbs.map(r => nodes[r].title)].join(' ').toLowerCase()
   }
   const recent = pages.filter(p => p.updated).sort((a,b) => b.updated.localeCompare(a.updated) || a.route.localeCompare(b.route)).slice(0, 5).map(p => p.route)
-  return { nodes, roots, recent, focus: '/robot-learning/act/' }
+  return { nodes, roots, recent, focus: '/robot-learning/pi0/', focusDescription: 'Vision-Language-Action robot policy with Flow Matching.', focusLinks: ['architecture', 'action-expert', 'training', 'inference'] }
 }

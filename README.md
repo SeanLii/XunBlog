@@ -1,15 +1,15 @@
 # AI Learning Notes
 
-围绕 ACT（Action Chunking with Transformers）以及理解 ACT 所需前置知识构建的结构化知识库。
+围绕 ACT（Action Chunking with Transformers）、π0 以及理解它们所需前置知识构建的结构化知识库。
 
 ## 内容范围
 
 - Mathematics：Linear Algebra、Probability、Information Theory
 - Deep Learning：Core、Transformer、Attention、Convolutional Neural Networks
 - Generative Models：Latent Variable、Variational Inference、ELBO、VAE、CVAE
-- Robot Learning：Imitation Learning、Behavior Cloning、ACT
+- Robot Learning：Imitation Learning、Behavior Cloning、VLA、Cross-Embodiment Learning、ACT、π0
 
-当前站点正文已完整更新为 XunBlog ACT Knowledge Corpus v2，由 53 个独立 canonical knowledge pages 构成。知识归属由目录树决定，跨页面链接只负责导航。
+当前站点正文已完整更新为 XunBlog Knowledge Corpus v3，由 69 个独立 canonical knowledge pages 构成。知识归属由目录树决定，跨页面链接只负责导航。
 
 ## Local development
 
@@ -46,3 +46,5 @@ docs/
 `.github/workflows/deploy.yml` 在每次推送到 `main` 后构建并发布 GitHub Pages。项目站点的 `/XunBlog/` base path 由工作流自动注入。
 
 第二版配套索引、知识树、来源说明和原包验收记录保存在 `research/act/corpus-v2/`。站点正文仅将行内公式分隔符转换为现有渲染器支持的 `$...$` 格式。
+
+π0 专题与 6 篇通用前置知识已从 v3 导入，原 53 篇正文不变。v3 配套说明见 `research/corpus-v3/`。

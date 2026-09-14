@@ -33,7 +33,10 @@ for (const malformed of ['/normal-distribution', '/XunBlog/robot-learning/act/',
 }
 assert(model.nodes['/robot-learning/act/'])
 assert(model.nodes['/mathematics/probability/normal-distribution/'])
-assert(!model.nodes['/robot-learning/pi0/'], 'Do not invent pi0 content')
+assert.equal(model.nodes['/robot-learning/pi0/'].kind, 'canonical')
+assert.equal(model.nodes['/robot-learning/pi0/'].children.length, 9)
+for (const alias of ['pi0', 'pi 0', 'pi-zero', 'π₀']) assert(model.nodes['/robot-learning/pi0/'].searchText.includes(alias))
+for (const slug of model.focusLinks) assert(model.nodes[model.focus + slug + '/'])
 for (const route of [model.focus, ...model.recent]) assert.equal(model.nodes[route]?.kind, 'canonical')
 for (const route of model.recent) assert(!Number.isNaN(Date.parse(model.nodes[route].updated)))
 const homepage = fs.readFileSync('docs/.vitepress/theme/components/HomePage.vue', 'utf8')

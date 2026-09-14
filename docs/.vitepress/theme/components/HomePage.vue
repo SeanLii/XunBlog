@@ -14,8 +14,8 @@ const openSearch = () => window.dispatchEvent(new Event('xunblog:search'))
     </section>
     <section class="home-section current-focus" aria-labelledby="focus-title"><h2 id="focus-title">Currently Studying</h2>
       <h3><a :href="href(model.focus)">{{ model.nodes[model.focus].title }}</a></h3>
-      <p>Action Chunking with Transformers</p>
-      <div class="focus-links"><a v-for="slug in ['architecture', 'cvae-in-act', 'training', 'inference']" :key="slug" :href="href(model.focus + slug + '/')">{{ model.nodes[model.focus + slug + '/'].title }}</a></div>
+      <p>{{ model.focusDescription }}</p>
+      <div class="focus-links"><a v-for="slug in model.focusLinks" :key="slug" :href="href(model.focus + slug + '/')">{{ model.nodes[model.focus + slug + '/'].title }}</a></div>
     </section>
     <section v-if="model.recent.length" class="home-section" aria-labelledby="recent-title"><h2 id="recent-title">Recently Updated</h2>
       <ul class="recent-list"><li v-for="r in model.recent" :key="r"><a :href="href(r)">{{ model.nodes[r].title }}</a><time :datetime="model.nodes[r].updated">{{ formatUpdated(model.nodes[r].updated) }}</time></li></ul>

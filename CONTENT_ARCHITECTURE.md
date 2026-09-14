@@ -4,36 +4,43 @@
 
 ## Scope
 
-当前内容严格限制为 ACT 以及理解 ACT 所需的前置知识，共 53 个 canonical knowledge pages：
+当前内容覆盖 ACT、π0 以及理解它们所需的前置知识，共 69 个 canonical knowledge pages：
 
 ```text
 Mathematics
 ├── Linear Algebra
 ├── Probability
-└── Information Theory
+├── Information Theory
+├── Calculus
+└── Numerical Methods
 
 Deep Learning
 ├── Core
 ├── Transformer
 │   └── Attention
-└── Convolutional Neural Networks
+├── Convolutional Neural Networks
+└── Multimodal Models
 
 Generative Models
-└── Latent-variable and variational models
+├── Latent-variable and variational models
+└── Flow Matching
 
 Robot Learning
 ├── Imitation Learning
 ├── Behavior Cloning
-└── ACT
+├── Vision-Language-Action Model
+├── Cross-Embodiment Learning
+├── ACT
+└── π0
 ```
 
-不在当前 corpus 中的 LLM、Embodied AI、Projects、VLA 等栏目不创建占位页面。
+不在当前 corpus 中的 LLM、Embodied AI、Projects、π0-FAST、π0.5 等栏目不创建占位页面。
 
 ## Knowledge ownership
 
 - Knowledge Tree 决定知识归属；Navigation Graph 只建立跨树导航。
 - 每个独立概念只有一个 canonical page。
-- canonical page 的标题使用概念名称；问题型标题只用于 ACT-specific 的具体问题。
+- canonical page 的标题使用概念名称；问题型标题只用于模型-specific 的具体问题。
 - ACT 页面只拥有 ACT-specific 内容，不复制 Transformer、CVAE、Gaussian、KL、Behavior Cloning 或 ResNet 的通用理论。
 
 ## URL and frontmatter contract
@@ -54,7 +61,7 @@ related:
 ---
 ```
 
-VitePress 页面放在 canonical 目录的 `index.md` 中。`prerequisites` 与 `related` 会自动显示在页面顶部；补充的跨树关系由 `docs/.vitepress/knowledge-graph.mjs` 提供。
+VitePress 页面放在 canonical 目录的 `index.md` 中。`prerequisites` 与 `related` 会自动显示在页面底部的 Knowledge Relations；补充的跨树关系由 `docs/.vitepress/knowledge-graph.mjs` 提供。
 
 ## Source boundary
 
@@ -68,5 +75,5 @@ VitePress 页面放在 canonical 目录的 `index.md` 中。`prerequisites` 与 
 - 站内 Markdown 链接使用 canonical absolute path，不手写部署 base path。
 - `BASE_PATH` 在构建时注入，GitHub Pages 当前使用 `/XunBlog/`。
 - `\[ ... \]` 与 `$ ... $` 由本地 KaTeX 插件进行服务端渲染。
-- `npm run docs:audit` 必须验证 53 个 canonical 页面、内部链接、frontmatter 关系和 Navigation Graph。
+- `npm run docs:audit` 必须验证 69 个 canonical 页面、内部链接、frontmatter 关系和 Navigation Graph。
 - `npm run docs:audit:math`、`npm run docs:build` 与 `npm run docs:audit:render` 必须全部通过后才能部署。

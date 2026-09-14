@@ -1,5 +1,7 @@
 # XunBlog UI Revision v1 — implementation and acceptance
 
+> 历史验收记录。后续 v3 已根据用户提供的语料新增 π0 与 6 篇通用前置知识，本文“π0 未实现”项已解决；详见 `research/corpus-v3/INTEGRATION.md`。
+
 本轮只修改 UI、导航、分类入口与路由。53 篇 canonical Markdown 文件已逐字节与上一版提交核对，全部不变。未改动 canonical ownership，未增加知识正文。
 
 ## Homepage
