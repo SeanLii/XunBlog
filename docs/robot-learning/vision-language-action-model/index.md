@@ -6,119 +6,182 @@ parent: "Robot Learning"
 canonical: "/robot-learning/vision-language-action-model/"
 prerequisites:
   - "/deep-learning/multimodal/vision-language-model/"
+  - "/robot-learning/imitation-learning/"
 related:
-  - "/robot-learning/pi0/"
   - "/robot-learning/cross-embodiment-learning/"
+  - "/robot-learning/pi0/"
 ---
 
 # Vision-Language-Action Model
 
-Vision-Language-Action Model（VLA）是一类把视觉、语言与机器人动作放进同一个 policy 中的模型。
+Vision-Language-Action Model（VLA）是一类把 visual observations、language instructions 与 robot actions 放在同一个 policy learning system 中的模型。
 
-最小形式可以写成：
-
-```text
-camera images ─────┐
-language command ──┼──→ VLA policy ───→ robot actions
-robot state ───────┘
-```
-
-它和普通 [Vision-Language Model](/deep-learning/multimodal/vision-language-model/) 的关键区别在最后一端：VLM 主要学习图像与语言之间的关系，而 VLA 还必须真正输出能够控制机器人的动作。
-
-## 从“理解指令”到“执行指令”
-
-假设用户说：
-
-> fold the shirt
-
-一个 VLM 可以识别 shirt、理解 fold 的语义，也可以根据图像描述衣服当前在哪里。
-
-但机器人 policy 还需要继续回答：
+最小 mental model：
 
 ```text
-左臂下一步怎么动？
-右臂下一步怎么动？
-夹爪什么时候闭合？
-接下来 0.5 秒的动作轨迹是什么？
-```
-
-VLA 的目标就是把前半段的视觉语言理解与后半段的低层机器人控制连接起来。
-
-## VLA 不是一种固定输出形式
-
-“VLA”描述的是模型覆盖的 modality 与任务角色，不规定 action 必须怎样表示。
-
-不同 VLA 可以采用不同 action decoder：
-
-- 把连续动作离散化成 tokens，再像语言一样 autoregressive 生成；
-- 直接回归连续动作；
-- 使用 diffusion / flow-based 方法生成连续 action chunk。
-
-因此不能把“VLA”与“action tokenization”画等号。
-
-RT-2 代表了一条重要路线：把 robot actions 表示成离散 text-like tokens。OpenVLA 也采用离散 action token 的 autoregressive 方式。π0 则选择另一条路线：**保留连续动作，并用 Flow Matching 生成 action chunk。**
-
-## 为什么 VLA 常从 VLM 开始
-
-机器人数据相比互联网 image-text 数据少得多。预训练 VLM 已经学到大量：
-
-- 物体类别；
-- 视觉属性；
-- 语言概念；
-- 图像与文本之间的对应关系。
-
-VLA 可以把这些已有表示作为起点，再通过 robot demonstrations 学习“这些语义如何对应动作”。
-
-所以一个常见思路是：
-
-```text
-Internet image-text data
-        │
-        ↓
-pre-trained VLM
-        │
-        + robot trajectories
+camera observation
+        +
+language instruction
+        +
+robot state (optional / common)
         ↓
        VLA
+        ↓
+   robot action(s)
 ```
 
-这并不意味着互联网数据直接包含机器人的正确关节控制。它提供的是更通用的视觉语言表示，而动作能力仍需要 embodied robot data 学习。
+它和 [Vision-Language Model](/deep-learning/multimodal/vision-language-model/) 的关键区别是：VLM 的主要输出仍是语义 representation / text / matching result，而 VLA 必须进入**physical control interface**。
 
-## 一个 VLA policy 的条件分布
+## 从理解任务到执行任务
 
-抽象地，可以把 VLA 写成
+VLM 可以理解：
+
+> “把红色杯子放进盒子。”
+
+它可能识别：
+
+- 哪个是红色杯子；
+- 哪个是盒子；
+- “放进”表示什么关系。
+
+但 robot policy 还要决定：
+
+- arm 怎样移动；
+- gripper 什么时候闭合；
+- trajectory 如何避障；
+- action magnitude 多大；
+- 下一时刻根据新 observation 怎么调整。
+
+所以 semantic understanding 和 motor policy 之间仍有很大 gap。
+
+## VLA 是 Model Family，不是一个固定 Architecture
+
+不同 VLA 可以输出完全不同的 action representation：
+
+- discrete action tokens；
+- continuous action vectors；
+- action chunks；
+- trajectories；
+- diffusion / flow generated continuous actions。
+
+因此不能用“把 action token 当文字生成”来定义所有 VLA。
+
+更一般的 conditional policy 可以写成：
 
 \[
-p(A_t\mid I_t,\ell_t,q_t),
+p(a_{t:t+k-1}
+\mid
+I_{\le t},l,s_{\le t}).
 \]
 
 其中：
 
-- $I_t$：当前视觉观测；
-- $\ell_t$：语言 instruction；
-- $q_t$：机器人 proprioceptive state；
-- $A_t$：要执行的 action 或 action chunk。
+- $I$：vision；
+- $l$：language；
+- $s$：robot state / proprioception；
+- $a$：action 或 action chunk。
 
-不同模型的主要区别，就体现在怎样编码条件、怎样表示 $A_t$、怎样训练这个 conditional distribution。
+## 从 VLM 到 Action Policy
 
-## π0 在 VLA 中的位置
+Internet-scale VLM / multimodal model 已经学习大量：
 
-π0 可以先压缩成：
+- object concepts；
+- attributes；
+- spatial / semantic relations；
+- language grounding；
+- broad visual features。
+
+Robot demonstration data 则通常规模更小、采集更贵。
+
+因此一个重要路线是：
 
 ```text
-pre-trained VLM
-      │
-      + robot state
-      + Action Expert
-      + Flow Matching
-      ↓
-continuous action chunks
+large-scale vision-language pretraining
+             ↓
+retain semantic representation
+             ↓
+train / adapt action prediction
+             ↓
+robot policy
 ```
 
-它继承 VLM 的图像与语言表示，但没有强迫连续机器人动作变成语言 token，而是专门增加 action expert 处理 robotics-specific continuous inputs/outputs。
+RT-2 正是这一思想的重要代表：把 robot actions 表示进 VLM-style output space，让 web-scale knowledge 迁移到 control。
+
+## Action Tokenization 路线
+
+RT-2 将 continuous robot actions discretize / tokenize，使 action 可以被 autoregressive model 当作特殊 tokens 输出。
+
+这种方法的优点是可以最大程度复用 language-model output machinery。
+
+但 quantization 会带来 precision / representation tradeoff，而且 autoregressive token-by-token generation 也影响 control latency。
+
+所以后续 VLA 不一定沿用同一种 action representation。
+
+## Continuous Action 路线
+
+OpenVLA 仍采用 discrete action tokenization strategy，而 π0 则引入 continuous action expert 与 flow matching，直接生成 continuous action chunks。
+
+这说明 VLA architecture 正在围绕一个核心问题分化：
+
+> 如何把高容量 vision-language representation 接到高频、精确、continuous robot control 上？
+
+## Pretraining 与 Robot Data
+
+VLA training 常组合两类数据：
+
+1. vision-language / Internet-scale data；
+2. robot demonstration data。
+
+这两类 supervision 的作用不同：
+
+- web data 提供 broad semantic knowledge；
+- robot data 把 representations 对齐到 action space 与 physical interaction。
+
+只拥有 VLM 能力并不会自动得到 robot control ability。
+
+## Closed-Loop Control
+
+VLA 最终仍是 policy。
+
+执行 action 后 environment 改变，下一轮 observation 也改变：
+
+```text
+observe
+ ↓
+VLA policy
+ ↓
+action
+ ↓
+environment changes
+ ↓
+observe again
+```
+
+因此 robot performance 不只取决于单次 action prediction accuracy，还取决于 latency、control horizon、action chunk strategy、error recovery 和 observation refresh。
+
+## Generalist VLA
+
+VLA 的长期目标通常不是“一条 instruction 一个模型”，而是：
+
+- many tasks；
+- many objects；
+- many environments；
+- potentially many embodiments。
+
+这与 [Cross-Embodiment Learning](/robot-learning/cross-embodiment-learning/) 紧密相关。
+
+Open X-Embodiment、RT-X、OpenVLA、π0 等工作都在探索数据规模和 model capacity 是否能带来 generalist robot policies。
+
+## VLA 的边界
+
+一个模型同时输入 image 和 text，并不自动是 VLA。
+
+必须存在 action prediction / control output，并且该 output 与 robot behavior 建立训练关系。
+
+同样，一个 robot policy 输入 image 但不使用 language，也不是 vision-language-action model。
 
 ## Sources
 
-- Brohan et al., **RT-2: Vision-Language-Action Models Transfer Web Knowledge to Robotic Control**, 2023. https://arxiv.org/abs/2307.15818
-- Kim et al., **OpenVLA: An Open-Source Vision-Language-Action Model**, 2024. https://arxiv.org/abs/2406.09246
-- Black et al., **π0: A Vision-Language-Action Flow Model for General Robot Control**, 2024. https://arxiv.org/abs/2410.24164
+- Brohan et al. / Zitkovich et al. *RT-2: Vision-Language-Action Models Transfer Web Knowledge to Robotic Control*. CoRL, 2023.
+- Kim et al. *OpenVLA: An Open-Source Vision-Language-Action Model*. 2024.
+- Open X-Embodiment Collaboration et al. *Open X-Embodiment*. 2023/2024.

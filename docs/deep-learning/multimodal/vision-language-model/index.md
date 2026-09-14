@@ -5,138 +5,120 @@ domain: "Deep Learning / Multimodal Models"
 parent: "Multimodal Models"
 canonical: "/deep-learning/multimodal/vision-language-model/"
 prerequisites:
-  - "/deep-learning/transformer/"
   - "/deep-learning/core/embedding/"
+  - "/deep-learning/transformer/"
 related:
   - "/robot-learning/vision-language-action-model/"
-  - "/robot-learning/pi0/architecture/"
 ---
 
 # Vision-Language Model
 
-Vision-Language Model（VLM）是同时处理视觉信息和语言信息的模型。
+Vision-Language Model（VLM）是一类同时处理 visual information 与 natural language 的模型。它的核心不是简单“把图片和文字都塞进 Transformer”，而是建立两种 modality 之间可以共同学习、对齐或交互的 representation 与 prediction mechanism。
 
-它最简单的整体形状是：
+一个 VLM 可能完成：
 
-```text
-image ─────┐
-           ├──→ Vision-Language Model ───→ multimodal representation / text output
-text  ─────┘
-```
+- image-text matching；
+- image captioning；
+- visual question answering；
+- multimodal dialogue；
+- visual grounding；
+- zero-shot visual classification。
 
-与只处理文字的语言模型相比，VLM 多了一件关键能力：**让图像中的内容进入与语言可以交互的表示空间。**
+因此 VLM 是一个 model family，而不是某一种固定 architecture。
 
-## 图像不能直接作为语言 token 使用
+## 两种 Modality 最开始并不在同一个表示空间
 
-一张 RGB 图像本质上是大量像素值：
-
-\[
-I\in\mathbb R^{H\times W\times3}.
-\]
-
-而 Transformer 通常处理一串 hidden vectors：
+文本通常先变成 token embeddings：
 
 \[
-X\in\mathbb R^{N\times d}.
+t_1,\ldots,t_N\in\mathbb R^{d_t}.
 \]
 
-因此 VLM 首先需要视觉 encoder，把图像变成一组视觉 tokens：
+图像则可能经过 CNN 或 Vision Transformer 得到 visual features：
+
+\[
+v_1,\ldots,v_M\in\mathbb R^{d_v}.
+\]
+
+问题是：这些 features 的数量、dimension、统计性质和语义来源都可能不同。
+
+所以 multimodal model 需要解决至少两件事：
+
+1. 怎样把 vision / language 表示成模型可联合处理的形式；
+2. 怎样让两种 representations 建立语义对应关系。
+
+## Dual-Encoder 路线
+
+CLIP 是典型 dual-encoder 思路：
 
 ```text
-image
-  │
-  ↓
-Vision Encoder
-  │
-  ↓
-[v1, v2, ..., vm]
+image → image encoder → image embedding
+text  → text encoder  → text embedding
 ```
 
-文字则经过 tokenizer 与 embedding 得到语言 tokens：
+训练目标让 matching image-text pairs 的 embeddings 更接近，不匹配 pairs 更远。
+
+这类模型非常适合 retrieval 与 zero-shot classification，因为 image / text 可以分别编码再比较。
+
+但两个 modalities 在 encoder 内部并没有进行 token-level deep interaction。
+
+## Fusion 路线
+
+另一类模型会让 visual tokens 与 language tokens 在 joint Transformer 或 cross-attention 中直接交互：
 
 ```text
-"fold the shirt"
-       │
-       ↓
-Tokenizer + Embedding
-       │
-       ↓
-[t1, t2, ..., tn]
+visual tokens ─┐
+               ├→ multimodal fusion → output
+text tokens ───┘
 ```
 
-之后模型需要让两种 token 可以进入同一套 Transformer 信息流。
+这样语言可以针对具体 visual regions 读取信息，视觉表示也可以被语言 context 调整。
 
-## 多模态表示
+现代 multimodal LLM 常把 visual encoder output 通过 projector 映射到 language model hidden space，再与 text tokens 一起处理。
 
-一种常见做法是把视觉 features 投影到语言模型使用的 hidden dimension，再把视觉和语言 tokens 放在同一序列中：
+## Training Objectives
 
-```text
-visual tokens      language tokens
-v1 v2 ... vm       t1 t2 ... tn
-      │                  │
-      └────────┬─────────┘
-               ↓
-         Transformer
-               ↓
-      multimodal states
-```
+不同 VLM 使用不同 objectives，例如：
 
-这时语言 token 可以通过 Attention 读取视觉 token，模型便能把“红色杯子”“桌上的衣服”这类语言概念与图像区域联系起来。
+- contrastive image-text alignment；
+- image-text matching；
+- masked language / masked image modeling；
+- caption generation；
+- next-token prediction on multimodal sequences。
 
-具体 VLM 的融合方式很多，并不是所有模型都采用完全相同的结构。这里最重要的是理解角色分工：
+因此不能用一个 loss 定义全部 VLM。
 
-- vision encoder 把像素变成可处理表示；
-- language embedding 把文本变成 token representations；
-- multimodal Transformer 让视觉与语言发生信息交换。
+更稳定的定义是：
 
-## VLM 学到的不是机器人动作
+> **模型同时接收或学习 vision 与 language，并通过联合训练使两种 modality 在同一个任务中建立可利用的关系。**
 
-VLM 可以有很强的视觉识别、语言理解和语义推理能力，但普通 VLM 的输出通常仍是语言 token 或其他视觉语言任务的结果。
+## VLM 输出不一定是 Text
 
-例如它可能理解：
+有些 VLM 输出 text tokens；有些输出 similarity score；有些产生 multimodal embedding；还有些输出 region grounding 或其他 structured predictions。
 
-> “把桌上的红色杯子拿起来”
-
-并识别图像中哪一个物体是红色杯子，但这还没有告诉机器人：
-
-- 肩关节应该转多少；
-- 手腕应该怎样移动；
-- 夹爪何时闭合；
-- 接下来几十个控制周期应该输出什么。
-
-从 VLM 到机器人 policy，中间还需要把语义理解连接到动作空间。
+所以“VLM = 看图说话模型”太窄。
 
 ## 从 VLM 到 VLA
 
-[Vision-Language-Action Model](/robot-learning/vision-language-action-model/) 在 VLM 基础上进一步把 **action** 纳入模型输入输出体系：
+[Vision-Language-Action Model](/robot-learning/vision-language-action-model/) 进一步要求模型不仅理解图像和语言，还要产生 robot actions。
 
-```text
-vision + language
-       │
-       ↓
- semantic understanding
-       │
-       + robot state
-       │
-       ↓
-     actions
-```
+VLM 已经提供：
 
-π0 就属于这一类模型。它从预训练 VLM 获得视觉和语言知识，再加入机器人 state 与连续 action 的处理结构。
+- visual semantics；
+- language grounding；
+- cross-modal representation。
 
-## π0 为什么从 VLM 开始
+但这不自动等于 motor control。VLA 还需要处理：
 
-π0 论文使用 PaliGemma 作为 base VLM。目的不是让机器人“先回答一个问题再执行动作”，而是继承 VLM 已经从大规模 image-text 数据中学到的语义表示能力。
+- robot state；
+- continuous / discrete action space；
+- temporal control；
+- embodiment differences；
+- closed-loop interaction。
 
-然后 π0 再通过机器人数据训练，把这套表示连接到连续机器人控制。
-
-因此在 π0 中，可以把 VLM backbone 理解成：
-
-> **负责理解“看到了什么、语言要求什么”的大型语义骨干。**
-
-而 action expert 负责把这些信息转成高频连续动作。
+因此 VLA 可以建立在 VLM backbone 上，但 VLM 自身是更广泛的 multimodal learning topic。
 
 ## Sources
 
-- Beyer et al., **PaliGemma: A versatile 3B VLM for transfer**, 2024. https://arxiv.org/abs/2407.07726
-- Black et al., **π0: A Vision-Language-Action Flow Model for General Robot Control**, 2024. https://arxiv.org/abs/2410.24164
+- Radford et al. *Learning Transferable Visual Models From Natural Language Supervision (CLIP)*. 2021.
+- Dosovitskiy et al. *An Image Is Worth 16×16 Words*. 2021.（视觉 tokenization 的重要基础之一）

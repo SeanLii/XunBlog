@@ -6,73 +6,131 @@ parent: "Generative Models"
 canonical: "/generative-models/posterior-collapse/"
 prerequisites:
   - "/generative-models/variational-autoencoder/"
-  - "/mathematics/information-theory/kl-divergence/"
 related:
-  - "/robot-learning/act/cvae-in-act/"
 ---
 
 # Posterior Collapse
 
-Posterior Collapse 是 latent-variable generative model 中的一种训练现象：approximate posterior 变得非常接近 prior，并且 decoder 基本不再使用 latent $z$ 中的信息。
+Posterior Collapse 是 latent-variable models，尤其 VAE 中的一种 failure mode：模型学会几乎不使用 latent variable $z$。
 
-典型表现是
-
-\[
-q_\phi(z\mid x)\approx p(z),
-\]
-
-于是
+典型现象：
 
 \[
-D_{KL}(q_\phi(z\mid x)\|p(z))\approx0.
+q_\phi(z\mid x)
+\approx p(z).
 \]
 
-这看起来像 KL objective 完成得很好，但如果同时 $z$ 与 $x$ 几乎无关，latent representation 就失去了原本要承担的信息作用。
+如果 approximate posterior 几乎与 prior 一样，那么看到不同 $x$ 后，encoder 给出的 latent distribution 也几乎不变。
 
-## 从 VAE 目标看这个现象
+于是 $z$ 不再携带多少 input-specific information。
+
+## ELBO 中的 Collapse Pressure
 
 VAE ELBO：
 
 \[
 \mathcal L
 =
-\mathbb E_q[\log p_\theta(x\mid z)]
+\mathbb E_{q(z\mid x)}
+[
+\log p(x\mid z)
+]
 -
-D_{KL}(q_\phi(z\mid x)\|p(z)).
+D_{KL}(q(z\mid x)\|p(z)).
 \]
 
-KL 项偏好 posterior 接近 prior。
-
-Reconstruction / likelihood 项则只有在 decoder **需要 $z$** 时，才会推动 encoder 往 $z$ 中放信息。
-
-如果 decoder 本身已经非常强，能够主要依靠其他上下文预测 $x$，那么最省事的解可能是：
-
-```text
-q(z|x) ≈ p(z)
-       ↓
-z carries little information
-       ↓
-decoder mostly ignores z
-```
-
-## Collapse 不等于“所有 KL 小都是坏的”
-
-KL 较小本身不是正式判定条件。我们真正关心的是 latent 是否仍然影响 reconstruction / generation，是否携带关于输入的有用信息。
-
-因此需要结合 KL、latent usage、decoder sensitivity、mutual-information style measurements 或生成行为一起判断。
-
-## 与条件模型的关系
-
-CVAE 中 decoder 还拿到 condition $x$：
+如果：
 
 \[
-p(y\mid x,z).
+q(z\mid x)=p(z),
 \]
 
-如果 $x$ 已经足以很好预测 $y$，decoder 更容易忽略 $z$。因此 conditional models 同样可能出现 posterior collapse。
+那么：
 
-## 与 ACT 的连接
+\[
+D_{KL}=0.
+\]
 
-ACT 的 action predictor 有强 observation condition（视觉 + proprioception）。理论上 latent 也可能被弱化，因此 KL weight、model capacity 与 training dynamics 都会影响 $z$ 实际被使用多少。
+这对 objective 的 KL term 来说是最省代价的状态。
 
-但不能仅凭“ACT inference 使用 $z=0$”就宣称发生 posterior collapse。Inference 固定 prior mean 是设计选择；posterior collapse 是训练后 latent 是否失去信息作用的现象，两者不是同一个概念。
+如果 decoder 足够强，即使忽略 $z$ 也能很好预测 $x$，模型就可能没有动力让 latent 承担 information。
+
+## Decoder Bypass
+
+例如 autoregressive text decoder 可以利用：
+
+\[
+p(x_t\mid x_{<t},z).
+\]
+
+如果过去 tokens 已经足以预测下一个 token，decoder 可以让：
+
+\[
+p(x_t\mid x_{<t},z)
+\approx p(x_t\mid x_{<t}),
+\]
+
+从而几乎不依赖 $z$。
+
+这时 KL 还能降到接近 0，所以 collapse 成为 objective 的可行 solution。
+
+## Collapse 不等于“KL 小就是坏”
+
+如果某些 data points 本来不需要大量 latent information，较小 KL 不一定有问题。
+
+真正关心的是：
+
+- $q(z\mid x)$ 是否随 $x$ 有 meaningful variation；
+- decoder output 是否真正受 $z$ 影响；
+- latent 是否携带 task 需要的 information。
+
+所以不能只看一个 scalar KL 数值就判定 collapse。
+
+## 与 Mutual Information 的联系
+
+在 aggregate sense 上，如果 $z$ 与 $x$ 几乎 independent：
+
+\[
+I(X;Z)\approx0,
+\]
+
+说明 latent 没有保留 observation information。
+
+这提供了比“KL 是否为零”更概念化的理解。
+
+## 常见缓解方向
+
+不同工作采用不同策略，例如：
+
+- KL annealing：训练早期降低 KL pressure；
+- free bits / minimum rate；
+- 限制 decoder capacity；
+- 更强 inference optimization；
+- 修改 objective；
+- 改善 encoder / decoder training balance。
+
+这些方法针对的机制不同，没有一个适用于所有 VAE 的通用 fix。
+
+## Lagging Inference Network 视角
+
+He 等 2019 分析了 inference network 在训练早期跟不上 changing model posterior 的问题：如果 approximate posterior 学得太慢，generator 会被推向一个更容易忽略 latent 的 solution。
+
+这说明 posterior collapse 不只是“KL coefficient 太大”，还与 optimization dynamics 有关。
+
+## Conditional Models
+
+CVAE 也会 collapse。
+
+如果 condition $c$ 已经足以预测 $y$，decoder 可能忽略 $z$：
+
+\[
+p(y\mid c,z)
+\approx p(y\mid c).
+\]
+
+所以“加入 latent 就会自动学到多样性”并不成立。
+
+## Sources
+
+- Bowman et al. *Generating Sentences from a Continuous Space*. 2016.
+- He et al. *Lagging Inference Networks and Posterior Collapse in Variational Autoencoders*. ICLR, 2019.

@@ -6,7 +6,7 @@ parent: "ACT"
 canonical: "/robot-learning/act/vision-pipeline/"
 prerequisites:
   - "/deep-learning/cnn/resnet/"
-  - "/deep-learning/transformer/positional-encoding/"
+  - "/deep-learning/sequence-modeling/positional-encoding/"
 related:
   - "/robot-learning/act/architecture/"
 ---

@@ -30,6 +30,8 @@ Action Chunking 是把 policy 的基本预测单位从“一个动作”改成�
 
 其中 $k$ 是 chunk size。
 
+ACT 借用了更早的 “action chunking” 名称，并把它具体化为机器人 imitation learning 中“根据当前 observation 一次预测未来 $k$ 步动作”的设计；本文只讨论这一 ACT formulation。
+
 ## 预测单位发生了什么变化
 
 假设一个机器人任务总共需要 400 个 control steps。

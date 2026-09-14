@@ -13,7 +13,7 @@
     "docs:audit:navigation": "node scripts/audit-navigation.mjs",
     "docs:audit:built-links": "node scripts/audit-built-links.mjs",
     "predocs:build": "npm run docs:audit && npm run docs:audit:navigation && npm run docs:audit:math",
-    "postdocs:build": "npm run docs:audit:render && npm run docs:audit:built-links"
+    "postdocs:build": "node scripts/build-route-redirects.mjs && npm run docs:audit:render && npm run docs:audit:built-links"
   },
   "devDependencies": {
     "katex": "0.16.47",

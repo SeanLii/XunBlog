@@ -42,7 +42,7 @@ ACT（Action Chunking with Transformers）是一种从机器人当前观测直�
 
 ## 从单步控制到动作片段
 
-普通 [Behavior Cloning](/robot-learning/behavior-cloning/) 可以把机器人 policy 写成
+最简单的 single-step [Behavior Cloning](/robot-learning/behavior-cloning/) policy 可以写成
 
 \[
 \hat a_t=\pi_\theta(o_t),
@@ -63,7 +63,7 @@ ACT 改成
 
 这就是 [Action Chunking](/robot-learning/act/action-chunking/)。
 
-## ACT 运行起来是什么样
+## ACT 的运行方式
 
 “预测 100 步”不等于“预测一次以后 100 步都不再看相机”。ACT 的实际执行仍然可以保持闭环：在下一个 timestep，机器人拿到新的图像和关节状态，再次调用 policy，又得到一个新的 action chunk。
 

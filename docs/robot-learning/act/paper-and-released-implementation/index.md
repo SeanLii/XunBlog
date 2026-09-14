@@ -99,7 +99,7 @@ repository 中部分参数是固定值，部分来自 command-line arguments。�
 
 论文负责描述研究方法与实验；代码负责把某个版本的方法具体实现出来。两者出现小差异并不罕见。
 
-XunBlog 的原则不是挑一个版本让叙述更整齐，而是：
+面对 paper 与 released code 的差异，不应该为了让叙述更整齐而挑一个版本隐藏另一个：
 
 ```text
 paper claim / description

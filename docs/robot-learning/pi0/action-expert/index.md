@@ -6,7 +6,7 @@ parent: "π0"
 canonical: "/robot-learning/pi0/action-expert/"
 prerequisites:
   - "/robot-learning/pi0/architecture/"
-  - "/deep-learning/transformer/attention/self-attention/"
+  - "/deep-learning/attention/self-attention/"
 related:
   - "/robot-learning/pi0/flow-matching-in-pi0/"
   - "/robot-learning/pi0/blockwise-causal-attention-mask/"
@@ -79,7 +79,7 @@ Action Expert：机器人现在怎样、动作应该怎样变化
 
 真实模型里两者通过 attention 融合，所以不是独立推理。
 
-## Action Expert 为什么更小
+## Action Expert 的较小规模
 
 Flow Matching inference 需要反复更新 action chunk。Observation prefix 可以缓存，但 action tokens 每个 integration step 都变化，因此 action expert 要被重复运行。
 

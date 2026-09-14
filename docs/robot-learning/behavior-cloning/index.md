@@ -7,155 +7,184 @@ canonical: "/robot-learning/behavior-cloning/"
 prerequisites:
   - "/robot-learning/imitation-learning/"
 related:
+  - "/robot-learning/dagger/"
   - "/robot-learning/act/"
-  - "/robot-learning/act/action-chunking/"
 ---
 
 # Behavior Cloning
 
-Behavior Cloning（BC）是最直接的 imitation learning 方法：把专家 demonstration 中的“当前观测 → 专家动作”当成监督学习数据，训练一个 policy 去复制专家。
+Behavior Cloning（BC）把 imitation learning 直接转成 supervised learning：给定 expert demonstrations，训练 policy 在 expert observations 上预测 expert actions。
 
-一条 demonstration trajectory 可以写成
+Dataset：
 
 \[
-(o_1,a_1),(o_2,a_2),\ldots,(o_T,a_T).
+\mathcal D=
+\{(o_i,a_i^*)\}_{i=1}^{N}.
 \]
 
-Behavior Cloning 把其中每一对当作训练样本：
+Policy：
+
+\[
+\pi_\theta(a\mid o).
+\]
+
+训练目标通常可以写成 negative log-likelihood：
+
+\[
+\theta^*
+=
+\arg\min_\theta
+\mathbb E_{(o,a^*)\sim\mathcal D}
+[-\log\pi_\theta(a^*\mid o)].
+\]
+
+如果 policy 是 deterministic Gaussian mean / regression head，这可能进一步表现为 MSE 或 L1 等 supervised losses。
+
+## Training Mental Model
 
 ```text
-observation o_t  ──→ policy πθ ──→ predicted action a_hat_t
-                                      │
-expert action a_t ────────────────────┘
-                       supervised loss
+expert observation o_t
+        ↓
+     policy πθ
+        ↓
+ predicted action a_hat_t
+        ↓
+compare with expert action a*_t
+        ↓
+ supervised loss
 ```
 
-如果 action 是连续向量，常见目标可以是 L1、L2 或 negative log-likelihood；如果 action 是离散类别，则可以使用 classification loss。损失函数的具体形式不是 BC 的定义，核心在于**直接监督 policy 模仿 demonstration actions**。
+训练阶段不需要 policy 自己真正执行 action 才能计算每个 demonstration sample 的 loss。
 
-## 训练数据来自专家走过的状态
+这也是 BC 易于扩展的原因：一旦 demonstrations 收集好，可以完全 offline training。
 
-设专家 policy 为 $\pi^*$。专家执行任务时会访问某些状态，并形成一个状态分布。可以把它记成
+## Closed-Loop Deployment 改变了问题
 
-\[
-d_{\pi^*}(s).
-\]
-
-Behavior Cloning 的训练数据主要来自这个分布：
+训练时 sample：
 
 \[
-(s,a)\sim d_{\pi^*}(s)\pi^*(a\mid s).
+o_t\sim d_{\pi^*}
 \]
 
-所以模型真正学到的是：
+来自 expert trajectories。
 
-> 当我处在**专家通常会到达的状态**时，应该做什么动作。
-
-这和普通图片分类有一个重要区别：部署时输入分布并不是固定的。
-
-## Policy 一旦自己行动，后续输入也被自己改变
-
-部署时，模型执行的动作会改变下一个状态：
-
-```text
-s_t
- │
- ↓
-πθ
- │
- ↓
-a_t
- │
- ↓
-environment
- │
- ↓
-s_{t+1}
-```
-
-因此如果某一步动作产生了小误差，机器人可能进入 demonstration 很少出现的状态。下一步 policy 仍然必须做决定，但此时它面对的输入已经偏离训练分布。
-
-继续执行后，会形成 model policy 自己诱导的状态分布：
+部署时：
 
 \[
-d_{\pi_\theta}(s).
+o_t\sim d_{\pi_\theta}
 \]
 
-而它未必等于训练时的
+来自 learned policy 自己的 rollout。
+
+而 environment transition：
 
 \[
-d_{\pi^*}(s).
+o_{t+1}\sim P(\cdot\mid o_t,a_t)
 \]
 
-这就是 imitation learning 中重要的 distribution shift。
+意味着当前 action 会改变未来 input。
+
+所以即使 supervised validation error 很低，也不保证 closed-loop rollout 一定稳定。
+
+## Covariate Shift
+
+如果 learned policy 发生一个小动作误差，robot state 可能偏离 expert trajectory。
+
+新 observation：
+
+\[
+\tilde o_t
+\]
+
+可能在 training data 中很少出现。
+
+policy 在这种 out-of-distribution state 上更容易犯错，于是进一步偏离。
+
+这个 mechanism 就是 BC 最经典的 failure mode。
 
 ## Compounding Error
 
-单步预测误差很小时，整条 rollout 仍然可能失败，因为错误会改变未来输入，再带来更多错误。
+设每一步在 expert distribution 上发生 error 的概率约 $\epsilon$。
 
-Ross 等人的分析说明，在简单假设下，纯 supervised imitation 的 long-horizon cost 可以随着 horizon 出现比单步误差更严重的累积；这正是后来 DAgger 等方法关注的问题。
+如果 sequence horizon 为 $T$，naive supervised intuition 可能认为总损失只线性增长。
 
-直观地看：
+但在 sequential rollout 中，一个 early error 会改变后续 states，使后面多个 timesteps 都进入 unfamiliar region。
 
-```text
-expert states:
-A → B → C → D → E
+经典分析显示，在 worst-case assumptions 下 vanilla imitation / BC 的 expected cost gap 可出现 $O(T^2\epsilon)$ 级别增长，而 interactive methods 可以改善这种 horizon dependence。
 
-learned policy:
-A → B' → C'' → D???
-```
+重要的是理解 mechanism，而不是死记一个 bound：
 
-BC 并不是在 $B'$、$C''$ 上训练得很充分，因为专家 demonstration 可能几乎从不访问这些状态。
+> **错误会改变未来输入，所以错误影响可以沿时间传播。**
 
-## DAgger 的核心改动
+## Deterministic Regression 与 Multimodality
 
-DAgger 不再只收集专家自己走过的数据。它让当前 policy 实际 rollout，在 policy 会访问的状态上再次询问 expert：
-
-```text
-current policy rollout
-        │
-        ↓
- states actually visited
-        │
-        ↓
- ask expert for correct action
-        │
-        ↓
- add to dataset and retrain
-```
-
-这样训练分布会逐渐覆盖 learned policy 自己会到达的状态。
-
-DAgger 是解决 distribution shift 的一种方法，但它通常要求在 learner rollout 状态上还能获得 expert label，这在真实机器人上可能很贵。
-
-## BC 与 ACT 的关系
-
-ACT 仍然属于 demonstration-based supervised policy learning。它并没有从原则上消除 Behavior Cloning 的 distribution-shift 问题。
-
-ACT 主要改变的是**动作预测单位和模型结构**：
+假设同一 observation 下 expert dataset 有两种 actions：
 
 \[
-o_t\rightarrow a_t
+a_A,
+\qquad a_B.
 \]
 
-变成
+如果用 MSE 回归单一 mean：
 
 \[
-o_t\rightarrow a_{t:t+k-1}.
+\hat a\approx\frac{a_A+a_B}{2}.
 \]
 
-也就是 [Action Chunking](/robot-learning/act/action-chunking/)。这可以缩短 policy 层面的 effective horizon，让模型一次表达一段相互关联的动作，但如果机器人进入 training demonstrations 没覆盖的状态，仍然可能失败。
+这个平均 action 可能并不是 expert 真正执行过的合理模式。
 
-所以可以把关系记成：
+因此 BC 并不等于“必须用 MSE 预测一个动作”。BC 只规定 supervision 来自 expert behavior；policy distribution 可以很丰富。
+
+## Sequence Prediction 仍然可以是 Behavior Cloning
+
+如果 policy 一次输出 action chunk：
+
+\[
+\hat A_t=
+(\hat a_t,\ldots,\hat a_{t+k-1}),
+\]
+
+然后用 expert future chunk：
+
+\[
+A_t^*
+\]
+
+做 supervised imitation，它仍然属于 Behavior Cloning。
+
+ACT 就是这个思路的重要例子。
+
+因此 Action Chunking 没有把 ACT 变成“不是 BC”；它改变的是 policy output granularity 和 architecture。
+
+## Dataset Coverage
+
+BC 的能力上限很大程度取决于 dataset：
 
 ```text
-Imitation Learning
-      │
-      └── Behavior Cloning
-             │
-             └── ACT: chunk-level behavior cloning + specific architecture
+what states are demonstrated
++
+what actions are labeled there
++
+how diverse expert behavior is
 ```
+
+如果 recovery states 从未出现，policy 很难凭 supervised objective 自动知道如何恢复。
+
+这推动了 [DAgger](/robot-learning/dagger/) 等 interactive data aggregation methods。
+
+## BC 的优势
+
+即使有 distribution shift，BC 仍然非常重要，因为它：
+
+- objective 简单；
+- 可以纯 offline；
+- 不需要 reward engineering；
+- 可以利用大规模 teleoperation data；
+- 能与大型 neural architectures 和 generative policies 结合。
+
+现代 robot learning 中很多强模型仍以 BC / maximum-likelihood-style imitation 为训练基础，只是在 architecture、action representation 与 data scale 上更复杂。
 
 ## Sources
 
-- Ross, Gordon & Bagnell, **A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning**, AISTATS 2011. https://proceedings.mlr.press/v15/ross11a.html
-- Zhao et al., **Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware**, 2023. https://arxiv.org/abs/2304.13705
+- Pomerleau. *ALVINN*. 1989.
+- Ross, Gordon, Bagnell. *A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning*. 2011.（distribution shift / compounding-error 理论背景）

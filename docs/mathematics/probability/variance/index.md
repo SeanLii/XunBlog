@@ -7,91 +7,144 @@ canonical: "/mathematics/probability/variance/"
 prerequisites:
   - "/mathematics/probability/expectation/"
 related:
+  - "/mathematics/probability/covariance/"
   - "/mathematics/probability/normal-distribution/"
 ---
 
 # Variance
 
-Variance 描述 random variable 围绕其 mean 的分散程度。
+Expectation 描述 distribution 的中心，但只知道中心还不够。
 
-若
+例如下面两组数据都可能均值为 0：
+
+```text
+A: -1, 0, 1
+B: -100, 0, 100
+```
+
+它们的波动尺度显然完全不同。
+
+Variance 用来描述 random variable 围绕其 mean 的离散程度。
+
+设：
 
 \[
-\mu=\mathbb E[X],
+\mu=\mathbb E[X].
 \]
 
-则
+Variance 定义为：
 
 \[
 \operatorname{Var}(X)
-=
-\mathbb E[(X-\mu)^2].
+=\mathbb E[(X-\mu)^2].
 \]
 
-## 先减去均值
+## Centering：先减 Mean
 
-$X-\mu$ 表示一次取值距离中心有多远。
+\[
+X-\mu
+\]
 
-如果不减 mean，而直接看 $X^2$，结果会同时受到“整体数值基准”和“分散程度”影响。Variance 只想描述 spread，所以先把中心移到 0。
+表示每个取值相对 distribution center 的偏差。
 
-## 再平方
+如果不减 mean，$\mathbb E[X^2]$ 会同时受到“整体位置”和“波动大小”影响，无法单独表示 spread。
 
-如果直接平均偏差：
+## Squared Deviation
+
+如果直接平均 deviation：
 
 \[
 \mathbb E[X-\mu]=0.
 \]
 
-正负偏差会抵消。因此用平方：
+正偏差和负偏差会互相抵消。
+
+平方后：
+
+- 正负偏差都变成非负；
+- 更大的 deviation 会被更强地放大；
+- 数学上可微且具有良好的代数性质。
+
+因此：
 
 \[
-(X-\mu)^2.
+\operatorname{Var}(X)\ge0.
 \]
 
-它同时让偏差非负，并让较大偏差贡献更大。
+## 等价形式
+
+展开：
+
+\[
+(X-\mu)^2=X^2-2\mu X+\mu^2.
+\]
+
+取 expectation：
+
+\[
+\operatorname{Var}(X)
+=\mathbb E[X^2]-2\mu\mathbb E[X]+\mu^2.
+\]
+
+因为 $\mathbb E[X]=\mu$：
+
+\[
+\boxed{
+\operatorname{Var}(X)
+=\mathbb E[X^2]-\mathbb E[X]^2
+}
+\]
+
+这个形式在推导里非常常见。
 
 ## Standard Deviation
 
-Variance 的单位被平方了。例如身高单位是 cm，variance 单位是 cm²。
+Variance 的单位是原变量单位的平方。
 
-Standard deviation 定义为
+例如身高单位是 cm，则 variance 单位是 cm²。
+
+因此常定义 standard deviation：
 
 \[
 \sigma=\sqrt{\operatorname{Var}(X)}.
 \]
 
-它恢复到和原变量相同的单位，因此更容易直接解释。
+它恢复到与原变量相同的单位，更容易解释实际尺度。
 
-## 等价形式
+Standard deviation 与 variance 是同一 spread 信息的两种表达，所以这里把它作为 Variance 的直接组成部分，而不是另拆一个孤立页面。
 
-展开平方可以得到
+## Scaling
 
-\[
-\operatorname{Var}(X)
-=
-\mathbb E[X^2]-\mathbb E[X]^2.
-\]
-
-这在推导中很常用。
-
-## Normal Distribution 中的角色
+若：
 
 \[
-X\sim\mathcal N(\mu,\sigma^2)
+Y=aX+b,
 \]
 
-的第二个参数是 variance $\sigma^2$，不是 standard deviation $\sigma$。
-
-$\sigma$ 越大，distribution 越宽；$\sigma$ 越小，越集中在 mean 附近。
-
-## Standardization 中除以 σ 的作用
-
-对
+则：
 
 \[
-Z=\frac{X-\mu}{\sigma},
+\operatorname{Var}(Y)
+=a^2\operatorname{Var}(X).
 \]
 
-先减 $\mu$ 把中心移到 0；再除 $\sigma$ 把“一份标准差”重新定义成 1 个单位。
+加常数 $b$ 只移动中心，不改变 spread；乘 $a$ 会把 deviation 放大 $|a|$ 倍，因此 variance 放大 $a^2$ 倍。
 
-只有减均值，没有除标准差时，不同 distributions 虽然中心都在 0，但 spread 仍然不同，仍不能直接比较“离自己群体中心有多异常”。
+## 从 Variance 到 Covariance
+
+Variance 只描述一个 random variable 自己的波动。
+
+当我们想描述两个 variables 是否一起变化，需要 [Covariance](/mathematics/probability/covariance/)：
+
+\[
+\operatorname{Cov}(X,Y)
+=\mathbb E[(X-\mu_X)(Y-\mu_Y)].
+\]
+
+并且：
+
+\[
+\operatorname{Var}(X)=\operatorname{Cov}(X,X).
+\]
+
+因此 covariance 是 variance 的多变量扩展，而不是另一个无关的统计量。

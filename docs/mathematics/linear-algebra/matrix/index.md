@@ -7,8 +7,8 @@ canonical: "/mathematics/linear-algebra/matrix/"
 prerequisites:
   - "/mathematics/linear-algebra/vector/"
 related:
-  - "/deep-learning/core/linear-layer/"
-  - "/deep-learning/transformer/attention/scaled-dot-product-attention/"
+  - "/mathematics/linear-algebra/linear-transformation/"
+  - "/mathematics/linear-algebra/dot-product/"
 ---
 
 # Matrix
@@ -18,51 +18,40 @@ Matrix 是按行和列排列的一组数：
 \[
 A=
 \begin{bmatrix}
-a_{11}&a_{12}&\cdots\\
-a_{21}&a_{22}&\cdots\\
-\vdots&\vdots&
+a_{11}&a_{12}&\cdots&a_{1n}\\
+a_{21}&a_{22}&\cdots&a_{2n}\\
+\vdots&\vdots&\ddots&\vdots\\
+a_{m1}&a_{m2}&\cdots&a_{mn}
 \end{bmatrix}
 \in\mathbb R^{m\times n}.
 \]
 
-在深度学习里，Matrix 最常见的两个角色是：**装一批 vectors**，以及**表示 linear transformation**。
+矩阵的两个最重要角色是：
 
-## 一批 vectors
+1. 把很多 [Vector](/mathematics/linear-algebra/vector/) 组织在一起；
+2. 表示一个 [Linear Transformation](/mathematics/linear-algebra/linear-transformation/) 在选定 basis 下的计算规则。
 
-如果有 $m$ 个 $n$ 维 vectors，把它们按行排列：
+理解这两个角色，比把 matrix 当作“二维数组”更重要。
 
-\[
-X\in\mathbb R^{m\times n}.
-\]
-
-Transformer 的 token matrix 就是这种形式：
-
-```text
-row 1 = token 1 hidden vector
-row 2 = token 2 hidden vector
-...
-row m = token m hidden vector
-```
-
-## Matrix 作为线性变换
+## Shape 决定了它能与谁运算
 
 若
 
 \[
-x\in\mathbb R^n,
+A\in\mathbb R^{m\times n},
 \qquad
-W\in\mathbb R^{m\times n},
+x\in\mathbb R^n,
 \]
 
-则
+那么
 
 \[
-y=Wx\in\mathbb R^m.
+Ax\in\mathbb R^m.
 \]
 
-矩阵 $W$ 把 $n$ 维向量映射到 $m$ 维空间。
+矩阵接收一个 $n$ 维 vector，输出一个 $m$ 维 vector。
 
-神经网络中的 Linear Layer、Q/K/V projections 都使用这类矩阵乘法。
+因此 shape 不只是编程中的报错信息，它直接表达了一个 mapping 的输入空间和输出空间。
 
 ## Matrix Multiplication
 
@@ -80,51 +69,103 @@ B\in\mathbb R^{n\times p},
 C=AB\in\mathbb R^{m\times p}.
 \]
 
-元素
+其元素：
 
 \[
-C_{ij}
-=
+C_{ij}=
 \sum_{k=1}^{n}A_{ik}B_{kj}.
 \]
 
-内侧 dimension $n$ 必须相同。
+也就是说，$C_{ij}$ 是 $A$ 的第 $i$ 行与 $B$ 的第 $j$ 列的 dot product。
 
-## Attention 中的 QKᵀ
+所以 matrix multiplication 不是“对应位置相乘”；它是在把两个线性变换复合，或者一次计算许多行列之间的线性组合。
+
+## Matrix 与一组 vectors
+
+若有 $N$ 个 $d$ 维 vectors，可以按行堆成：
+
+\[
+X\in\mathbb R^{N\times d}.
+\]
+
+如果右乘
+
+\[
+W\in\mathbb R^{d\times h},
+\]
+
+则：
+
+\[
+XW\in\mathbb R^{N\times h}.
+\]
+
+这里同一个 transformation $W$ 同时作用在 $N$ 个 vectors 上。
+
+这解释了为什么神经网络里一个 [Linear Layer](/deep-learning/core/linear-layer/) 可以高效处理整个 batch 或 token sequence：本质上是把许多 vector transformation 合并成一次 matrix multiplication。
+
+## Transpose
+
+Transpose 把行列交换：
+
+\[
+A^\top_{ij}=A_{ji}.
+\]
 
 如果
 
 \[
-Q\in\mathbb R^{n_q\times d_k},
-\qquad
-K\in\mathbb R^{n_k\times d_k},
+A\in\mathbb R^{m\times n},
 \]
 
 则
 
 \[
-K^\top\in\mathbb R^{d_k\times n_k},
+A^\top\in\mathbb R^{n\times m}.
 \]
 
-于是
+在 [Dot Product](/mathematics/linear-algebra/dot-product/) 中，column vectors 常写成：
 
 \[
-QK^\top
-\in\mathbb R^{n_q\times n_k}.
+x^\top y.
 \]
 
-结果的每一个元素都是一个 query vector 与一个 key vector 的 dot product。
+在 attention 中，$QK^\top$ 也是通过 transpose 让所有 query 与 key 的 pairwise dot products 一次完成。
 
-因此 Matrix Multiplication 可以一次并行完成所有 query-key pairs 的相似度计算。
+但这些只是 matrix 的应用；matrix 本身的意义不依赖 Transformer。
 
-## Shape 是理解 Matrix 的核心工具
+## Identity Matrix
 
-在 AI 模型中，看懂矩阵往往不是先问“每个数字是多少”，而是先问：
+Identity matrix：
 
-```text
-这个 axis 表示 batch？
-这个 axis 表示 token？
-这个 axis 表示 hidden dimension？
-```
+\[
+I=
+\begin{bmatrix}
+1&0&\cdots&0\\
+0&1&\cdots&0\\
+\vdots&&\ddots&\vdots\\
+0&0&\cdots&1
+\end{bmatrix}
+\]
 
-只要 shape 与每个 axis 的语义清楚，很多复杂 tensor 运算就能还原成普通 matrix/vector operations。
+满足：
+
+\[
+Ix=x,
+\qquad
+AI=A,
+\qquad
+IA=A
+\]
+
+在维度匹配时成立。
+
+它对应“什么都不改变”的 linear transformation，也是 residual connection 中 identity path 的线性代数原型。
+
+## Matrix 不只是数据容器
+
+在代码里，matrix 经常表现为二维 tensor。但数学上它更强的意义在于：
+
+> **它可以表示坐标、批量数据，也可以表示空间之间的线性映射。**
+
+后续的 Linear Layer、convolution 展开、attention、least squares 等大量计算，都建立在这一点上。

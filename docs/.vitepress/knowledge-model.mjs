@@ -3,10 +3,14 @@ import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { navigationGraph } from './knowledge-graph.mjs'
+import { routeMigrations } from './route-migrations.mjs'
 import { canonicalRoute } from './routes.mjs'
 
 const root = fileURLToPath(new URL('../../', import.meta.url))
 export const categories = {
+  '/mathematics/analysis/': { title: 'Analysis', description: '分析学中的运算与表示。当前内容聚焦卷积及其在神经网络中的使用。', focus: '/mathematics/analysis/convolution/' },
+  '/deep-learning/sequence-modeling/': { title: 'Sequence Modeling', description: '序列建模中的位置表示与因果约束，以及它们在具体模型中的使用。', focus: '/deep-learning/sequence-modeling/positional-encoding/' },
+  '/deep-learning/representation-learning/': { title: 'Representation Learning', description: '表示学习研究数据的编码方式。当前内容聚焦 Autoencoder 及其与生成模型的联系。', focus: '/deep-learning/representation-learning/autoencoder/' },
   '/mathematics/calculus/': { title: 'Calculus', description: '微积分描述连续变化。当前内容通过常微分方程连接 Flow Matching 的连续时间过程。', focus: '/mathematics/calculus/ordinary-differential-equation/' },
   '/mathematics/numerical-methods/': { title: 'Numerical Methods', description: '数值方法用有限计算近似连续问题。当前内容聚焦 Euler Method 与动作生成中的数值积分。', focus: '/mathematics/numerical-methods/euler-method/' },
   '/deep-learning/multimodal/': { title: 'Multimodal Models', description: '多模态模型联合处理不同类型的输入。当前内容聚焦视觉语言模型及其在机器人策略中的使用。', focus: '/deep-learning/multimodal/vision-language-model/' },
@@ -21,6 +25,10 @@ export const categories = {
   '/robot-learning/': { title: 'Robot Learning', description: '机器人学习研究如何从数据中学习行为。当前内容覆盖模仿学习、行为克隆、VLA、跨形态学习、ACT 与 π0，连接视觉观测、动作预测和训练推理过程。', focus: '/robot-learning/pi0/', focusDescription: 'Vision-Language-Action robot policy with Flow Matching.', focusLinks: ['architecture', 'action-expert', 'training', 'inference'] }
 }
 const aliases = {
+  'object-query': ['Object Query', 'Learnable Query Embedding', '对象查询'],
+  'position-wise-feed-forward-network': ['FFN', 'Feed-Forward Network'],
+  'multilayer-perceptron': ['MLP', '多层感知机'],
+  'kv-cache': ['KV Cache', '键值缓存'],
   pi0: ['pi0', 'pi 0', 'pi-zero', 'pi zero', 'π 0', 'π₀'],
   'flow-matching': ['流匹配'],
   'vision-language-model': ['VLM', '视觉语言模型'],
@@ -41,17 +49,18 @@ const aliases = {
   'expectation': ['期望'], 'random-variable': ['随机变量'], 'matrix': ['矩阵'], 'vector': ['向量']
 }
 // Explicit component-use edges, already represented in the existing navigation graph.
-const uses = {
+const originalUses = {
   '/robot-learning/pi0/': ['/deep-learning/multimodal/vision-language-model/', '/generative-models/flow-matching/', '/robot-learning/act/action-chunking/'],
   '/robot-learning/pi0/inference/': ['/mathematics/numerical-methods/euler-method/'],
   '/robot-learning/act/': ['/deep-learning/transformer/', '/generative-models/conditional-variational-autoencoder/', '/deep-learning/cnn/resnet/'],
   '/robot-learning/act/architecture/': navigationGraph['/robot-learning/act/architecture/'],
   '/robot-learning/act/cvae-in-act/': navigationGraph['/robot-learning/act/cvae-in-act/'],
   '/robot-learning/act/vision-pipeline/': ['/deep-learning/cnn/resnet/'],
-  '/deep-learning/transformer/': ['/deep-learning/transformer/attention/'],
+  '/deep-learning/transformer/': ['/deep-learning/attention/'],
   '/deep-learning/cnn/resnet/': ['/deep-learning/cnn/convolutional-neural-network/'],
-  '/deep-learning/cnn/convolutional-neural-network/': ['/deep-learning/cnn/convolution/']
+  '/deep-learning/cnn/convolutional-neural-network/': ['/mathematics/analysis/convolution/']
 }
+const uses = Object.fromEntries(Object.entries(originalUses).map(([source, targets]) => [routeMigrations[source] || source, targets.map(target => routeMigrations[target] || target)]))
 function walk(dir) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => {
     if (e.name.startsWith('.')) return []
@@ -87,7 +96,7 @@ export function buildKnowledgeModel() {
     const summary = body.split(/\n\s*\n/).find(p => /^[A-Za-z\u3400-\u9fff]/.test(p.trim()))?.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[*`]/g, '').slice(0, 180) || ''
     pages.push({ summary, route, title: field(fm, 'title'), kind: 'canonical', updated, minutes: Math.max(1, Math.ceil(units / 250)), aliases: aliases[slug] || [], prerequisites: links(fm, 'prerequisites'), related: links(fm, 'related') })
   }
-  if (pages.length !== 69) throw new Error(`Expected 69 canonical pages, found ${pages.length}`)
+  if (pages.length !== 82) throw new Error(`Expected 82 canonical pages, found ${pages.length}`)
   const nodes = Object.fromEntries(pages.map(p => [p.route, p]))
   for (const [route, category] of Object.entries(categories)) {
     if (nodes[route]) throw new Error(`Category conflicts with canonical: ${route}`)
@@ -106,7 +115,7 @@ export function buildKnowledgeModel() {
     if (node.parent) nodes[node.parent].children.push(node.route)
     else roots.push(node.route)
   }
-  const order = ['linear-algebra', 'probability', 'information-theory', 'calculus', 'numerical-methods', 'core', 'transformer', 'cnn', 'multimodal', 'imitation-learning', 'behavior-cloning', 'vision-language-action-model', 'cross-embodiment-learning', 'act', 'pi0']
+  const order = ['linear-algebra', 'probability', 'information-theory', 'calculus', 'numerical-methods', 'core', 'attention', 'sequence-modeling', 'transformer', 'bert', 'detr', 'representation-learning', 'cnn', 'multimodal', 'imitation-learning', 'behavior-cloning', 'vision-language-action-model', 'cross-embodiment-learning', 'act', 'pi0']
   for (const node of Object.values(nodes)) node.children.sort((a,b) => {
     const rank = r => { const i = order.indexOf(r.split('/').filter(Boolean).at(-1)); return i < 0 ? 99 : i }
     return rank(a)-rank(b) || nodes[a].title.localeCompare(nodes[b].title)

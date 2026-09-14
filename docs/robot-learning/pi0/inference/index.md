@@ -5,6 +5,7 @@ domain: "Robot Learning / π0"
 parent: "π0"
 canonical: "/robot-learning/pi0/inference/"
 prerequisites:
+  - "/deep-learning/transformer/kv-cache/"
   - "/robot-learning/pi0/flow-matching-in-pi0/"
   - "/mathematics/numerical-methods/euler-method/"
 related:
@@ -78,9 +79,9 @@ images 与 language 不会在这 10 个 flow steps 中变化，robot state 也�
 
 因此 π0 先计算 observation-side representations。
 
-## Step 2：建立 KV cache
+## Step 2：建立 KV Cache
 
-由于 [Blockwise Causal Attention Mask](/robot-learning/pi0/blockwise-causal-attention-mask/) 保证 prefix 不依赖后面的 action block，observation 的 keys / values 可以缓存。
+由于 [Blockwise Causal Attention Mask](/robot-learning/pi0/blockwise-causal-attention-mask/) 保证 prefix 不依赖后面的 action block，observation 的 keys / values 可以缓存。这个机制本身见 [KV Cache](/deep-learning/transformer/kv-cache/)。
 
 ```text
 images + language + state
@@ -221,7 +222,7 @@ x_{t+dt}=x_t+dt\,v_t.
 
 所以阅读 paper 与 code 时必须先确认当前采用哪一种 flow-time convention。
 
-## 推理成本为什么集中在 Action Expert
+## Action Expert 主导重复推理成本
 
 论文报告的 3-camera、RTX 4090 timing 中：
 

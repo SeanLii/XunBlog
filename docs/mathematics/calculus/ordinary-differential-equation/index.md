@@ -4,7 +4,8 @@ kind: "canonical"
 domain: "Mathematics / Calculus"
 parent: "Calculus"
 canonical: "/mathematics/calculus/ordinary-differential-equation/"
-prerequisites: []
+prerequisites:
+  - "/mathematics/linear-algebra/vector/"
 related:
   - "/mathematics/numerical-methods/euler-method/"
   - "/generative-models/flow-matching/"
@@ -12,149 +13,114 @@ related:
 
 # Ordinary Differential Equation
 
-Ordinary Differential Equation（ODE，常微分方程）描述的不是“某个变量等于多少”，而是：**一个量在当前状态下应该怎样变化。**
+Ordinary Differential Equation（ODE）不是直接告诉我们一个状态“在哪里”，而是规定这个状态**怎样随一个连续变量变化**。
 
-最简单的形式是
-
-\[
-\frac{dx}{dt}=f(x,t).
-\]
-
-其中：
-
-- $x(t)$ 是随时间变化的状态；
-- $t$ 是连续时间；
-- $\frac{dx}{dt}$ 表示状态此刻的变化速度；
-- $f(x,t)$ 给出在状态 $x$、时间 $t$ 下应该朝哪个方向变化。
-
-与普通函数
+最常见的形式：
 
 \[
-y=f(x)
+\frac{dx(t)}{dt}=f(t,x(t)).
 \]
 
-不同，ODE 通常不会直接告诉你最终答案。它告诉你**每一个位置上的局部运动规则**，然后通过连续地沿着这个规则移动，得到完整轨迹。
+这里：
 
-## 从“位置”到“速度”
+- $t$：独立变量，常被理解为 time；
+- $x(t)$：随 $t$ 变化的 state；
+- $f(t,x)$：给出当前 state 的变化率。
 
-假设一个一维点的位置是 $x(t)$。如果
+如果 $x$ 是位置，那么 $dx/dt$ 可以理解为速度；如果 $x$ 是一个高维 vector，那么 $f$ 给出 vector space 中的瞬时运动方向。
+
+## ODE 描述的是 local rule
+
+ODE 给的是局部变化：
 
 \[
-\frac{dx}{dt}=2,
+\frac{dx}{dt}=f(t,x).
 \]
 
-表示它始终以速度 2 向正方向移动。
-
-如果初始状态是
+但我们真正想知道的通常是完整 trajectory：
 
 \[
-x(0)=3,
+x(t_0),x(t_1),\ldots
 \]
 
-那么经过时间 $t$ 后：
+因此需要从一个 initial state 开始，把局部变化累积起来。
+
+## Initial Value Problem
+
+只有 differential equation 通常还不足以确定唯一 trajectory。
+
+还需要 initial condition：
 
 \[
-x(t)=3+2t.
+x(t_0)=x_0.
 \]
 
-这里真正定义运动的是“速度场” $dx/dt=2$。初始条件 $x(0)=3$ 决定从哪里开始。
-
-更一般地，变化速度可以依赖当前状态：
+于是得到 initial value problem：
 
 \[
-\frac{dx}{dt}=-x.
+\begin{cases}
+\dfrac{dx}{dt}=f(t,x),\\
+x(t_0)=x_0.
+\end{cases}
 \]
 
-此时 $x$ 越大，向 0 移动得越快。轨迹不再是一条直线，而是由这个局部变化规律决定。
+在满足适当 regularity 条件时，这可以确定一条唯一 solution trajectory。
 
-## 高维状态
+## 一个简单解析例子
 
-在机器学习中，$x$ 往往不是一个数，而是向量：
+考虑：
 
 \[
-x(t)\in\mathbb R^d.
+\frac{dx}{dt}=kx.
 \]
 
-于是
+解为：
 
 \[
-\frac{dx}{dt}=v(x,t)
+x(t)=x_0e^{k(t-t_0)}.
 \]
 
-中的 $v(x,t)\in\mathbb R^d$ 可以理解成：在 $d$ 维空间中的每一个位置，都给出一个移动方向和速度。
+这里每个时刻的变化率都与当前值成比例。
 
-例如二维空间中：
+但大多数实际 ODE 不会有这么简单的 closed-form solution。
 
-```text
-当前位置 x
-    │
-    │  查询 v(x,t)
-    ↓
-得到一个二维箭头
-    │
-    ↓
-沿箭头移动一点
-    │
-    ↓
-新的位置
-```
+## 高维 ODE
 
-所有位置上的这些箭头合在一起，就构成 vector field（向量场）。
-
-## 初值问题
-
-一个 ODE 要产生确定轨迹，通常还需要初始状态：
+如果：
 
 \[
-\frac{dx}{dt}=v(x,t),
-\qquad
-x(0)=x_0.
+x(t)\in\mathbb R^d,
 \]
 
-可以把它读成：
-
-> 从 $x_0$ 出发，在每个时刻按照 $v$ 给出的方向移动。
-
-这正是很多 continuous-time generative model 的基本结构。模型不直接一次输出最终样本，而是学习一个 vector field，让一个简单分布中的样本逐渐流向目标数据分布。
-
-## 解析解与数值积分
-
-少数简单 ODE 可以直接写出解析解，但神经网络定义的
+则：
 
 \[
-\frac{dx}{dt}=v_\theta(x,t)
+\frac{dx(t)}{dt}=v_t(x(t))
 \]
 
-通常没有方便的闭式解。
+中的 $v_t$ 是 vector field：对 space 中每个位置与时间，指定一个 velocity vector。
 
-因此计算机需要离散地近似连续运动：
+可以把它想成一个高维“流场”：一个 particle 放在任意位置，都能查到它此刻应该往哪里移动。
 
-```text
-x0
- ↓  根据 v(x0,t0) 移动一点
-x1
- ↓  根据 v(x1,t1) 再移动一点
-x2
- ↓
-...
- ↓
-xN
-```
+## 解析解与数值解
 
-最基本的数值方法是 [Euler Method](/mathematics/numerical-methods/euler-method/)。
+如果找不到 closed-form solution，就需要 numerical integration。
 
-## 与 Flow Matching 的连接
-
-[Flow Matching](/generative-models/flow-matching/) 学习的就是一个参数化 vector field：
+最简单的方法之一是 [Euler Method](/mathematics/numerical-methods/euler-method/)：
 
 \[
-\frac{dx}{dt}=v_\theta(x,t).
+x_{k+1}
+=x_k+h f(t_k,x_k).
 \]
 
-训练阶段让 $v_\theta$ 学会正确的局部运动方向；生成阶段从 noise 出发，通过求解这个 ODE，把 noise 逐步移动成数据样本。
+它用当前瞬时 slope 近似未来一小段时间内的运动。
 
-π0 把这个思想用于机器人动作：起点是一整个 noisy action chunk，终点是一整个可执行 action chunk。
+更高阶方法如 Runge–Kutta 会更精确地估计一步中的变化。
 
-## Sources
+## ODE 与 Flow
 
-- Lipman et al., **Flow Matching for Generative Modeling**, 2022. https://arxiv.org/abs/2210.02747
+如果每个 initial point 都沿 vector field 随时间移动，整个 space 会产生一个 continuous flow。
+
+这正是 Continuous Normalizing Flow 和 [Flow Matching](/generative-models/flow-matching/) 使用 ODE 的原因：模型学习一个 vector field，把 samples 从一个 distribution 连续运输到另一个 distribution。
+
+Flow Matching 是 ODE 的应用；ODE 本身则是描述连续动态系统的基础数学语言。

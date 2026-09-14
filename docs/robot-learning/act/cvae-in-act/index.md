@@ -43,7 +43,7 @@ q_\phi(z\mid q_t,a_{t:t+k-1}).
 
 ## Training branch 怎样得到 z
 
-官方模型先把 action sequence 与 qpos 投影到 Transformer hidden dimension，并在最前面加入 CLS token：
+官方模型先把 action sequence 与 qpos 投影到 Transformer hidden dimension，并在最前面加入一个 [CLS Token](/deep-learning/bert/cls-token/)：
 
 ```text
 [CLS]  q_t  a_t  a_t+1  ...  a_t+k-1

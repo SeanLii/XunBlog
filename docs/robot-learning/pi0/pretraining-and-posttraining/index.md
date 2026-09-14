@@ -43,7 +43,7 @@ related:
 - Open X-Embodiment 中的部分 open-source robot data；
 - VLM 已经获得的 Internet-scale image-language pre-training knowledge。
 
-机器人部分覆盖多个 robot configurations 和大量 tasks。
+机器人部分在论文报告的 pre-training mixture 中超过 **10,000 小时**，Physical Intelligence 自有数据覆盖 **7 种 robot configurations、68 个 tasks**，并进一步混入 Open X-Embodiment 数据。这里的数字是论文数据规模描述，不是 π0 architecture 的定义。
 
 这一阶段最重要的不是让某一个动作做得极致，而是让模型见到：
 
@@ -56,7 +56,7 @@ related:
 
 这会扩大 policy 训练分布覆盖范围。
 
-## 为什么只用最高质量数据反而不够
+## High-Quality Data 的覆盖缺口
 
 高质量 demonstration 往往意味着执行非常顺利。
 
@@ -119,5 +119,5 @@ VLM pre-training 主要提供 Internet-scale visual-semantic knowledge；robot p
 
 ## Sources
 
-- Black et al., **π0: A Vision-Language-Action Flow Model for General Robot Control**, Sections III and V. https://arxiv.org/abs/2410.24164
+- Black et al., **π0: A Vision-Language-Action Flow Model for General Robot Control**, Sections III and V. https://www.pi.website/download/pi0.pdf
 - Physical Intelligence, **π0: Our First Generalist Policy**. https://www.pi.website/blog/pi0

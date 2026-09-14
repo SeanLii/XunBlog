@@ -5,85 +5,149 @@ domain: "Deep Learning / Convolutional Neural Networks"
 parent: "Convolutional Neural Networks"
 canonical: "/deep-learning/cnn/convolutional-neural-network/"
 prerequisites:
-  - "/deep-learning/cnn/convolution/"
+  - "/mathematics/analysis/convolution/"
+  - "/deep-learning/core/activation-function/"
 related:
   - "/deep-learning/cnn/resnet/"
-  - "/robot-learning/act/vision-pipeline/"
 ---
 
 # Convolutional Neural Network
 
-Convolutional Neural Network（CNN）是一类特别适合处理网格数据的神经网络。对图像来说，最重要的特点是：**同一个小型 filter 会在整张图像上重复使用，从局部区域提取模式。**
+Convolutional Neural Network（CNN / ConvNet）是一类围绕 [Convolution](/mathematics/analysis/convolution/) 构建的 neural network architecture，尤其适合处理具有 spatial structure 的数据，例如 images。
 
-先看一张图像：
+它的核心不是“用了一个 convolution layer”，而是利用：
+
+- local connectivity；
+- weight sharing；
+- hierarchical feature extraction；
+- spatial resolution 与 channel dimension 的逐层变化。
+
+把一张图像送进 CNN，可以先得到 local feature maps，再逐层组合成更抽象的 representation。
+
+## 从 Image 到 Feature Map
+
+RGB image：
 
 \[
-X\in\mathbb R^{H\times W\times C}.
+X\in\mathbb R^{3\times H\times W}.
 \]
 
-普通 fully-connected layer 如果直接连接所有像素，会忽略“附近像素之间有强局部关系”这一结构。CNN 使用 [Convolution](/deep-learning/cnn/convolution/) 只观察局部窗口，并共享参数。
+第一层 convolution 可能输出：
 
-## 从像素到 feature map
+\[
+F_1\in\mathbb R^{C_1\times H_1\times W_1}.
+\]
 
-一个卷积层可以先想成很多个可学习 detector：
+这里的 channel 不再是 RGB，而是 learned feature channels。
+
+每个 channel 对某种局部 pattern 产生响应，但不要过度把每个 channel 固定解释成“边缘检测器”或某个可命名语义；feature meaning 是训练结果，并且会随网络层级与任务变化。
+
+## 一个典型 CNN Block
+
+常见结构：
+
+```text
+Convolution
+    ↓
+Normalization (optional)
+    ↓
+Activation
+    ↓
+Downsampling (optional)
+```
+
+多个 blocks 堆起来：
 
 ```text
 image
-  │
-  ├─ filter 1 → feature map 1
-  ├─ filter 2 → feature map 2
-  ├─ filter 3 → feature map 3
-  └─ ...
+  ↓
+low-level feature maps
+  ↓
+mid-level feature maps
+  ↓
+high-level feature maps
+  ↓
+head / decoder / downstream module
 ```
 
-某个 filter 可以逐渐学会响应边缘、纹理或其他局部模式。多层 CNN 继续在前一层 feature maps 上做 convolution，于是 receptive field 逐渐变大，表示也逐渐从像素级模式变成更高层结构。
+## Channel Growth 与 Spatial Downsampling
 
-## 参数共享
+很多 CNN 随深度增加会：
 
-如果“检测竖直边缘”在图像左上角有意义，那么在右下角通常也有意义。CNN 不需要为每个位置单独学习一套完全不同的权重，而是把同一 kernel 滑过不同位置。
+- 降低 $H,W$；
+- 增加 channels $C$。
 
-这带来两个结果：
+低层保留细空间位置；高层每个 feature 对应更大 receptive field，并用更多 channels 表示不同 learned patterns。
 
-- 参数量显著小于把所有像素完全连接；
-- 学到的局部 pattern 可以在不同位置复用。
+这种设计在计算成本与 representation capacity 之间折中。
 
-## 多层 CNN 的表征层级
+## Pooling 与 Strided Convolution
 
-一层 convolution 的感受野很小。多层叠加后，后面的一个 feature 会间接依赖更大的图像区域：
-
-```text
-pixels
-  ↓
-local edges / textures
-  ↓
-larger motifs
-  ↓
-object parts / semantic features
-```
-
-这不是每层都有人为规定“这一层必须检测什么”，而是训练目标通过 gradient 让网络自动形成有用的层级 features。
-
-## CNN 与 ResNet
-
-当 CNN 变得非常深时，优化会变困难。[ResNet](/deep-learning/cnn/resnet/) 在 CNN blocks 之间加入 residual connections：
+早期 CNN 常用 max pooling：
 
 \[
-y=x+F(x),
+2\times2\text{ window}
+\rightarrow
+\max\text{ value}
 \]
 
-使深层 convolutional network 更容易训练。
+降低 spatial resolution。
 
-## 在 ACT 中的位置
+现代 CNN 也常使用 strided convolution 完成 downsampling，同时让 downsampling weights 可学习。
 
-ACT 的相机图像先经过 ResNet backbone 得到 spatial features，然后这些 features 才进入 Transformer。也就是说：
+两者都不是 CNN 定义本身的必要条件。
+
+## Hierarchical Representation
+
+CNN 的一个关键特点是 receptive field 随层数增大。
+
+低层 unit 只直接读取小 patch；更高层 unit 通过前层 features 间接读取更大区域。
+
+因此可以形成：
 
 ```text
-image → CNN/ResNet → visual tokens → Transformer → action chunk
+small local pattern
+      ↓
+combination of local patterns
+      ↓
+larger spatial structure
+      ↓
+task-relevant representation
 ```
 
-CNN 负责把原始像素转成更适合后续推理的视觉表示；Transformer 再负责跨位置、跨相机、与机器人状态之间的信息融合。
+这是一种 hierarchy，而不是保证网络一定按照“边缘 → 纹理 → 物体”这种固定人工语义顺序学习。
+
+## Classification CNN
+
+经典 image classifier 可能是：
+
+```text
+image
+ ↓
+CNN backbone
+ ↓
+feature tensor
+ ↓
+global pooling / flatten
+ ↓
+Linear Layer
+ ↓
+class logits
+```
+
+但 CNN 并不只用于 classification。
+
+Detection、segmentation、robot perception、audio spectrogram processing 等也可以把 CNN 当 feature extractor 或 backbone。
+
+## 从 Plain CNN 到 ResNet
+
+当网络越来越深，plain CNN 会遇到 optimization difficulties。2015 年的 [ResNet](/deep-learning/cnn/resnet/) 通过 residual connections 让 deep networks 更容易训练。
+
+所以 ResNet 是 CNN architecture family 中的重要发展，而不是 CNN 的定义。
+
+CNN 经历了从早期 ConvNet 到大规模深度视觉 backbone 的发展，但本文重点放在 convolutional architecture 本身的计算结构，而不是模型历史。
 
 ## Sources
 
-- LeCun et al., **Gradient-Based Learning Applied to Document Recognition**, 1998.
-- He et al., **Deep Residual Learning for Image Recognition**, 2015/2016. https://arxiv.org/abs/1512.03385
+- LeCun et al. *Gradient-Based Learning Applied to Document Recognition*. 1998.
+- Krizhevsky, Sutskever, Hinton. *ImageNet Classification with Deep Convolutional Neural Networks*. 2012.

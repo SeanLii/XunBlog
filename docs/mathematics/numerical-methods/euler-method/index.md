@@ -8,124 +8,165 @@ prerequisites:
   - "/mathematics/calculus/ordinary-differential-equation/"
 related:
   - "/generative-models/flow-matching/"
-  - "/robot-learning/pi0/inference/"
 ---
 
 # Euler Method
 
-Euler Method（欧拉法）是一种用很多个小步，近似求解常微分方程的方法。
+Euler Method 是求解 ordinary differential equation 的最简单 numerical integration 方法之一。
 
-假设有 ODE：
-
-\[
-\frac{dx}{dt}=v(x,t).
-\]
-
-模型知道当前位置 $x_t$ 和当前位置的变化速度 $v(x_t,t)$，但不知道完整轨迹。Euler Method 的做法很直接：假设在一个很短的时间 $\Delta t$ 内，速度近似不变，于是
+给定 initial value problem：
 
 \[
-x_{t+\Delta t}
-\approx
-x_t+\Delta t\,v(x_t,t).
+\frac{dx}{dt}=f(t,x),
+\qquad
+x(t_0)=x_0,
 \]
 
-这条式子就是 Euler step。
-
-## 一步在做什么
-
-把它拆开：
+Euler Method 使用当前位置的 derivative，向前走一个小 step：
 
 \[
-\Delta x\approx \Delta t\,v(x_t,t).
+\boxed{
+x_{k+1}=x_k+h f(t_k,x_k)
+}
 \]
 
-其中 $v$ 是“每单位时间变化多少”，乘上时间长度 $\Delta t$，得到这一小步应该移动多少。
+同时：
 
-所以：
+\[
+t_{k+1}=t_k+h.
+\]
 
-```text
-当前状态 x_t
-      │
-      ↓
-计算 v(x_t,t)
-      │
-      ↓
-乘 Δt 得到小位移
-      │
-      ↓
-x_{t+Δt} = x_t + Δt · v
-```
+其中 $h$ 是 step size。
+
+## 从 Tangent Line 得到公式
+
+对足够小的 $h$，Taylor expansion：
+
+\[
+x(t+h)
+=x(t)+h x'(t)+O(h^2).
+\]
+
+因为：
+
+\[
+x'(t)=f(t,x(t)),
+\]
+
+忽略 higher-order terms：
+
+\[
+x(t+h)
+\approx x(t)+h f(t,x(t)).
+\]
+
+这正是 Euler update。
+
+所以 Euler Method 的本质是：
+
+> **假设当前 tangent slope 在这一小步里近似不变。**
 
 ## 一个数值例子
 
-设
+考虑：
 
 \[
-\frac{dx}{dt}=2x,
-\qquad x(0)=1.
+\frac{dx}{dt}=x,
+\qquad
+x(0)=1.
 \]
 
-取 $\Delta t=0.1$。第一步：
+真实解：
 
 \[
-v(x_0,0)=2\times1=2,
+x(t)=e^t.
 \]
 
-因此
+取：
 
 \[
-x_{0.1}\approx1+0.1\times2=1.2.
+h=0.1.
 \]
 
-第二步重新计算当前位置的速度：
+第一步：
 
 \[
-v(1.2,0.1)=2.4,
+x_1=1+0.1\times1=1.1.
 \]
 
-所以
+第二步：
 
 \[
-x_{0.2}\approx1.2+0.1\times2.4=1.44.
+x_2=1.1+0.1\times1.1=1.21.
 \]
 
-每一步都使用**新的状态重新计算方向**。
+继续迭代，在 $t=1$ 时会得到一个对 $e$ 的近似。
 
-## 步长与误差
+## Local Error 与 Global Error
 
-$\Delta t$ 越小，一小步内“速度不变”的近似通常越合理，但需要更多步骤。
-
-因此存在一个基本权衡：
-
-```text
-更小 step size
-→ 通常更精确
-→ 但需要更多次函数 / 神经网络计算
-```
-
-在神经生成模型中，这一点非常实际：如果每个 Euler step 都要运行一次大模型，那么积分步数直接影响推理速度。
-
-## π0 中的 Euler Method
-
-π0 的 flow matching inference 从 noisy action chunk 开始。论文使用 10 个积分步骤，并写成
+Euler Method 每一步忽略了 Taylor expansion 中的二阶及以上项，因此 local truncation error 是：
 
 \[
-A_t^{\tau+\delta}
-=
-A_t^\tau+
-\delta v_\theta(A_t^\tau,o_t),
+O(h^2).
 \]
 
-其中 $\delta=0.1$。
+累积很多步后，global error 通常为：
 
-这里：
+\[
+O(h).
+\]
 
-- $A_t^\tau$ 是当前 flow timestep 的 action chunk；
-- $v_\theta$ 是 π0 预测的 vector field；
-- 每次更新后，action chunk 都更接近真实动作分布。
+所以 step size 减半时，整体误差通常大约按一阶比例下降。
 
-所以“π0 需要 10 次 flow matching forward pass”并不是重复生成十次答案，而是在用 Euler Method 走完一条从 noise 到 action 的轨迹。
+## Step Size 的取舍
 
-## Sources
+更小的 $h$：
 
-- Black et al., **π0: A Vision-Language-Action Flow Model for General Robot Control**, 2024. https://arxiv.org/abs/2410.24164
+- 通常更精确；
+- 需要更多 steps；
+- 计算更慢。
+
+更大的 $h$：
+
+- 计算更快；
+- approximation 更粗；
+- 对某些 ODE 甚至可能 numerical instability。
+
+因此 numerical integration 不只是“多跑几次 update”，而是在 accuracy、stability 与 compute 之间取舍。
+
+## 高维状态
+
+如果：
+
+\[
+x_k\in\mathbb R^d,
+\]
+
+公式完全相同：
+
+\[
+x_{k+1}
+=x_k+h f(t_k,x_k).
+\]
+
+只是 $f$ 输出一个 $d$-dimensional velocity vector。
+
+所以 Euler Method 可以直接用于 neural ODE、continuous normalizing flow 或 action-space flow。
+
+## 与 Flow Matching 的关系
+
+[Flow Matching](/generative-models/flow-matching/) 学习的是 vector field。Sampling 时需要把：
+
+\[
+\frac{dx_t}{dt}=v_\theta(x_t,t)
+\]
+
+沿时间积分。
+
+Euler Method 是最直接的 solver：
+
+\[
+x_{k+1}=x_k+h v_\theta(x_k,t_k).
+\]
+
+一些模型会使用固定少量 Euler steps；另一些会使用更高阶 ODE solver。Euler 是其中一种数值求解方法，而不是 Flow Matching 自己定义出来的更新规则。

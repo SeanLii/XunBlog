@@ -6,111 +6,180 @@ parent: "Probability"
 canonical: "/mathematics/probability/multivariate-normal-distribution/"
 prerequisites:
   - "/mathematics/probability/normal-distribution/"
-  - "/mathematics/linear-algebra/vector/"
+  - "/mathematics/probability/covariance/"
   - "/mathematics/linear-algebra/matrix/"
 related:
   - "/generative-models/variational-autoencoder/"
-  - "/robot-learning/act/cvae-in-act/"
 ---
 
 # Multivariate Normal Distribution
 
-Multivariate Normal Distribution 是一维 Normal Distribution 在多维 random vector 上的扩展。
-
-一维：
+一维 Normal Distribution 描述一个 scalar random variable；Multivariate Normal Distribution 把它扩展到 random vector：
 
 \[
-X\sim\mathcal N(\mu,\sigma^2).
+X\in\mathbb R^d.
 \]
 
-多维：
+写作：
 
 \[
 X\sim\mathcal N(\mu,\Sigma),
 \]
 
-其中
+其中：
 
 \[
-X\in\mathbb R^d,
-\qquad
-\mu\in\mathbb R^d,
-\qquad
-\Sigma\in\mathbb R^{d\times d}.
+\mu\in\mathbb R^d
 \]
 
-## Mean 变成向量
+是 mean vector，
 
-每一维都有自己的中心：
+\[
+\Sigma\in\mathbb R^{d\times d}
+\]
+
+是 covariance matrix。
+
+## Mean Vector 决定中心
+
+\[
+\mu=\mathbb E[X]
+\]
+
+逐维给出 distribution 的中心：
 
 \[
 \mu=
-[\mu_1,\ldots,\mu_d]^\top.
+\begin{bmatrix}
+\mathbb E[X_1]\\
+\vdots\\
+\mathbb E[X_d]
+\end{bmatrix}.
 \]
 
-## Variance 变成 Covariance Matrix
+二维时，$\mu$ 就是 density ellipse 的中心位置。
+
+## Covariance Matrix 决定尺度与方向
+
+\[
+\Sigma
+=\mathbb E[(X-\mu)(X-\mu)^\top].
+\]
+
+对角线元素：
 
 \[
 \Sigma_{ii}=\operatorname{Var}(X_i)
 \]
 
-描述每一维自己的 variance。
+控制各 coordinate 的 spread。
 
-非对角元素
-
-\[
-\Sigma_{ij}
-=
-\operatorname{Cov}(X_i,X_j)
-\]
-
-描述两个 dimensions 是否一起变化。
-
-二维下：
+非对角线：
 
 \[
-\Sigma=
-\begin{bmatrix}
-\sigma_1^2 & \operatorname{cov}_{12}\\
-\operatorname{cov}_{12}&\sigma_2^2
-\end{bmatrix}.
+\Sigma_{ij}=\operatorname{Cov}(X_i,X_j)
 \]
 
-## Geometry
+描述 coordinates 之间的线性共同变化。
 
-二维 independent standard normal 的等密度线近似圆形：
+因此 multivariate Gaussian 的几何形状不仅有“宽窄”，还有“朝哪个方向拉伸”。
+
+## Density
+
+当 $\Sigma$ positive definite 时：
 
 \[
-\Sigma=I.
+p(x)=
+\frac{1}{(2\pi)^{d/2}|\Sigma|^{1/2}}
+\exp\left(
+-\frac12(x-\mu)^\top
+\Sigma^{-1}
+(x-\mu)
+\right).
 \]
 
-不同 dimensions variance 不同时会拉成椭圆；存在 covariance 时椭圆还会旋转。
+其中：
 
-所以 covariance matrix 同时决定 distribution 在各方向上的尺度与相关结构。
+\[
+(x-\mu)^\top\Sigma^{-1}(x-\mu)
+\]
+
+可以看作考虑 covariance 后的“标准化平方距离”。
+
+如果某个方向 variance 很大，那么同样的 Euclidean displacement 在那个方向上不会被认为特别罕见。
+
+## 等密度面的 Geometry
+
+满足：
+
+\[
+(x-\mu)^\top\Sigma^{-1}(x-\mu)=c
+\]
+
+的点形成 ellipse / ellipsoid。
+
+Covariance matrix 的 eigenvectors 给出主轴方向，eigenvalues 控制各主轴尺度。
+
+这把 probability distribution 与 linear algebra 直接连接起来。
 
 ## Diagonal Gaussian
 
-VAE 常为了简化采用 diagonal covariance：
+如果：
 
 \[
 \Sigma=
-\operatorname{diag}(\sigma_1^2,\ldots,\sigma_d^2).
+\operatorname{diag}(\sigma_1^2,\ldots,\sigma_d^2),
 \]
 
-这表示在该 Gaussian approximation 中，各 latent dimensions 的 covariance 被设为 0。
+则不同 dimensions 的 covariance 为 0。
 
-Encoder 只需输出 $d$ 个 means 与 $d$ 个 variances，而不必输出完整 $d\times d$ covariance matrix。
+在 Gaussian 情况下，diagonal covariance 还意味着这些 coordinates independent。
+
+此时 density 可以 factorize：
+
+\[
+p(x)=\prod_{i=1}^d
+\mathcal N(x_i;\mu_i,\sigma_i^2).
+\]
+
+这极大简化了参数量和计算，因此很多 latent-variable models 使用 diagonal Gaussian approximate posterior。
 
 ## Standard Multivariate Normal
+
+当：
+
+\[
+\mu=0,
+\qquad
+\Sigma=I,
+\]
+
+得到：
 
 \[
 Z\sim\mathcal N(0,I).
 \]
 
-表示：
+各 coordinates 都是 standard normal，并且互相 independent。
 
-- mean vector 全 0；
-- 每一维 variance 为 1；
-- covariance matrix 为 identity。
+这正是许多 generative models 选择的简单 prior，但它首先是一个独立的 probability distribution。
 
-ACT 的 latent prior 就采用这种 standard normal form。
+## Affine Transformation
+
+若：
+
+\[
+X\sim\mathcal N(\mu,\Sigma),
+\qquad
+Y=AX+b,
+\]
+
+则：
+
+\[
+Y\sim
+\mathcal N(A\mu+b,
+A\Sigma A^\top).
+\]
+
+Gaussian 对 affine transformation 的这种封闭性，是它在统计推断、控制、state estimation 和 generative modeling 中非常重要的原因。

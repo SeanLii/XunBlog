@@ -136,7 +136,7 @@ v_\theta(A_t^\tau,o_t),
 
 > 已知当前 observation，而且 action chunk 现在被噪声污染到程度 $\tau$，接下来整块 action 应该朝什么方向移动。
 
-## 为什么 condition 是 observation
+## Observation 作为 Flow Matching Condition
 
 如果没有 $o_t$，Flow Matching 只能学“所有动作数据整体长什么样”。
 
@@ -162,7 +162,7 @@ images + language + state
 conditioned velocity vθ
 ```
 
-## 为什么一次生成 50 个 action positions
+## Chunk-Level Flow Generation
 
 论文使用 $H=50$。整个 action chunk 一起加噪、一起进入 Action Expert、一起预测 vector field。
 
@@ -180,7 +180,7 @@ v_\theta\in\mathbb R^{H\times d_a}.
 
 Flow Matching 并没有把 chunk 拆成 50 次独立生成；相反，action tokens 之间使用 bidirectional attention，可以共同形成连贯轨迹。
 
-## Timestep sampling 不是 uniform
+## 非均匀 Timestep Sampling
 
 原始 Flow Matching 可以从 $[0,1]$ 均匀采样 timestep。π0 论文改用了 shifted beta distribution，让训练更多看到靠近 noise 端的 timesteps，并且不采样超过 cutoff $s=0.999$ 的区域。
 

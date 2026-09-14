@@ -1,0 +1,23 @@
+export const routeMigrations = {
+  "/deep-learning/transformer/attention/": "/deep-learning/attention/",
+  "/deep-learning/transformer/attention/qkv/": "/deep-learning/attention/qkv/",
+  "/deep-learning/transformer/attention/self-attention/": "/deep-learning/attention/self-attention/",
+  "/deep-learning/transformer/attention/cross-attention/": "/deep-learning/attention/cross-attention/",
+  "/deep-learning/transformer/attention/scaled-dot-product-attention/": "/deep-learning/transformer/scaled-dot-product-attention/",
+  "/deep-learning/transformer/attention/multi-head-attention/": "/deep-learning/transformer/multi-head-attention/",
+  "/deep-learning/transformer/positional-encoding/": "/deep-learning/sequence-modeling/positional-encoding/",
+  "/deep-learning/transformer/causal-mask/": "/deep-learning/sequence-modeling/causal-mask/",
+  "/deep-learning/transformer/feed-forward-network/": "/deep-learning/transformer/position-wise-feed-forward-network/",
+  "/deep-learning/transformer/cls-token/": "/deep-learning/bert/cls-token/",
+  "/deep-learning/transformer/learnable-query-embedding/": "/deep-learning/detr/object-query/",
+  "/deep-learning/core/residual-connection/": "/deep-learning/cnn/resnet/residual-connection/",
+  "/deep-learning/cnn/convolution/": "/mathematics/analysis/convolution/",
+  "/generative-models/autoencoder/": "/deep-learning/representation-learning/autoencoder/",
+  "/generative-models/latent-variable/": "/mathematics/probability/latent-variable/",
+  "/generative-models/variational-inference/": "/mathematics/probability/variational-inference/",
+  "/generative-models/evidence-lower-bound/": "/mathematics/probability/variational-inference/evidence-lower-bound/",
+  "/generative-models/variational-autoencoder/reparameterization-trick/": "/mathematics/probability/variational-inference/reparameterization-trick/",
+  "/generative-models/variational-autoencoder/conditional-variational-autoencoder/": "/generative-models/conditional-variational-autoencoder/",
+  "/generative-models/variational-autoencoder/posterior-collapse/": "/generative-models/posterior-collapse/",
+  "/generative-models/reparameterization-trick/": "/mathematics/probability/variational-inference/reparameterization-trick/"
+}

@@ -169,8 +169,8 @@ for (const [source, targets] of Object.entries(navigationGraph)) {
   }
 }
 
-if (canonicalPages !== 69) {
-  errors.push(`found ${canonicalPages} canonical knowledge pages; expected 69`)
+if (canonicalPages !== 82) {
+  errors.push(`found ${canonicalPages} canonical knowledge pages; expected 82`)
 }
 
 if (errors.length) {

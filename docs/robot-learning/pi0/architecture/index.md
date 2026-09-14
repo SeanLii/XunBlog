@@ -7,7 +7,7 @@ canonical: "/robot-learning/pi0/architecture/"
 prerequisites:
   - "/robot-learning/pi0/"
   - "/deep-learning/multimodal/vision-language-model/"
-  - "/deep-learning/transformer/attention/self-attention/"
+  - "/deep-learning/attention/self-attention/"
 related:
   - "/robot-learning/pi0/action-expert/"
   - "/robot-learning/pi0/blockwise-causal-attention-mask/"
@@ -181,7 +181,7 @@ v_\theta(A_t^\tau,o_t).
 v_\theta(A_t^\tau,o_t).
 \]
 
-## 为什么要分 VLM 与 Action Expert
+## VLM 与 Action Expert 的参数分工
 
 如果直接把 state 与 action 当作普通 VLM tokens，模型必须让原本为了 image/text pre-training 学到的 weights 同时承担一种完全不同的 continuous robotics modality。
 

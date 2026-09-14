@@ -1,19 +1,20 @@
 ---
-title: "Blockwise Causal Attention Mask"
+title: "Blockwise Causal Attention Mask in π0"
 kind: "pi0-topic"
 domain: "Robot Learning / π0"
 parent: "π0"
 canonical: "/robot-learning/pi0/blockwise-causal-attention-mask/"
 prerequisites:
-  - "/deep-learning/transformer/causal-mask/"
-  - "/deep-learning/transformer/attention/self-attention/"
+  - "/deep-learning/sequence-modeling/causal-mask/"
+  - "/deep-learning/attention/self-attention/"
   - "/robot-learning/pi0/architecture/"
 related:
+  - "/deep-learning/transformer/kv-cache/"
   - "/robot-learning/pi0/inference/"
   - "/robot-learning/pi0/action-expert/"
 ---
 
-# Blockwise Causal Attention Mask
+# Blockwise Causal Attention Mask in π0
 
 π0 不让所有 token 无限制地互相 attention。它把输入分成三个 block，并规定每个 block 可以读取哪些信息：
 
@@ -34,6 +35,18 @@ B3 actions      ✓        ✓        ✓
 
 同时，每个 block 内部是 full bidirectional attention。
 
+## 这是 π0 的具体 Attention Layout
+
+Causal masking 作为一般概念早于 π0，见 [Causal Mask](/deep-learning/sequence-modeling/causal-mask/)。
+
+π0 论文自己的设计，是把 VLM inputs、robot state、noisy actions 分成三个 blocks，并规定：
+
+- block 内 full bidirectional attention；
+- 后面的 block 可以读取前面的 block；
+- 前面的 block 不能读取后面的 block。
+
+因此这个页面的 ownership 属于 π0。它不是在定义所有模型都必须使用的“通用 blockwise mask”，而是在解释 π0 为什么选择这三个 block，以及这个选择如何支持 VLM distribution preservation 与 KV caching。
+
 ## 它不是普通逐 token causal mask
 
 语言模型常见 causal mask 是：第 $i$ 个 token 只能看自己和左边 token。
@@ -46,7 +59,7 @@ B3 actions      ✓        ✓        ✓
 
 因此 action chunk 的第 30 个位置可以直接读取第 5 个 action position，而不是必须按时间顺序 autoregressive 生成。
 
-## Block 1 为什么不能读取 state 和 action
+## VLM Prefix 的单向依赖
 
 Block 1 对应 PaliGemma VLM pre-training 中已经存在的 modalities：images 与 language。
 
@@ -64,7 +77,7 @@ images ↔ language
 
 而后面的 robotics-specific tokens 可以读取 VLM representations。
 
-## State 为什么单独成为 Block 2
+## State Block 与缓存边界
 
 Robot state $q_t$ 在一次 flow matching inference 中是不变的。
 
@@ -82,7 +95,7 @@ A_t^{\tau_1},
 
 所以这个 mask 不只是“语义上的因果关系”，也是 inference efficiency 设计。
 
-## Action block 为什么可以双向读取
+## Action Block 的双向 Attention
 
 π0 一次生成整个 action chunk：
 

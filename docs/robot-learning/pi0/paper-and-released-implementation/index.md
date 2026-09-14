@@ -165,7 +165,7 @@ image module 在 JAX implementation 中使用 SigLIP `So400m/14`，与 PaliGemma
 
 例如当前 `Pi0Config` 中存在 `pi05` 相关选项。这些代码不能反过来被当成 2024 π0 paper 的原始 architecture definition。
 
-本板块只把原始 π0 作为 canonical model；后续 π0-FAST / π0.5 如果加入 XunBlog，应各自拥有独立页面。
+这里讨论的是原始 π0。π0-FAST、π0.5 等后续模型具有不同的 action representation 或 training design，不应和原始 π0 的细节混为一谈。
 
 ## Sources
 

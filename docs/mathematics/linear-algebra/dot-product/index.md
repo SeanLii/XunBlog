@@ -6,88 +6,160 @@ parent: "Linear Algebra"
 canonical: "/mathematics/linear-algebra/dot-product/"
 prerequisites:
   - "/mathematics/linear-algebra/vector/"
+  - "/mathematics/linear-algebra/vector-norm/"
 related:
-  - "/deep-learning/transformer/attention/scaled-dot-product-attention/"
+  - "/deep-learning/transformer/scaled-dot-product-attention/"
 ---
 
 # Dot Product
 
-Dot Product 把两个同维向量变成一个 scalar：
+Dot Product 接收两个同维 vectors，输出一个 scalar：
 
 \[
 x\cdot y
 =x^\top y
-=
-\sum_{i=1}^{d}x_i y_i.
+=\sum_{i=1}^{d}x_i y_i.
 \]
 
-例如
+例如：
 
 \[
 x=[1,2],\qquad y=[3,4],
 \]
 
-则
+则：
 
 \[
 x\cdot y=1\times3+2\times4=11.
 \]
 
-## 几何意义
+只看这个公式，它像是“对应分量相乘再求和”。但 dot product 真正重要的地方在于，它把**代数计算**和**几何关系**连接了起来。
 
-Dot product 也可以写成
+## 几何形式
+
+在 Euclidean space 中：
 
 \[
 x\cdot y
-=\|x\|\|y\|\cos\theta.
+=\|x\|_2\|y\|_2\cos\theta,
 \]
 
 其中 $\theta$ 是两个 vectors 的夹角。
 
-所以它同时受两件事影响：
+因此 dot product 同时包含：
 
-- vectors 的长度；
-- vectors 的方向是否一致。
+- 两个 vectors 的长度；
+- 两个 vectors 的方向关系。
 
-若两个 unit vectors 完全同方向，dot product 为 1；垂直时为 0；反方向时为 -1。
-
-## Dot Product 不是纯粹的“相似度”
-
-因为长度也会影响结果，一个 norm 很大的向量即使角度没有特别接近，也可能产生较大 dot product。
-
-如果只想比较方向，常使用 cosine similarity：
+如果两个 vectors 都是 unit vectors：
 
 \[
-\cos\theta
-=\frac{x\cdot y}{\|x\|\|y\|}.
+\|x\|_2=\|y\|_2=1,
 \]
 
-Transformer attention 使用的是 learned Q/K vectors 的 dot product，而不是自动归一化后的 cosine similarity。
-
-## QKᵀ 作为并行 Pairwise Dot Products
-
-把 queries 按行组成矩阵 $Q$，keys 按行组成 $K$：
+则：
 
 \[
-QK^\top.
+x\cdot y=\cos\theta.
 \]
 
-其中第 $(i,j)$ 个元素正好是
+这时 dot product 才直接只表示方向接近程度。
+
+## Orthogonality
+
+如果：
 
 \[
-q_i\cdot k_j.
+x\cdot y=0,
 \]
 
-因此一个 matrix multiplication 就得到所有 query-key pairs 的 scores。
+则在 Euclidean geometry 中，两个 vectors orthogonal，也就是垂直。
 
-## 高维下的尺度问题
+Orthogonality 在高维空间里仍然成立，不需要我们能画出这些 vectors。
 
-如果 vector 各维独立、均值 0、方差约 1，那么 $d$ 个乘积相加后，dot-product variance 会随 $d$ 增大。
-
-这就是 Transformer [Scaled Dot-Product Attention](/deep-learning/transformer/attention/scaled-dot-product-attention/) 再除以
+例如：
 
 \[
-\sqrt{d_k}
+[1,0,0]\cdot[0,1,0]=0.
 \]
 
-的原因之一：控制 logits 的尺度，避免 softmax 过早进入非常尖锐的区域。
+更一般地，一组两两 orthogonal 的 vectors 可以形成非常方便的 coordinate directions。
+
+## Projection
+
+Dot product 还能回答：一个 vector 在另一个方向上有多少分量。
+
+若 $u$ 是 unit vector，则 $x$ 在 $u$ 方向上的 scalar component 为：
+
+\[
+x\cdot u.
+\]
+
+对应的 projected vector 是：
+
+\[
+\operatorname{proj}_u(x)=(x\cdot u)u.
+\]
+
+如果 $u$ 不是 unit vector：
+
+\[
+\operatorname{proj}_u(x)
+=\frac{x\cdot u}{u\cdot u}u.
+\]
+
+这说明 dot product 并不是专门为了“相似度”设计的，它本质上是 Euclidean geometry 中测量方向关系和分解向量的重要工具。
+
+## Cosine Similarity
+
+因为 raw dot product 同时受长度影响，所以如果只想比较方向，常归一化：
+
+\[
+\operatorname{cosine}(x,y)
+=\frac{x\cdot y}{\|x\|_2\|y\|_2}.
+\]
+
+因此：
+
+- dot product 大，不一定意味着方向非常接近；
+- vector 很长，也会放大 dot product；
+- cosine similarity 去掉了长度这一因素。
+
+## Matrix multiplication 中的 Dot Product
+
+如果
+
+\[
+A\in\mathbb R^{m\times d},
+\qquad
+B\in\mathbb R^{d\times n},
+\]
+
+那么：
+
+\[
+(AB)_{ij}
+=A_{i,:}\cdot B_{:,j}.
+\]
+
+也就是说，matrix multiplication 的每一个输出元素都是一对 row/column 的 dot product。
+
+在 attention 中：
+
+\[
+QK^\top
+\]
+
+会一次计算所有 query-key pairs 的 dot products。这是 dot product 的一个重要应用，但不是这个概念本身的定义范围。
+
+## 高维随机 vectors 的尺度
+
+假设 $x_i,y_i$ 大致独立、均值为 0、方差有限，那么
+
+\[
+x\cdot y=\sum_i x_i y_i
+\]
+
+是很多随机项的和。维度增大时，这个和的典型尺度也会增大。
+
+这就是 [Scaled Dot-Product Attention](/deep-learning/transformer/scaled-dot-product-attention/) 需要考虑 $d_k$ 的背景：attention 不是因为 dot product “不稳定”才缩放，而是因为高维 dot-product logits 的统计尺度会影响后续 softmax。

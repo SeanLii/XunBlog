@@ -4,35 +4,9 @@
 
 ## Scope
 
-当前内容覆盖 ACT、π0 以及理解它们所需的前置知识，共 69 个 canonical knowledge pages：
+当前内容覆盖 ACT、π0 以及理解它们所需的前置知识，共 82 个 canonical knowledge pages：
 
-```text
-Mathematics
-├── Linear Algebra
-├── Probability
-├── Information Theory
-├── Calculus
-└── Numerical Methods
-
-Deep Learning
-├── Core
-├── Transformer
-│   └── Attention
-├── Convolutional Neural Networks
-└── Multimodal Models
-
-Generative Models
-├── Latent-variable and variational models
-└── Flow Matching
-
-Robot Learning
-├── Imitation Learning
-├── Behavior Cloning
-├── Vision-Language-Action Model
-├── Cross-Embodiment Learning
-├── ACT
-└── π0
-```
+完整 v4 归属树见 `research/corpus-v4/KNOWLEDGE_TREE.md`。Attention、Sequence Modeling、BERT、DETR 与 Representation Learning 为独立分支；变分推断归属 Probability；Residual Connection 归属 ResNet。
 
 不在当前 corpus 中的 LLM、Embodied AI、Projects、π0-FAST、π0.5 等栏目不创建占位页面。
 
@@ -75,5 +49,5 @@ VitePress 页面放在 canonical 目录的 `index.md` 中。`prerequisites` 与 
 - 站内 Markdown 链接使用 canonical absolute path，不手写部署 base path。
 - `BASE_PATH` 在构建时注入，GitHub Pages 当前使用 `/XunBlog/`。
 - `\[ ... \]` 与 `$ ... $` 由本地 KaTeX 插件进行服务端渲染。
-- `npm run docs:audit` 必须验证 69 个 canonical 页面、内部链接、frontmatter 关系和 Navigation Graph。
+- `npm run docs:audit` 必须验证 82 个 canonical 页面、内部链接、frontmatter 关系和 Navigation Graph。
 - `npm run docs:audit:math`、`npm run docs:build` 与 `npm run docs:audit:render` 必须全部通过后才能部署。

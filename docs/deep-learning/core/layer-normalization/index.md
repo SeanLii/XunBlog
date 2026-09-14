@@ -8,64 +8,135 @@ prerequisites:
   - "/mathematics/probability/expectation/"
   - "/mathematics/probability/variance/"
 related:
-  - "/deep-learning/transformer/transformer-encoder/"
-  - "/deep-learning/transformer/transformer-decoder/"
+  - "/deep-learning/cnn/resnet/residual-connection/"
+  - "/deep-learning/transformer/"
 ---
 
 # Layer Normalization
 
-Layer Normalization 对一个样本内部的 feature dimensions 做标准化，再用可学习参数恢复合适的尺度与偏移。
+Layer Normalization（LayerNorm）对**单个样本内部的一组 features**计算 mean 和 variance，然后把这些 features 标准化，再施加可学习的 scale 与 bias。
 
-对一个 hidden vector
+对 feature vector：
 
 \[
-x=(x_1,\ldots,x_d),
+x=[x_1,\ldots,x_d],
 \]
 
-先计算该向量自己的均值与方差：
+先计算：
 
 \[
-\mu=\frac1d\sum_i x_i,
+\mu=\frac1d\sum_{i=1}^{d}x_i,
 \]
 
 \[
-\sigma^2=\frac1d\sum_i(x_i-\mu)^2.
+\sigma^2=\frac1d\sum_{i=1}^{d}(x_i-\mu)^2.
 \]
 
-标准化：
+然后：
 
 \[
-\hat x_i=\frac{x_i-\mu}{\sqrt{\sigma^2+\epsilon}}.
+\hat x_i
+=\frac{x_i-\mu}{\sqrt{\sigma^2+\epsilon}}.
 \]
 
 最后：
 
 \[
-y_i=\gamma_i\hat x_i+\beta_i,
+y_i=\gamma_i\hat x_i+\beta_i.
 \]
 
-其中 $\gamma,\beta$ 是可学习参数。
+其中 $\gamma,\beta$ 是 learned parameters。
 
-## 它在什么维度上计算
+## 一次 LayerNorm 改变什么
 
-LayerNorm 的关键是对**同一个样本/位置的 features**做 normalization，而不是依赖整个 batch 的统计量。
-
-对于 Transformer hidden states
+标准化部分把当前 feature vector 调整到大致：
 
 \[
-X\in\mathbb R^{B\times n\times d},
+\text{mean}\approx0,
+\qquad
+\text{variance}\approx1.
 \]
 
-常见做法是对最后一个 hidden dimension $d$ 独立归一化每个 $(b,i)$ 位置。
+但如果永远强制每个 feature 的最终 scale 和 offset 固定，会限制模型表达能力。
+
+所以 LayerNorm 在标准化后加入：
+
+\[
+\gamma_i,\beta_i.
+\]
+
+模型可以重新学习每个 feature 适合的尺度与偏移。
+
+## 它沿哪个 Dimension 计算
+
+对于 Transformer hidden states：
+
+\[
+X\in\mathbb R^{B\times N\times d_{model}},
+\]
+
+LayerNorm 通常独立处理每个 token：
+
+\[
+X[b,n,:].
+\]
+
+也就是沿最后一个 feature dimension $d_{model}$ 计算 statistics。
+
+不同 batch items 之间不会互相计算 mean；不同 sequence positions 也通常各自独立。
+
+这是理解 LayerNorm 与 BatchNorm 区别的关键。
 
 ## 与 Batch Normalization 的差别
 
-BatchNorm 统计通常依赖 batch dimension；LayerNorm 不需要用其他样本来算当前样本的均值/方差，因此对可变序列长度和小 batch 更自然。
+BatchNorm 典型做法是在 mini-batch / spatial dimensions 上为每个 channel 估计 statistics，因此计算依赖 batch composition，并且 training 与 inference 常使用不同 statistics 处理方式。
 
-## 在 Transformer 中的位置
+LayerNorm 则对单个 sample 的 feature dimensions 计算：
 
-原始 Transformer 采用 post-norm 形式：sublayer + residual 后再 LayerNorm。后续很多模型改成 pre-norm：先 LayerNorm，再进入 sublayer。
+- 不需要 batch-level statistics；
+- batch size 变化不会改变 normalization definition；
+- training 与 inference 使用同一种即时计算方式。
 
-两者都使用 LayerNorm，但 gradient behavior 与训练稳定性不同。
+Ba、Kiros 与 Hinton 在 2016 年提出 Layer Normalization 时，正是为了避免 BatchNorm 在 recurrent sequence settings 中的一些不便。
 
-ACT released Transformer code也保留了这一类 Transformer normalization 结构；具体是否 pre-norm 由实现配置决定。
+## $\epsilon$ 的作用
+
+如果 variance 很小：
+
+\[
+\sigma^2\approx0,
+\]
+
+直接除以 $\sigma$ 会造成 numerical instability。
+
+因此使用：
+
+\[
+\sqrt{\sigma^2+\epsilon}.
+\]
+
+$\epsilon$ 是数值稳定项，不是模型用来控制 normalization strength 的主要 hyperparameter。
+
+## Pre-Norm 与 Post-Norm
+
+在 Transformer 中，LayerNorm 与 residual connection 的相对位置形成不同 architecture。
+
+Post-Norm：
+
+\[
+y=\operatorname{LN}(x+F(x)).
+\]
+
+Pre-Norm：
+
+\[
+y=x+F(\operatorname{LN}(x)).
+\]
+
+原始 Transformer 使用 post-norm；很多后续大模型更常使用 pre-norm 或相关变体，因为深层 optimization properties 不同。
+
+这些是 Transformer design choices，但 LayerNorm 自身仍然是一个通用 normalization method。
+
+## Sources
+
+- Ba, Kiros, Hinton. *Layer Normalization*. 2016.

@@ -4,76 +4,147 @@ kind: "canonical"
 domain: "Mathematics / Probability"
 parent: "Probability"
 canonical: "/mathematics/probability/random-variable/"
-prerequisites:
-  []
+prerequisites: []
 related:
   - "/mathematics/probability/probability-distribution/"
-  - "/generative-models/latent-variable/"
+  - "/mathematics/probability/expectation/"
+  - "/mathematics/probability/variance/"
 ---
 
 # Random Variable
 
-Random Variable 是把随机实验的每一种可能结果映射成一个数的函数。
+Random Variable 不是“一个会自己随机变化的普通变量”。它是把随机实验的结果映射成数值的函数。
 
-例如掷一枚骰子，结果空间是
+设随机实验的 sample space 为 $\Omega$。Random variable $X$ 是一个 mapping：
 
-```text
-{点数1, 点数2, ..., 点数6}
-```
+\[
+X:\Omega\rightarrow\mathbb R.
+\]
 
-定义随机变量 $X$ 为“掷出的点数”，那么
+例如掷一枚硬币两次，sample space 可以写成：
+
+\[
+\Omega=\{HH,HT,TH,TT\}.
+\]
+
+定义 $X$ 为“正面出现的次数”，那么：
+
+\[
+X(HH)=2,
+\quad
+X(HT)=1,
+\quad
+X(TH)=1,
+\quad
+X(TT)=0.
+\]
+
+随机性来自实验结果 $\omega\in\Omega$，而 $X$ 把这些结果转成我们关心的数值。
+
+## Random Variable 与一次观测值
+
+要区分：
+
+\[
+X
+\]
+
+和
+
+\[
+x.
+\]
+
+通常大写 $X$ 表示 random variable，小写 $x$ 表示它某次可能取得的具体值。
+
+写：
+
+\[
+P(X=x)
+\]
+
+表示 random variable $X$ 取值为 $x$ 的概率。
+
+这个区分在 probabilistic model 中非常重要：模型定义的是 random variables 之间的 distribution，而数据集给我们的是这些 variables 的具体 observations。
+
+## Discrete Random Variable
+
+如果 $X$ 只取有限或可数多个值，它是 discrete random variable。
+
+例如骰子：
 
 \[
 X\in\{1,2,3,4,5,6\}.
 \]
 
-随机性来自实验结果不确定；Random Variable 让我们可以用数学数值描述这种不确定性。
-
-## 离散与连续
-
-离散随机变量只取离散值，例如骰子点数。
-
-连续随机变量可以在连续区间取值，例如人的身高、传感器噪声、VAE latent 中某一维的 Gaussian sample。
-
-## Random Variable 与普通变量的区别
-
-普通代数变量 $x=3$ 只是一个确定数。
-
-随机变量 $X$ 在实验发生前不是一个固定结果，而由概率规律决定。真正观测到一次结果后，可以得到一个 realization，例如
+它的概率由 probability mass function 描述：
 
 \[
-X=3.
+p_X(x)=P(X=x).
 \]
 
-因此通常用大写 $X$ 表示 random variable，小写 $x$ 表示它的一次具体取值。
-
-## Distribution 描述它怎样随机
-
-只知道“$X$ 是随机变量”还不够。还需要 [Probability Distribution](/mathematics/probability/probability-distribution/) 描述每个可能值出现的概率。
-
-例如公平骰子：
+并满足：
 
 \[
-P(X=i)=\frac16,
-\qquad i=1,\ldots,6.
+\sum_x p_X(x)=1.
 \]
 
-连续变量则通过 probability density 等方式描述。
+## Continuous Random Variable
 
-## 在生成模型中
-
-VAE 的 latent $Z$ 是 random variable：
+如果 $X$ 可以在连续范围取值，通常用 probability density function：
 
 \[
-Z\sim\mathcal N(0,I).
+p_X(x).
 \]
 
-这句话不是说 $Z$ 永远等于 0，而是说它的取值按一个 Normal Distribution 随机产生。
-
-看到数据 $x$ 后，posterior
+此时单点概率通常为：
 
 \[
-p(z\mid x)
+P(X=x)=0.
 \]
 
-又会描述“在这个观测条件下 latent variable 可能取哪些值”。
+真正有意义的是区间概率：
+
+\[
+P(a\le X\le b)
+=\int_a^b p_X(x)\,dx.
+\]
+
+因此 density 的数值本身不是“这个点的概率”。
+
+## Random Vector
+
+多个 random variables 可以组成 random vector：
+
+\[
+X=
+\begin{bmatrix}
+X_1\\
+\vdots\\
+X_d
+\end{bmatrix}.
+\]
+
+它的取值是 $\mathbb R^d$ 中的 vector。
+
+这正是 multivariate distributions、latent variables、robot states 等概率建模的基础。
+
+## Distribution 描述随机性的规律
+
+Random variable 定义“我们从随机结果中读取什么数”；[Probability Distribution](/mathematics/probability/probability-distribution/) 则描述这些数值出现的规律。
+
+例如同样是实值 random variable：
+
+\[
+X\sim \mathcal N(0,1)
+\]
+
+和
+
+\[
+Y\sim \mathcal N(10,0.1^2)
+\]
+
+都取实数，但其 distribution 完全不同。
+
+后续的 [Expectation](/mathematics/probability/expectation/)、[Variance](/mathematics/probability/variance/) 都是对 random variable distribution 的整体性质进行总结。

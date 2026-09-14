@@ -5,160 +5,165 @@ domain: "Mathematics / Information Theory"
 parent: "Information Theory"
 canonical: "/mathematics/information-theory/kl-divergence/"
 prerequisites:
-  - "/mathematics/probability/probability-distribution/"
-  - "/mathematics/probability/expectation/"
+  - "/mathematics/information-theory/entropy/"
+  - "/mathematics/information-theory/cross-entropy/"
 related:
-  - "/generative-models/evidence-lower-bound/"
+  - "/mathematics/probability/variational-inference/"
   - "/generative-models/variational-autoencoder/"
 ---
 
 # KL Divergence
 
-KL Divergence（Kullback–Leibler Divergence）衡量一个 probability distribution $Q$ 与另一个 distribution $P$ 的差异。
+KL Divergence（Kullback–Leibler Divergence）衡量两个 probability distributions 之间的差异，但它不是 ordinary geometric distance。
 
-离散形式：
+对于 discrete distributions $p,q$：
 
 \[
-D_{KL}(Q\|P)
-=
-\sum_x Q(x)
-\log\frac{Q(x)}{P(x)}.
+D_{KL}(p\|q)
+=\sum_x p(x)
+\log\frac{p(x)}{q(x)}.
 \]
 
-连续形式：
+continuous 情况：
 
 \[
-D_{KL}(Q\|P)
-=
-\int q(x)
-\log\frac{q(x)}{p(x)}\,dx.
+D_{KL}(p\|q)
+=\int p(x)
+\log\frac{p(x)}{q(x)}\,dx.
 \]
 
-它也可以写成 expectation：
+Expectation form：
 
 \[
-D_{KL}(Q\|P)
-=
-\mathbb E_{x\sim Q}
+D_{KL}(p\|q)
+=\mathbb E_{x\sim p}
 \left[
-\log\frac{Q(x)}{P(x)}
+\log p(x)-\log q(x)
 \right].
 \]
 
-## KL Divergence 的比较方向
+## 它比较的是“用 q 描述 p”的代价
 
-从 $Q$ 中经常出现的区域出发，如果 $P$ 也给这些区域较高 probability，log ratio 不大；如果 $Q$ 认为很常见而 $P$ 认为非常罕见，贡献就会变大。
+因为 expectation 是在 $p$ 下取的，$D_{KL}(p\|q)$ 的方向很重要。
 
-所以 $D_{KL}(Q\|P)$ 可以理解成：**以 Q 的视角，看 P 与 Q 有多不匹配。**
+可以把它理解为：
+
+> 数据实际上来自 $p$，但我们用 $q$ 去描述它，相比直接使用 $p$ 自己，多付出了多少平均 log-loss / coding cost。
+
+由：
+
+\[
+H(p,q)=H(p)+D_{KL}(p\|q)
+\]
+
+可见：
+
+\[
+D_{KL}(p\|q)=H(p,q)-H(p).
+\]
+
+所以 KL 正好是 cross-entropy 超过真实 entropy 的部分。
 
 ## 非负性
 
-KL divergence 满足
+KL divergence 满足 Gibbs' inequality：
 
 \[
-D_{KL}(Q\|P)\ge0.
+D_{KL}(p\|q)\ge0.
 \]
 
-当两 distributions 几乎处处相同时：
+并且在适当条件下：
 
 \[
-D_{KL}(Q\|P)=0.
+D_{KL}(p\|q)=0
+\iff p=q\quad\text{almost everywhere}.
 \]
 
-这也是 ELBO 能成为 lower bound 的关键数学性质。
+因此如果把 $q$ 优化到尽可能接近 $p$，minimizing KL 是一种自然目标。
 
-## KL 不是距离 metric
+## KL 不是 Metric
 
-一般情况下：
+一个 metric 通常要求 symmetry：
 
 \[
-D_{KL}(Q\|P)\neq D_{KL}(P\|Q).
+d(p,q)=d(q,p).
 \]
 
-而且它不满足普通 metric 的所有性质。
-
-所以不能把 KL 当成 Euclidean distance 使用。
-
-顺序很重要：
+但 KL 一般不满足：
 
 \[
-D_{KL}(q(z\mid x)\|p(z))
+D_{KL}(p\|q)
+\ne
+D_{KL}(q\|p).
 \]
 
-与反过来不是同一个目标。
+它也不满足一般意义上的 triangle inequality。
 
-## VAE 中的 KL
+所以更准确叫 divergence，而不是 distance。
 
-VAE 训练中：
+## KL 的 Directionality
+
+考虑某些区域：
+
+- $p(x)>0$；
+- $q(x)$ 非常小。
+
+在 $D_{KL}(p\|q)$ 中，这些区域会受到很强惩罚，因为模型 $q$ 漏掉了真实 $p$ 的 mass。
+
+反过来 $D_{KL}(q\|p)$ 是对 $q$ 采样区域取 expectation，优化行为会不同。
+
+这种 directionality 是 variational inference 中 “forward / reverse KL” 行为差异的基础之一。
+
+## Gaussian 之间的 KL
+
+如果：
 
 \[
-D_{KL}\big(q_\phi(z\mid x)\|p(z)\big)
+q(z)=\mathcal N(\mu_q,\Sigma_q),
+\qquad
+p(z)=\mathcal N(\mu_p,\Sigma_p),
 \]
 
-让 encoder 给某个样本产生的 approximate posterior 不要任意远离 prior。
+Gaussian KL 有 closed form。
 
-当
+VAE 常见的特殊情况是：
 
 \[
-q_\phi(z\mid x)
-=
-\mathcal N(\mu,\operatorname{diag}(\sigma^2))
+q(z\mid x)=
+\mathcal N(\mu,\operatorname{diag}(\sigma^2)),
 \]
 
-且
-
 \[
-p(z)=\mathcal N(0,I),
+p(z)=\mathcal N(0,I).
 \]
 
-KL 有解析形式：
+此时：
 
 \[
-D_{KL}
+D_{KL}(q\|p)
 =
 \frac12
-\sum_{j=1}^{d}
+\sum_i
 \left(
-\mu_j^2+
-\sigma_j^2-
-\log\sigma_j^2-
+\mu_i^2+
+\sigma_i^2-
+\log\sigma_i^2-
 1
 \right).
 \]
 
-因此不需要 Monte Carlo 才能计算这一项。
+这个解析式很重要，但它只是 KL 的一个 Gaussian application，不是 KL Divergence 的全部内容。
 
-## 公式每一项的意义
+## 在 Variational Inference 中
 
-如果 $\mu_j$ 离 0 很远，$\mu_j^2$ 让 KL 变大。
-
-如果 $\sigma_j^2$ 远离 1，
+[Variational Inference](/mathematics/probability/variational-inference/) 常通过优化：
 
 \[
-\sigma_j^2-
-\log\sigma_j^2-1
+D_{KL}(q(z)\|p(z\mid x))
 \]
 
-也会增大。
+让 tractable approximation $q$ 靠近难以直接求解的 posterior。
 
-所以最小值出现在
+VAE 又进一步把这一思路 amortize 到 inference network 中。
 
-\[
-\mu=0,
-\qquad
-\sigma^2=1,
-\]
-
-也就是 approximate posterior 正好等于 standard normal prior。
-
-## KL 在 ACT 中的作用
-
-ACT training 使用
-
-\[
-D_{KL}(q_\phi(z\mid q_t,A_t)\|\mathcal N(0,I)).
-\]
-
-这让 training-time latent posterior 被约束在 standard normal prior 附近，使 inference 能够使用 prior mean $z=0$ 作为稳定输入。
-
-但 KL 权重过强也可能让 latent 携带的信息过少，这与 [Posterior Collapse](/generative-models/posterior-collapse/) 有关。
+因此 KL 与 VAE 有很深的连接，但它首先是一个独立的信息论量，并不由 VAE 定义。

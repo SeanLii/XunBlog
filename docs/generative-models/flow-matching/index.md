@@ -5,8 +5,8 @@ domain: "Generative Models"
 parent: "Generative Models"
 canonical: "/generative-models/flow-matching/"
 prerequisites:
-  - "/mathematics/probability/normal-distribution/"
   - "/mathematics/calculus/ordinary-differential-equation/"
+  - "/mathematics/probability/probability-distribution/"
 related:
   - "/mathematics/numerical-methods/euler-method/"
   - "/robot-learning/pi0/flow-matching-in-pi0/"
@@ -14,49 +14,49 @@ related:
 
 # Flow Matching
 
-Flow Matching 是一种训练连续生成模型的方法。它的核心想法不是“让网络直接输出最终样本”，而是：**学习一个 vector field，告诉样本在每个中间状态应该往哪里移动，最终把简单的 noise distribution 搬运到 data distribution。**
+Flow Matching 是训练 continuous normalizing flow 的一种方法。它的核心目标是学习一个 time-dependent vector field，使 samples 从一个简单 base distribution 连续运输到 data distribution。
 
-先看最小数据流：
+Mental model：
 
 ```text
-noise x_0
-   │
-   │  沿 learned vector field 连续移动
-   ↓
-x_t
-   │
-   ↓
-...
-   │
-   ↓
-data-like x_1
+simple noise distribution
+        ↓
+continuous flow over time
+        ↓
+data distribution
 ```
 
-这里的“flow”就是样本沿着连续轨迹流动。
-
-## 生成模型要学的是一条运输过程
-
-设容易采样的起始分布为
+如果 sample state 为 $x_t$，动态由 ODE 描述：
 
 \[
-p_0(x),
+\frac{dx_t}{dt}=v_\theta(t,x_t).
 \]
 
-目标数据分布为
+模型学习的就是 velocity field $v_\theta$。
+
+## Generative Modeling 变成 Transport Problem
+
+设：
 
 \[
-p_1(x).
+p_0(x)
 \]
 
-例如 $p_0$ 可以是 standard normal，而 $p_1$ 是真实图片、动作轨迹或其他连续数据。
+是容易 sample 的 base distribution，
 
-Flow-based model 希望构造一个随时间变化的分布
+\[
+p_1(x)
+\]
+
+是 target data distribution。
+
+我们希望存在一族 intermediate distributions：
 
 \[
 p_t(x),\qquad t\in[0,1],
 \]
 
-使得：
+满足：
 
 \[
 p_{t=0}=p_0,
@@ -64,147 +64,142 @@ p_{t=0}=p_0,
 p_{t=1}=p_1.
 \]
 
-也就是把“noise”与“data”之间补上一整条连续路径。
+vector field 让 samples 沿 trajectory 移动，同时整体 probability distribution 随时间从 $p_0$ 演化到 $p_1$。
 
-## Vector field 决定样本怎样移动
+## Marginal Vector Field 的训练困难
 
-样本的运动由 ODE 描述：
+理想 target 是一个能够生成整个 probability path 的 marginal vector field：
 
 \[
-\frac{dx}{dt}=v_\theta(x,t).
+u_t(x).
 \]
 
-其中 $v_\theta(x,t)$ 是神经网络预测的 vector field。
+但这个 field 通常依赖对 data distribution 的整体积分，不容易直接得到监督 target。
 
-它不是预测“最终应该到哪个样本”，而是在当前 $(x,t)$ 下预测一个局部速度：
+Flow Matching 的关键技巧是：改为构造**conditional probability paths**，在给定 data sample 时拥有简单 closed-form conditional vector field。
 
-```text
-当前位置 x_t
-    │
-    ↓
-vθ(x_t,t)
-    │
-    ↓
-下一小步应该往哪里走
-```
+## Conditional Path
 
-不断重复，就得到完整生成轨迹。
-
-## 训练困难转化成速度回归
-
-直接要求神经网络学习整个 marginal vector field 并不方便。Flow Matching 的关键做法是先定义容易处理的 **conditional probability path**，再对对应的 conditional vector field 做回归。
-
-一个非常直观的例子是在线性路径上连接 noise $\epsilon$ 与数据 $x_1$：
+可以先 sample data：
 
 \[
-x_t=(1-t)\epsilon+t x_1.
+x_1\sim p_{data}.
 \]
 
-当 $t=0$：
+再定义一个从 base noise 到这个 sample 附近的 conditional path：
 
 \[
-x_0=\epsilon,
+p_t(x\mid x_1).
 \]
 
-当 $t=1$：
+对应 conditional vector field：
 
 \[
-x_1=x_1.
+u_t(x\mid x_1).
 \]
 
-沿这条直线路径对 $t$ 求导：
+这个 target 可以直接计算。
+
+于是训练 network 回归：
 
 \[
-\frac{dx_t}{dt}=x_1-\epsilon.
-\]
-
-于是训练 target 变得非常简单：模型在中间点 $x_t$ 上预测速度
-
-\[
-v_\theta(x_t,t),
-\]
-
-并让它接近
-
-\[
-u_t=x_1-\epsilon.
-\]
-
-常见损失形式是
-
-\[
-\mathcal L(\theta)
+L_{FM}
 =
-\mathbb E
+\mathbb E_{t,x_1,x_t}
 \left[
-\|v_\theta(x_t,t)-u_t\|_2^2
+\|v_\theta(t,x_t)-u_t(x_t\mid x_1)\|^2
 \right].
 \]
 
-## Training 与 Sampling 是两件不同的事
+Lipman 等证明，在适当构造下，这种 conditional regression 可以得到正确的 marginal flow training objective。
 
-训练时，我们有真实数据 $x_1$，也主动采样 noise $\epsilon$，因此可以构造任意中间点 $x_t$ 并知道对应 target velocity。
+## 一个最直观的 Linear Interpolation Path
 
-```text
-TRAIN
-真实数据 x1 + noise ε + 随机 t
-            │
-            ↓
-      构造中间状态 x_t
-            │
-            ↓
-      网络预测 vθ(x_t,t)
-            │
-            ↓
-与已知 target velocity 比较
-```
+如果使用 base sample：
 
-生成时没有真实 $x_1$。只能从 noise 开始，反复调用网络：
+\[
+x_0\sim p_0,
+\]
 
-```text
-SAMPLE
-noise x0
-   ↓
-ODE step
-   ↓
-x1/N
-   ↓
-ODE step
-   ↓
-...
-   ↓
-generated sample
-```
+和 data sample：
 
-这就是为什么 Flow Matching 的训练可以只做一次随机 timestep 的监督，而推理却需要多个 integration steps。
+\[
+x_1\sim p_{data},
+\]
 
-## Flow Matching 与 Diffusion 的关系
+最简单 path：
 
-Flow Matching 与 diffusion models 有紧密联系，但两者不是同一个定义。Flow Matching 是训练 continuous normalizing flow / vector field 的框架，可以使用 diffusion probability path，也可以使用其他路径，例如 optimal-transport-style interpolation。
+\[
+x_t=(1-t)x_0+t x_1.
+\]
 
-因此更准确的说法是：
+对时间求 derivative：
 
-> Flow Matching 可以覆盖与 diffusion 密切相关的 probability paths，但它的核心训练对象是 vector field。
+\[
+\frac{dx_t}{dt}=x_1-x_0.
+\]
 
-π0 论文为了帮助读者定位，把 flow matching 描述成 diffusion 的一种相关变体；真正进入 π0 数学时，直接抓住“noise → learned vector field → action”会更清楚。
+于是 target velocity 非常直接。
 
-## 与 π0 的连接
+实际 Flow Matching 可以使用更一般 Gaussian probability paths，包括 diffusion-related paths 与 optimal-transport-inspired paths。
 
-π0 不用 Flow Matching 生成图像，而是生成一整个连续机器人 action chunk。
+## Training 与 Sampling 是两件事
 
-把通用符号替换掉：
+Training：
 
 ```text
-普通 Flow Matching:
-noise vector → data vector
-
-π0:
-noisy action chunk → executable action chunk
+sample data / noise / t
+       ↓
+construct x_t
+       ↓
+known target velocity u_t
+       ↓
+network predicts vθ(t, x_t)
+       ↓
+regression loss
 ```
 
-具体怎样构造 noisy action、怎样加入 observation condition、怎样进行 10 步积分，在 [Flow Matching in π0](/robot-learning/pi0/flow-matching-in-pi0/) 中展开。
+Sampling：
+
+```text
+x_0 ~ base distribution
+       ↓
+solve dx/dt = vθ(t,x)
+       ↓
+x_1 ≈ data sample
+```
+
+训练不需要在每个 step 完整跑 ODE trajectory，这就是原始 Flow Matching 方法强调的 simulation-free training 特点。
+
+## ODE Solver
+
+生成时需要 numerical integration。
+
+最简单可以使用 [Euler Method](/mathematics/numerical-methods/euler-method/)：
+
+\[
+x_{k+1}
+=x_k+h v_\theta(t_k,x_k).
+\]
+
+也可以使用 Runge–Kutta 等更高阶 solvers。
+
+所以 sampling quality / compute 还受 solver 与 step count 影响。
+
+## 与 Diffusion Models 的关系
+
+Flow Matching 与 diffusion 并不是简单的对立关系。
+
+原始 Flow Matching framework 可以使用 diffusion probability paths；同时也允许使用 non-diffusion paths，例如 optimal transport displacement interpolation。
+
+两类模型都可以描述“从简单 distribution 到 data distribution”的连续变化，但 parameterization、training target 和 sampling interpretation 不同。
+
+## π0 中的使用
+
+π0 把 action chunk 当作要生成的 continuous data，并训练 flow-style action expert 从 noise action 逐步变成合理 action chunk。
+
+那是 Flow Matching 在 robot action generation 中的一种特定 parameterization，详细应放在 π0 自己页面，而不是用 π0 来定义 Flow Matching。
 
 ## Sources
 
-- Lipman et al., **Flow Matching for Generative Modeling**, 2022. https://arxiv.org/abs/2210.02747
-- Liu, **Rectified Flow: A Marginal Preserving Approach to Optimal Transport**, 2022. https://arxiv.org/abs/2209.14577
+- Lipman et al. *Flow Matching for Generative Modeling*. 2022/ICLR 2023.

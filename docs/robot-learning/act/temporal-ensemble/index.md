@@ -113,6 +113,8 @@ o_t     → prediction for a_t
 
 ## 官方实现的数据结构
 
+官方 evaluation code 在启用 `temporal_agg` 时把 policy query frequency 设为 1，也就是每一个 control timestep 都生成一个新的 chunk。随后把第 $t$ 次 query 的输出写入 `all_time_actions[t, t:t+k]`，执行时再读取目标时刻这一列的所有已填充预测。
+
 官方 evaluation code 用一个大 tensor 保存所有历史 chunk 对所有未来时刻的预测：
 
 ```text

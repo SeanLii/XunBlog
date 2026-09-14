@@ -2,7 +2,14 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { buildKnowledgeModel } from '../docs/.vitepress/knowledge-model.mjs'
 import { canonicalRoute, pageHref, routeFromPath } from '../docs/.vitepress/routes.mjs'
+import { routeMigrations } from '../docs/.vitepress/route-migrations.mjs'
 const model = buildKnowledgeModel()
+for (const [oldRoute, target] of Object.entries(routeMigrations)) {
+  assert(!model.nodes[oldRoute], `Legacy route is still a canonical node: ${oldRoute}`)
+  assert.equal(model.nodes[target]?.kind, 'canonical', `Missing migration target: ${target}`)
+}
+assert.deepEqual(model.nodes['/deep-learning/attention/qkv/'].breadcrumbs, ['/deep-learning/', '/deep-learning/attention/', '/deep-learning/attention/qkv/'])
+assert.equal(model.nodes['/deep-learning/bert/cls-token/'].parent, '/deep-learning/bert/')
 let links = 0
 const targets = ['/', ...Object.keys(model.nodes)]
 for (const [route, node] of Object.entries(model.nodes)) {

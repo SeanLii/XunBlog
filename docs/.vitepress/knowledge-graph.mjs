@@ -1,4 +1,5 @@
-export const navigationGraph = {
+import { routeMigrations } from './route-migrations.mjs'
+const originalGraph = {
   '/robot-learning/act/': [
     '/robot-learning/behavior-cloning/',
     '/robot-learning/act/action-chunking/',
@@ -49,3 +50,5 @@ export const navigationGraph = {
     '/deep-learning/cnn/convolution/'
   ]
 }
+
+export const navigationGraph = Object.fromEntries(Object.entries(originalGraph).map(([source, targets]) => [routeMigrations[source] || source, targets.map(target => routeMigrations[target] || target)]))

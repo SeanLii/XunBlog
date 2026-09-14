@@ -5,8 +5,8 @@ domain: "Deep Learning / Transformer"
 parent: "Transformer"
 canonical: "/deep-learning/transformer/"
 prerequisites:
-  - "/deep-learning/transformer/attention/"
-  - "/deep-learning/transformer/positional-encoding/"
+  - "/deep-learning/attention/"
+  - "/deep-learning/sequence-modeling/positional-encoding/"
 related:
   - "/deep-learning/transformer/transformer-encoder/"
   - "/deep-learning/transformer/transformer-decoder/"
@@ -29,7 +29,7 @@ x1   x2   x3   x4   x5
 h1   h2   h3   h4   h5
 ```
 
-关键变化是：$h_3$ 不再只由 $x_3$ 决定。通过 [Attention](/deep-learning/transformer/attention/)，它可以读取其他位置中与自己有关的信息。因此每个输出都成为一个带有上下文的表示。
+关键变化是：$h_3$ 不再只由 $x_3$ 决定。通过 [Attention](/deep-learning/attention/)，它可以读取其他位置中与自己有关的信息。因此每个输出都成为一个带有上下文的表示。
 
 这就是理解 Transformer 的第一层：
 
@@ -46,18 +46,18 @@ h1   h2   h3   h4   h5
 Self-Attention
    │    每个位置读取其他位置
    ↓
-Feed-Forward Network
+Position-Wise Feed-Forward Network
    │    每个位置再独立做非线性变换
    ↓
 输出表示 H
 ```
 
-真实结构还会在这些子层周围加入 [Residual Connection](/deep-learning/core/residual-connection/) 与 [Layer Normalization](/deep-learning/core/layer-normalization/)。但如果一开始把所有组件同时塞进图里，很容易失去主线。
+真实结构还会在这些子层周围加入 [Residual Connection](/deep-learning/cnn/resnet/residual-connection/) 与 [Layer Normalization](/deep-learning/core/layer-normalization/)。但如果一开始把所有组件同时塞进图里，很容易失去主线。
 
 所以先把职责分开：
 
 - Attention 负责 **位置之间的信息交换**；
-- Feed-Forward Network 负责 **每个位置内部的表示变换**；
+- Position-Wise Feed-Forward Network 负责 **每个位置内部的表示变换**；
 - Residual / LayerNorm 帮助深层网络稳定训练。
 
 多个 layer 叠起来，就能反复进行“读别人 → 更新自己”。
@@ -80,13 +80,13 @@ Attention 的基础计算可以写成
 - Key：每个候选位置用什么特征表示“我适不适合被你读取”；
 - Value：如果决定读取这个位置，真正拿走什么信息。
 
-完整推导在 [Query / Key / Value](/deep-learning/transformer/attention/qkv/) 与 [Scaled Dot-Product Attention](/deep-learning/transformer/attention/scaled-dot-product-attention/) 中展开。
+完整推导在 [Query / Key / Value](/deep-learning/attention/qkv/) 与 [Scaled Dot-Product Attention](/deep-learning/transformer/scaled-dot-product-attention/) 中展开。
 
 ## 位置信息的必要性
 
 标准 self-attention 主要根据内容相似关系决定读取权重。如果只给一组 token vectors，却不提供它们的位置，网络本身不会自动知道“第一个”“前一个”“后一个”这些顺序信息。
 
-因此 Transformer 还需要 [Positional Encoding](/deep-learning/transformer/positional-encoding/) 或其他位置表示，把位置信息加入 token representation。
+因此 Transformer 还需要 [Positional Encoding](/deep-learning/sequence-modeling/positional-encoding/) 或其他位置表示，把位置信息加入 token representation。
 
 于是输入不再只是“词是什么”，而是同时带有“它在哪里”。
 
@@ -108,11 +108,11 @@ Transformer Encoder
 encoder memory
 ```
 
-内部核心是 [Self-Attention](/deep-learning/transformer/attention/self-attention/)：Query、Key、Value 都来自同一组输入表示。
+内部核心是 [Self-Attention](/deep-learning/attention/self-attention/)：Query、Key、Value 都来自同一组输入表示。
 
 ### Decoder
 
-Decoder 的任务是产生另一组输出表示。原始机器翻译模型中，它一方面读取已经生成的 target tokens，另一方面通过 [Cross-Attention](/deep-learning/transformer/attention/cross-attention/) 读取 encoder memory。
+Decoder 的任务是产生另一组输出表示。原始机器翻译模型中，它一方面读取已经生成的 target tokens，另一方面通过 [Cross-Attention](/deep-learning/attention/cross-attention/) 读取 encoder memory。
 
 ```text
 decoder state ─────┐
@@ -125,7 +125,7 @@ decoder state ─────┐
 
 这里最重要的是理解：
 
-> **Decoder 的本质不是“生成文字”，而是用一组 query states 去读取 memory，并更新这些 query。**
+> **在原始 encoder–decoder Transformer 中，Decoder 一边更新 target-side states，一边通过 cross-attention 读取 encoder memory。**
 
 因此后来的 DETR、ACT 也可以使用 Transformer decoder，却不需要把任务写成语言生成。
 
@@ -139,8 +139,10 @@ decoder state ─────┐
 
 所以学习 Transformer 时应把两层知识分开：
 
-1. **通用机制**：Attention、QKV、Multi-Head、FFN、position information；
-2. **具体架构**：某个模型怎样把这些机制组合起来。
+1. **通用机制**：Attention、QKV、MLP / nonlinear transformation、position information；
+2. **Transformer-specific 设计**：Scaled Dot-Product Attention、Multi-Head Attention、Position-Wise FFN，以及 Encoder / Decoder stack。
+
+Attention、positional representation、residual connection 与 LayerNorm 等基础机制并非 Transformer 首创；Transformer 论文的具体设计重点包括 Scaled Dot-Product Attention、Multi-Head Attention、Position-Wise Feed-Forward Network，以及完整的 Encoder / Decoder stack。
 
 ## 一个具体 shape 例子
 
@@ -162,7 +164,9 @@ H\in\mathbb R^{5\times512}.
 
 ## 与 ACT 的连接
 
-ACT 中的视觉 features、proprioception 等会形成一组 representations，进入 Transformer encoder 形成 memory；随后一组 [Learnable Query Embedding](/deep-learning/transformer/learnable-query-embedding/) 作为 action queries，通过 decoder 从 memory 中读取信息，分别对应 future action chunk 中的多个输出位置。
+ACT 中的视觉 features、proprioception 等会形成一组 representations，进入 Transformer encoder 形成 memory；随后一组 action query slots 通过 decoder 从 memory 中读取信息，分别对应 future action chunk 中的多个输出位置。
+
+这种 learned output-query 设计并不是原始 Transformer 的标准组件。ACT 的实现直接继承了 DETR-style query slots；其来源见 [DETR](/deep-learning/detr/) 与 [Object Query](/deep-learning/detr/object-query/)。
 
 因此在 ACT 中：
 

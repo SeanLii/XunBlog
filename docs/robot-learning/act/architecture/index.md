@@ -56,7 +56,7 @@ latent z ───── projection ┘
 
 ## 视觉输入
 
-对于每个 camera image，官方实现使用 ResNet backbone 提取 feature map。随后用 $1\times1$ convolution 投影到 Transformer hidden dimension。
+对于每个 camera image，官方实现使用 [ResNet](/deep-learning/cnn/resnet/) backbone 提取 feature map。随后用 $1\times1$ convolution 投影到 Transformer hidden dimension。
 
 多相机 feature maps 在官方代码中沿 spatial width 方向拼接，再和对应 positional features 一起送入 Transformer。
 
@@ -78,7 +78,7 @@ Latent $z$ 也先通过 linear layer 映射到相同 hidden dimension。官方�
 
 ## Action queries
 
-ACT 从 DETR 借用了 learnable query 的思路。模型维护 $k$ 个 learnable embeddings：
+ACT 从 [DETR](/deep-learning/detr/) 借用了 [Object Query](/deep-learning/detr/object-query/) 的 learnable output-slot 思路。模型维护 $k$ 个 learnable embeddings：
 
 \[
 Q_{action}\in\mathbb R^{k\times d}.
@@ -104,7 +104,7 @@ H_{dec}\in\mathbb R^{B\times k\times d}
 
 训练时，模型已知真实 action chunk。ACT 使用另一套 Transformer encoder 来从
 
-- 一个 learnable CLS token；
+- 一个 learnable [CLS Token](/deep-learning/bert/cls-token/)；
 - current qpos；
 - ground-truth action sequence
 
@@ -141,7 +141,7 @@ H_{dec}\in\mathbb R^{B\times k\times d}
 
 ## Architecture 与算法思想的边界
 
-ResNet、Transformer、CLS token、learnable queries 都是已有机制。ACT 的模型设计价值在于它如何把这些组件放到 action-chunk imitation learning 中：
+[ResNet](/deep-learning/cnn/resnet/)、[Transformer](/deep-learning/transformer/)、[CLS Token](/deep-learning/bert/cls-token/) 与 [Object Query](/deep-learning/detr/object-query/) 都来自 ACT 之前的模型或机制。ACT 的模型设计价值在于它如何把这些组件放到 action-chunk imitation learning 中：
 
 ```text
 human demonstration variation

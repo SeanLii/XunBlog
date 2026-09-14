@@ -7,94 +7,121 @@ canonical: "/mathematics/probability/conditional-probability/"
 prerequisites:
   - "/mathematics/probability/probability-distribution/"
 related:
-  - "/generative-models/conditional-variational-autoencoder/"
+  - "/mathematics/probability/bayes-theorem/"
 ---
 
 # Conditional Probability
 
-Conditional Probability 描述：**在已经知道某个条件成立以后，另一个事件的概率如何重新计算。**
+Conditional Probability 描述：**在已经知道某件事发生的前提下，另一件事的概率应该怎样更新。**
 
-对事件 $A,B$，且 $P(B)>0$：
+对 events $A,B$，若 $P(B)>0$：
 
 \[
 P(A\mid B)
-=
-\frac{P(A\cap B)}{P(B)}.
+=\frac{P(A\cap B)}{P(B)}.
 \]
 
-它相当于把原来的样本空间缩小到 $B$ 中，再看其中有多少同时属于 $A$。
+这里的 $B$ 不是“额外乘一个条件”，而是在告诉我们：原来的 sample space 已经缩小到 $B$ 发生的部分，需要在这个新范围内重新归一化概率。
 
-## 一个简单例子
+## 从 sample space 缩小来理解
 
-假设 100 人中：
+假设一副标准扑克牌中随机抽一张。
 
-- 40 人学过线性代数；
-- 20 人同时学过线性代数和概率论。
+令：
 
-在“已知这个人学过线性代数”的条件下，他也学过概率论的概率为
+- $A$：抽到 Ace；
+- $B$：抽到 Spade。
+
+原本：
 
 \[
-P(Probability\mid LinearAlgebra)
-=\frac{20}{40}=0.5.
+P(A)=\frac4{52}.
 \]
 
-分母不再是全部 100 人，而是条件限定后的 40 人。
-
-## 乘法规则
-
-由定义立即得到：
+但如果已经知道这张牌是 Spade，那么可能结果只剩 13 张 Spades，其中只有一张 Ace：
 
 \[
-P(A\cap B)
-=P(A\mid B)P(B).
+P(A\mid B)=\frac1{13}.
 \]
 
-随机变量分布也可以写成：
+条件信息改变了我们计算概率的参考范围。
+
+## Product Rule
+
+由定义直接得到：
 
 \[
-p(x,y)=p(x\mid y)p(y).
+P(A\cap B)=P(A\mid B)P(B).
 \]
 
-这就是很多 probabilistic model factorization 的基础。
-
-## Bayes Rule
-
-同一个 joint probability 也可以写成
+也可以反过来：
 
 \[
-p(x,y)=p(y\mid x)p(x).
+P(A\cap B)=P(B\mid A)P(A).
 \]
 
-于是
+因此：
 
 \[
-p(x\mid y)
-=
-\frac{p(y\mid x)p(x)}{p(y)}.
+P(A\mid B)P(B)
+=P(B\mid A)P(A).
 \]
 
-Bayes rule 把“从 $x$ 生成 $y$”的概率关系转成“看到 $y$ 后 $x$ 可能是什么”。
+这正是 [Bayes’ Theorem](/mathematics/probability/bayes-theorem/) 的起点。
 
-## VAE 中的条件关系
+## Random Variables 的 conditional distribution
 
-VAE 生成模型写成
+对于 discrete random variables：
 
 \[
-p(z)p_\theta(x\mid z).
+p(y\mid x)
+=\frac{p(x,y)}{p(x)}.
 \]
 
-看到 $x$ 后关心 posterior：
+对于 continuous variables，形式仍然类似，只是用 density：
 
 \[
-p_\theta(z\mid x).
+p(y\mid x)
+=\frac{p(x,y)}{p(x)}.
 \]
 
-CVAE 则进一步建模：
+这里的 $p(x)$ 是对 $y$ marginalize 后得到：
 
 \[
-p_\theta(y\mid x,z),
+p(x)=\int p(x,y)\,dy.
 \]
 
-其中 $x$ 是已知 condition，$z$ 是 latent variable。
+## Independence
 
-所以条件概率不是“给公式加一条竖线”，而是在明确：**当前哪些信息已经被视为已知。**
+如果 $A$ 与 $B$ independent：
+
+\[
+P(A\mid B)=P(A).
+\]
+
+等价地：
+
+\[
+P(A\cap B)=P(A)P(B).
+\]
+
+意思是知道 $B$ 没有改变我们对 $A$ 的概率判断。
+
+对于 random variables，也可以通过 joint distribution 是否 factorize 来定义 independence。
+
+## Conditional Probability 在建模中的意义
+
+大量机器学习任务本质上都在学习 conditional distribution：
+
+\[
+p(y\mid x).
+\]
+
+例如：
+
+- 给定图像 $x$，类别 $y$ 的概率；
+- 给定文本上下文 $x$，下一个 token $y$ 的概率；
+- 给定 observation $x$，机器人 action $a$ 的分布；
+- 给定输入 $x$，生成模型输出 $y$ 的分布。
+
+因此 conditional probability 是概率建模本身的基本语言，而不是 VAE 或某个模型专属的背景公式。

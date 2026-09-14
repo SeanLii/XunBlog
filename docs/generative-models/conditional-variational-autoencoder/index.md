@@ -6,164 +6,184 @@ parent: "Generative Models"
 canonical: "/generative-models/conditional-variational-autoencoder/"
 prerequisites:
   - "/generative-models/variational-autoencoder/"
-  - "/mathematics/probability/conditional-probability/"
 related:
   - "/robot-learning/act/cvae-in-act/"
 ---
 
 # Conditional Variational Autoencoder
 
-Conditional Variational Autoencoder（CVAE）可以先理解成：**在已知条件 $x$ 的情况下，对可能输出 $y$ 的分布进行 latent-variable modeling。**
+Conditional Variational Autoencoder（CVAE）把 VAE 从“建模 $x$ 的分布”扩展到“在给定 condition $c$ 时，建模 output $y$ 的多种可能结果”。
 
-普通确定性模型通常学习
-
-\[
-y=f(x).
-\]
-
-它隐含地把一个输入对应成一个主要答案。但很多任务天然存在“一对多”：同一个 $x$ 可能对应多个都合理的 $y$。
-
-CVAE 希望学习的不是单一映射，而是
+目标是：
 
 \[
-p_\theta(y\mid x).
+p(y\mid c).
 \]
 
-它通过额外的 latent variable $z$ 表示那些没有被条件 $x$ 完全决定的变化：
+如果同一个 condition 可能对应多个合理 outputs，只做 deterministic regression：
+
+\[
+y=f(c)
+\]
+
+往往会压成单一答案。
+
+CVAE 引入 latent variable $z$：
+
+\[
+p(y,z\mid c)
+=p(z\mid c)p(y\mid c,z).
+\]
+
+让 latent 表示 condition 没有完全决定的随机变化。
+
+## 一个 Mental Model
 
 ```text
-condition x ───────────────┐
-                           ↓
-latent z ─────────→ decoder pθ(y|x,z)
-                           │
-                           ↓
-                           y
+Condition c
+    │
+    ├───────────────┐
+    │               │
+    ↓               │
+latent z            │
+    │               │
+    └──────┬────────┘
+           ↓
+     Decoder
+           ↓
+        output y
 ```
 
-## Latent z 表示条件未决定的变化
+同一个 $c$，改变 sampled $z$，可以产生不同 plausible $y$。
 
-假设 $x$ 只提供了部分信息。对于同一个 $x$，数据中可能出现 $y_1,y_2,y_3$ 三种不同但都合理的输出。
+## Training-Time Recognition Path
 
-如果模型只有
-
-\[
-y=f(x),
-\]
-
-它必须把这些差异全部压进同一个确定性答案里。
-
-加入 $z$ 后，模型可以写成
+训练数据提供 pairs：
 
 \[
-y\sim p_\theta(y\mid x,z),
-\qquad z\sim p_\theta(z\mid x).
+(c,y).
 \]
 
-于是 $x$ 表示已经知道的条件，$z$ 表示在这个条件下仍然需要补充的潜在变化。
-
-## Training：看到 x 和 y以后推断 z
-
-训练时我们同时知道条件 $x$ 和真实输出 $y$。因此可以训练 recognition / inference model：
+为了知道这个具体 output $y$ 对应什么 latent variation，recognition model 可以使用：
 
 \[
-q_\phi(z\mid x,y).
+q_\phi(z\mid c,y).
 \]
 
-它回答的是：
+也就是：已经知道 condition 和真实 output 后，推断这次 example 的 latent distribution。
 
-> 已经看到这组 $(x,y)$ 以后，什么样的 latent $z$ 可以解释这个输出为什么是这样？
-
-数据流为：
-
-```text
-x ─────────────┐
-               ├→ qφ(z|x,y) → z ──┐
-y ─────────────┘                   │
-                                   ↓
-x ───────────────────────→ pθ(y|x,z)
-                                   │
-                                   ↓
-                                  y_hat
-```
-
-然后模型要求 $\hat y$ 能解释真实 $y$。
-
-## Generation：没有真实 y 时从 prior 得到 z
-
-真正生成时，真实 $y$ 当然还不存在，因此不能再使用 $q_\phi(z\mid x,y)$。模型需要从 conditional prior
+然后 sample：
 
 \[
-p_\theta(z\mid x)
+z\sim q_\phi(z\mid c,y),
 \]
 
-得到 $z$，再通过
+decoder 学：
 
 \[
-p_\theta(y\mid x,z)
+p_\theta(y\mid c,z).
 \]
 
-生成输出。
+## Generation 时没有真实 y
 
-因此 CVAE 的核心不是“encoder 和 decoder”这两个神经网络名词，而是三种概率关系：
+真正生成时，目标 $y$ 还不存在，所以不能使用：
 
 \[
-q_\phi(z\mid x,y),\qquad
-p_\theta(z\mid x),\qquad
-p_\theta(y\mid x,z).
+q(z\mid c,y).
 \]
+
+必须从 conditional prior：
+
+\[
+p_\theta(z\mid c)
+\]
+
+采样，或者某些模型使用固定 prior：
+
+\[
+p(z)=\mathcal N(0,I).
+\]
+
+然后：
+
+\[
+y\sim p_\theta(y\mid c,z).
+\]
+
+这就是 CVAE training 与 generation 最重要的结构差异。
 
 ## Conditional ELBO
 
-对 conditional likelihood $\log p_\theta(y\mid x)$，CVAE 使用 variational lower bound：
+目标 log-likelihood：
 
 \[
-\log p_\theta(y\mid x)
+\log p_\theta(y\mid c).
+\]
+
+其 ELBO：
+
+\[
+\log p_\theta(y\mid c)
 \ge
-\mathbb E_{q_\phi(z\mid x,y)}
-[\log p_\theta(y\mid x,z)]
+\mathbb E_{q_\phi(z\mid c,y)}
+[
+\log p_\theta(y\mid c,z)
+]
 -
-D_{KL}\left(
-q_\phi(z\mid x,y)
-\|p_\theta(z\mid x)
+D_{KL}
+\left(
+q_\phi(z\mid c,y)
+\|p_\theta(z\mid c)
 \right).
 \]
 
-第一项要求 sampled latent 与 condition 一起能生成正确输出；第二项让 training-time posterior approximation 靠近 generation-time prior。
+第一项要求 latent + condition 能解释 target；第二项让 training-time recognition posterior 与 generation-time prior 对齐。
 
-这样做的原因非常直接：训练时 encoder 看得到 $y$，推理时看不到。如果两边的 latent distribution 完全不相干，那么训练好的 decoder 到真正生成时就会接收到完全陌生的 $z$。
+## Conditional Prior
 
-## 原始 CVAE 与 ACT 中 CVAE 的区别
-
-通用 CVAE 并不要求 prior 一定是 $\mathcal N(0,I)$，也不要求推理一定取 $z=0$。原始 CVAE formulation 可以学习 conditional prior
+通用 CVAE 并不要求：
 
 \[
-p_\theta(z\mid x).
+p(z)=\mathcal N(0,I).
 \]
 
-ACT 做了更具体的设计：它把 prior 固定为 standard normal，并在部署时取其均值 $z=0$。
+完全可以学习：
 
-因此：
+\[
+p_\theta(z\mid c).
+\]
 
-- “CVAE 可以有 conditional prior”属于这个页面；
-- “ACT 为什么固定 standard normal，以及为什么 inference 用 $z=0$”属于 [CVAE in ACT](/robot-learning/act/cvae-in-act/) 与 [为什么 ACT 推理时令 z = 0？](/robot-learning/act/why-z-zero-at-inference/)。
+这意味着不同 condition 可以拥有不同 latent distributions。
 
-## 一个最小 mental model
+所以把某个具体模型使用 standard normal prior 的做法写成“CVAE 定义”是不准确的。
 
-把 CVAE 压缩成一张图：
+## Multimodality
 
-```text
-TRAIN
-x + y ──→ infer z ──→ x + z ──→ reconstruct y
-             │
-             └── kept close to prior p(z|x)
+设一个 condition $c$ 对应两种明显不同 outputs：
 
-GENERATE
-x ──→ prior z ──→ x + z ──→ generate y
-```
+\[
+y_A,
+\qquad y_B.
+\]
 
-只要这张图清楚，后面的 ELBO、reparameterization、Gaussian latent 才有落脚点。
+普通 MSE regression 可能产生：
+
+\[
+\hat y\approx\frac{y_A+y_B}{2},
+\]
+
+而这个平均结果本身可能并不合理。
+
+CVAE 可以让不同 $z$ regions 对应不同 output modes，从而保留 one-to-many structure。
+
+但是否真的学出清楚 modes，仍取决于 latent usage、decoder capacity 和 training dynamics。
+
+## ACT 是一种特殊使用方式
+
+ACT 用 CVAE-style latent 处理 demonstration style variation，但它的 condition、recognition input、prior choice 与 inference convention 都是 ACT-specific design choices。
+
+因此完整机制应在 [CVAE in ACT](/robot-learning/act/cvae-in-act/) 解释；这些选择不能反过来定义一般 CVAE。
 
 ## Sources
 
-- Sohn, Lee & Yan, **Learning Structured Output Representation using Deep Conditional Generative Models**, NeurIPS 2015. https://papers.nips.cc/paper/5775-learning-structured-output-representation-using-deep-conditional-generative-models
-- Kingma & Welling, **Auto-Encoding Variational Bayes**. https://arxiv.org/abs/1312.6114
+- Sohn, Lee, Yan. *Learning Structured Output Representation using Deep Conditional Generative Models*. NeurIPS, 2015.

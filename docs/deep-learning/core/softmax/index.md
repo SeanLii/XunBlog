@@ -7,84 +7,153 @@ canonical: "/deep-learning/core/softmax/"
 prerequisites:
   - "/mathematics/linear-algebra/vector/"
 related:
-  - "/deep-learning/transformer/attention/scaled-dot-product-attention/"
+  - "/mathematics/information-theory/cross-entropy/"
+  - "/deep-learning/transformer/scaled-dot-product-attention/"
 ---
 
 # Softmax
 
-Softmax 把一组任意实数 scores 转换成一组非负、总和为 1 的数：
+Softmax 把一组 arbitrary real-valued scores 转成一组正数，并且总和为 1：
 
 \[
-\operatorname{softmax}(z_i)
-=
-\frac{e^{z_i}}{\sum_j e^{z_j}}.
+p_i=
+\frac{e^{z_i}}
+{\sum_{j=1}^{K}e^{z_j}}.
 \]
 
-因此输出可以被当作 categorical probabilities，也可以被当作一组 normalized weights。
-
-## 一个数值例子
-
-设 scores 为
+输入 $z\in\mathbb R^K$ 常被叫 logits，输出 $p$ 位于 probability simplex：
 
 \[
-[1,2,3].
-\]
-
-指数后约为
-
-\[
-[e^1,e^2,e^3]
-\approx[2.72,7.39,20.09].
-\]
-
-除以总和约 30.20：
-
-\[
-[0.09,0.24,0.67].
-\]
-
-最大的 score 得到最大权重，但其他位置仍保留非零值。
-
-## Softmax 看的是相对差异
-
-如果所有 logits 同时加同一个常数 $c$：
-
-\[
-\operatorname{softmax}(z+c)=\operatorname{softmax}(z).
-\]
-
-因为分子分母都会多出同一个因子 $e^c$。
-
-所以 Softmax 关心的是 logits 之间的差，而不是它们的绝对基准。
-
-## 数值稳定形式
-
-直接计算很大的 $e^{z_i}$ 可能 overflow。实现通常先减去最大值：
-
-\[
-\operatorname{softmax}(z_i)
-=
-\frac{e^{z_i-m}}{\sum_j e^{z_j-m}},
+p_i>0,
 \qquad
-m=\max_j z_j.
+\sum_i p_i=1.
 \]
 
-由于所有 logits 同时减去 $m$，结果不变，但数值更稳定。
+因此输出可以解释成 categorical probabilities，也可以解释成 normalized positive weights。
 
-## 在 Attention 中的作用
+## 一次完整计算
 
-Attention 先计算 query-key scores：
+设：
 
 \[
-s_{ij}=\frac{q_i^\top k_j}{\sqrt{d_k}}.
+z=[1,2,3].
 \]
 
-然后对固定 query 的所有 keys 做 softmax：
+指数：
 
 \[
-\alpha_{ij}=\operatorname{softmax}_j(s_{ij}).
+e^z\approx[2.72,7.39,20.09].
 \]
 
-于是 $\alpha_{ij}$ 成为一组总和为 1 的读取权重，再用它们加权 Values。
+归一化：
 
-所以 Softmax 在 Attention 中不是“分类器”，而是把任意匹配 scores 归一化为可用于 weighted sum 的权重。
+\[
+\operatorname{softmax}(z)
+\approx[0.09,0.24,0.67].
+\]
+
+最大的 logit 得到最大 probability，但其他位置仍然保留非零 mass。
+
+## Softmax 关心相对差异
+
+如果所有 logits 同时加常数 $c$：
+
+\[
+\operatorname{softmax}(z+c\mathbf 1)
+=
+\operatorname{softmax}(z).
+\]
+
+因为：
+
+\[
+\frac{e^{z_i+c}}
+{\sum_j e^{z_j+c}}
+=
+\frac{e^c e^{z_i}}
+{e^c\sum_j e^{z_j}}.
+\]
+
+公共 factor 被约掉。
+
+因此 Softmax 没有绝对零点，它只关心 logits 之间的相对差。
+
+## Temperature
+
+可以加入 temperature $T>0$：
+
+\[
+p_i=
+\frac{e^{z_i/T}}
+{\sum_j e^{z_j/T}}.
+\]
+
+当 $T<1$，differences 被放大，distribution 更尖锐；当 $T>1$，differences 被压小，distribution 更平坦。
+
+极限上：
+
+- $T\to0$：趋向 one-hot argmax；
+- $T\to\infty$：趋向 uniform distribution。
+
+这使 Softmax 不只是一个固定归一化公式，还能控制 probability mass 的集中程度。
+
+## Numerical Stability
+
+直接计算 $e^{z_i}$ 可能 overflow。
+
+利用 translation invariance，可以先减最大 logit：
+
+\[
+m=\max_j z_j,
+\]
+
+\[
+p_i=
+\frac{e^{z_i-m}}
+{\sum_j e^{z_j-m}}.
+\]
+
+最大 exponent 变成 $e^0=1$，其余不大于 1，结果完全不变但数值稳定得多。
+
+## Gradient Structure
+
+Softmax 的 Jacobian：
+
+\[
+\frac{\partial p_i}{\partial z_j}
+=p_i(\delta_{ij}-p_j).
+\]
+
+因此某一个 logit 的变化不仅改变自己的 probability，也会通过 normalization 改变所有其他 positions。
+
+这就是 Softmax 与逐元素 sigmoid 的根本差别：Softmax outputs 之间是耦合的，因为它们共享同一个 denominator。
+
+## 与 Cross-Entropy
+
+分类模型常将 logits 经过 Softmax 得到：
+
+\[
+p(y=k\mid x).
+\]
+
+再用 [Cross-Entropy](/mathematics/information-theory/cross-entropy/) 比较 predicted distribution 与 target distribution。
+
+实际库通常把 `softmax + log + NLL` 合并成稳定的 cross-entropy implementation，不需要手动先算 Softmax。
+
+## 在 Attention 中
+
+[Scaled Dot-Product Attention](/deep-learning/transformer/scaled-dot-product-attention/) 先得到一组 query-key scores：
+
+\[
+s_j=\frac{q^\top k_j}{\sqrt{d_k}},
+\]
+
+再：
+
+\[
+\alpha_j=\operatorname{softmax}(s)_j.
+\]
+
+这里 Softmax 不代表“分类”，只是把多个 matching scores 转成总和为 1 的 reading weights。
+
+因此 Softmax 的核心身份是：**把 relative logits 映射到 probability simplex**。分类和 attention 都是这个机制的应用。
