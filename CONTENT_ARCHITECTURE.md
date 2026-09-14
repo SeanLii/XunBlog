@@ -7,7 +7,7 @@
 - 内容由 `docs/` 下的 Markdown 文件维护，VitePress 配置位于 `docs/.vitepress/config.ts`。
 - 导航和侧边栏目前手工配置；在内容规模较小的阶段继续沿用，避免引入生成器。
 - 站点启用 `cleanUrls`，部署时由 `BASE_PATH` 注入 GitHub Pages 的 `/XunBlog/` 前缀。
-- Markdown 内部链接统一写站内绝对路径，例如 `/robot-learning/act/`；不写 `/XunBlog/`，也不写 `.html`。
+- Markdown 正文内部链接使用指向真实源码的相对 `.md` 路径，由 VitePress 在构建时结合 `base` 转换；配置文件中的 nav/sidebar 继续使用站内绝对路径，且不手写 `/XunBlog/` 前缀。
 - `NoteMeta` 已可优先读取显式 props，并在未传 props 时读取当前页面 frontmatter。
 - 现有未标为 `reviewed` 或 `stable` 的页面均视为工作笔记，不作为后续文章的事实来源。
 
@@ -18,8 +18,8 @@
 | `pageType` | 回答的问题 | 示例 |
 | --- | --- | --- |
 | `concept` | 这个知识本身是什么？ | `/deep-learning/transformer` |
-| `paper` | 一篇论文提出了什么问题与方法？ | `/robot-learning/act/why-action-chunking` |
-| `application` | 某概念在特定模型中如何使用？ | `/robot-learning/act/transformer` |
+| `paper` | 一篇论文提出了什么问题与方法？ | `/robot-learning/act/act-what-problem-does-it-solve` |
+| `application` | 某概念在特定模型中如何使用？ | `/robot-learning/act/architecture` |
 | `topic-index` | 一个专题应按什么顺序阅读？ | `/robot-learning/act/` |
 | `domain-index` | 一个知识域包含哪些主题？ | `/robot-learning/` |
 
@@ -59,7 +59,7 @@ title: ACT：它到底解决什么问题？
 description: ...
 status: reviewed
 pageType: paper
-canonical: /robot-learning/act/why-action-chunking
+canonical: /robot-learning/act/act-what-problem-does-it-solve
 updated: "2026-09-14"
 prerequisites:
   - /robot-learning/imitation-learning
@@ -125,8 +125,10 @@ ACT overview 的最小 prerequisite 只有模仿学习与 Behavior Cloning 的�
 
 ## 8. 当前 ACT 内容边界
 
-- `/robot-learning/act/`：专题阅读地图和裁剪后的依赖图。
-- `/robot-learning/act/why-action-chunking`：第一篇正式 paper page，解释 ACT 解决的问题与设计逻辑。
-- `/robot-learning/act/transformer`、`cvae`、`temporal-ensemble`：现阶段仍是 `seed/learning` application pages，不能反向作为正式页面的证据来源。
-- `/deep-learning/transformer`：Transformer 的 canonical page；正式重写前仍视为工作笔记。
-- `/robot-learning/imitation-learning`：Imitation Learning 的 canonical page；目前包含 Behavior Cloning 的最小定义，后续是否拆页由内容边界而非目录对称性决定。
+- `docs/deep-learning/`：神经网络基础、Attention 与 Transformer 的通用 canonical pages。
+- `docs/generative-models/`：Latent Variable、VAE、CVAE、Reparameterization Trick 与 Posterior Collapse 的通用 canonical pages。
+- `/robot-learning/imitation-learning/behavior-cloning-distribution-shift`：Behavior Cloning、distribution shift 与 compounding error 的 canonical page。
+- `/robot-learning/act/`：ACT 专题的导航入口；11 篇正文只解释 ACT 的问题、架构和具体实现。
+- `/robot-learning/act/act-what-problem-does-it-solve`：ACT 问题定义与设计动机的 paper page。
+- `/robot-learning/act/architecture`：ACT 架构 hub；Transformer 通用理论仍归属 `/deep-learning/transformer`。
+- `/robot-learning/act/cvae-in-act`：ACT 对 CVAE 的具体实例化；CVAE 通用理论仍归属 `/generative-models/cvae`。

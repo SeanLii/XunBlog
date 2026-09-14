@@ -80,7 +80,7 @@ const path = [
         <div><span>03</span><p>Start Here</p></div>
         <h2>从一个真实问题开始。</h2>
       </header>
-      <a class="featured-note" :href="withBase('/robot-learning/act/why-action-chunking')">
+      <a class="featured-note" :href="withBase('/robot-learning/act/act-what-problem-does-it-solve')">
         <div>
           <span class="note-label">FEATURED NOTE · ACT 01</span>
           <h3>为什么机器人需要 Action Chunking？</h3>

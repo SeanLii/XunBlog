@@ -15,6 +15,7 @@ VitePress turns the Markdown files in `docs/` into a static website. The npm scr
 
 ```bash
 npm run docs:dev      # start the local writing server
+npm run docs:audit    # verify local Markdown links and anchors
 npm run docs:build    # build the production site
 npm run docs:preview  # preview the production build
 ```
@@ -25,6 +26,7 @@ npm run docs:preview  # preview the production build
 docs/
 ├── mathematics/       # mathematical foundations
 ├── deep-learning/     # neural networks and architectures
+├── generative-models/ # latent variables, VAE and CVAE
 ├── llm/               # language-model notes
 ├── robot-learning/    # imitation learning, ACT, VLA
 ├── embodied-ai/       # embodied intelligence
@@ -39,4 +41,3 @@ The GitHub repository is the source of truth. Notes, code and experiments should
 `.github/workflows/deploy.yml` builds and deploys the site with GitHub Pages on every push to `main`. In the repository settings, choose **GitHub Actions** as the Pages source.
 
 The workflow automatically uses `/<repository-name>/` for a project Pages site. A custom domain can use `/` by setting the `BASE_PATH` environment variable to `/` in the workflow.
-

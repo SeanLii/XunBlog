@@ -17,9 +17,6 @@ flowchart TD
   B --> C[ACT]
   D[Transformer] --> C
   E[CVAE] --> C
-  C --> F[LeRobot]
-  C --> G[VLA]
-  H[Reinforcement Learning] --> G
 ```
 
 ## 当前专题
@@ -31,7 +28,4 @@ flowchart TD
 ## 下一步
 
 - [Imitation Learning](/robot-learning/imitation-learning)
-- LeRobot
-- Vision-Language-Action Models
-- Reinforcement Learning
-
+- [Behavior Cloning & Distribution Shift](/robot-learning/imitation-learning/behavior-cloning-distribution-shift)

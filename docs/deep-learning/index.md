@@ -1,15 +1,35 @@
 ---
 title: Deep Learning
-description: 从神经网络到 Transformer 的模型基础。
+description: 神经网络基础、Attention 与 Transformer 的 canonical 知识入口。
 ---
 
 # Deep Learning
 
-<NoteMeta status="Learning" difficulty="Mixed" updated="2026-09" />
+## Neural Network Foundations
 
-这一部分关注模型如何表示信息、在序列中建立依赖，以及训练目标如何改变模型行为。
+- [Linear Layer](./linear-layer.md)
+- [ReLU](./relu.md)
+- [MLP](./mlp.md)
+- [Backpropagation](./backpropagation.md)
 
-## 当前路径
+## Attention
 
-Neural Network → RNN / LSTM / GRU → Attention → [Transformer](/deep-learning/transformer)
+- [Dot Product](./dot-product.md)
+- [Softmax](./softmax.md)
+- [Attention](./attention.md)
+- [Query / Key / Value](./qkv.md)
+- [Self-Attention](./self-attention.md)
+- [Cross-Attention](./cross-attention.md)
+- [Multi-Head Attention](./multi-head-attention.md)
 
+## Transformer
+
+- [Transformer](./transformer.md)
+- [Positional Encoding](./positional-encoding.md)
+- [Causal Mask](./causal-mask.md)
+- [Transformer Encoder](./transformer-encoder.md)
+- [Transformer Decoder](./transformer-decoder.md)
+- [Feed-Forward Network](./feed-forward-network.md)
+- [Residual Connection](./residual-connection.md)
+- [Layer Normalization](./layer-normalization.md)
+- [Dropout](./dropout.md)

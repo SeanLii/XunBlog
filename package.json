@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "docs:dev": "vitepress dev docs",
+    "docs:audit": "node scripts/audit-doc-links.mjs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"
   },
