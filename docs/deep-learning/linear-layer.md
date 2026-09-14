@@ -36,9 +36,9 @@ nn.Linear(3200, 512)
 
 Multi-Head Attention 背后还有：
 
-\[
+$$
 W_Q,\quad W_K,\quad W_V,\quad W_O
-\]
+$$
 
 本质上也都是 learned linear / affine projections。
 
@@ -50,11 +50,11 @@ W_Q,\quad W_K,\quad W_V,\quad W_O
 
 当我们写：
 
-\[
+$$
 y=Wx+b
-\]
+$$
 
-时，\(W\) 到底是什么意思？
+时，$W$ 到底是什么意思？
 
 一个：
 
@@ -67,8 +67,8 @@ nn.Linear(512, 64)
 - Query；
 - Key；
 - Value；
-- \(\mu\)；
-- \(\log\sigma^2\)；
+- $\mu$；
+- $\log\sigma^2$；
 - latent embedding；
 - action prediction；
 
@@ -76,7 +76,7 @@ nn.Linear(512, 64)
 
 是不是 `Linear` 内部知道：
 
-> “现在我要算 \(\mu\)”？
+> “现在我要算 $\mu$”？
 
 当然不是。
 
@@ -84,159 +84,159 @@ nn.Linear(512, 64)
 
 ---
 
-# 1. 先从一个最简单的 Neuron 开始
+## 1. 先从一个最简单的 Neuron 开始
 
 假设输入只有三个 features：
 
-\[
+$$
 x=
 [x_1,x_2,x_3]
-\]
+$$
 
 我们想输出一个 scalar：
 
-\[
+$$
 y
-\]
+$$
 
 最基本的神经元计算：
 
-\[
+$$
 \boxed{
 y=
 w_1x_1+w_2x_2+w_3x_3+b
 }
-\]
+$$
 
 也可以写：
 
-\[
+$$
 \boxed{
 y=w^\top x+b
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 w=
 [w_1,w_2,w_3]
-\]
+$$
 
 ---
 
-# 2. Weight 的最直接意义
+## 2. Weight 的最直接意义
 
 每个：
 
-\[
+$$
 w_i
-\]
+$$
 
 控制输入 feature：
 
-\[
+$$
 x_i
-\]
+$$
 
 对输出：
 
-\[
+$$
 y
-\]
+$$
 
 产生多大影响。
 
 例如：
 
-\[
+$$
 y=
 2x_1-3x_2+0.5x_3+1
-\]
+$$
 
 那么：
 
-- \(x_1\) 增加 1，其他不变：
-  \[
+- $x_1$ 增加 1，其他不变：
+  $$
   y
-  \]
+  $$
   增加 2；
-- \(x_2\) 增加 1：
-  \[
+- $x_2$ 增加 1：
+  $$
   y
-  \]
+  $$
   减少 3；
-- \(x_3\) 增加 1：
-  \[
+- $x_3$ 增加 1：
+  $$
   y
-  \]
+  $$
   增加 0.5。
 
 所以：
 
-\[
+$$
 \boxed{
 w_i
 =
 \text{output 对 feature }x_i\text{ 的线性敏感度}
 }
-\]
+$$
 
 ---
 
-# 3. Bias 又是什么？
+## 3. Bias 又是什么？
 
-\[
+$$
 b
-\]
+$$
 
 是一个与输入无关的 learned offset。
 
 如果：
 
-\[
+$$
 x=0
-\]
+$$
 
 那么：
 
-\[
+$$
 y=b
-\]
+$$
 
 所以 bias 让模型不必满足：
 
-\[
+$$
 x=0
 \Rightarrow
 y=0
-\]
+$$
 
 这一限制。
 
 ---
 
-# 4. 一个数值例子
+## 4. 一个数值例子
 
 设：
 
-\[
+$$
 x=
 [2,-1,3]
-\]
+$$
 
-\[
+$$
 w=
 [0.5,2,-1]
-\]
+$$
 
-\[
+$$
 b=4
-\]
+$$
 
 则：
 
-\[
+$$
 y
 =
 0.5(2)
@@ -246,18 +246,18 @@ y
 1(3)
 +
 4
-\]
+$$
 
-\[
+$$
 =
 1-2-3+4
-\]
+$$
 
-\[
+$$
 \boxed{
 y=0
 }
-\]
+$$
 
 Linear Layer 的最底层并没有更神秘。
 
@@ -267,65 +267,65 @@ Linear Layer 的最底层并没有更神秘。
 
 ---
 
-# 5. 如果我们想输出不止一个数呢？
+## 5. 如果我们想输出不止一个数呢？
 
 假设 input：
 
-\[
+$$
 x\in\mathbb R^3
-\]
+$$
 
 但我们想输出两个 features：
 
-\[
+$$
 y_1,\ y_2
-\]
+$$
 
 那么可以建立两个神经元：
 
-\[
+$$
 y_1
 =
 w_{11}x_1+
 w_{12}x_2+
 w_{13}x_3+
 b_1
-\]
+$$
 
-\[
+$$
 y_2
 =
 w_{21}x_1+
 w_{22}x_2+
 w_{23}x_3+
 b_2
-\]
+$$
 
 ---
 
-# 6. 两个输出就是两套 Weight Vectors
+## 6. 两个输出就是两套 Weight Vectors
 
 定义：
 
-\[
+$$
 w_1=
 [w_{11},w_{12},w_{13}]
-\]
+$$
 
-\[
+$$
 w_2=
 [w_{21},w_{22},w_{23}]
-\]
+$$
 
 那么：
 
-\[
+$$
 y_1=w_1^\top x+b_1
-\]
+$$
 
-\[
+$$
 y_2=w_2^\top x+b_2
-\]
+$$
 
 所以每一个 output dimension：
 
@@ -333,173 +333,173 @@ y_2=w_2^\top x+b_2
 
 ---
 
-# 7. Matrix 只是一次把很多 Neurons 写完
+## 7. Matrix 只是一次把很多 Neurons 写完
 
 把 weights堆成：
 
-\[
+$$
 W=
 \begin{bmatrix}
 w_1^\top\\
 w_2^\top
 \end{bmatrix}
-\]
+$$
 
 那么：
 
-\[
+$$
 W
 \in
 \mathbb R^{2\times3}
-\]
+$$
 
 bias：
 
-\[
+$$
 b=
 \begin{bmatrix}
 b_1\\
 b_2
 \end{bmatrix}
-\]
+$$
 
 于是：
 
-\[
+$$
 \boxed{
 y=Wx+b
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 x\in\mathbb R^3
-\]
+$$
 
-\[
+$$
 y\in\mathbb R^2
-\]
+$$
 
 ---
 
-# 8. Matrix Multiplication 的每一行是什么？
+## 8. Matrix Multiplication 的每一行是什么？
 
 对于：
 
-\[
+$$
 W
 \in
 \mathbb R^{m\times n}
-\]
+$$
 
 输入：
 
-\[
+$$
 x\in\mathbb R^n
-\]
+$$
 
 输出：
 
-\[
+$$
 y\in\mathbb R^m
-\]
+$$
 
-第 \(j\) 个 output：
+第 $j$ 个 output：
 
-\[
+$$
 \boxed{
 y_j
 =
 w_j^\top x+b_j
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 w_j^\top
-\]
+$$
 
 是：
 
-> \(W\) 的第 \(j\) 行。
+> $W$ 的第 $j$ 行。
 
 所以：
 
-\[
+$$
 \boxed{
 W\text{ 的每一行对应一个 output unit 的 weight vector}
 }
-\]
+$$
 
 在 column-vector convention 下。
 
 ---
 
-# 9. 一个 `Linear(3,2)` 的完整矩阵例子
+## 9. 一个 `Linear(3,2)` 的完整矩阵例子
 
 设：
 
-\[
+$$
 W=
 \begin{bmatrix}
 1&2&0\\
 -1&0&3
 \end{bmatrix}
-\]
+$$
 
-\[
+$$
 b=
 \begin{bmatrix}
 1\\
 -2
 \end{bmatrix}
-\]
+$$
 
 输入：
 
-\[
+$$
 x=
 \begin{bmatrix}
 2\\
 1\\
 -1
 \end{bmatrix}
-\]
+$$
 
 则：
 
-\[
+$$
 Wx
 =
 \begin{bmatrix}
 1(2)+2(1)+0(-1)\\
 -1(2)+0(1)+3(-1)
 \end{bmatrix}
-\]
+$$
 
-\[
+$$
 =
 \begin{bmatrix}
 4\\
 -5
 \end{bmatrix}
-\]
+$$
 
 加 bias：
 
-\[
+$$
 y=
 \begin{bmatrix}
 5\\
 -7
 \end{bmatrix}
-\]
+$$
 
 ---
 
-# 10. `nn.Linear(3,2)` 本质是什么？
+## 10. `nn.Linear(3,2)` 本质是什么？
 
 就是：
 
@@ -507,29 +507,29 @@ y=
 
 参数：
 
-\[
+$$
 W:
 [2,3]
-\]
+$$
 
-\[
+$$
 b:
 [2]
-\]
+$$
 
 总参数：
 
-\[
+$$
 2\times3+2
 =
 \boxed{
 8
 }
-\]
+$$
 
 ---
 
-# 11. PyTorch 官方定义
+## 11. PyTorch 官方定义
 
 当前 PyTorch 文档定义：
 
@@ -543,129 +543,129 @@ nn.Linear(
 
 应用：
 
-\[
+$$
 \boxed{
 y=xA^\top+b
 }
-\]
+$$
 
 PyTorch 存储：
 
-\[
+$$
 \boxed{
 weight:
 [out\_features,in\_features]
 }
-\]
+$$
 
 bias：
 
-\[
+$$
 \boxed{
 [out\_features]
 }
-\]
+$$
 
 ---
 
-# 12. 为什么 PyTorch 写 \(xA^\top+b\)，我们前面写 \(Wx+b\)？
+## 12. 为什么 PyTorch 写 $xA^\top+b$，我们前面写 $Wx+b$？
 
 只是 vector / tensor convention不同。
 
 数学教材常把单个 vector写成 column：
 
-\[
+$$
 x
 \in
 \mathbb R^{n\times1}
-\]
+$$
 
 于是：
 
-\[
+$$
 y=Wx+b
-\]
+$$
 
 其中：
 
-\[
+$$
 W:
 [m,n]
-\]
+$$
 
 ---
 
 PyTorch tensor通常把 features放最后一维：
 
-\[
+$$
 x:
 [\ldots,n]
-\]
+$$
 
 可以把每个 sample想成 row vector，
 
 所以计算写：
 
-\[
+$$
 \boxed{
 y=xW^\top+b
 }
-\]
+$$
 
 其中 PyTorch stored weight仍：
 
-\[
+$$
 W:
 [m,n]
-\]
+$$
 
 ---
 
-# 13. 两种写法完全等价
+## 13. 两种写法完全等价
 
 Column-vector notation：
 
-\[
+$$
 \boxed{
 y=Wx+b
 }
-\]
+$$
 
 PyTorch row-vector notation：
 
-\[
+$$
 \boxed{
 y=xW^\top+b
 }
-\]
+$$
 
 只要 shape convention保持一致，
 
 表达的是同一组 scalar equations：
 
-\[
+$$
 y_j
 =
 \sum_i
 W_{ji}x_i+b_j
-\]
+$$
 
 ---
 
-# 14. 这是读代码时最容易 Shape Confusion 的地方
+## 14. 这是读代码时最容易 Shape Confusion 的地方
 
 如果你在论文里看到：
 
-\[
+$$
 W:
 [512,64]
-\]
+$$
 
 可能作者使用：
 
-\[
+$$
 xW
-\]
+$$
 
 row-vector notation。
 
@@ -683,15 +683,15 @@ weight.shape = [64, 512]
 
 所以不要看到：
 
-\[
+$$
 [64,512]
-\]
+$$
 
 就以为 projection方向写反了。
 
 ---
 
-# 15. 最安全的方法：永远先看 Input / Output Dimensions
+## 15. 最安全的方法：永远先看 Input / Output Dimensions
 
 对于：
 
@@ -703,13 +703,13 @@ nn.Linear(512, 64)
 
 你只需要先牢牢记住：
 
-\[
+$$
 \boxed{
 512
 \rightarrow
 64
 }
-\]
+$$
 
 也就是：
 
@@ -717,27 +717,27 @@ nn.Linear(512, 64)
 
 ---
 
-# 16. PyTorch 会作用于哪个 Axis？
+## 16. PyTorch 会作用于哪个 Axis？
 
 官方文档：
 
 输入：
 
-\[
+$$
 (*,H_{in})
-\]
+$$
 
 输出：
 
-\[
+$$
 (*,H_{out})
-\]
+$$
 
 其中：
 
-\[
+$$
 *
-\]
+$$
 
 可以是任意数量的前置 dimensions。
 
@@ -747,7 +747,7 @@ nn.Linear(512, 64)
 
 ---
 
-# 17. 例如
+## 17. 例如
 
 ```python
 x.shape =
@@ -762,70 +762,70 @@ nn.Linear(512, 64)
 
 得到：
 
-\[
+$$
 \boxed{
 [B,N,64]
 }
-\]
+$$
 
 Batch：
 
-\[
+$$
 B
-\]
+$$
 
 不变。
 
 Token count：
 
-\[
+$$
 N
-\]
+$$
 
 不变。
 
 只改变：
 
-\[
+$$
 512\rightarrow64
-\]
+$$
 
 feature axis。
 
 ---
 
-# 18. 所以 Linear Layer 不会自动 Mixing Tokens
+## 18. 所以 Linear Layer 不会自动 Mixing Tokens
 
 如果：
 
-\[
+$$
 X:
 [B,N,512]
-\]
+$$
 
 `Linear(512,64)` 对每一个：
 
-\[
+$$
 X[b,n,:]
-\]
+$$
 
 独立使用同一套 weights。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Linear over last dimension}
 \neq
 \text{token mixing}
 }
-\]
+$$
 
 这和我们前面讲 FFN position-wise computation是一致的。
 
 ---
 
-# 19. Token 之间什么时候交流？
+## 19. Token 之间什么时候交流？
 
 Transformer中主要是：
 
@@ -833,29 +833,29 @@ Transformer中主要是：
 
 Linear projections例如：
 
-\[
+$$
 W_Q,W_K,W_V
-\]
+$$
 
 只是对每个 token自身 feature vector做变换。
 
 真正 token-to-token interaction直到：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 才出现。
 
 ---
 
-# 20. 一个重要的数学问题：为什么叫 Linear Layer？
+## 20. 一个重要的数学问题：为什么叫 Linear Layer？
 
 如果：
 
-\[
+$$
 y=Wx
-\]
+$$
 
 这在严格线性代数定义中确实是：
 
@@ -863,74 +863,74 @@ y=Wx
 
 因为它满足：
 
-\[
+$$
 T(x_1+x_2)
 =
 T(x_1)+T(x_2)
-\]
+$$
 
 以及：
 
-\[
+$$
 T(cx)
 =
 cT(x)
-\]
+$$
 
 ---
 
-# 21. 但加了 Bias 以后呢？
+## 21. 但加了 Bias 以后呢？
 
 如果：
 
-\[
+$$
 T(x)=Wx+b
-\]
+$$
 
 且：
 
-\[
+$$
 b\neq0
-\]
+$$
 
 那么：
 
-\[
+$$
 T(0)=b
-\]
+$$
 
 不再是：
 
-\[
+$$
 0
-\]
+$$
 
 而任何严格 linear map必须：
 
-\[
+$$
 T(0)=0
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 Wx+b
 \text{ 严格数学上不是 linear map}
 }
-\]
+$$
 
 ---
 
-# 22. 它真正叫什么？
+## 22. 它真正叫什么？
 
 严格地说：
 
-\[
+$$
 \boxed{
 T(x)=Wx+b
 }
-\]
+$$
 
 是：
 
@@ -942,7 +942,7 @@ T(x)=Wx+b
 
 ---
 
-# 23. PyTorch 官方自己也承认这一点
+## 23. PyTorch 官方自己也承认这一点
 
 PyTorch 对：
 
@@ -956,9 +956,9 @@ nn.Linear
 
 公式：
 
-\[
+$$
 y=xA^\top+b
-\]
+$$
 
 所以名称叫 `Linear`，
 
@@ -968,15 +968,15 @@ y=xA^\top+b
 
 ---
 
-# 24. 为什么深度学习还一直叫 Linear Layer？
+## 24. 为什么深度学习还一直叫 Linear Layer？
 
 主要是工程/历史命名。
 
 大家把：
 
-\[
+$$
 Wx+b
-\]
+$$
 
 这一类 fully-connected affine operation习惯称为：
 
@@ -990,15 +990,15 @@ Wx+b
 
 不要因此忘记：
 
-\[
+$$
 b
-\]
+$$
 
 会破坏严格线性。
 
 ---
 
-# 25. 如果 `bias=False` 呢？
+## 25. 如果 `bias=False` 呢？
 
 ```python
 nn.Linear(
@@ -1010,33 +1010,33 @@ nn.Linear(
 
 那么：
 
-\[
+$$
 y=Wx
-\]
+$$
 
 这才是严格 linear transformation。
 
 ---
 
-# 26. Bias 的几何意义
+## 26. Bias 的几何意义
 
 没有 bias：
 
-\[
+$$
 y=w^\top x
-\]
+$$
 
 如果：
 
-\[
+$$
 y=0
-\]
+$$
 
 决策/等值 hyperplane：
 
-\[
+$$
 w^\top x=0
-\]
+$$
 
 必须经过 origin。
 
@@ -1044,15 +1044,15 @@ w^\top x=0
 
 有 bias：
 
-\[
+$$
 y=w^\top x+b
-\]
+$$
 
 零点：
 
-\[
+$$
 w^\top x+b=0
-\]
+$$
 
 hyperplane可以：
 
@@ -1060,65 +1060,65 @@ hyperplane可以：
 
 所以 bias增加：
 
-\[
+$$
 \boxed{
 \text{translation / threshold flexibility}
 }
-\]
+$$
 
 ---
 
-# 27. 一个 2-D 例子
+## 27. 一个 2-D 例子
 
 无 bias：
 
-\[
+$$
 y=x_1+x_2
-\]
+$$
 
-\(y=0\)：
+$y=0$：
 
-\[
+$$
 x_1+x_2=0
-\]
+$$
 
 经过 origin。
 
 有 bias：
 
-\[
+$$
 y=x_1+x_2-3
-\]
+$$
 
-\(y=0\)：
+$y=0$：
 
-\[
+$$
 x_1+x_2=3
-\]
+$$
 
 整条直线平移。
 
 ---
 
-# 28. 一个 Output Neuron 可以看成 Learned Direction
+## 28. 一个 Output Neuron 可以看成 Learned Direction
 
-\[
+$$
 y_j=w_j^\top x+b_j
-\]
+$$
 
 其中：
 
-\[
+$$
 w_j
-\]
+$$
 
 定义 input space中的一个 direction / normal vector。
 
 dot product：
 
-\[
+$$
 w_j^\top x
-\]
+$$
 
 衡量 input沿这组 learned coefficients的 signed response。
 
@@ -1128,25 +1128,25 @@ w_j^\top x
 
 ---
 
-# 29. 但不要直接叫“投影长度”
+## 29. 但不要直接叫“投影长度”
 
-严格正交投影到 unit vector \(u\) 的 scalar component是：
+严格正交投影到 unit vector $u$ 的 scalar component是：
 
-\[
+$$
 u^\top x
-\]
+$$
 
 前提：
 
-\[
+$$
 \|u\|=1
-\]
+$$
 
 而神经网络 weight：
 
-\[
+$$
 w_j
-\]
+$$
 
 通常：
 
@@ -1154,9 +1154,9 @@ w_j
 
 所以：
 
-\[
+$$
 w_j^\top x
-\]
+$$
 
 更准确叫：
 
@@ -1166,13 +1166,13 @@ w_j^\top x
 
 ---
 
-# 30. Linear Layer 可以做什么几何变换？
+## 30. Linear Layer 可以做什么几何变换？
 
 矩阵：
 
-\[
+$$
 W
-\]
+$$
 
 可以实现或组合：
 
@@ -1186,42 +1186,42 @@ W
 
 具体取决于：
 
-\[
+$$
 W
-\]
+$$
 
 shape和结构。
 
 再加：
 
-\[
+$$
 b
-\]
+$$
 
 可做 translation。
 
 ---
 
-# 31. 但“Dimension Expansion”需要一个重要 Caveat
+## 31. 但“Dimension Expansion”需要一个重要 Caveat
 
 例如：
 
-\[
+$$
 x\in\mathbb R^2
-\]
+$$
 
 通过：
 
-\[
+$$
 W:
 [100,2]
-\]
+$$
 
 得到：
 
-\[
+$$
 y\in\mathbb R^{100}
-\]
+$$
 
 我们可以说：
 
@@ -1229,41 +1229,41 @@ y\in\mathbb R^{100}
 
 但它没有凭空创造：
 
-\[
+$$
 100
-\]
+$$
 
 个独立信息自由度。
 
 ---
 
-# 32. 为什么？
+## 32. 为什么？
 
 因为：
 
-\[
+$$
 y=Wx
-\]
+$$
 
 所有 outputs仍由原始：
 
-\[
+$$
 2
-\]
+$$
 
 个 input degrees of freedom决定。
 
 矩阵 rank最多：
 
-\[
+$$
 \boxed{
 rank(W)\le2
 }
-\]
+$$
 
-所以所有输出 \(y\) 只能位于：
+所以所有输出 $y$ 只能位于：
 
-> \(\mathbb R^{100}\) 中至多 2-D 的 linear subspace
+> $\mathbb R^{100}$ 中至多 2-D 的 linear subspace
 
 里，
 
@@ -1271,11 +1271,11 @@ rank(W)\le2
 
 ---
 
-# 33. 加 Bias 后呢？
+## 33. 加 Bias 后呢？
 
-\[
+$$
 y=Wx+b
-\]
+$$
 
 输出位于：
 
@@ -1283,9 +1283,9 @@ y=Wx+b
 
 所以：
 
-\[
+$$
 2\rightarrow100
-\]
+$$
 
 的单个 Linear Layer：
 
@@ -1295,23 +1295,23 @@ y=Wx+b
 
 ---
 
-# 34. 那 FFN 为什么要 512 → 3200？
+## 34. 那 FFN 为什么要 512 → 3200？
 
 非常好的问题。
 
 单个：
 
-\[
+$$
 512\rightarrow3200
-\]
+$$
 
 Linear本身仍然只是 affine map，
 
 rank最多：
 
-\[
+$$
 512
-\]
+$$
 
 它的价值之一是：
 
@@ -1319,9 +1319,9 @@ rank最多：
 
 然后经过：
 
-\[
+$$
 ReLU
-\]
+$$
 
 这种非线性，
 
@@ -1329,23 +1329,23 @@ ReLU
 
 这时整个：
 
-\[
+$$
 Linear
 \rightarrow
 ReLU
 \rightarrow
 Linear
-\]
+$$
 
 就不能再压成一个 affine map。
 
 ---
 
-# 35. 所以“扩维”与“非线性”要一起理解
+## 35. 所以“扩维”与“非线性”要一起理解
 
 FFN：
 
-\[
+$$
 512
 \rightarrow
 3200
@@ -1353,11 +1353,11 @@ FFN：
 ReLU
 \rightarrow
 512
-\]
+$$
 
 更准确地：
 
-\[
+$$
 512
 \xrightarrow{Linear}
 3200
@@ -1365,7 +1365,7 @@ ReLU
 3200
 \xrightarrow{Linear}
 512
-\]
+$$
 
 第一 Linear创建：
 
@@ -1379,65 +1379,65 @@ ReLU做：
 
 ---
 
-# 36. 为什么两层 Linear 没 Activation 可以合并？
+## 36. 为什么两层 Linear 没 Activation 可以合并？
 
 假设：
 
-\[
+$$
 h=W_1x+b_1
-\]
+$$
 
-\[
+$$
 y=W_2h+b_2
-\]
+$$
 
 代入：
 
-\[
+$$
 y
 =
 W_2(W_1x+b_1)+b_2
-\]
+$$
 
-\[
+$$
 =
 W_2W_1x+
 W_2b_1+b_2
-\]
+$$
 
 定义：
 
-\[
+$$
 W'=W_2W_1
-\]
+$$
 
-\[
+$$
 b'=W_2b_1+b_2
-\]
+$$
 
 则：
 
-\[
+$$
 \boxed{
 y=W'x+b'
 }
-\]
+$$
 
 仍然只是一个 affine layer。
 
 ---
 
-# 37. 所以 Deep Network 为什么需要 Activation？
+## 37. 所以 Deep Network 为什么需要 Activation？
 
 因为如果整个网络只有：
 
-\[
+$$
 Linear
 \rightarrow
 Linear
 \rightarrow
 Linear
-\]
+$$
 
 无论多少层：
 
@@ -1452,7 +1452,7 @@ Linear
 
 ---
 
-# 38. Linear Layer 本身并不会“理解语义”
+## 38. Linear Layer 本身并不会“理解语义”
 
 这是整篇最重要的思想之一。
 
@@ -1475,23 +1475,23 @@ nn.Linear(512, 32)
 
 ---
 
-# 39. 那 Output Semantics 从哪里来？
+## 39. 那 Output Semantics 从哪里来？
 
 来自：
 
-\[
+$$
 \boxed{
 \text{它在 computation graph 中被怎样使用}
 }
-\]
+$$
 
 以及：
 
-\[
+$$
 \boxed{
 \text{最终 loss 怎样给它 gradient}
 }
-\]
+$$
 
 也就是：
 
@@ -1499,7 +1499,7 @@ nn.Linear(512, 32)
 
 ---
 
-# 40. 一个最简单的例子
+## 40. 一个最简单的例子
 
 有：
 
@@ -1519,19 +1519,19 @@ cross_entropy(logits, class_label)
 
 ---
 
-# 41. 同一个 `Linear(512,10)` 放到别处
+## 41. 同一个 `Linear(512,10)` 放到别处
 
 如果输出被拿去和：
 
-\[
+$$
 10
-\]
+$$
 
 维 robot action做：
 
-\[
+$$
 MSE
-\]
+$$
 
 那么它会被训练成：
 
@@ -1543,7 +1543,7 @@ Architecture完全一样。
 
 ---
 
-# 42. 所以 Linear Layer 的名字不会决定它学什么
+## 42. 所以 Linear Layer 的名字不会决定它学什么
 
 ```text
 Linear(512,10)
@@ -1568,21 +1568,21 @@ Linear(512,10)
 
 ---
 
-# 43. 这直接解释 Q / K / V
+## 43. 这直接解释 Q / K / V
 
 Transformer中：
 
-\[
+$$
 q=xW_Q
-\]
+$$
 
-\[
+$$
 k=xW_K
-\]
+$$
 
-\[
+$$
 v=xW_V
-\]
+$$
 
 三个 operation从数学层面都是：
 
@@ -1590,7 +1590,7 @@ v=xW_V
 
 ---
 
-# 44. 为什么 \(W_Q\) 学成“Query”？
+## 44. 为什么 $W_Q$ 学成“Query”？
 
 不是因为矩阵里写了：
 
@@ -1598,9 +1598,9 @@ v=xW_V
 
 而是因为它的 output被放在：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 左边，
 
@@ -1612,13 +1612,13 @@ QK^\top
 
 ---
 
-# 45. 为什么 \(W_K\) 学成“Key”？
+## 45. 为什么 $W_K$ 学成“Key”？
 
 因为它的 output出现在：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 另一侧，
 
@@ -1628,27 +1628,27 @@ QK^\top
 
 Gradient会根据最终 task loss不断调整：
 
-\[
+$$
 W_K
-\]
+$$
 
 使这种 matching有用。
 
 ---
 
-# 46. 为什么 \(W_V\) 学成“Value”？
+## 46. 为什么 $W_V$ 学成“Value”？
 
 因为它不直接决定标准 attention score：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 而是在：
 
-\[
+$$
 A V
-\]
+$$
 
 中承担：
 
@@ -1656,19 +1656,19 @@ A V
 
 所以 role来自：
 
-\[
+$$
 \boxed{
 \text{computation topology}
 }
-\]
+$$
 
 而不是 Linear本身。
 
 ---
 
-# 47. 这就是我们在 QKV 文章里说的核心
+## 47. 这就是我们在 QKV 文章里说的核心
 
-\[
+$$
 \boxed{
 \text{Role}
 \leftarrow
@@ -1676,7 +1676,7 @@ A V
 +
 \text{task gradients}
 }
-\]
+$$
 
 Linear Layer只是：
 
@@ -1684,15 +1684,15 @@ Linear Layer只是：
 
 ---
 
-# 48. 同样逻辑解释 ACT 的 μ 和 logvar
+## 48. 同样逻辑解释 ACT 的 μ 和 logvar
 
 ACT CVAE Encoder得到：
 
-\[
+$$
 h_{CLS}
 \in
 \mathbb R^{512}
-\]
+$$
 
 官方代码：
 
@@ -1706,33 +1706,33 @@ self.latent_proj =
 
 其中：
 
-\[
+$$
 hidden\_dim=512
-\]
+$$
 
-\[
+$$
 latent\_dim=32
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 512\rightarrow64
 }
-\]
+$$
 
 ---
 
-# 49. 这个 Linear Output 一开始只是 64 个 Numbers
+## 49. 这个 Linear Output 一开始只是 64 个 Numbers
 
 记作：
 
-\[
+$$
 z_{raw}
 \in
 \mathbb R^{64}
-\]
+$$
 
 `nn.Linear` 本身不知道：
 
@@ -1741,37 +1741,37 @@ z_{raw}
 
 ---
 
-# 50. 是后续代码赋予语义
+## 50. 是后续代码赋予语义
 
 官方 forward把：
 
-\[
+$$
 64
-\]
+$$
 
 维 output拆成：
 
-\[
+$$
 32+32
-\]
+$$
 
 例如概念上：
 
-\[
+$$
 [\mu,\log\sigma^2]
-\]
+$$
 
 然后第一半被当作：
 
-\[
+$$
 \mu
-\]
+$$
 
 第二半被当作：
 
-\[
+$$
 \log\sigma^2
-\]
+$$
 
 进入：
 
@@ -1781,23 +1781,23 @@ z_{raw}
 
 ---
 
-# 51. 于是 Gradient 开始塑造这两半
+## 51. 于是 Gradient 开始塑造这两半
 
 如果前32维改变，
 
 它们通过：
 
-\[
+$$
 z=\mu+\sigma\epsilon
-\]
+$$
 
 和 KL中的 mean项影响 loss。
 
 后32维则通过：
 
-\[
+$$
 \sigma=\exp(\tfrac12\log\sigma^2)
-\]
+$$
 
 和 KL中的 variance项影响 loss。
 
@@ -1809,7 +1809,7 @@ z=\mu+\sigma\epsilon
 
 ---
 
-# 52. 所以不要说 Linear Layer “学习一组参数让 μ 接近0、variance接近1”
+## 52. 所以不要说 Linear Layer “学习一组参数让 μ 接近0、variance接近1”
 
 更准确：
 
@@ -1817,9 +1817,9 @@ z=\mu+\sigma\epsilon
 
 它的两半因为后续被解释为：
 
-\[
+$$
 \mu,\log\sigma^2
-\]
+$$
 
 并同时受到：
 
@@ -1832,17 +1832,17 @@ z=\mu+\sigma\epsilon
 
 KL会鼓励 posterior靠近：
 
-\[
+$$
 \mathcal N(0,I)
-\]
+$$
 
 但并不要求：
 
-> 每个 sample的 \(\mu=0\)、variance=1。
+> 每个 sample的 $\mu=0$、variance=1。
 
 ---
 
-# 53. 同样解释 ACT Action Head
+## 53. 同样解释 ACT Action Head
 
 官方：
 
@@ -1856,9 +1856,9 @@ self.action_head =
 
 其中：
 
-\[
+$$
 512\rightarrow14
-\]
+$$
 
 Linear本身只产生：
 
@@ -1866,29 +1866,29 @@ Linear本身只产生：
 
 ---
 
-# 54. 为什么这14维变成 Robot Joint Targets？
+## 54. 为什么这14维变成 Robot Joint Targets？
 
 因为：
 
 1. ground-truth action也是14维；
 2. reconstruction loss比较：
-   \[
+   $$
    \hat a
-   \]
+   $$
    和：
-   \[
+   $$
    a
-   \]
+   $$
 3. inference时这14维被 de-normalize；
 4. 最后送给 robot/environment作为 target action。
 
 因此：
 
-\[
+$$
 \boxed{
 \text{usage + supervision}
 }
-\]
+$$
 
 赋予这14维：
 
@@ -1896,7 +1896,7 @@ Linear本身只产生：
 
 ---
 
-# 55. Action Head 并不知道“左肩关节”是什么
+## 55. Action Head 并不知道“左肩关节”是什么
 
 例如 output第3维最终可能对应：
 
@@ -1904,9 +1904,9 @@ Linear本身只产生：
 
 不是因为：
 
-\[
+$$
 W_{3,:}
-\]
+$$
 
 天然具有“肩关节”标签。
 
@@ -1918,7 +1918,7 @@ Loss逐维训练它。
 
 ---
 
-# 56. Linear Layer 的 Output Ordering 也来自 Data Convention
+## 56. Linear Layer 的 Output Ordering 也来自 Data Convention
 
 如果你把 training target的 joint order换掉，
 
@@ -1936,15 +1936,15 @@ Linear(512,14)
 
 所以：
 
-\[
+$$
 \boxed{
 \text{output index semantics are external conventions learned through targets}
 }
-\]
+$$
 
 ---
 
-# 57. ACT Joint Projection
+## 57. ACT Joint Projection
 
 官方：
 
@@ -1958,11 +1958,11 @@ self.encoder_joint_proj =
 
 所以：
 
-\[
+$$
 \boxed{
 14\rightarrow512
 }
-\]
+$$
 
 输入是：
 
@@ -1970,7 +1970,7 @@ self.encoder_joint_proj =
 
 ---
 
-# 58. 这是不是把14个 Joint 变成512个“虚拟关节”？
+## 58. 这是不是把14个 Joint 变成512个“虚拟关节”？
 
 不是。
 
@@ -1980,11 +1980,11 @@ self.encoder_joint_proj =
 
 每一个 output feature：
 
-\[
+$$
 h_j
 =
 w_j^\top q+b_j
-\]
+$$
 
 可以是14个 joints的不同 learned combination。
 
@@ -1994,14 +1994,14 @@ w_j^\top q+b_j
 
 ---
 
-# 59. 一个 Hidden Feature 可以同时依赖所有14个 Joints
+## 59. 一个 Hidden Feature 可以同时依赖所有14个 Joints
 
-\[
+$$
 h_j
 =
 \sum_{i=1}^{14}
 W_{ji}q_i+b_j
-\]
+$$
 
 所以某个 512-D feature可能综合：
 
@@ -2013,33 +2013,33 @@ W_{ji}q_i+b_j
 
 ---
 
-# 60. 为什么要投影到512？
+## 60. 为什么要投影到512？
 
 因为 Transformer需要统一：
 
-\[
+$$
 d_{\text{model}}=512
-\]
+$$
 
 hidden space。
 
 visual tokens：
 
-\[
+$$
 512
-\]
+$$
 
 joint token：
 
-\[
+$$
 512
-\]
+$$
 
 latent token：
 
-\[
+$$
 512
-\]
+$$
 
 这样才能：
 
@@ -2051,7 +2051,7 @@ latent token：
 
 ---
 
-# 61. ACT Action Projection 同理
+## 61. ACT Action Projection 同理
 
 CVAE Encoder：
 
@@ -2065,29 +2065,29 @@ self.encoder_action_proj =
 
 每个 ground-truth action：
 
-\[
+$$
 a_t\in\mathbb R^{14}
-\]
+$$
 
 变成：
 
-\[
+$$
 \boxed{
 512\text{-D action token}
 }
-\]
+$$
 
 供 Transformer Encoder处理。
 
 ---
 
-# 62. 为什么 Joint 和 Action 都是14维，却需要两个不同 Linear Layers？
+## 62. 为什么 Joint 和 Action 都是14维，却需要两个不同 Linear Layers？
 
 因为它们虽然 physical dimension相同：
 
-\[
+$$
 14
-\]
+$$
 
 但 role不同。
 
@@ -2102,15 +2102,15 @@ encoder_action_proj
 
 所以：
 
-\[
+$$
 W_{joint}\neq W_{action}
-\]
+$$
 
 一般成立。
 
 ---
 
-# 63. 为什么不共享？
+## 63. 为什么不共享？
 
 qpos token表示：
 
@@ -2128,13 +2128,13 @@ action token表示：
 
 ---
 
-# 64. ACT Latent Output Projection
+## 64. ACT Latent Output Projection
 
 推理时：
 
-\[
+$$
 z\in\mathbb R^{32}
-\]
+$$
 
 官方：
 
@@ -2148,39 +2148,39 @@ self.latent_out_proj =
 
 所以：
 
-\[
+$$
 \boxed{
 32\rightarrow512
 }
-\]
+$$
 
 变成 latent token。
 
 ---
 
-# 65. 当 z=0 时为什么 Linear Output 不一定是0？
+## 65. 当 z=0 时为什么 Linear Output 不一定是0？
 
 这是我们之前专门讲过的重要细节。
 
 Linear：
 
-\[
+$$
 y=Wz+b
-\]
+$$
 
 如果：
 
-\[
+$$
 z=0
-\]
+$$
 
 那么：
 
-\[
+$$
 \boxed{
 y=b
 }
-\]
+$$
 
 只要 bias存在，
 
@@ -2188,7 +2188,7 @@ y=b
 
 ---
 
-# 66. PyTorch `nn.Linear` 默认 bias=True
+## 66. PyTorch `nn.Linear` 默认 bias=True
 
 官方 API：
 
@@ -2214,33 +2214,33 @@ bias=False
 
 就有：
 
-\[
+$$
 b\in\mathbb R^{512}
-\]
+$$
 
 ---
 
-# 67. 所以 ACT Inference 的 z=0
+## 67. 所以 ACT Inference 的 z=0
 
 进入：
 
-\[
+$$
 latent\_out\_proj(z)
-\]
+$$
 
 得到：
 
-\[
+$$
 W(0)+b
-\]
+$$
 
 即：
 
-\[
+$$
 \boxed{
 b
 }
-\]
+$$
 
 所以：
 
@@ -2248,7 +2248,7 @@ b
 
 ---
 
-# 68. 这个 Bias 是什么含义？
+## 68. 这个 Bias 是什么含义？
 
 可以把它理解为：
 
@@ -2266,13 +2266,13 @@ b
 
 ---
 
-# 69. 为什么 Bias 很容易被忽略？
+## 69. 为什么 Bias 很容易被忽略？
 
 因为很多公式简写：
 
-\[
+$$
 zW
-\]
+$$
 
 而代码：
 
@@ -2282,9 +2282,9 @@ nn.Linear(...)
 
 默认还有：
 
-\[
+$$
 +b
-\]
+$$
 
 这会造成很多错误推断。
 
@@ -2294,29 +2294,29 @@ nn.Linear(...)
 
 只在：
 
-\[
+$$
 bias=False
-\]
+$$
 
 或：
 
-\[
+$$
 b=0
-\]
+$$
 
 时成立。
 
 ---
 
-# 70. Transformer Q/K/V 有 Bias 吗？
+## 70. Transformer Q/K/V 有 Bias 吗？
 
 这取决于具体 implementation。
 
 概念论文公式常简写：
 
-\[
+$$
 Q=XW_Q
-\]
+$$
 
 省略 bias。
 
@@ -2328,23 +2328,23 @@ Q=XW_Q
 
 ---
 
-# 71. 为什么论文经常省略 Bias？
+## 71. 为什么论文经常省略 Bias？
 
 因为 Bias通常不改变主要 architecture逻辑。
 
 写：
 
-\[
+$$
 XW_Q+b_Q
-\]
+$$
 
 每次会让公式更繁琐。
 
 所以很多论文只突出：
 
-\[
+$$
 W_Q
-\]
+$$
 
 projection。
 
@@ -2354,7 +2354,7 @@ projection。
 
 ---
 
-# 72. Linear Layer 到底有多少参数？
+## 72. Linear Layer 到底有多少参数？
 
 ```python
 nn.Linear(
@@ -2365,148 +2365,148 @@ nn.Linear(
 
 weight：
 
-\[
+$$
 m\times n
-\]
+$$
 
 bias：
 
-\[
+$$
 m
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 mn+m
 }
-\]
+$$
 
 如果 bias=True。
 
 ---
 
-# 73. `Linear(512,64)`
+## 73. `Linear(512,64)`
 
 weight：
 
-\[
+$$
 64\times512
 =
 32768
-\]
+$$
 
 bias：
 
-\[
+$$
 64
-\]
+$$
 
 总：
 
-\[
+$$
 \boxed{
 32832
 }
-\]
+$$
 
 ---
 
-# 74. `Linear(512,3200)`
+## 74. `Linear(512,3200)`
 
 weight：
 
-\[
+$$
 3200\times512
 =
 1,638,400
-\]
+$$
 
 bias：
 
-\[
+$$
 3200
-\]
+$$
 
 总：
 
-\[
+$$
 \boxed{
 1,641,600
 }
-\]
+$$
 
 ---
 
-# 75. `Linear(3200,512)`
+## 75. `Linear(3200,512)`
 
 weight：
 
-\[
+$$
 512\times3200
 =
 1,638,400
-\]
+$$
 
 bias：
 
-\[
+$$
 512
-\]
+$$
 
 总：
 
-\[
+$$
 \boxed{
 1,638,912
 }
-\]
+$$
 
 ---
 
-# 76. ACT 一个 FFN 两层总参数
+## 76. ACT 一个 FFN 两层总参数
 
-\[
+$$
 1,641,600
 +
 1,638,912
-\]
+$$
 
-\[
+$$
 =
 \boxed{
 3,280,512
 }
-\]
+$$
 
 这正好与我们 FFN 文章算过的一致。
 
 ---
 
-# 77. `Linear(512,14)` Action Head
+## 77. `Linear(512,14)` Action Head
 
 weight：
 
-\[
+$$
 14\times512
 =
 7168
-\]
+$$
 
 bias：
 
-\[
+$$
 14
-\]
+$$
 
 总：
 
-\[
+$$
 \boxed{
 7182
 }
-\]
+$$
 
 相比大型 FFN：
 
@@ -2514,21 +2514,21 @@ bias：
 
 ---
 
-# 78. 这说明 Representation Learning 在前，Task Head 可以很简单
+## 78. 这说明 Representation Learning 在前，Task Head 可以很简单
 
 Decoder已经把每个 action slot变成：
 
-\[
+$$
 512
-\]
+$$
 
 维高度 processed representation。
 
 最终只需要：
 
-\[
+$$
 512\rightarrow14
-\]
+$$
 
 affine map，
 
@@ -2536,25 +2536,25 @@ affine map，
 
 所以深度学习常见结构：
 
-\[
+$$
 \boxed{
 \text{complex representation network}
 +
 \text{simple linear task head}
 }
-\]
+$$
 
 ---
 
-# 79. Linear Classifier 为什么常只要一层？
+## 79. Linear Classifier 为什么常只要一层？
 
 如果 upstream representation已经把 classes分得很好，
 
 最终：
 
-\[
+$$
 W x+b
-\]
+$$
 
 就可以用 hyperplanes完成分类。
 
@@ -2566,67 +2566,67 @@ W x+b
 
 ---
 
-# 80. Linear Layer 的几何决策边界
+## 80. Linear Layer 的几何决策边界
 
 二分类 logit：
 
-\[
+$$
 s=w^\top x+b
-\]
+$$
 
 decision：
 
-\[
+$$
 s>0
-\]
+$$
 
 vs：
 
-\[
+$$
 s<0
-\]
+$$
 
 boundary：
 
-\[
+$$
 \boxed{
 w^\top x+b=0
 }
-\]
+$$
 
 这是一个 hyperplane。
 
 ---
 
-# 81. 多分类 Linear Head
+## 81. 多分类 Linear Head
 
-\[
+$$
 z=Wx+b
-\]
+$$
 
 每个 class：
 
-\[
+$$
 z_c=w_c^\top x+b_c
-\]
+$$
 
 选择：
 
-\[
+$$
 \operatorname{argmax}_c z_c
-\]
+$$
 
 不同 class logits之间的 equality：
 
-\[
+$$
 z_a=z_b
-\]
+$$
 
 也形成 hyperplane：
 
-\[
+$$
 (w_a-w_b)^\top x+(b_a-b_b)=0
-\]
+$$
 
 所以 linear classifier在 representation space中形成：
 
@@ -2634,7 +2634,7 @@ z_a=z_b
 
 ---
 
-# 82. Linear Layer 自己无法表示 XOR 类非线性边界
+## 82. Linear Layer 自己无法表示 XOR 类非线性边界
 
 如果原始 input geometry不是 linearly separable，
 
@@ -2650,13 +2650,13 @@ z_a=z_b
 
 ---
 
-# 83. 但在 Deep Network 最后一层 Linear 仍然足够
+## 83. 但在 Deep Network 最后一层 Linear 仍然足够
 
 因为前面的 nonlinear network：
 
-\[
+$$
 h=f_\theta(x)
-\]
+$$
 
 可以把 raw data变成：
 
@@ -2664,24 +2664,24 @@ h=f_\theta(x)
 
 然后：
 
-\[
+$$
 y=Wh+b
-\]
+$$
 
 只需做最终 readout。
 
 ---
 
-# 84. Linear Layer 也可以理解成 Change of Coordinates 吗？
+## 84. Linear Layer 也可以理解成 Change of Coordinates 吗？
 
 在某些情况下可以。
 
 方阵：
 
-\[
+$$
 W:
 [n,n]
-\]
+$$
 
 如果 invertible，
 
@@ -2699,26 +2699,26 @@ W:
 
 ---
 
-# 85. Dimension Reduction
+## 85. Dimension Reduction
 
 例如：
 
-\[
+$$
 512\rightarrow64
-\]
+$$
 
 如果：
 
-\[
+$$
 W:
 [64,512]
-\]
+$$
 
 rank最多：
 
-\[
+$$
 64
-\]
+$$
 
 因此它将512-D representation压到一个最多64-D的线性子空间 representation。
 
@@ -2726,20 +2726,20 @@ rank最多：
 
 ---
 
-# 86. Q/K Head Projection 正是这种 Reduction
+## 86. Q/K Head Projection 正是这种 Reduction
 
 Multi-Head Attention：
 
-\[
+$$
 512
 \rightarrow64
-\]
+$$
 
 每个 head的：
 
-\[
+$$
 W_Q^{(h)}
-\]
+$$
 
 把当前 token投到：
 
@@ -2747,9 +2747,9 @@ W_Q^{(h)}
 
 同样：
 
-\[
+$$
 W_K^{(h)}
-\]
+$$
 
 投到：
 
@@ -2757,20 +2757,20 @@ W_K^{(h)}
 
 ---
 
-# 87. 为什么 Q 和 K 必须输出相同维度？
+## 87. 为什么 Q 和 K 必须输出相同维度？
 
 因为要做：
 
-\[
+$$
 q^\top k
-\]
+$$
 
 所以：
 
-\[
+$$
 q,k
 \in\mathbb R^{d_k}
-\]
+$$
 
 维度必须一致。
 
@@ -2782,60 +2782,60 @@ Linear Layer自身并不知道：
 
 设计者为了后续 dot product设定：
 
-\[
+$$
 out\_features=64
-\]
+$$
 
 ---
 
-# 88. Value 的 Dimension 可以不同
+## 88. Value 的 Dimension 可以不同
 
 理论上：
 
-\[
+$$
 d_v
-\]
+$$
 
 不必等于：
 
-\[
+$$
 d_k
-\]
+$$
 
 因为 Value不会和 Q做 dot product。
 
 它只被：
 
-\[
+$$
 A V
-\]
+$$
 
 读取。
 
 原始 Transformer选择：
 
-\[
+$$
 d_k=d_v=64
-\]
+$$
 
 是 architecture choice。
 
 ---
 
-# 89. W_O 又是另一个 Linear Layer
+## 89. W_O 又是另一个 Linear Layer
 
 Concat heads：
 
-\[
+$$
 [8\times64]=512
-\]
+$$
 
 然后：
 
-\[
+$$
 W_O:
 512\rightarrow512
-\]
+$$
 
 作用：
 
@@ -2845,7 +2845,7 @@ W_O:
 
 ---
 
-# 90. Multi-Head Attention 可以看成什么？
+## 90. Multi-Head Attention 可以看成什么？
 
 简化：
 
@@ -2863,7 +2863,7 @@ Linear projection
 
 即：
 
-\[
+$$
 \boxed{
 \text{Linear}
 \rightarrow
@@ -2871,17 +2871,17 @@ Linear projection
 \rightarrow
 \text{Linear}
 }
-\]
+$$
 
 ---
 
-# 91. 为什么 Q/K/V Projection 非常重要？
+## 91. 为什么 Q/K/V Projection 非常重要？
 
 如果完全没有 learned projection：
 
-\[
+$$
 Q=K=V=X
-\]
+$$
 
 模型只能在原 hidden coordinates中：
 
@@ -2896,26 +2896,26 @@ Q=K=V=X
 
 ---
 
-# 92. Linear 不是“降维工具”而已
+## 92. Linear 不是“降维工具”而已
 
 它可以：
 
 - 降维：
-  \[
+  $$
   512\rightarrow64
-  \]
+  $$
 - 升维：
-  \[
+  $$
   512\rightarrow3200
-  \]
+  $$
 - 保持维度但换 representation：
-  \[
+  $$
   512\rightarrow512
-  \]
+  $$
 - 输出 task values：
-  \[
+  $$
   512\rightarrow14
-  \]
+  $$
 
 所以核心不是：
 
@@ -2923,21 +2923,21 @@ Q=K=V=X
 
 而是：
 
-\[
+$$
 \boxed{
 \text{learned affine feature transformation}
 }
-\]
+$$
 
 ---
 
-# 93. `Linear(512,512)` 也不是“什么都没做”
+## 93. `Linear(512,512)` 也不是“什么都没做”
 
 即使 input/output维度一样，
 
-\[
+$$
 W
-\]
+$$
 
 可以：
 
@@ -2949,45 +2949,45 @@ W
 
 所以：
 
-\[
+$$
 512\rightarrow512
-\]
+$$
 
 不意味着 identity。
 
 Identity只有当：
 
-\[
+$$
 W=I
-\]
+$$
 
 且：
 
-\[
+$$
 b=0
-\]
+$$
 
 ---
 
-# 94. 为什么 Residual Connection 需要相同维度，却不要求同一 Representation？
+## 94. 为什么 Residual Connection 需要相同维度，却不要求同一 Representation？
 
 Residual：
 
-\[
+$$
 x+F(x)
-\]
+$$
 
 要求：
 
 > coordinate shape一致。
 
-但 \(F(x)\) 可以是复杂 learned update。
+但 $F(x)$ 可以是复杂 learned update。
 
 所以 Linear：
 
-\[
+$$
 512\rightarrow512
-\]
+$$
 
 常用于在相同 residual space width中：
 
@@ -2995,21 +2995,21 @@ x+F(x)
 
 ---
 
-# 95. Linear Layer 与 Dot Product 的关系
+## 95. Linear Layer 与 Dot Product 的关系
 
 一个 neuron：
 
-\[
+$$
 y_j=w_j^\top x+b_j
-\]
+$$
 
 本质包含：
 
-\[
+$$
 \boxed{
 \text{dot product}
 }
-\]
+$$
 
 所以一个 Linear Layer就是：
 
@@ -3017,42 +3017,42 @@ y_j=w_j^\top x+b_j
 
 ---
 
-# 96. `Linear(n,m)` 可以理解成 m 个 Learned Dot Products
+## 96. `Linear(n,m)` 可以理解成 m 个 Learned Dot Products
 
-\[
+$$
 W=
 \begin{bmatrix}
 w_1^\top\\
 \vdots\\
 w_m^\top
 \end{bmatrix}
-\]
+$$
 
 那么：
 
-\[
+$$
 \boxed{
 y_j=w_j^\top x+b_j,\qquad j=1,\ldots,m
 }
-\]
+$$
 
 这是理解 Linear Layer最有用的 mental model之一。
 
 ---
 
-# 97. 为什么它和 Attention Dot Product 又不同？
+## 97. 为什么它和 Attention Dot Product 又不同？
 
 Linear：
 
-\[
+$$
 w_j^\top x
-\]
+$$
 
 其中：
 
-\[
+$$
 w_j
-\]
+$$
 
 是：
 
@@ -3060,15 +3060,15 @@ w_j
 
 Attention score：
 
-\[
+$$
 q_i^\top k_j
-\]
+$$
 
 其中：
 
-\[
+$$
 q_i,k_j
-\]
+$$
 
 是：
 
@@ -3076,21 +3076,21 @@ q_i,k_j
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Linear neuron: input vs parameter}
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 \text{Attention score: activation vs activation}
 }
-\]
+$$
 
 ---
 
-# 98. 这两个 Dot Product 都重要
+## 98. 这两个 Dot Product 都重要
 
 Linear先学习：
 
@@ -3112,37 +3112,37 @@ dynamic vectors interact
 
 ---
 
-# 99. Weight 是静态参数，Activation 是动态数据
+## 99. Weight 是静态参数，Activation 是动态数据
 
 训练结束后某次 inference：
 
-\[
+$$
 W
-\]
+$$
 
 固定。
 
 输入：
 
-\[
+$$
 x
-\]
+$$
 
 改变。
 
 所以：
 
-\[
+$$
 y=Wx+b
-\]
+$$
 
 随 input动态变化。
 
 这和 Attention matrix：
 
-\[
+$$
 A(X)
-\]
+$$
 
 不同：
 
@@ -3150,27 +3150,27 @@ A(X)
 
 ---
 
-# 100. Linear Layer 的 Weight 在 Training 中怎样学习？
+## 100. Linear Layer 的 Weight 在 Training 中怎样学习？
 
 设 loss：
 
-\[
+$$
 L
-\]
+$$
 
 Linear：
 
-\[
+$$
 y=Wx+b
-\]
+$$
 
 如果我们知道：
 
-\[
+$$
 g_y
 =
 \frac{\partial L}{\partial y}
-\]
+$$
 
 那么可以计算：
 
@@ -3180,137 +3180,137 @@ g_y
 
 ---
 
-# 101. 单个 Sample 的 Gradient：Column Convention
+## 101. 单个 Sample 的 Gradient：Column Convention
 
-\[
+$$
 y=Wx+b
-\]
+$$
 
 其中：
 
-\[
+$$
 x\in\mathbb R^n
-\]
+$$
 
-\[
+$$
 y\in\mathbb R^m
-\]
+$$
 
 令：
 
-\[
+$$
 g=
 \frac{\partial L}{\partial y}
 \in\mathbb R^m
-\]
+$$
 
 则：
 
-\[
+$$
 \boxed{
 \frac{\partial L}{\partial x}
 =
 W^\top g
 }
-\]
+$$
 
 ---
 
-# 102. Weight Gradient
+## 102. Weight Gradient
 
-第 \(j,i\) 个 weight：
+第 $j,i$ 个 weight：
 
-\[
+$$
 y_j=
 \sum_iW_{ji}x_i+b_j
-\]
+$$
 
 所以：
 
-\[
+$$
 \frac{\partial y_j}{\partial W_{ji}}
 =
 x_i
-\]
+$$
 
 因此：
 
-\[
+$$
 \boxed{
 \frac{\partial L}{\partial W}
 =
 g x^\top
 }
-\]
+$$
 
 shape：
 
-\[
+$$
 [m,1]
 [1,n]
 =
 [m,n]
-\]
+$$
 
 正好和：
 
-\[
+$$
 W
-\]
+$$
 
 一样。
 
 ---
 
-# 103. Bias Gradient
+## 103. Bias Gradient
 
-\[
+$$
 \frac{\partial y_j}{\partial b_j}=1
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \frac{\partial L}{\partial b}
 =
 g
 }
-\]
+$$
 
 单样本情况下。
 
 ---
 
-# 104. 这说明 Weight 怎样被训练？
+## 104. 这说明 Weight 怎样被训练？
 
 如果某个 input feature：
 
-\[
+$$
 x_i
-\]
+$$
 
 在当前 sample很大，
 
 同时某个 output：
 
-\[
+$$
 y_j
-\]
+$$
 
 收到很强 gradient：
 
-\[
+$$
 g_j
-\]
+$$
 
 则：
 
-\[
+$$
 \frac{\partial L}{\partial W_{ji}}
 =
 g_jx_i
-\]
+$$
 
 会相应较大。
 
@@ -3320,63 +3320,63 @@ g_jx_i
 
 ---
 
-# 105. Batch 情况
+## 105. Batch 情况
 
 PyTorch row convention：
 
-\[
+$$
 X:
 [B,n]
-\]
+$$
 
-\[
+$$
 W:
 [m,n]
-\]
+$$
 
-\[
+$$
 Y=XW^\top+b
-\]
+$$
 
 令：
 
-\[
+$$
 G=
 \frac{\partial L}{\partial Y}
 :
 [B,m]
-\]
+$$
 
 则：
 
-\[
+$$
 \boxed{
 \frac{\partial L}{\partial X}
 =
 GW
 }
-\]
+$$
 
 ---
 
-# 106. Batch Weight Gradient
+## 106. Batch Weight Gradient
 
-\[
+$$
 \boxed{
 \frac{\partial L}{\partial W}
 =
 G^\top X
 }
-\]
+$$
 
 shape：
 
-\[
+$$
 [m,B]
 [B,n]
 =
 [m,n]
-\]
+$$
 
 也就是说：
 
@@ -3384,18 +3384,18 @@ shape：
 
 ---
 
-# 107. Batch Bias Gradient
+## 107. Batch Bias Gradient
 
 如果 bias broadcast到所有 batch samples：
 
-\[
+$$
 \boxed{
 \frac{\partial L}{\partial b}
 =
 \sum_{r=1}^{B}
 G_r
 }
-\]
+$$
 
 实际 reduction还取决于 loss是否 mean/sum，
 
@@ -3403,38 +3403,38 @@ G_r
 
 ---
 
-# 108. Sequence Tensor 也是同样
+## 108. Sequence Tensor 也是同样
 
 输入：
 
-\[
+$$
 X:
 [B,N,n]
-\]
+$$
 
 Linear：
 
-\[
+$$
 n\rightarrow m
-\]
+$$
 
 可以把：
 
-\[
+$$
 B\times N
-\]
+$$
 
 个 vectors概念上 flatten成：
 
-\[
+$$
 [B N,n]
-\]
+$$
 
 全部共享同一：
 
-\[
+$$
 W,b
-\]
+$$
 
 所以 gradient会从：
 
@@ -3444,7 +3444,7 @@ W,b
 
 ---
 
-# 109. 这就是 Transformer Parameter Sharing 的一部分
+## 109. 这就是 Transformer Parameter Sharing 的一部分
 
 FFN的：
 
@@ -3458,48 +3458,48 @@ linear1
 
 > 每个 token产生自己的 activation和gradient，
 
-但它们共同更新同一套 \(W_1\)。
+但它们共同更新同一套 $W_1$。
 
 ---
 
-# 110. 为什么 Linear Layer 能泛化到任意 Sequence Length？
+## 110. 为什么 Linear Layer 能泛化到任意 Sequence Length？
 
 参数：
 
-\[
+$$
 W:
 [m,n]
-\]
+$$
 
 不依赖 token count：
 
-\[
+$$
 N
-\]
+$$
 
 所以训练可能看到：
 
-\[
+$$
 N=100
-\]
+$$
 
 理论上同一 layer可以应用：
 
-\[
+$$
 N=200
-\]
+$$
 
 只要 feature dimension：
 
-\[
+$$
 n
-\]
+$$
 
 一致。
 
 ---
 
-# 111. 当然整个模型未必因此支持任意长度
+## 111. 当然整个模型未必因此支持任意长度
 
 因为还可能有：
 
@@ -3510,68 +3510,68 @@ n
 
 这里只是说：
 
-\[
+$$
 \boxed{
 \text{Linear Layer本身与 sequence length无关}
 }
-\]
+$$
 
 ---
 
-# 112. Weight Matrix 的 Rows 与 Columns 到底分别是什么？
+## 112. Weight Matrix 的 Rows 与 Columns 到底分别是什么？
 
 PyTorch stored：
 
-\[
+$$
 W:
 [out,in]
-\]
+$$
 
-### Row \(j\)
+#### Row $j$
 
-\[
+$$
 W_{j,:}
-\]
+$$
 
 对应：
 
-> output feature \(j\) 如何读取所有 input features。
+> output feature $j$ 如何读取所有 input features。
 
 ---
 
-### Column \(i\)
+#### Column $i$
 
-\[
+$$
 W_{:,i}
-\]
+$$
 
 对应：
 
-> input feature \(i\) 对所有 output features的连接权重。
+> input feature $i$ 对所有 output features的连接权重。
 
 ---
 
-# 113. 所以看 Row 更像“一个 Neuron”
+## 113. 所以看 Row 更像“一个 Neuron”
 
-第 \(j\) 行：
+第 $j$ 行：
 
-\[
+$$
 w_j
-\]
+$$
 
 完整定义：
 
-> output neuron \(j\) 的 input coefficients。
+> output neuron $j$ 的 input coefficients。
 
 这是最直观读法。
 
 ---
 
-# 114. 看 Column 又有什么用？
+## 114. 看 Column 又有什么用？
 
-第 \(i\) 列告诉你：
+第 $i$ 列告诉你：
 
-> input dimension \(i\) 会怎样影响所有 outputs。
+> input dimension $i$ 会怎样影响所有 outputs。
 
 例如某一列全部接近0，
 
@@ -3583,7 +3583,7 @@ w_j
 
 ---
 
-# 115. Weight Visualization 能直接告诉 Semantic 吗？
+## 115. Weight Visualization 能直接告诉 Semantic 吗？
 
 通常不能。
 
@@ -3593,64 +3593,64 @@ w_j
 
 某个大 weight：
 
-\[
+$$
 W_{ji}
-\]
+$$
 
 只说明 local sensitivity/link较强，
 
 不代表：
 
-> feature \(i\) 就是某个人类概念。
+> feature $i$ 就是某个人类概念。
 
 深层网络解释需要考虑整个 computation graph。
 
 ---
 
-# 116. Linear Layer 的 Jacobian
+## 116. Linear Layer 的 Jacobian
 
 对于：
 
-\[
+$$
 y=Wx+b
-\]
+$$
 
 对 input：
 
-\[
+$$
 x
-\]
+$$
 
 的 Jacobian：
 
-\[
+$$
 \boxed{
 J=
 \frac{\partial y}{\partial x}
 =
 W
 }
-\]
+$$
 
 这是 Linear/Affine Layer一个非常漂亮的性质。
 
 ---
 
-# 117. Bias 不影响 Input Jacobian
+## 117. Bias 不影响 Input Jacobian
 
 因为：
 
-\[
+$$
 \frac{\partial b}{\partial x}=0
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \frac{\partial (Wx+b)}{\partial x}=W
 }
-\]
+$$
 
 这也是为什么 weight matrix本身直接描述：
 
@@ -3658,19 +3658,19 @@ W
 
 ---
 
-# 118. Affine Function 的 Jacobian everywhere 一样
+## 118. Affine Function 的 Jacobian everywhere 一样
 
 无论：
 
-\[
+$$
 x
-\]
+$$
 
 在哪里：
 
-\[
+$$
 J(x)=W
-\]
+$$
 
 不会随 input变化。
 
@@ -3680,23 +3680,23 @@ J(x)=W
 
 ---
 
-# 119. ReLU 后就不同
+## 119. ReLU 后就不同
 
-\[
+$$
 y=ReLU(Wx+b)
-\]
+$$
 
 Jacobian变成：
 
-\[
+$$
 D(x)W
-\]
+$$
 
 其中：
 
-\[
+$$
 D(x)
-\]
+$$
 
 取决于哪些 neurons active。
 
@@ -3706,13 +3706,13 @@ D(x)
 
 ---
 
-# 120. 这又解释 Deep Network 的表达能力
+## 120. 这又解释 Deep Network 的表达能力
 
 Affine：
 
-\[
+$$
 J=W
-\]
+$$
 
 固定。
 
@@ -3727,7 +3727,7 @@ Nonlinear composition：
 
 ---
 
-# 121. Linear Layer 能不能“学习公式”？
+## 121. Linear Layer 能不能“学习公式”？
 
 某种意义上：
 
@@ -3735,29 +3735,29 @@ Nonlinear composition：
 
 例如真实关系：
 
-\[
+$$
 y=3x_1-2x_2+5
-\]
+$$
 
 一个 Linear Layer可以直接学：
 
-\[
+$$
 w=[3,-2]
-\]
+$$
 
-\[
+$$
 b=5
-\]
+$$
 
 ---
 
-# 122. 但复杂函数需要多个模块
+## 122. 但复杂函数需要多个模块
 
 例如：
 
-\[
+$$
 y=x_1x_2
-\]
+$$
 
 单个 affine layer不能在全空间精确表示这种乘法。
 
@@ -3773,13 +3773,13 @@ y=x_1x_2
 
 ---
 
-# 123. 为什么 Attention 里用 Linear Projection 很合理？
+## 123. 为什么 Attention 里用 Linear Projection 很合理？
 
 我们希望从同一个 hidden representation：
 
-\[
+$$
 x
-\]
+$$
 
 构造不同 views：
 
@@ -3797,7 +3797,7 @@ Linear projection提供：
 
 ---
 
-# 124. 为什么 Q/K/V 不先用很深 MLP？
+## 124. 为什么 Q/K/V 不先用很深 MLP？
 
 理论上可以设计。
 
@@ -3812,7 +3812,7 @@ Architecture是整体设计平衡。
 
 ---
 
-# 125. Linear Projection 和 Embedding 有什么区别？
+## 125. Linear Projection 和 Embedding 有什么区别？
 
 `nn.Embedding`通常通过：
 
@@ -3820,15 +3820,15 @@ Architecture是整体设计平衡。
 
 例如 token id：
 
-\[
+$$
 42
-\]
+$$
 
 直接选：
 
-\[
+$$
 E_{42,:}
-\]
+$$
 
 ---
 
@@ -3838,23 +3838,23 @@ E_{42,:}
 
 所以：
 
-\[
+$$
 \boxed{
 Embedding:
 index\rightarrow vector
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 Linear:
 vector\rightarrow vector
 }
-\]
+$$
 
 ---
 
-# 126. ACT Query Embedding 不是 Linear
+## 126. ACT Query Embedding 不是 Linear
 
 官方：
 
@@ -3872,21 +3872,21 @@ self.query_embed =
 
 它不是把某个 continuous action index通过：
 
-\[
+$$
 Wx+b
-\]
+$$
 
 计算出来。
 
 ---
 
-# 127. 但 Query Embedding 进入 Attention 后会再被 Linear Project
+## 127. 但 Query Embedding 进入 Attention 后会再被 Linear Project
 
 `nn.MultiheadAttention`内部：
 
-\[
+$$
 Q
-\]
+$$
 
 仍需 Q projection。
 
@@ -3904,7 +3904,7 @@ head-specific query vectors
 
 ---
 
-# 128. ACT Image Projection 为什么是 Conv2d，不是 Linear？
+## 128. ACT Image Projection 为什么是 Conv2d，不是 Linear？
 
 官方：
 
@@ -3919,62 +3919,62 @@ self.input_proj =
 
 它把 backbone channel dimension投到：
 
-\[
+$$
 512
-\]
+$$
 
 ---
 
-# 129. 1×1 Conv 和 Linear 有什么关系？
+## 129. 1×1 Conv 和 Linear 有什么关系？
 
 对于每一个 spatial location：
 
-\[
+$$
 (h,w)
-\]
+$$
 
 1×1 convolution只看该位置的 channel vector：
 
-\[
+$$
 x_{h,w}
 \in\mathbb R^{C_{in}}
-\]
+$$
 
 然后计算：
 
-\[
+$$
 \boxed{
 y_{h,w}
 =
 Wx_{h,w}+b
 }
-\]
+$$
 
 其中同一：
 
-\[
+$$
 W,b
-\]
+$$
 
 在所有 spatial locations共享。
 
 ---
 
-# 130. 所以 1×1 Conv 本质上像 Spatially Shared Linear Layer
+## 130. 所以 1×1 Conv 本质上像 Spatially Shared Linear Layer
 
 可以理解：
 
-\[
+$$
 C_{in}\rightarrow C_{out}
-\]
+$$
 
 per pixel/location affine transform，
 
 并在：
 
-\[
+$$
 H\times W
-\]
+$$
 
 位置共享。
 
@@ -3988,7 +3988,7 @@ Linear(C_in,512)
 
 ---
 
-# 131. 但 `Conv2d(1×1)` 仍不是 API 上的 `nn.Linear`
+## 131. 但 `Conv2d(1×1)` 仍不是 API 上的 `nn.Linear`
 
 它有：
 
@@ -4006,13 +4006,13 @@ Linear(C_in,512)
 
 ---
 
-# 132. Linear 与 Normalization 又有什么区别？
+## 132. Linear 与 Normalization 又有什么区别？
 
 Linear：
 
-\[
+$$
 y=Wx+b
-\]
+$$
 
 parameters：
 
@@ -4020,9 +4020,9 @@ parameters：
 
 LayerNorm：
 
-\[
+$$
 \frac{x-\mu(x)}{\sqrt{\sigma^2(x)+\epsilon}}
-\]
+$$
 
 statistics：
 
@@ -4032,19 +4032,19 @@ statistics：
 
 虽然最后还有：
 
-\[
+$$
 \gamma,\beta
-\]
+$$
 
 ---
 
-# 133. Linear 与 Softmax 也完全不同
+## 133. Linear 与 Softmax 也完全不同
 
 Linear output：
 
-\[
+$$
 y_j
-\]
+$$
 
 可以任意正负，
 
@@ -4052,11 +4052,11 @@ y_j
 
 Softmax：
 
-\[
+$$
 p_j
 =
 \frac{e^{y_j}}{\sum_ke^{y_k}}
-\]
+$$
 
 把 logits转成：
 
@@ -4072,27 +4072,27 @@ Linear
 
 ---
 
-# 134. 为什么 Logit 常由 Linear Head 输出？
+## 134. 为什么 Logit 常由 Linear Head 输出？
 
 因为最后 hidden representation：
 
-\[
+$$
 h
-\]
+$$
 
 已经包含复杂 nonlinear features。
 
 每个 class只需一个 learned vector：
 
-\[
+$$
 w_c
-\]
+$$
 
 计算：
 
-\[
+$$
 z_c=w_c^\top h+b_c
-\]
+$$
 
 即可衡量：
 
@@ -4100,13 +4100,13 @@ z_c=w_c^\top h+b_c
 
 ---
 
-# 135. ACT Action Head 不用 Softmax
+## 135. ACT Action Head 不用 Softmax
 
 因为动作：
 
-\[
+$$
 a\in\mathbb R^{14}
-\]
+$$
 
 是连续 regression target，
 
@@ -4114,39 +4114,39 @@ a\in\mathbb R^{14}
 
 所以：
 
-\[
+$$
 Linear(512,14)
-\]
+$$
 
 直接输出 normalized action values。
 
 ---
 
-# 136. ACT μ/logvar Head 也不用 Softmax
+## 136. ACT μ/logvar Head 也不用 Softmax
 
 因为：
 
-\[
+$$
 \mu
-\]
+$$
 
 可以任意实数。
 
-\[
+$$
 \log\sigma^2
-\]
+$$
 
 也可以任意实数。
 
 真正正 variance通过：
 
-\[
+$$
 \sigma^2
 =
 \exp(
 \log\sigma^2
 )
-\]
+$$
 
 获得。
 
@@ -4156,34 +4156,34 @@ Linear(512,14)
 
 ---
 
-# 137. 为什么输出 logvar 而不是直接 variance？
+## 137. 为什么输出 logvar 而不是直接 variance？
 
 如果直接预测：
 
-\[
+$$
 \sigma^2
-\]
+$$
 
 必须保证：
 
-\[
+$$
 \sigma^2>0
-\]
+$$
 
 Linear output本身不保证正。
 
 预测：
 
-\[
+$$
 \log\sigma^2
 \in\mathbb R
-\]
+$$
 
 则：
 
-\[
+$$
 \exp(\log\sigma^2)>0
-\]
+$$
 
 天然满足 positivity。
 
@@ -4191,19 +4191,19 @@ Linear output本身不保证正。
 
 ---
 
-# 138. Linear Layer 会自动限制输出范围吗？
+## 138. Linear Layer 会自动限制输出范围吗？
 
 不会。
 
-\[
+$$
 Wx+b
-\]
+$$
 
 理论上可以：
 
-\[
+$$
 (-\infty,+\infty)
-\]
+$$
 
 如果需要范围限制，
 
@@ -4217,7 +4217,7 @@ Wx+b
 
 ---
 
-# 139. 为什么 ACT Action Head 可以不显式 Tanh？
+## 139. 为什么 ACT Action Head 可以不显式 Tanh？
 
 因为 training targets经过 normalization，
 
@@ -4229,21 +4229,21 @@ Wx+b
 
 Canonical ACT并不需要通过：
 
-\[
+$$
 tanh
-\]
+$$
 
 硬限制 action head。
 
 ---
 
-# 140. Linear Layer 的 Initialization 为什么重要？
+## 140. Linear Layer 的 Initialization 为什么重要？
 
 训练刚开始：
 
-\[
+$$
 W,b
-\]
+$$
 
 还没有 learned semantics。
 
@@ -4255,25 +4255,25 @@ W,b
 
 ---
 
-# 141. PyTorch `nn.Linear` 当前默认初始化
+## 141. PyTorch `nn.Linear` 当前默认初始化
 
 PyTorch官方文档说明 weight：
 
-\[
+$$
 [out,in]
-\]
+$$
 
 初始化于一个与：
 
-\[
+$$
 in\_features
-\]
+$$
 
 有关的 uniform range。
 
 其当前实现等价于大致：
 
-\[
+$$
 \boxed{
 W_{ij}
 \sim
@@ -4283,44 +4283,44 @@ U
 \frac1{\sqrt{n}}
 \right)
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 n=in\_features
-\]
+$$
 
 bias若存在，也使用同尺度范围。
 
 ---
 
-# 142. 为什么 Scale 随 in_features 变化？
+## 142. 为什么 Scale 随 in_features 变化？
 
 如果 input有：
 
-\[
+$$
 n
-\]
+$$
 
 项，
 
 输出：
 
-\[
+$$
 y_j=
 \sum_{i=1}^nW_{ji}x_i
-\]
+$$
 
 如果 weights尺度完全不随：
 
-\[
+$$
 n
-\]
+$$
 
 调整，
 
-当 \(n\) 很大时，
+当 $n$ 很大时，
 
 sum variance可能随 dimension快速增大。
 
@@ -4334,7 +4334,7 @@ sum variance可能随 dimension快速增大。
 
 ---
 
-# 143. 不要把 Initialization 当成最终 Weight Distribution
+## 143. 不要把 Initialization 当成最终 Weight Distribution
 
 初始化只发生在：
 
@@ -4342,9 +4342,9 @@ sum variance可能随 dimension快速增大。
 
 经过 optimizer更新后：
 
-\[
+$$
 W
-\]
+$$
 
 不再服从最初 uniform distribution。
 
@@ -4354,7 +4354,7 @@ W
 
 ---
 
-# 144. ACT Transformer 又会做额外 Initialization
+## 144. ACT Transformer 又会做额外 Initialization
 
 ACT/DETR-style `Transformer._reset_parameters()` 会对某些参数：
 
@@ -4366,17 +4366,17 @@ ACT/DETR-style `Transformer._reset_parameters()` 会对某些参数：
 
 这说明：
 
-\[
+$$
 \boxed{
 \text{PyTorch module default}
 \neq
 \text{specific architecture final initialization recipe}
 }
-\]
+$$
 
 ---
 
-# 145. 为什么这篇不把 Initialization 展开太深？
+## 145. 为什么这篇不把 Initialization 展开太深？
 
 因为初始化本身值得单独 canonical page：
 
@@ -4395,7 +4395,7 @@ Linear Layer这里只建立：
 
 ---
 
-# 146. “Projection”这个词到底是什么意思？
+## 146. “Projection”这个词到底是什么意思？
 
 深度学习经常说：
 
@@ -4403,7 +4403,7 @@ Linear Layer这里只建立：
 
 严格线性代数中：
 
-> projection 有更专门的含义，例如 \(P^2=P\)。
+> projection 有更专门的含义，例如 $P^2=P$。
 
 而神经网络工程里：
 
@@ -4411,36 +4411,36 @@ Linear Layer这里只建立：
 
 所以：
 
-\[
+$$
 \boxed{
 \text{neural projection}
 \text{ 不一定是严格数学投影算子}
 }
-\]
+$$
 
 ---
 
-# 147. 例如 Q Projection
+## 147. 例如 Q Projection
 
 我们叫：
 
-\[
+$$
 W_Q
-\]
+$$
 
 “Query Projection”。
 
 并不要求：
 
-\[
+$$
 W_Q^2=W_Q
-\]
+$$
 
 甚至它可能：
 
-\[
+$$
 512\rightarrow64
-\]
+$$
 
 根本不是方阵。
 
@@ -4450,7 +4450,7 @@ W_Q^2=W_Q
 
 ---
 
-# 148. “Embedding”这个词也类似
+## 148. “Embedding”这个词也类似
 
 ACT说：
 
@@ -4476,13 +4476,13 @@ nn.Linear(14,512)
 
 ---
 
-# 149. Linear Layer 是否有 Memory？
+## 149. Linear Layer 是否有 Memory？
 
 Parameters：
 
-\[
+$$
 W,b
-\]
+$$
 
 当然存储训练学到的信息。
 
@@ -4498,21 +4498,21 @@ W,b
 
 ---
 
-# 150. Linear Layer 是否是 End-to-End Learnable？
+## 150. Linear Layer 是否是 End-to-End Learnable？
 
 是。
 
 因为：
 
-\[
+$$
 y=Wx+b
-\]
+$$
 
 对：
 
-- \(x\)；
-- \(W\)；
-- \(b\)；
+- $x$；
+- $W$；
+- $b$；
 
 都可微。
 
@@ -4520,7 +4520,7 @@ y=Wx+b
 
 ---
 
-# 151. 这就是为什么各种模块都喜欢用 Linear
+## 151. 这就是为什么各种模块都喜欢用 Linear
 
 它同时具有：
 
@@ -4536,33 +4536,33 @@ y=Wx+b
 
 ---
 
-# 152. Linear 的 Compute Complexity
+## 152. Linear 的 Compute Complexity
 
 对于一个：
 
-\[
+$$
 n\rightarrow m
-\]
+$$
 
 vector，
 
 主要乘加操作量约：
 
-\[
+$$
 O(nm)
-\]
+$$
 
 如果有：
 
-\[
+$$
 B\times N
-\]
+$$
 
 个 vectors：
 
-\[
+$$
 O(BNnm)
-\]
+$$
 
 所以大型 FFN中的 Linear：
 
@@ -4570,19 +4570,19 @@ O(BNnm)
 
 ---
 
-# 153. 为什么 GPU 特别喜欢 Linear Layer？
+## 153. 为什么 GPU 特别喜欢 Linear Layer？
 
 因为大量 vectors可以组成矩阵：
 
-\[
+$$
 X
-\]
+$$
 
 然后统一做：
 
-\[
+$$
 XW^\top
-\]
+$$
 
 这是标准：
 
@@ -4592,7 +4592,7 @@ GPU/TPU对此高度优化。
 
 ---
 
-# 154. 所以 Python 看起来只是一个 `nn.Linear`
+## 154. 所以 Python 看起来只是一个 `nn.Linear`
 
 背后实际可能是：
 
@@ -4600,27 +4600,27 @@ GPU/TPU对此高度优化。
 
 例如：
 
-\[
+$$
 [B,1202,512]
-\]
+$$
 
 乘：
 
-\[
+$$
 [512,3200]
-\]
+$$
 
 一次就处理：
 
-\[
+$$
 B\times1202
-\]
+$$
 
 个 token vectors。
 
 ---
 
-# 155. Linear Layer 和 Fully Connected 是不是一回事？
+## 155. Linear Layer 和 Fully Connected 是不是一回事？
 
 经典 MLP语境：
 
@@ -4636,7 +4636,7 @@ B\times1202
 
 ---
 
-# 156. 但在 Transformer Sequence 上为什么又不是“所有 Token 全连接”？
+## 156. 但在 Transformer Sequence 上为什么又不是“所有 Token 全连接”？
 
 因为 “fully connected” 指：
 
@@ -4644,9 +4644,9 @@ B\times1202
 
 例如每个 token：
 
-\[
+$$
 512\rightarrow3200
-\]
+$$
 
 所有 3200 outputs都读取该 token的全部512 features。
 
@@ -4660,7 +4660,7 @@ B\times1202
 
 ---
 
-# 157. Attention 才是 Dynamic Token-to-Token Connectivity
+## 157. Attention 才是 Dynamic Token-to-Token Connectivity
 
 Linear：
 
@@ -4672,37 +4672,37 @@ Attention：
 
 这又回到我们前面建立的分工：
 
-\[
+$$
 \boxed{
 \text{Linear/FFN:
 feature-space computation}
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 \text{Attention:
 cross-token interaction}
 }
-\]
+$$
 
 当然 Attention内部本身也大量使用 Linear。
 
 ---
 
-# 158. 一个 Linear Layer 能同时混 Feature 和 Token 吗？
+## 158. 一个 Linear Layer 能同时混 Feature 和 Token 吗？
 
 如果你先 reshape：
 
-\[
+$$
 [N,D]
-\]
+$$
 
 成：
 
-\[
+$$
 [ND]
-\]
+$$
 
 再对整个 flattened vector做 Linear，
 
@@ -4720,7 +4720,7 @@ cross-token interaction}
 
 ---
 
-# 159. 为什么 Shape 思维如此重要？
+## 159. 为什么 Shape 思维如此重要？
 
 `nn.Linear` 只看：
 
@@ -4738,64 +4738,64 @@ cross-token interaction}
 
 所以读 AI代码首先问：
 
-\[
+$$
 \boxed{
 \text{当前 tensor 每个 axis 代表什么？}
 }
-\]
+$$
 
 ---
 
-# 160. ACT 中 Linear Layer 总表
+## 160. ACT 中 Linear Layer 总表
 
 可以把核心 `nn.Linear` 整理成：
 
 | 模块 | Shape | 作用 |
 |---|---:|---|
-| `encoder_joint_proj` | \(14\to512\) | qpos → CVAE token |
-| `encoder_action_proj` | \(14\to512\) | action → CVAE token |
-| `latent_proj` | \(512\to64\) | `[CLS]` → \(\mu,\log\sigma^2\) |
-| `latent_out_proj` | \(32\to512\) | latent \(z\) → policy latent token |
-| `input_proj_robot_state` | \(14\to512\) | current qpos → policy token |
-| Transformer FFN `linear1` | \(512\to3200\) | feature expansion |
-| Transformer FFN `linear2` | \(3200\to512\) | return to residual width |
-| `action_head` | \(512\to14\) | decoder slot → robot action |
-| `is_pad_head` | \(512\to1\) | decoder slot → padding score |
+| `encoder_joint_proj` | $14\to512$ | qpos → CVAE token |
+| `encoder_action_proj` | $14\to512$ | action → CVAE token |
+| `latent_proj` | $512\to64$ | `[CLS]` → $\mu,\log\sigma^2$ |
+| `latent_out_proj` | $32\to512$ | latent $z$ → policy latent token |
+| `input_proj_robot_state` | $14\to512$ | current qpos → policy token |
+| Transformer FFN `linear1` | $512\to3200$ | feature expansion |
+| Transformer FFN `linear2` | $3200\to512$ | return to residual width |
+| `action_head` | $512\to14$ | decoder slot → robot action |
+| `is_pad_head` | $512\to1$ | decoder slot → padding score |
 
 另外 MHA内部还有：
 
-\[
+$$
 W_Q,W_K,W_V,W_O
-\]
+$$
 
 等 learned projections。
 
 ---
 
-# 161. `latent_proj` 的64维怎样 split？
+## 161. `latent_proj` 的64维怎样 split？
 
 latent dim：
 
-\[
+$$
 32
-\]
+$$
 
 所以：
 
-\[
+$$
 64=32+32
-\]
+$$
 
 概念上：
 
-\[
+$$
 latent\_info
 =
 [
 \mu_1,\ldots,\mu_{32},
 \log\sigma_1^2,\ldots,\log\sigma_{32}^2
 ]
-\]
+$$
 
 具体代码split顺序应以实现为准。
 
@@ -4805,7 +4805,7 @@ latent\_info
 
 ---
 
-# 162. 为什么可以用一个 Linear 而不是两个？
+## 162. 为什么可以用一个 Linear 而不是两个？
 
 数学上：
 
@@ -4828,11 +4828,11 @@ Linear(512,64)
 
 ---
 
-# 163. 这说明“一个 Linear Layer”其实只是很多 Output Neurons 的打包
+## 163. 这说明“一个 Linear Layer”其实只是很多 Output Neurons 的打包
 
 前32 rows：
 
-> 可以被后续用作 \(\mu\)。
+> 可以被后续用作 $\mu$。
 
 后32 rows：
 
@@ -4844,15 +4844,15 @@ Linear(512,64)
 
 ---
 
-# 164. 是否意味着 μ 与 logvar 完全独立？
+## 164. 是否意味着 μ 与 logvar 完全独立？
 
 它们的 final affine rows不同，
 
 但都共享同一个 input：
 
-\[
+$$
 h_{CLS}
-\]
+$$
 
 而这个 upstream representation由共同 encoder产生。
 
@@ -4864,19 +4864,19 @@ h_{CLS}
 
 ---
 
-# 165. 为什么 `latent_proj` 不需要 Activation？
+## 165. 为什么 `latent_proj` 不需要 Activation？
 
 因为：
 
-\[
+$$
 \mu
-\]
+$$
 
 可以是任意 real。
 
-\[
+$$
 \log\sigma^2
-\]
+$$
 
 也可以是任意 real。
 
@@ -4888,7 +4888,7 @@ h_{CLS}
 
 ---
 
-# 166. 为什么 Action Head 也没有 ReLU？
+## 166. 为什么 Action Head 也没有 ReLU？
 
 Robot joint target经过 normalization后：
 
@@ -4902,45 +4902,45 @@ Robot joint target经过 normalization后：
 
 ---
 
-# 167. Final Layer 是否需要 Activation 取决于 Output Semantics
+## 167. Final Layer 是否需要 Activation 取决于 Output Semantics
 
 例如：
 
-### Binary probability
+#### Binary probability
 
 Linear logit：
 
-\[
+$$
 z
-\]
+$$
 
 再：
 
-\[
+$$
 Sigmoid(z)
-\]
+$$
 
 ---
 
-### Multiclass probability
+#### Multiclass probability
 
 Linear logits：
 
-\[
+$$
 z
-\]
+$$
 
 再：
 
-\[
+$$
 Softmax(z)
-\]
+$$
 
 或 CrossEntropy直接接 logits。
 
 ---
 
-### Regression
+#### Regression
 
 常常：
 
@@ -4948,37 +4948,37 @@ Softmax(z)
 
 ---
 
-### Positive scale
+#### Positive scale
 
 可能：
 
-\[
+$$
 Linear
 \rightarrow
 Softplus
-\]
+$$
 
 或者预测 log-scale再 exponentiate。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Linear output semantics由 downstream transform决定}
 }
-\]
+$$
 
 ---
 
-# 168. 这就是为什么“Linear Layer 学的是什么？”没有脱离 Context 的唯一答案
+## 168. 这就是为什么“Linear Layer 学的是什么？”没有脱离 Context 的唯一答案
 
 数学上它学：
 
-\[
+$$
 \boxed{
 W,b
 }
-\]
+$$
 
 也就是：
 
@@ -4990,7 +4990,7 @@ W,b
 
 ---
 
-# 169. Q Projection 学的是怎样的 Mapping？
+## 169. Q Projection 学的是怎样的 Mapping？
 
 它学习：
 
@@ -5002,7 +5002,7 @@ W,b
 
 ---
 
-# 170. K Projection 呢？
+## 170. K Projection 呢？
 
 学习：
 
@@ -5010,7 +5010,7 @@ W,b
 
 ---
 
-# 171. V Projection 呢？
+## 171. V Projection 呢？
 
 学习：
 
@@ -5018,7 +5018,7 @@ W,b
 
 ---
 
-# 172. W_O 呢？
+## 172. W_O 呢？
 
 学习：
 
@@ -5026,7 +5026,7 @@ W,b
 
 ---
 
-# 173. FFN Linear1 呢？
+## 173. FFN Linear1 呢？
 
 学习：
 
@@ -5034,7 +5034,7 @@ W,b
 
 ---
 
-# 174. FFN Linear2 呢？
+## 174. FFN Linear2 呢？
 
 学习：
 
@@ -5042,7 +5042,7 @@ W,b
 
 ---
 
-# 175. ACT Joint Projection 呢？
+## 175. ACT Joint Projection 呢？
 
 学习：
 
@@ -5050,7 +5050,7 @@ W,b
 
 ---
 
-# 176. ACT Action Projection 呢？
+## 176. ACT Action Projection 呢？
 
 学习：
 
@@ -5058,7 +5058,7 @@ W,b
 
 ---
 
-# 177. ACT Latent Projection 呢？
+## 177. ACT Latent Projection 呢？
 
 学习：
 
@@ -5066,7 +5066,7 @@ W,b
 
 ---
 
-# 178. ACT Latent Out Projection 呢？
+## 178. ACT Latent Out Projection 呢？
 
 学习：
 
@@ -5074,7 +5074,7 @@ W,b
 
 ---
 
-# 179. ACT Action Head 呢？
+## 179. ACT Action Head 呢？
 
 学习：
 
@@ -5082,13 +5082,13 @@ W,b
 
 ---
 
-# 180. 所有这些都是同一个数学模块
+## 180. 所有这些都是同一个数学模块
 
-\[
+$$
 \boxed{
 y=Wx+b
 }
-\]
+$$
 
 区别：
 
@@ -5102,7 +5102,7 @@ y=Wx+b
 
 ---
 
-# 181. 这是理解深度学习代码非常重要的一次“去神秘化”
+## 181. 这是理解深度学习代码非常重要的一次“去神秘化”
 
 看到：
 
@@ -5127,7 +5127,7 @@ nn.Linear(512, 64)
 
 ---
 
-# 182. 一个最小 PyTorch 例子
+## 182. 一个最小 PyTorch 例子
 
 ```python
 import torch
@@ -5155,13 +5155,13 @@ print(y.shape)
 
 因为：
 
-\[
+$$
 3\rightarrow2
-\]
+$$
 
 ---
 
-# 183. 手动复现 PyTorch Forward
+## 183. 手动复现 PyTorch Forward
 
 PyTorch stored：
 
@@ -5201,80 +5201,80 @@ True
 
 ---
 
-# 184. 为什么 `.T`？
+## 184. 为什么 `.T`？
 
 因为：
 
-\[
+$$
 x:
 [B,3]
-\]
+$$
 
 而：
 
-\[
+$$
 weight:
 [2,3]
-\]
+$$
 
 需要：
 
-\[
+$$
 weight^\top:
 [3,2]
-\]
+$$
 
 所以：
 
-\[
+$$
 [B,3]
 [3,2]
 \rightarrow
 [B,2]
-\]
+$$
 
 ---
 
-# 185. 如果你自己用参数矩阵 [in,out] 呢？
+## 185. 如果你自己用参数矩阵 [in,out] 呢？
 
 你也可以定义：
 
-\[
+$$
 W:
 [3,2]
-\]
+$$
 
 然后写：
 
-\[
+$$
 xW+b
-\]
+$$
 
 数学完全可以。
 
 只是 PyTorch `nn.Linear` 的 stored weight convention是：
 
-\[
+$$
 [out,in]
-\]
+$$
 
 因此 forward内部使用 transpose意义。
 
 ---
 
-# 186. 不要把 Storage Convention 当成数学定律
+## 186. 不要把 Storage Convention 当成数学定律
 
 框架可以选择不同 layout。
 
 真正不变的是：
 
-\[
+$$
 \boxed{
 y_j
 =
 \sum_iw_{ji}x_i+b_j
 }
-\]
+$$
 
 只要知道 scalar equation，
 
@@ -5282,7 +5282,7 @@ y_j
 
 ---
 
-# 187. Linear Layer 是否一定 Dense？
+## 187. Linear Layer 是否一定 Dense？
 
 `nn.Linear` 是 dense affine layer。
 
@@ -5298,39 +5298,39 @@ y_j
 
 ---
 
-# 188. Low-Rank Linear 又是什么？
+## 188. Low-Rank Linear 又是什么？
 
 如果：
 
-\[
+$$
 W
-\]
+$$
 
 很大，
 
 可以近似：
 
-\[
+$$
 W\approx AB
-\]
+$$
 
 其中：
 
-\[
+$$
 A:
 [m,r]
-\]
+$$
 
-\[
+$$
 B:
 [r,n]
-\]
+$$
 
 且：
 
-\[
+$$
 r\ll \min(m,n)
-\]
+$$
 
 这能降低参数量。
 
@@ -5340,11 +5340,11 @@ LoRA等方法就利用了：
 
 思想。
 
-但 canonical Linear Layer先理解完整 dense \(W\)。
+但 canonical Linear Layer先理解完整 dense $W$。
 
 ---
 
-# 189. 为什么 LoRA 也离不开 Linear Layer？
+## 189. 为什么 LoRA 也离不开 Linear Layer？
 
 Transformer大量参数就在：
 
@@ -5355,15 +5355,15 @@ Transformer大量参数就在：
 
 LoRA通过给某些：
 
-\[
+$$
 W
-\]
+$$
 
 增加低秩 update：
 
-\[
+$$
 \Delta W=BA
-\]
+$$
 
 来低成本 fine-tune。
 
@@ -5371,19 +5371,19 @@ W
 
 ---
 
-# 190. Quantization 为什么也重点处理 Linear Weights？
+## 190. Quantization 为什么也重点处理 Linear Weights？
 
 因为大模型大量计算是：
 
-\[
+$$
 XW^\top
-\]
+$$
 
 如果：
 
-\[
+$$
 W
-\]
+$$
 
 从 FP16量化到：
 
@@ -5399,7 +5399,7 @@ W
 
 ---
 
-# 191. ACT/Robot Policy 部署同样如此
+## 191. ACT/Robot Policy 部署同样如此
 
 即使不是 LLM，
 
@@ -5418,23 +5418,23 @@ Transformer policy中大量：
 
 ---
 
-# 192. Linear Layer 和 Parameter Count 的关系非常直接
+## 192. Linear Layer 和 Parameter Count 的关系非常直接
 
-\[
+$$
 n\rightarrow m
-\]
+$$
 
 参数近似：
 
-\[
+$$
 nm
-\]
+$$
 
 所以当：
 
-\[
+$$
 n,m
-\]
+$$
 
 都很大，
 
@@ -5442,9 +5442,9 @@ n,m
 
 例如：
 
-\[
+$$
 4096\rightarrow11008
-\]
+$$
 
 这类现代 LLM FFN projection：
 
@@ -5452,13 +5452,13 @@ n,m
 
 ---
 
-# 193. 为什么矩阵乘是现代 AI 芯片核心？
+## 193. 为什么矩阵乘是现代 AI 芯片核心？
 
 因为神经网络反复执行：
 
-\[
+$$
 Y=XW
-\]
+$$
 
 所以 GPU Tensor Cores、TPUs等硬件专门优化：
 
@@ -5472,13 +5472,13 @@ Y=XW
 
 ---
 
-# 194. 但 Linear Layer 本身没有“智能”
+## 194. 但 Linear Layer 本身没有“智能”
 
 这一点值得强调。
 
-\[
+$$
 y=Wx+b
-\]
+$$
 
 是非常简单的数学函数。
 
@@ -5495,7 +5495,7 @@ y=Wx+b
 
 所以：
 
-\[
+$$
 \boxed{
 \text{simple primitives}
 +
@@ -5503,43 +5503,43 @@ y=Wx+b
 =
 \text{complex model behavior}
 }
-\]
+$$
 
 ---
 
-# 195. 常见误解一：`nn.Linear` 严格数学上一定是 Linear Map
+## 195. 常见误解一：`nn.Linear` 严格数学上一定是 Linear Map
 
 **默认带 bias 时不是。**
 
 它是：
 
-\[
+$$
 Wx+b
-\]
+$$
 
 即 affine transformation。
 
 ---
 
-# 196. 常见误解二：`Linear(512,64)` 的 Weight Shape 是 [512,64]
+## 196. 常见误解二：`Linear(512,64)` 的 Weight Shape 是 [512,64]
 
 PyTorch存储：
 
-\[
+$$
 \boxed{
 [64,512]
 }
-\]
+$$
 
 因为：
 
-\[
+$$
 [out,in]
-\]
+$$
 
 ---
 
-# 197. 常见误解三：PyTorch 公式和论文 \(xW\) 冲突
+## 197. 常见误解三：PyTorch 公式和论文 $xW$ 冲突
 
 **不冲突。**
 
@@ -5547,27 +5547,27 @@ PyTorch存储：
 
 ---
 
-# 198. 常见误解四：每个 Output 只读取一个 Input Feature
+## 198. 常见误解四：每个 Output 只读取一个 Input Feature
 
 **错误。**
 
 每一个：
 
-\[
+$$
 y_j
-\]
+$$
 
 通常读取：
 
-\[
+$$
 \boxed{
 \text{所有 input features}
 }
-\]
+$$
 
 ---
 
-# 199. 常见误解五：Linear Layer 会自动让 Tokens 相互交流
+## 199. 常见误解五：Linear Layer 会自动让 Tokens 相互交流
 
 **错误。**
 
@@ -5575,7 +5575,7 @@ y_j
 
 ---
 
-# 200. 常见误解六：512→3200 创建了3200个独立新信息维度
+## 200. 常见误解六：512→3200 创建了3200个独立新信息维度
 
 **错误。**
 
@@ -5583,27 +5583,27 @@ y_j
 
 ---
 
-# 201. 常见误解七：升维本身就是非线性
+## 201. 常见误解七：升维本身就是非线性
 
 **错误。**
 
 无论多宽：
 
-\[
+$$
 Wx+b
-\]
+$$
 
 仍是 affine。
 
 ---
 
-# 202. 常见误解八：两层 Linear 一定比一层更强
+## 202. 常见误解八：两层 Linear 一定比一层更强
 
 **没有 activation 时可以合并成一层 affine map。**
 
 ---
 
-# 203. 常见误解九：Bias 只是可有可无的小常数，没有数学作用
+## 203. 常见误解九：Bias 只是可有可无的小常数，没有数学作用
 
 它允许：
 
@@ -5611,47 +5611,47 @@ Wx+b
 
 使：
 
-\[
+$$
 T(0)\neq0
-\]
+$$
 
 并移动 decision hyperplane。
 
 ---
 
-# 204. 常见误解十：输入0，Linear输出一定0
+## 204. 常见误解十：输入0，Linear输出一定0
 
 **只有 bias为0时。**
 
 默认：
 
-\[
+$$
 y=b
-\]
+$$
 
 ---
 
-# 205. 常见误解十一：ACT z=0 所以 latent token是0
+## 205. 常见误解十一：ACT z=0 所以 latent token是0
 
 **错误。**
 
 `latent_out_proj` 默认含 bias：
 
-\[
+$$
 Linear(0)=b
-\]
+$$
 
 ---
 
-# 206. 常见误解十二：Linear Layer 自己知道 Output 是 μ
+## 206. 常见误解十二：Linear Layer 自己知道 Output 是 μ
 
 **错误。**
 
-后续 graph把 output当成 \(\mu\)，loss才训练出这种功能。
+后续 graph把 output当成 $\mu$，loss才训练出这种功能。
 
 ---
 
-# 207. 常见误解十三：Linear Layer 自己知道 Output 是 Action
+## 207. 常见误解十三：Linear Layer 自己知道 Output 是 Action
 
 **错误。**
 
@@ -5659,7 +5659,7 @@ Action target、loss和execution convention赋予语义。
 
 ---
 
-# 208. 常见误解十四：Q/K/V 是三种特殊神经元类型
+## 208. 常见误解十四：Q/K/V 是三种特殊神经元类型
 
 **错误。**
 
@@ -5669,21 +5669,21 @@ Action target、loss和execution convention赋予语义。
 
 ---
 
-# 209. 常见误解十五：一个 Output Neuron 就是对某个 Input Dimension做 Projection
+## 209. 常见误解十五：一个 Output Neuron 就是对某个 Input Dimension做 Projection
 
 **不准确。**
 
 通常：
 
-\[
+$$
 w_j^\top x
-\]
+$$
 
 混合所有 input dimensions。
 
 ---
 
-# 210. 常见误解十六：Neural “Projection” 一定满足数学投影 \(P^2=P\)
+## 210. 常见误解十六：Neural “Projection” 一定满足数学投影 $P^2=P$
 
 **错误。**
 
@@ -5691,15 +5691,15 @@ w_j^\top x
 
 ---
 
-# 211. 常见误解十七：Linear Layer 会把512维“压缩成64维但信息完全不丢”
+## 211. 常见误解十七：Linear Layer 会把512维“压缩成64维但信息完全不丢”
 
 一般不能保证。
 
 如果：
 
-\[
+$$
 64<512
-\]
+$$
 
 rank上限64，
 
@@ -5707,25 +5707,25 @@ rank上限64，
 
 ---
 
-# 212. 常见误解十八：512→512 一定不丢信息
+## 212. 常见误解十八：512→512 一定不丢信息
 
 也不保证。
 
 如果：
 
-\[
+$$
 W
-\]
+$$
 
 rank-deficient，
 
 仍可能丢失 directions。
 
-只有 invertible square \(W\)才是一一可逆的线性部分。
+只有 invertible square $W$才是一一可逆的线性部分。
 
 ---
 
-# 213. 常见误解十九：Weight Matrix 每一列是一个 Output Neuron
+## 213. 常见误解十九：Weight Matrix 每一列是一个 Output Neuron
 
 在 PyTorch `[out,in]` convention下：
 
@@ -5733,7 +5733,7 @@ rank-deficient，
 
 ---
 
-# 214. 常见误解二十：Linear Layer 的 Weight 会随每个 Input 动态变化
+## 214. 常见误解二十：Linear Layer 的 Weight 会随每个 Input 动态变化
 
 标准 `nn.Linear`：
 
@@ -5745,21 +5745,21 @@ rank-deficient，
 
 ---
 
-# 215. 常见误解二十一：Attention Weight 和 Linear Weight 是同一种东西
+## 215. 常见误解二十一：Attention Weight 和 Linear Weight 是同一种东西
 
 不是。
 
-### Linear Weight \(W\)
+#### Linear Weight $W$
 
 learned parameters。
 
-### Attention Weight \(A(X)\)
+#### Attention Weight $A(X)$
 
 由当前 input动态计算的 activations。
 
 ---
 
-# 216. 常见误解二十二：Linear Output 默认是 Probability
+## 216. 常见误解二十二：Linear Output 默认是 Probability
 
 不是。
 
@@ -5769,7 +5769,7 @@ learned parameters。
 
 ---
 
-# 217. 常见误解二十三：Action Head 必须有 Tanh
+## 217. 常见误解二十三：Action Head 必须有 Tanh
 
 不一定。
 
@@ -5779,13 +5779,13 @@ ACT canonical action head就是 Linear readout。
 
 ---
 
-# 218. 常见误解二十四：logvar必须由正数输出层产生
+## 218. 常见误解二十四：logvar必须由正数输出层产生
 
 不需要。
 
-\[
+$$
 \log\sigma^2
-\]
+$$
 
 本来就是任意 real。
 
@@ -5793,7 +5793,7 @@ Exponentiation后 variance才为正。
 
 ---
 
-# 219. 常见误解二十五：1×1 Conv 和 Linear 毫无关系
+## 219. 常见误解二十五：1×1 Conv 和 Linear 毫无关系
 
 在单个 spatial position，
 
@@ -5805,25 +5805,25 @@ Exponentiation后 variance才为正。
 
 ---
 
-# 220. 常见误解二十六：Linear Layer 没有 Bias 也叫 Affine
+## 220. 常见误解二十六：Linear Layer 没有 Bias 也叫 Affine
 
 严格地：
 
-\[
+$$
 Wx
-\]
+$$
 
 是 linear。
 
-\[
+$$
 Wx+b
-\]
+$$
 
 才是 affine。
 
 ---
 
-# 221. 常见误解二十七：所有论文中的 \(W\) Shape 都应该和 PyTorch `.weight.shape` 一样
+## 221. 常见误解二十七：所有论文中的 $W$ Shape 都应该和 PyTorch `.weight.shape` 一样
 
 不一定。
 
@@ -5838,7 +5838,7 @@ Wx+b
 
 ---
 
-# 222. 常见误解二十八：Linear Layer 的 Expansion 可以替代 Activation
+## 222. 常见误解二十八：Linear Layer 的 Expansion 可以替代 Activation
 
 不能。
 
@@ -5846,7 +5846,7 @@ Wx+b
 
 ---
 
-# 223. 常见误解二十九：Output Dimension 越大一定越强
+## 223. 常见误解二十九：Output Dimension 越大一定越强
 
 不一定。
 
@@ -5866,7 +5866,7 @@ Wx+b
 
 ---
 
-# 224. 常见误解三十：Linear 是一个“简单层”，所以对模型不重要
+## 224. 常见误解三十：Linear 是一个“简单层”，所以对模型不重要
 
 Transformer中绝大多数大参数矩阵：
 
@@ -5876,7 +5876,7 @@ Transformer中绝大多数大参数矩阵：
 
 ---
 
-# 225. 一张图记住 Linear Layer
+## 225. 一张图记住 Linear Layer
 
 ```text
 Input x ∈ R^n
@@ -5891,15 +5891,15 @@ Input x ∈ R^n
 
 统一矩阵写法：
 
-\[
+$$
 \boxed{
 y=Wx+b
 }
-\]
+$$
 
 ---
 
-# 226. 一张图记住 PyTorch Shape
+## 226. 一张图记住 PyTorch Shape
 
 ```text
 nn.Linear(in_features=n, out_features=m)
@@ -5922,7 +5922,7 @@ output:
 
 ---
 
-# 227. 一张图记住 Transformer 中的 Linear
+## 227. 一张图记住 Transformer 中的 Linear
 
 ```text
 hidden x
@@ -5946,7 +5946,7 @@ residual-space output
 
 ---
 
-# 228. 一张图记住 ACT 中的 Linear
+## 228. 一张图记住 ACT 中的 Linear
 
 ```text
 qpos [14]
@@ -5992,15 +5992,15 @@ predicted robot action
 
 每一条箭头背后：
 
-\[
+$$
 \boxed{
 y=Wx+b
 }
-\]
+$$
 
 ---
 
-# 229. 最重要的 Mental Model：Linear = Learned Readout / Re-encoding
+## 229. 最重要的 Mental Model：Linear = Learned Readout / Re-encoding
 
 一个非常好用的直觉是：
 
@@ -6008,19 +6008,19 @@ y=Wx+b
 
 输入：
 
-\[
+$$
 x
-\]
+$$
 
 每个输出：
 
-\[
+$$
 y_j=w_j^\top x+b_j
-\]
+$$
 
 所以：
 
-> 每个 \(w_j\) 都像一种 learned question：
+> 每个 $w_j$ 都像一种 learned question：
 
 > “当前 input沿我这组 feature combination响应多大？”
 
@@ -6030,13 +6030,13 @@ y_j=w_j^\top x+b_j
 
 ---
 
-# 230. 更严谨的说法
+## 230. 更严谨的说法
 
-\[
+$$
 \boxed{
 \text{A Linear/Affine Layer learns a basis of output responses, not semantics by itself.}
 }
-\]
+$$
 
 这些 responses最终承担什么角色：
 
@@ -6044,85 +6044,85 @@ y_j=w_j^\top x+b_j
 
 ---
 
-# 231. 一句话真正理解 Linear Layer
+## 231. 一句话真正理解 Linear Layer
 
-> **神经网络中的 Linear Layer 本质上是一组并行的 learned weighted sums：每个 output dimension都有一个 weight vector \(w_j\)，通过 \(y_j=w_j^\top x+b_j\) 从全部 input features中读取一种 learned linear response；把所有 output neurons堆在一起就是矩阵形式 \(y=Wx+b\)。默认带 bias时它严格说是 affine transformation，而这些输出最终是 Query、Key、Value、latent parameter还是 robot action，并不是 Linear Layer自己知道的，而是由它在 computation graph中的位置、后续运算、training targets和 loss gradients共同赋予的。**
-
----
-
-# 232. 一句话理解为什么 Linear 到处都是
-
-> **Linear Layer可以用极其高效的矩阵乘完成任意 learned feature mixing，并且对参数和输入都可微；它既能改变 feature dimension，也能在相同维度中重新编码 representation，因此 Transformer可以用它构造 Q/K/V 和 \(W_O\)，FFN用它完成扩维与压回，CVAE用它读取 distribution parameters，ACT用它把 joint/action/latent映射进统一 hidden space并最终把 decoder representation读出为14维动作。**
+> **神经网络中的 Linear Layer 本质上是一组并行的 learned weighted sums：每个 output dimension都有一个 weight vector $w_j$，通过 $y_j=w_j^\top x+b_j$ 从全部 input features中读取一种 learned linear response；把所有 output neurons堆在一起就是矩阵形式 $y=Wx+b$。默认带 bias时它严格说是 affine transformation，而这些输出最终是 Query、Key、Value、latent parameter还是 robot action，并不是 Linear Layer自己知道的，而是由它在 computation graph中的位置、后续运算、training targets和 loss gradients共同赋予的。**
 
 ---
 
-# 233. 一句话连接你之前的 μ / logvar 问题
+## 232. 一句话理解为什么 Linear 到处都是
 
-> **`h_CLS → Linear(512,64)` 并不是一个“知道如何把输入变成均值和方差”的特殊概率层；它只是输出64个 affine responses。之所以前32维最终成为 \(\mu\)、后32维成为 \(\log\sigma^2\)，是因为代码这样解释它们并把它们送入 reparameterization 和 KL objective，于是 reconstruction + KL 的梯度不断调整对应 rows of \(W\)，让这些 numbers逐渐成为对训练有用的 posterior parameters。**
+> **Linear Layer可以用极其高效的矩阵乘完成任意 learned feature mixing，并且对参数和输入都可微；它既能改变 feature dimension，也能在相同维度中重新编码 representation，因此 Transformer可以用它构造 Q/K/V 和 $W_O$，FFN用它完成扩维与压回，CVAE用它读取 distribution parameters，ACT用它把 joint/action/latent映射进统一 hidden space并最终把 decoder representation读出为14维动作。**
 
 ---
 
-# 234. 下一篇：ReLU
+## 233. 一句话连接你之前的 μ / logvar 问题
+
+> **`h_CLS → Linear(512,64)` 并不是一个“知道如何把输入变成均值和方差”的特殊概率层；它只是输出64个 affine responses。之所以前32维最终成为 $\mu$、后32维成为 $\log\sigma^2$，是因为代码这样解释它们并把它们送入 reparameterization 和 KL objective，于是 reconstruction + KL 的梯度不断调整对应 rows of $W$，让这些 numbers逐渐成为对训练有用的 posterior parameters。**
+
+---
+
+## 234. 下一篇：ReLU
 
 现在我们已经真正理解：
 
-\[
+$$
 Linear
-\]
+$$
 
 能做什么，
 
 也知道一个严重限制：
 
-\[
+$$
 Linear
 \rightarrow
 Linear
-\]
+$$
 
 仍然只是 Linear/Affine。
 
 那么真正让 MLP 开始拥有 nonlinear expressive power 的那个最小模块就是：
 
-\[
+$$
 \boxed{
 ReLU
 }
-\]
+$$
 
 下一篇：
 
-> **[ReLU：为什么只做 \(\max(0,x)\)，就能让神经网络学非线性？](./relu.md)**
+> **[ReLU：为什么只做 $\max(0,x)$，就能让神经网络学非线性？](./relu.md)**
 
 会详细解释：
 
 - 什么叫 linear / nonlinear function；
 - 为什么：
-  \[
+  $$
   ReLU(x)=\max(0,x)
-  \]
+  $$
   如此简单却足够关键；
 - 为什么两个 Linear中间没有 ReLU可以合并；
 - ReLU如何把 input space切成不同 linear regions；
 - 一个 neuron的：
-  \[
+  $$
   w^\top x+b=0
-  \]
+  $$
   为什么形成 activation boundary；
 - 多个 ReLU如何组成 piecewise-linear function；
 - ReLU derivative；
 - 为什么负区间 gradient=0；
 - dying ReLU；
 - 为什么 ACT FFN：
-  \[
+  $$
   512\rightarrow3200\rightarrow ReLU\rightarrow512
-  \]
+  $$
   需要这个 activation；
 - ReLU、GELU、Sigmoid、Tanh 的角色区别。
 
 ---
 
-## Primary Mathematical Background：Linear Transformations
+### Primary Mathematical Background：Linear Transformations
 
 MIT OpenCourseWare — Gilbert Strang.
 
@@ -6137,41 +6137,41 @@ MIT OpenCourseWare — Gilbert Strang.
 
 严格 linear transformation必须保持：
 
-\[
+$$
 T(x+y)=T(x)+T(y)
-\]
+$$
 
-\[
+$$
 T(cx)=cT(x)
-\]
+$$
 
 因此：
 
-\[
+$$
 T(0)=0
-\]
+$$
 
 必然成立。
 
 所以：
 
-\[
+$$
 Wx
-\]
+$$
 
 是 linear，
 
 而：
 
-\[
+$$
 Wx+b,\quad b\neq0
-\]
+$$
 
 严格说是 affine transformation。
 
 ---
 
-## Deep Learning Background
+### Deep Learning Background
 
 Ian Goodfellow, Yoshua Bengio, Aaron Courville.
 
@@ -6184,15 +6184,15 @@ Feedforward networks使用 affine transformations与 nonlinear activation functi
 
 本文中的：
 
-\[
+$$
 Wx+b
-\]
+$$
 
 是 dense neural network最基础的 affine building block。
 
 ---
 
-## PyTorch Primary Implementation Reference
+### PyTorch Primary Implementation Reference
 
 PyTorch `torch.nn.Linear`:
 
@@ -6210,39 +6210,39 @@ torch.nn.Linear(
 
 并明确说明：
 
-\[
+$$
 \boxed{
 y=xA^\top+b
 }
-\]
+$$
 
 PyTorch stored parameters：
 
-\[
+$$
 \boxed{
 weight:
 [out\_features,in\_features]
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 bias:
 [out\_features]
 }
-\]
+$$
 
 输入：
 
-\[
+$$
 (*,H_{in})
-\]
+$$
 
 输出：
 
-\[
+$$
 (*,H_{out})
-\]
+$$
 
 所以所有前置 dimensions保持不变，
 
@@ -6250,7 +6250,7 @@ bias:
 
 ---
 
-## ACT Official Implementation
+### ACT Official Implementation
 
 Official repository:
 
@@ -6316,17 +6316,17 @@ self.latent_proj =
 
 因此：
 
-\[
+$$
 \boxed{
 512\rightarrow64
 }
-\]
+$$
 
 再在 forward中解释为：
 
-\[
+$$
 \mu,\log\sigma^2
-\]
+$$
 
 latent进入 policy：
 
@@ -6340,15 +6340,15 @@ self.latent_out_proj =
 
 即：
 
-\[
+$$
 \boxed{
 32\rightarrow512
 }
-\]
+$$
 
 ---
 
-## ACT Transformer FFN
+### ACT Transformer FFN
 
 Official source:
 
@@ -6372,17 +6372,17 @@ self.linear2 =
 
 ACT canonical config：
 
-\[
+$$
 d_{\text{model}}=512
-\]
+$$
 
-\[
+$$
 d_{ff}=3200
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 512
 \rightarrow
@@ -6390,7 +6390,7 @@ d_{ff}=3200
 \rightarrow
 512
 }
-\]
+$$
 
 中间必须有 nonlinear activation，
 
@@ -6398,7 +6398,7 @@ d_{ff}=3200
 
 ---
 
-## Transformer Q/K/V Background
+### Transformer Q/K/V Background
 
 Ashish Vaswani et al.
 
@@ -6410,23 +6410,23 @@ NeurIPS 2017.
 
 Multi-Head Attention使用 learned projections：
 
-\[
+$$
 QW_i^Q
-\]
+$$
 
-\[
+$$
 KW_i^K
-\]
+$$
 
-\[
+$$
 VW_i^V
-\]
+$$
 
 以及最终：
 
-\[
+$$
 W^O
-\]
+$$
 
 这些 projection从神经网络计算角度都属于：
 
@@ -6438,9 +6438,9 @@ W^O
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### 数学
+#### 数学
 
 - Vector
 - Matrix
@@ -6453,7 +6453,7 @@ W^O
 - Jacobian
 - Gradient
 
-### Deep Learning
+#### Deep Learning
 
 - [MLP](./mlp.md)
 - [Feed-Forward Network](./feed-forward-network.md)
@@ -6461,7 +6461,7 @@ W^O
 - Xavier Initialization
 - Embedding
 
-### Transformer
+#### Transformer
 
 - [Q / K / V](./qkv.md)
 - [Attention](./attention.md)
@@ -6469,19 +6469,19 @@ W^O
 - [Transformer Encoder](./transformer-encoder.md)
 - [Transformer Decoder](./transformer-decoder.md)
 
-### Generative Modeling
+#### Generative Modeling
 
 - [VAE](../generative-models/vae.md)
 - [CVAE](../generative-models/cvae.md)
 - [Reparameterization Trick](../generative-models/reparameterization-trick.md)
 
-### Robot Learning
+#### Robot Learning
 
 - [ACT Architecture](../robot-learning/act/architecture.md)
 - [CVAE in ACT](../robot-learning/act/cvae-in-act.md)
 - [ACT Training](../robot-learning/act/training.md)
 - [ACT Complete Data Flow](../robot-learning/act/complete-data-flow.md)
 
-### 下一步
+#### 下一步
 
 - [ReLU](./relu.md)

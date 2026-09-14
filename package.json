@@ -6,11 +6,13 @@
   "scripts": {
     "docs:dev": "vitepress dev docs",
     "docs:audit": "node scripts/audit-doc-links.mjs",
+    "docs:audit:math": "node scripts/audit-math-rendering.mjs",
+    "docs:audit:render": "node scripts/audit-built-rendering.mjs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"
   },
   "devDependencies": {
-    "markdown-it-mathjax3": "4.3.2",
+    "katex": "0.16.47",
     "mermaid": "10.9.3",
     "vitepress": "1.6.4",
     "vitepress-plugin-mermaid": "2.0.17"

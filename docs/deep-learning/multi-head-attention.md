@@ -11,7 +11,7 @@ updated: "2026-09-15"
 
 在 [Self-Attention](./self-attention.md) 中，我们已经完整走过一次：
 
-\[
+$$
 X
 \rightarrow
 Q,K,V
@@ -23,15 +23,15 @@ QK^\top
 \operatorname{Softmax}
 \rightarrow
 AV
-\]
+$$
 
 如果只有一个 Attention Head，
 
 那么整个 sequence 中所有位置之间的关系，都必须通过同一套：
 
-\[
+$$
 W_Q,\;W_K,\;W_V
-\]
+$$
 
 来表达。
 
@@ -45,25 +45,25 @@ W_Q,\;W_K,\;W_V
 
 为什么不直接做：
 
-\[
+$$
 d_{\text{model}}=512
-\]
+$$
 
 的一次大 Attention？
 
 为什么原始 Transformer Base 反而使用：
 
-\[
+$$
 h=8
-\]
+$$
 
 个 heads，
 
 每个 head 只有：
 
-\[
+$$
 d_k=d_v=64
-\]
+$$
 
 维？
 
@@ -73,19 +73,19 @@ d_k=d_v=64
 
 还有：
 
-\[
+$$
 \operatorname{Concat}
 (
 head_1,\ldots,head_8
 )
 W^O
-\]
+$$
 
 为什么先拼起来以后，还要再乘一个：
 
-\[
+$$
 W^O
-\]
+$$
 
 ？
 
@@ -93,11 +93,11 @@ W^O
 
 ---
 
-# 1. 先看原论文真正的动机
+## 1. 先看原论文真正的动机
 
 《Attention Is All You Need》在 Section 3.2.2 中明确写道：
 
-> 与其使用一组 \(d_{\text{model}}\) 维 queries、keys、values 做一次 attention，作者发现，把 Q/K/V 用多组不同的 learned linear projections 投影到多个较低维空间，再并行做 Attention，会更有效。
+> 与其使用一组 $d_{\text{model}}$ 维 queries、keys、values 做一次 attention，作者发现，把 Q/K/V 用多组不同的 learned linear projections 投影到多个较低维空间，再并行做 Attention，会更有效。
 
 原论文给出的核心理由是：
 
@@ -105,13 +105,13 @@ W^O
 
 也就是：
 
-\[
+$$
 \boxed{
 \text{不同 Heads}
 \rightarrow
 \text{不同 learned representation subspaces}
 }
-\]
+$$
 
 并且论文还指出：
 
@@ -121,34 +121,34 @@ W^O
 
 ---
 
-# 2. Single-Head Attention 有什么潜在限制？
+## 2. Single-Head Attention 有什么潜在限制？
 
 先假设只有一组：
 
-\[
+$$
 W_Q,\;W_K,\;W_V
-\]
+$$
 
 那么所有 Query–Key pair 都在同一个 learned matching space 中计算：
 
-\[
+$$
 q_i^\top k_j
-\]
+$$
 
 最终一个 query 得到一组：
 
-\[
+$$
 \alpha_{ij}
-\]
+$$
 
 再计算：
 
-\[
+$$
 o_i
 =
 \sum_j
 \alpha_{ij}v_j
-\]
+$$
 
 问题在于：
 
@@ -177,7 +177,7 @@ o_i
 
 ---
 
-# 3. 一个直觉例子
+## 3. 一个直觉例子
 
 考虑：
 
@@ -195,7 +195,7 @@ it
 
 模型可能同时希望知道：
 
-### 关系 A
+#### 关系 A
 
 `it` 指代谁？
 
@@ -207,7 +207,7 @@ animal
 
 ---
 
-### 关系 B
+#### 关系 B
 
 当前局部短语是什么？
 
@@ -220,7 +220,7 @@ tired
 
 ---
 
-### 关系 C
+#### 关系 C
 
 它处在句子的哪个结构位置？
 
@@ -230,59 +230,59 @@ tired
 
 最终只产生：
 
-\[
+$$
 \alpha_{it,1},
 \ldots,
 \alpha_{it,n}
-\]
+$$
 
 这一组权重，
 
 所有关系最后都混进：
 
-\[
+$$
 \sum_j\alpha_{ij}v_j
-\]
+$$
 
 同一个 weighted sum。
 
 ---
 
-# 4. Multi-Head 的基本想法
+## 4. Multi-Head 的基本想法
 
 不要只做一次：
 
-\[
+$$
 Attention(Q,K,V)
-\]
+$$
 
 而是做：
 
-\[
+$$
 head_1
-\]
+$$
 
-\[
+$$
 head_2
-\]
+$$
 
-\[
+$$
 \cdots
-\]
+$$
 
-\[
+$$
 head_h
-\]
+$$
 
 每个 head 都有自己独立的：
 
-\[
+$$
 W_i^Q,\;W_i^K,\;W_i^V
-\]
+$$
 
 因此：
 
-\[
+$$
 \boxed{
 head_i
 =
@@ -292,11 +292,11 @@ KW_i^K,
 VW_i^V
 )
 }
-\]
+$$
 
 最后：
 
-\[
+$$
 \boxed{
 MultiHead(Q,K,V)
 =
@@ -304,67 +304,67 @@ Concat(
 head_1,\ldots,head_h
 )W^O
 }
-\]
+$$
 
 这就是原论文的正式定义。
 
 ---
 
-# 5. 每个 Head 到底不同在哪里？
+## 5. 每个 Head 到底不同在哪里？
 
 假设输入 hidden representation：
 
-\[
+$$
 X
-\]
+$$
 
 对 head 1：
 
-\[
+$$
 Q_1=XW_1^Q
-\]
+$$
 
-\[
+$$
 K_1=XW_1^K
-\]
+$$
 
-\[
+$$
 V_1=XW_1^V
-\]
+$$
 
 对 head 2：
 
-\[
+$$
 Q_2=XW_2^Q
-\]
+$$
 
-\[
+$$
 K_2=XW_2^K
-\]
+$$
 
-\[
+$$
 V_2=XW_2^V
-\]
+$$
 
 因为：
 
-\[
+$$
 W_1^Q\neq W_2^Q
-\]
+$$
 
-\[
+$$
 W_1^K\neq W_2^K
-\]
+$$
 
-\[
+$$
 W_1^V\neq W_2^V
-\]
+$$
 
 所以即使输入：
 
-\[
+$$
 X
-\]
+$$
 
 完全一样，
 
@@ -372,41 +372,41 @@ X
 
 ---
 
-# 6. 因此每个 Head 都有自己的 Matching Space
+## 6. 因此每个 Head 都有自己的 Matching Space
 
 回忆单头：
 
-\[
+$$
 score_{ij}
 =
 q_i^\top k_j
-\]
+$$
 
-第 \(r\) 个 head：
+第 $r$ 个 head：
 
-\[
+$$
 score_{ij}^{(r)}
 =
 q_i^{(r)\top}k_j^{(r)}
-\]
+$$
 
 又因为：
 
-\[
+$$
 q_i^{(r)}
 =
 x_iW_r^Q
-\]
+$$
 
-\[
+$$
 k_j^{(r)}
 =
 x_jW_r^K
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 score_{ij}^{(r)}
 =
@@ -415,13 +415,13 @@ W_r^Q
 W_r^{K\top}
 x_j^\top
 }
-\]
+$$
 
 不同 head 有不同：
 
-\[
+$$
 W_r^QW_r^{K\top}
-\]
+$$
 
 于是它们实际上学习：
 
@@ -429,7 +429,7 @@ W_r^QW_r^{K\top}
 
 ---
 
-# 7. 这就是“Different Representation Subspaces”的数学含义
+## 7. 这就是“Different Representation Subspaces”的数学含义
 
 原论文说：
 
@@ -449,9 +449,9 @@ Head 2 = 原始维度 65~128
 
 而是每个 head 都有 learned projection：
 
-\[
+$$
 XW_r^Q
-\]
+$$
 
 因此 head 1 的第一个维度可能是：
 
@@ -463,13 +463,13 @@ head 2 的第一个维度又可以是：
 
 所以：
 
-\[
+$$
 \boxed{
 \text{subspace}
 \neq
 \text{fixed feature slice}
 }
-\]
+$$
 
 它是：
 
@@ -477,49 +477,49 @@ head 2 的第一个维度又可以是：
 
 ---
 
-# 8. 每个 Head 不只 Matching 不同，Value Space 也不同
+## 8. 每个 Head 不只 Matching 不同，Value Space 也不同
 
-第 \(r\) 个 head：
+第 $r$ 个 head：
 
-\[
+$$
 V_r=XW_r^V
-\]
+$$
 
 所以即使两个 heads 最终注意到了同一个 token，
 
 它们从这个 token 中读取的：
 
-\[
+$$
 v_j^{(1)}
-\]
+$$
 
 和：
 
-\[
+$$
 v_j^{(2)}
-\]
+$$
 
 也可以完全不同。
 
 因此不同 heads 的差异有两层：
 
-### 第一层：从哪里读
+#### 第一层：从哪里读
 
 由：
 
-\[
+$$
 Q_rK_r^\top
-\]
+$$
 
 决定。
 
-### 第二层：读到什么
+#### 第二层：读到什么
 
 由：
 
-\[
+$$
 V_r
-\]
+$$
 
 决定。
 
@@ -529,7 +529,7 @@ V_r
 
 ---
 
-# 9. 一个简单双头例子
+## 9. 一个简单双头例子
 
 假设 sequence：
 
@@ -541,19 +541,19 @@ A B C
 
 Head 1 的 attention weights 可能是：
 
-\[
+$$
 [0.8,\;0.1,\;0.1]
-\]
+$$
 
 而 Head 2：
 
-\[
+$$
 [0.1,\;0.2,\;0.7]
-\]
+$$
 
 所以：
 
-\[
+$$
 head_1(B)
 =
 0.8v_A^{(1)}
@@ -561,11 +561,11 @@ head_1(B)
 0.1v_B^{(1)}
 +
 0.1v_C^{(1)}
-\]
+$$
 
 而：
 
-\[
+$$
 head_2(B)
 =
 0.1v_A^{(2)}
@@ -573,7 +573,7 @@ head_2(B)
 0.2v_B^{(2)}
 +
 0.7v_C^{(2)}
-\]
+$$
 
 同一个 token B：
 
@@ -581,7 +581,7 @@ head_2(B)
 
 ---
 
-# 10. 为什么不能让一个 Head 同时做到这些？
+## 10. 为什么不能让一个 Head 同时做到这些？
 
 理论上一个足够强的 single head：
 
@@ -605,43 +605,43 @@ Multi-Head 并不是说：
 
 ---
 
-# 11. “Single-Head Averaging Inhibits This”是什么意思？
+## 11. “Single-Head Averaging Inhibits This”是什么意思？
 
 单个 head 输出：
 
-\[
+$$
 o_i
 =
 \sum_j\alpha_{ij}v_j
-\]
+$$
 
 如果 query 同时需要从两个完全不同的位置读取不同类型的信息，
 
 它们最终会先被混合进：
 
-\[
+$$
 o_i
-\]
+$$
 
 这个同一 vector。
 
 Multi-Head 则可以先分别产生：
 
-\[
+$$
 head_1(i)
-\]
+$$
 
-\[
+$$
 head_2(i)
-\]
+$$
 
 ……
 
 再：
 
-\[
+$$
 Concat
-\]
+$$
 
 也就是说：
 
@@ -653,34 +653,34 @@ Concat
 
 ---
 
-# 12. 原始 Transformer Base 的尺寸
+## 12. 原始 Transformer Base 的尺寸
 
 原论文 Base model：
 
-\[
+$$
 \boxed{
 d_{\text{model}}=512
 }
-\]
+$$
 
 heads：
 
-\[
+$$
 \boxed{
 h=8
 }
-\]
+$$
 
 每个 head：
 
-\[
+$$
 \boxed{
 d_k=d_v=
 \frac{d_{\text{model}}}{h}
 =
 64
 }
-\]
+$$
 
 所以：
 
@@ -696,98 +696,98 @@ d_k=d_v=
 
 每个 head 输出：
 
-\[
+$$
 64
-\]
+$$
 
 维。
 
 8 个拼起来：
 
-\[
+$$
 8\times64=512
-\]
+$$
 
 又回到：
 
-\[
+$$
 d_{\text{model}}
-\]
+$$
 
 ---
 
-# 13. 一个 Sequence 的完整 Shape
+## 13. 一个 Sequence 的完整 Shape
 
 假设：
 
-\[
+$$
 B=32
-\]
+$$
 
 batch size，
 
-\[
+$$
 n=100
-\]
+$$
 
 sequence length，
 
-\[
+$$
 d_{\text{model}}=512
-\]
+$$
 
 输入：
 
-\[
+$$
 \boxed{
 X\in
 \mathbb R^{32\times100\times512}
 }
-\]
+$$
 
 8 heads，
 
 每头：
 
-\[
+$$
 64
-\]
+$$
 
 维。
 
 ---
 
-# 14. Q Projection 后怎样分 Head？
+## 14. Q Projection 后怎样分 Head？
 
 实际实现常常不会写 8 个独立 `Linear(512,64)`。
 
 更高效的方式是一次：
 
-\[
+$$
 XW_Q
-\]
+$$
 
 得到：
 
-\[
+$$
 [32,100,512]
-\]
+$$
 
 然后 reshape 成：
 
-\[
+$$
 \boxed{
 [32,100,8,64]
 }
-\]
+$$
 
 再 transpose：
 
-\[
+$$
 \boxed{
 [32,8,100,64]
 }
-\]
+$$
 
 于是维度含义：
 
@@ -802,33 +802,33 @@ K/V 同理。
 
 ---
 
-# 15. 每个 Head 的 Attention Matrix
+## 15. 每个 Head 的 Attention Matrix
 
 Q：
 
-\[
+$$
 [32,8,100,64]
-\]
+$$
 
 K：
 
-\[
+$$
 [32,8,100,64]
-\]
+$$
 
 对最后两个维度做：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 得到：
 
-\[
+$$
 \boxed{
 [32,8,100,100]
 }
-\]
+$$
 
 也就是说：
 
@@ -837,37 +837,37 @@ QK^\top
 
 都有自己的一张：
 
-\[
+$$
 100\times100
-\]
+$$
 
 Attention Matrix。
 
 ---
 
-# 16. 所以 8 Heads 真的有 8 张 Attention Map
+## 16. 所以 8 Heads 真的有 8 张 Attention Map
 
 对同一个 sample：
 
-\[
+$$
 A^{(1)},A^{(2)},\ldots,A^{(8)}
-\]
+$$
 
 每张：
 
-\[
+$$
 [n,n]
-\]
+$$
 
 因为它们 Q/K projections 不同，
 
 所以：
 
-\[
+$$
 A^{(1)}
 \neq
 A^{(2)}
-\]
+$$
 
 通常成立。
 
@@ -875,77 +875,77 @@ A^{(2)}
 
 ---
 
-# 17. 每个 Head 输出什么 Shape？
+## 17. 每个 Head 输出什么 Shape？
 
 每个 head：
 
-\[
+$$
 A_r
 \in
 \mathbb R^{n\times n}
-\]
+$$
 
 对应：
 
-\[
+$$
 V_r
 \in
 \mathbb R^{n\times64}
-\]
+$$
 
 所以：
 
-\[
+$$
 head_r
 =
 A_rV_r
-\]
+$$
 
 得到：
 
-\[
+$$
 \boxed{
 [n,64]
 }
-\]
+$$
 
 8 个 heads：
 
-\[
+$$
 8\times[n,64]
-\]
+$$
 
 ---
 
-# 18. Concat 到底做什么？
+## 18. Concat 到底做什么？
 
-对于同一个 token position \(i\)，
+对于同一个 token position $i$，
 
 8 个 heads 分别输出：
 
-\[
+$$
 h_i^{(1)}
 \in
 \mathbb R^{64}
-\]
+$$
 
-\[
+$$
 h_i^{(2)}
 \in
 \mathbb R^{64}
-\]
+$$
 
 ……
 
-\[
+$$
 h_i^{(8)}
 \in
 \mathbb R^{64}
-\]
+$$
 
 Concat：
 
-\[
+$$
 \boxed{
 [
 h_i^{(1)};
@@ -954,13 +954,13 @@ h_i^{(2)};
 h_i^{(8)}
 ]
 }
-\]
+$$
 
 得到：
 
-\[
+$$
 512
-\]
+$$
 
 维。
 
@@ -974,13 +974,13 @@ h_i^{(8)}
 
 ---
 
-# 19. 为什么不把 Heads 直接相加？
+## 19. 为什么不把 Heads 直接相加？
 
 如果直接：
 
-\[
+$$
 head_1+\cdots+head_8
-\]
+$$
 
 多个 representation subspaces 会立即混在一起。
 
@@ -990,89 +990,89 @@ Concat：
 
 然后交给：
 
-\[
+$$
 W^O
-\]
+$$
 
 学习怎样组合。
 
 所以：
 
-\[
+$$
 \boxed{
 Concat
 =
 \text{preserve head-specific outputs}
 }
-\]
+$$
 
 ---
 
-# 20. 那 W^O 到底在做什么？
+## 20. 那 W^O 到底在做什么？
 
 Concat 后：
 
-\[
+$$
 H
 =
 Concat(head_1,\ldots,head_h)
-\]
+$$
 
 shape：
 
-\[
+$$
 [n,h d_v]
-\]
+$$
 
 原始 Transformer：
 
-\[
+$$
 hd_v=512
-\]
+$$
 
 然后：
 
-\[
+$$
 \boxed{
 O=HW^O
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 W^O
 \in
 \mathbb R^{hd_v\times d_{\text{model}}}
-\]
+$$
 
 原始 Base：
 
-\[
+$$
 W^O\in\mathbb R^{512\times512}
-\]
+$$
 
 它的作用是：
 
-> **学习怎样重新混合不同 heads 提取出的信息，并映射回统一 \(d_{\text{model}}\) representation space。**
+> **学习怎样重新混合不同 heads 提取出的信息，并映射回统一 $d_{\text{model}}$ representation space。**
 
 ---
 
-# 21. W^O 不是简单“恢复 Shape”
+## 21. W^O 不是简单“恢复 Shape”
 
 虽然：
 
-\[
+$$
 512\rightarrow512
-\]
+$$
 
 看起来维度没变，
 
 但：
 
-\[
+$$
 W^O
-\]
+$$
 
 不是 identity。
 
@@ -1087,45 +1087,45 @@ W^O
 
 因此：
 
-\[
+$$
 \boxed{
 W^O
 =
 \text{learned head integration}
 }
-\]
+$$
 
 而不仅仅是 reshape。
 
 ---
 
-# 22. 一个两头小例子
+## 22. 一个两头小例子
 
 假设每个 head 输出 2 维。
 
-Token \(i\)：
+Token $i$：
 
-\[
+$$
 head_1(i)
 =
 [1,2]
-\]
+$$
 
-\[
+$$
 head_2(i)
 =
 [10,20]
-\]
+$$
 
 Concat：
 
-\[
+$$
 [1,2,10,20]
-\]
+$$
 
 然后假设：
 
-\[
+$$
 W^O
 =
 \begin{bmatrix}
@@ -1134,15 +1134,15 @@ W^O
 0.1&0\\
 0&0.1
 \end{bmatrix}
-\]
+$$
 
 那么：
 
-\[
+$$
 [1,2,10,20]W^O
 =
 [2,4]
-\]
+$$
 
 也就是：
 
@@ -1152,7 +1152,7 @@ W^O
 
 ---
 
-# 23. 为什么不是“每个 Head 最终投票”？
+## 23. 为什么不是“每个 Head 最终投票”？
 
 Multi-Head Attention 不是 ensemble voting。
 
@@ -1170,9 +1170,9 @@ Head 2 说 dog
 
 然后：
 
-\[
+$$
 Concat + W^O
-\]
+$$
 
 融合成一个新的 hidden representation。
 
@@ -1186,7 +1186,7 @@ Concat + W^O
 
 ---
 
-# 24. 最关键的问题：8 个 Heads 会不会贵 8 倍？
+## 24. 最关键的问题：8 个 Heads 会不会贵 8 倍？
 
 直觉上：
 
@@ -1200,123 +1200,123 @@ Concat + W^O
 
 ---
 
-# 25. 先看一个 Full 512-D Single Head
+## 25. 先看一个 Full 512-D Single Head
 
 假设：
 
-\[
+$$
 d=d_{\text{model}}=512
-\]
+$$
 
 sequence length：
 
-\[
+$$
 n
-\]
+$$
 
 single head 直接使用：
 
-\[
+$$
 d_k=d_v=d
-\]
+$$
 
 QK score：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 大约需要：
 
-\[
+$$
 \boxed{
 O(n^2d)
 }
-\]
+$$
 
 AV：
 
-\[
+$$
 A V
-\]
+$$
 
 又大约：
 
-\[
+$$
 \boxed{
 O(n^2d)
 }
-\]
+$$
 
 所以 Attention 核心大约：
 
-\[
+$$
 \boxed{
 2n^2d
 }
-\]
+$$
 
 量级。
 
 ---
 
-# 26. 再看 h 个 Heads
+## 26. 再看 h 个 Heads
 
 每个 head：
 
-\[
+$$
 d_k=d_v=\frac dh
-\]
+$$
 
 每一个 head 的 QK：
 
-\[
+$$
 O
 \left(
 n^2\frac dh
 \right)
-\]
+$$
 
 h 个 heads：
 
-\[
+$$
 h
 \times
 O
 \left(
 n^2\frac dh
 \right)
-\]
+$$
 
 h 抵消：
 
-\[
+$$
 \boxed{
 O(n^2d)
 }
-\]
+$$
 
 AV 同理：
 
-\[
+$$
 \boxed{
 O(n^2d)
 }
-\]
+$$
 
 所以多头的 Attention 核心仍然是：
 
-\[
+$$
 \boxed{
 O(n^2d)
 }
-\]
+$$
 
 同数量级。
 
 ---
 
-# 27. 为什么 h 正好抵消？
+## 27. 为什么 h 正好抵消？
 
 因为：
 
@@ -1330,9 +1330,9 @@ Head 数量：
 
 于是总 feature width：
 
-\[
+$$
 h\times\frac dh=d
-\]
+$$
 
 没有变。
 
@@ -1346,55 +1346,55 @@ h\times\frac dh=d
 
 ---
 
-# 28. Q/K/V Projection 的成本呢？
+## 28. Q/K/V Projection 的成本呢？
 
 Single full-width：
 
-\[
+$$
 W_Q,W_K,W_V
 \in
 \mathbb R^{d\times d}
-\]
+$$
 
 总 projection cost：
 
-\[
+$$
 \sim3nd^2
-\]
+$$
 
 Multi-Head 实际上也相当于：
 
-\[
+$$
 W_Q,W_K,W_V
 :
 d\rightarrow d
-\]
+$$
 
 再拆成 heads。
 
 所以整体 projection cost 仍约：
 
-\[
+$$
 \sim3nd^2
-\]
+$$
 
 再加：
 
-\[
+$$
 W^O
-\]
+$$
 
 约：
 
-\[
+$$
 nd^2
-\]
+$$
 
 这也是标准 MHA 的主要 linear-projection cost。
 
 ---
 
-# 29. 因此“计算成本相近”不是说完全一模一样
+## 29. 因此“计算成本相近”不是说完全一模一样
 
 具体 wall-clock 还受：
 
@@ -1417,116 +1417,116 @@ nd^2
 
 ---
 
-# 30. 参数量会不会乘 h？
+## 30. 参数量会不会乘 h？
 
 也不会简单乘 h。
 
 如果每个 head 独立：
 
-\[
+$$
 W_i^Q
 \in
 \mathbb R^{d\times(d/h)}
-\]
+$$
 
 h 个：
 
-\[
+$$
 h\times d\times\frac dh
 =
 d^2
-\]
+$$
 
 所以所有 Query projections 加起来：
 
-\[
+$$
 d^2
-\]
+$$
 
 K：
 
-\[
+$$
 d^2
-\]
+$$
 
 V：
 
-\[
+$$
 d^2
-\]
+$$
 
 再加：
 
-\[
+$$
 W^O:
 d^2
-\]
+$$
 
 总计大约：
 
-\[
+$$
 \boxed{
 4d^2
 }
-\]
+$$
 
 忽略 bias。
 
 并不会因为：
 
-\[
+$$
 h=8
-\]
+$$
 
 变成：
 
-\[
+$$
 32d^2
-\]
+$$
 
 ---
 
-# 31. 原始 Base Transformer 的 MHA 参数量
+## 31. 原始 Base Transformer 的 MHA 参数量
 
-\[
+$$
 d=512
-\]
+$$
 
 单个：
 
-\[
+$$
 512\times512
 =
 262144
-\]
+$$
 
 Q/K/V 三组：
 
-\[
+$$
 3\times262144
 =
 786432
-\]
+$$
 
 再加：
 
-\[
+$$
 W^O
-\]
+$$
 
 ：
 
-\[
+$$
 262144
-\]
+$$
 
 总计：
 
-\[
+$$
 \boxed{
 1,048,576
 }
-\]
+$$
 
 约：
 
@@ -1538,45 +1538,45 @@ W^O
 
 ---
 
-# 32. 为什么代码里常只有一个 W_Q，而不是 8 个？
+## 32. 为什么代码里常只有一个 W_Q，而不是 8 个？
 
 数学公式写：
 
-\[
+$$
 W_1^Q,\ldots,W_h^Q
-\]
+$$
 
 方便理解每个 head 有不同 projection。
 
 实现中可以把它们拼成一个大矩阵：
 
-\[
+$$
 W^Q
 \in
 \mathbb R^{d\times d}
-\]
+$$
 
 一次计算：
 
-\[
+$$
 Q=XW^Q
-\]
+$$
 
 得到 512 维，
 
 再 reshape：
 
-\[
+$$
 512
 \rightarrow
 8\times64
-\]
+$$
 
 这和分别计算 8 个：
 
-\[
+$$
 512\rightarrow64
-\]
+$$
 
 Linear 在数学上等价。
 
@@ -1584,7 +1584,7 @@ Linear 在数学上等价。
 
 ---
 
-# 33. 所以 “Head” 不一定对应代码里的一个独立 nn.Linear
+## 33. 所以 “Head” 不一定对应代码里的一个独立 nn.Linear
 
 这是代码阅读时很重要的点。
 
@@ -1602,15 +1602,15 @@ v_proj = nn.Linear(512, 512)
 
 因为这个：
 
-\[
+$$
 512
-\]
+$$
 
 输出里已经包含：
 
-\[
+$$
 8\times64
-\]
+$$
 
 个 head channels。
 
@@ -1618,92 +1618,92 @@ v_proj = nn.Linear(512, 512)
 
 ---
 
-# 34. PyTorch 常见 Shape Flow
+## 34. PyTorch 常见 Shape Flow
 
 输入：
 
-\[
+$$
 X:
 [B,N,D]
-\]
+$$
 
 例如：
 
-\[
+$$
 [32,100,512]
-\]
+$$
 
 Q projection：
 
-\[
+$$
 [B,N,D]
-\]
+$$
 
 reshape：
 
-\[
+$$
 [B,N,H,D_h]
-\]
+$$
 
 得到：
 
-\[
+$$
 [32,100,8,64]
-\]
+$$
 
 transpose：
 
-\[
+$$
 \boxed{
 [32,8,100,64]
 }
-\]
+$$
 
 然后：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 得到：
 
-\[
+$$
 [32,8,100,100]
-\]
+$$
 
 Softmax 后乘 V：
 
-\[
+$$
 [32,8,100,64]
-\]
+$$
 
 再 transpose / concat：
 
-\[
+$$
 [32,100,512]
-\]
+$$
 
 最后：
 
-\[
+$$
 W^O
-\]
+$$
 
 仍是：
 
-\[
+$$
 [32,100,512]
-\]
+$$
 
 ---
 
-# 35. 为什么 Head 这个维度通常放在 Batch 后面？
+## 35. 为什么 Head 这个维度通常放在 Batch 后面？
 
 因为计算时希望把：
 
-\[
+$$
 B\times H
-\]
+$$
 
 看成很多并行 attention problems。
 
@@ -1713,9 +1713,9 @@ GPU 可以并行计算：
 
 所以常见 layout：
 
-\[
+$$
 [B,H,N,D_h]
-\]
+$$
 
 非常自然。
 
@@ -1723,13 +1723,13 @@ GPU 可以并行计算：
 
 ---
 
-# 36. 每个 Head 的 Softmax 是独立的吗？
+## 36. 每个 Head 的 Softmax 是独立的吗？
 
 是。
 
 对于：
 
-\[
+$$
 A^{(r)}
 =
 softmax
@@ -1740,9 +1740,9 @@ Q_rK_r^\top
 \sqrt{d_k}
 }
 \right)
-\]
+$$
 
-每一个 head \(r\) 都有自己的 score matrix 和自己的 Softmax。
+每一个 head $r$ 都有自己的 score matrix 和自己的 Softmax。
 
 所以：
 
@@ -1750,24 +1750,24 @@ Q_rK_r^\top
 
 每个 head 内：
 
-\[
+$$
 \sum_j
 A_{ij}^{(r)}
 =
 1
-\]
+$$
 
-对固定 query \(i\) 成立。
+对固定 query $i$ 成立。
 
 ---
 
-# 37. Heads 之间在 Attention 阶段会互相交流吗？
+## 37. Heads 之间在 Attention 阶段会互相交流吗？
 
 在每个 head 独立计算：
 
-\[
+$$
 head_r
-\]
+$$
 
 的过程中：
 
@@ -1781,11 +1781,11 @@ head_r
 
 真正第一次显式融合发生在：
 
-\[
+$$
 \boxed{
 Concat(\cdots)W^O
 }
-\]
+$$
 
 之后。
 
@@ -1793,7 +1793,7 @@ Concat(\cdots)W^O
 
 ---
 
-# 38. 所以 Multi-Head 是“先分，再合”
+## 38. 所以 Multi-Head 是“先分，再合”
 
 可以把整个过程压成：
 
@@ -1825,15 +1825,15 @@ Head1  Head2  ...
 
 ---
 
-# 39. 为什么这种结构有点像“多种视角”？
+## 39. 为什么这种结构有点像“多种视角”？
 
 这是一个不错的直觉。
 
 同一个 input：
 
-\[
+$$
 X
-\]
+$$
 
 经过不同 heads 的 projection，
 
@@ -1856,7 +1856,7 @@ X
 
 ---
 
-# 40. 原论文有没有观察到不同 Heads 学不同东西？
+## 40. 原论文有没有观察到不同 Heads 学不同东西？
 
 有。
 
@@ -1878,7 +1878,7 @@ Transformer 原论文 Section 4 提到：
 
 ---
 
-# 41. 为什么不能给每个 Head 强行贴固定标签？
+## 41. 为什么不能给每个 Head 强行贴固定标签？
 
 因为 head behavior：
 
@@ -1898,61 +1898,61 @@ Transformer 原论文 Section 4 提到：
 
 ---
 
-# 42. Head 数是不是越多越好？
+## 42. Head 数是不是越多越好？
 
 不是。
 
 如果：
 
-\[
+$$
 d_{\text{model}}
-\]
+$$
 
 固定，
 
 增加：
 
-\[
+$$
 h
-\]
+$$
 
 意味着每头：
 
-\[
+$$
 d_h=\frac dh
-\]
+$$
 
 变小。
 
 例如：
 
-\[
+$$
 d=512
-\]
+$$
 
 ---
 
-### 8 Heads
+#### 8 Heads
 
-\[
+$$
 d_h=64
-\]
+$$
 
 ---
 
-### 16 Heads
+#### 16 Heads
 
-\[
+$$
 d_h=32
-\]
+$$
 
 ---
 
-### 64 Heads
+#### 64 Heads
 
-\[
+$$
 d_h=8
-\]
+$$
 
 head 太窄时，
 
@@ -1966,17 +1966,17 @@ head 太窄时，
 
 ---
 
-# 43. Head 数和 Model Width 是两个不同概念
+## 43. Head 数和 Model Width 是两个不同概念
 
-\[
+$$
 d_{\text{model}}
-\]
+$$
 
 表示总 hidden width。
 
-\[
+$$
 h
-\]
+$$
 
 表示：
 
@@ -2002,27 +2002,27 @@ d_head = 32
 
 ---
 
-# 44. 为什么 d_model 通常要能被 h 整除？
+## 44. 为什么 d_model 通常要能被 h 整除？
 
 标准实现常令：
 
-\[
+$$
 d_h=
 \frac{
 d_{\text{model}}
 }{
 h
 }
-\]
+$$
 
 因此为了 integer dimension：
 
-\[
+$$
 d_{\text{model}}
 \bmod h
 =
 0
-\]
+$$
 
 最方便。
 
@@ -2034,15 +2034,15 @@ d_{\text{model}}
 
 ---
 
-# 45. Multi-Head 是否一定要求 d_k=d_v？
+## 45. Multi-Head 是否一定要求 d_k=d_v？
 
 不一定。
 
 公式允许：
 
-\[
+$$
 d_k\neq d_v
-\]
+$$
 
 只要：
 
@@ -2054,70 +2054,70 @@ V 的输出维度符合后续 concat。
 
 原始 Transformer 为了简单选择：
 
-\[
+$$
 d_k=d_v=64
-\]
+$$
 
 ---
 
-# 46. 为什么 Scaling 每个 Head 用 √d_k，而不是 √d_model？
+## 46. 为什么 Scaling 每个 Head 用 √d_k，而不是 √d_model？
 
 因为每个 head 的 Dot Product 实际发生在：
 
-\[
+$$
 d_k
-\]
+$$
 
 维：
 
-\[
+$$
 q_r^\top k_r
 =
 \sum_{j=1}^{d_k}
 q_jk_j
-\]
+$$
 
 其 variance 与：
 
-\[
+$$
 d_k
-\]
+$$
 
 有关。
 
 所以 scale：
 
-\[
+$$
 \boxed{
 1/\sqrt{d_k}
 }
-\]
+$$
 
 而不是：
 
-\[
+$$
 1/\sqrt{d_{\text{model}}}
-\]
+$$
 
 ---
 
-# 47. 原始 Base 的 Scale 是多少？
+## 47. 原始 Base 的 Scale 是多少？
 
 每头：
 
-\[
+$$
 d_k=64
-\]
+$$
 
 所以：
 
-\[
+$$
 \sqrt{64}=8
-\]
+$$
 
 因此每个 head 实际计算：
 
-\[
+$$
 \boxed{
 softmax
 \left(
@@ -2128,25 +2128,25 @@ Q_rK_r^\top
 }
 \right)
 }
-\]
+$$
 
 ---
 
-# 48. Multi-Head Attention 会产生 h 倍的 n×n Matrix
+## 48. Multi-Head Attention 会产生 h 倍的 n×n Matrix
 
 这一点仍然是真的。
 
 单头 full attention：
 
-\[
+$$
 [n,n]
-\]
+$$
 
 多头：
 
-\[
+$$
 [h,n,n]
-\]
+$$
 
 所以 attention score / probability tensors 在 head dimension 上确实增加。
 
@@ -2158,9 +2158,9 @@ Q_rK_r^\top
 
 但 attention matrix memory 本身：
 
-\[
+$$
 h n^2
-\]
+$$
 
 这一项确实带有 head factor。
 
@@ -2174,13 +2174,13 @@ h n^2
 
 ---
 
-# 49. 这一点为什么值得严谨区分？
+## 49. 这一点为什么值得严谨区分？
 
 原论文的“total computational cost similar”主要来自：
 
-\[
+$$
 h\times d_h=d
-\]
+$$
 
 的算术关系。
 
@@ -2203,31 +2203,31 @@ h\times d_h=d
 
 ---
 
-# 50. Multi-Head Self-Attention
+## 50. Multi-Head Self-Attention
 
 如果所有 heads 的：
 
-\[
+$$
 Q,K,V
-\]
+$$
 
 都来自：
 
-\[
+$$
 X
-\]
+$$
 
 那么就是：
 
-\[
+$$
 \boxed{
 Multi\text{-}Head\ Self\text{-}Attention
 }
-\]
+$$
 
 即：
 
-\[
+$$
 head_r
 =
 Attention(
@@ -2235,33 +2235,33 @@ XW_r^Q,
 XW_r^K,
 XW_r^V
 )
-\]
+$$
 
 这就是 Transformer Encoder 的核心 attention sublayer。
 
 ---
 
-# 51. Multi-Head Cross-Attention
+## 51. Multi-Head Cross-Attention
 
 如果 Decoder hidden states：
 
-\[
+$$
 H
-\]
+$$
 
 提供 Query，
 
 Encoder Memory：
 
-\[
+$$
 M
-\]
+$$
 
 提供 K/V，
 
 那么：
 
-\[
+$$
 \boxed{
 head_r
 =
@@ -2271,7 +2271,7 @@ MW_r^K,
 MW_r^V
 )
 }
-\]
+$$
 
 就是：
 
@@ -2283,7 +2283,7 @@ MW_r^V
 
 ---
 
-# 52. 所以 Multi-Head 和 Self/Cross 是两个独立维度
+## 52. 所以 Multi-Head 和 Self/Cross 是两个独立维度
 
 不要混淆。
 
@@ -2304,17 +2304,17 @@ MW_r^V
 
 ---
 
-# 53. 原始 Transformer 哪里用了 Multi-Head？
+## 53. 原始 Transformer 哪里用了 Multi-Head？
 
 原论文明确列了三处：
 
-### Encoder Self-Attention
+#### Encoder Self-Attention
 
 Q/K/V 都来自 Encoder 前一层。
 
 ---
 
-### Decoder Masked Self-Attention
+#### Decoder Masked Self-Attention
 
 Q/K/V 都来自 Decoder 当前 sequence，
 
@@ -2322,7 +2322,7 @@ Q/K/V 都来自 Decoder 当前 sequence，
 
 ---
 
-### Encoder–Decoder Attention
+#### Encoder–Decoder Attention
 
 Q 来自 Decoder，
 
@@ -2334,7 +2334,7 @@ K/V 来自 Encoder output。
 
 ---
 
-# 54. 为什么 Decoder Cross-Attention 特别适合 Multi-Head？
+## 54. 为什么 Decoder Cross-Attention 特别适合 Multi-Head？
 
 Decoder 当前 position 读取 source sentence 时，
 
@@ -2354,15 +2354,15 @@ Decoder 当前 position 读取 source sentence 时，
 
 ---
 
-# 55. ACT 中 Multi-Head Attention 用在哪里？
+## 55. ACT 中 Multi-Head Attention 用在哪里？
 
 ACT 原始配置使用：
 
-\[
+$$
 \boxed{
 8\text{ attention heads}
 }
-\]
+$$
 
 所以我们前面讲的：
 
@@ -2378,79 +2378,79 @@ ACT 原始配置使用：
 
 ---
 
-# 56. ACT Policy Encoder：1202 Tokens × 8 Heads
+## 56. ACT Policy Encoder：1202 Tokens × 8 Heads
 
 ACT Policy Encoder 的典型输入：
 
-\[
+$$
 1200
-\]
+$$
 
 visual tokens，
 
 加：
 
-\[
+$$
 1
-\]
+$$
 
 joint token，
 
 加：
 
-\[
+$$
 1
-\]
+$$
 
 latent token，
 
 共：
 
-\[
+$$
 1202
-\]
+$$
 
 tokens。
 
 hidden width：
 
-\[
+$$
 512
-\]
+$$
 
 8 heads，
 
 每头：
 
-\[
+$$
 64
-\]
+$$
 
 维。
 
 ---
 
-# 57. 每个 ACT Head 都有自己的 1202×1202 Attention Matrix
+## 57. 每个 ACT Head 都有自己的 1202×1202 Attention Matrix
 
 对于单个 sample：
 
-\[
+$$
 A_r
 \in
 \mathbb R^{1202\times1202}
-\]
+$$
 
 共有：
 
-\[
+$$
 8
-\]
+$$
 
 份：
 
-\[
+$$
 A_1,\ldots,A_8
-\]
+$$
 
 架构上，
 
@@ -2466,7 +2466,7 @@ A_1,\ldots,A_8
 
 ---
 
-# 58. ACT 中为什么多头可能特别有用？
+## 58. ACT 中为什么多头可能特别有用？
 
 ACT observation memory 同时包含不同类型的信息：
 
@@ -2491,41 +2491,41 @@ latent condition
 
 ---
 
-# 59. ACT Decoder 中多个 Heads 又意味着什么？
+## 59. ACT Decoder 中多个 Heads 又意味着什么？
 
-第 \(i\) 个 future action slot 要 cross-attend observation memory。
+第 $i$ 个 future action slot 要 cross-attend observation memory。
 
 对于同一个 action slot：
 
 Head 1：
 
-\[
+$$
 A_i^{(1)}
-\]
+$$
 
 可能形成一种读取模式。
 
 Head 2：
 
-\[
+$$
 A_i^{(2)}
-\]
+$$
 
 形成另一种。
 
 它们分别得到：
 
-\[
+$$
 head_i^{(1)}
-\]
+$$
 
-\[
+$$
 head_i^{(2)}
-\]
+$$
 
 ……
 
-最后 concat + \(W^O\)。
+最后 concat + $W^O$。
 
 因此一个 future action representation 可以同时整合：
 
@@ -2533,7 +2533,7 @@ head_i^{(2)}
 
 ---
 
-# 60. Action Slot 自己也有 Multi-Head Self-Attention
+## 60. Action Slot 自己也有 Multi-Head Self-Attention
 
 ACT Decoder 不只有 Cross-Attention。
 
@@ -2541,9 +2541,9 @@ ACT Decoder 不只有 Cross-Attention。
 
 因此：
 
-\[
+$$
 slot_i
-\]
+$$
 
 可以通过不同 heads：
 
@@ -2555,7 +2555,7 @@ slot_i
 
 ---
 
-# 61. Multi-Head 是否让每个 Head 看不同 Token 子集？
+## 61. Multi-Head 是否让每个 Head 看不同 Token 子集？
 
 不一定。
 
@@ -2580,7 +2580,7 @@ Head 2 只能看后 10 个 token
 
 ---
 
-# 62. Multi-Head 是否等于把 Sequence 切成 h 段？
+## 62. Multi-Head 是否等于把 Sequence 切成 h 段？
 
 完全不是。
 
@@ -2594,39 +2594,39 @@ Head 2 只能看后 10 个 token
 
 每个 head 通常仍然面对完整：
 
-\[
+$$
 n
-\]
+$$
 
 个 token。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{split hidden channels}
 \neq
 \text{split sequence}
 }
-\]
+$$
 
 ---
 
-# 63. 也不是把原始 512 Features 生硬分成 8 段
+## 63. 也不是把原始 512 Features 生硬分成 8 段
 
 再次强调：
 
 projection：
 
-\[
+$$
 XW_r^Q
-\]
+$$
 
 意味着每个 head 的 64 维 Q 都可以使用原始：
 
-\[
+$$
 512
-\]
+$$
 
 维 hidden state 的任意 learned linear combination。
 
@@ -2640,7 +2640,7 @@ XW_r^Q
 
 ---
 
-# 64. 为什么这比简单 Feature Slicing 强？
+## 64. 为什么这比简单 Feature Slicing 强？
 
 如果只是：
 
@@ -2655,9 +2655,9 @@ Head 2 → x[64:128]
 
 Learned projection：
 
-\[
+$$
 W_r
-\]
+$$
 
 让每个 head 自己学习：
 
@@ -2665,15 +2665,15 @@ W_r
 
 ---
 
-# 65. Heads 会不会学成完全一样？
+## 65. Heads 会不会学成完全一样？
 
 可能部分冗余。
 
 Architecture 并没有强制：
 
-\[
+$$
 A_1\neq A_2
-\]
+$$
 
 也没有一个显式 loss 说：
 
@@ -2691,15 +2691,15 @@ A_1\neq A_2
 
 ---
 
-# 66. 原论文有没有“Head Diversity Loss”？
+## 66. 原论文有没有“Head Diversity Loss”？
 
 没有。
 
 原始 Transformer 并没有额外添加：
 
-\[
+$$
 L_{\text{diversity}}
-\]
+$$
 
 强迫 heads 不同。
 
@@ -2709,21 +2709,21 @@ L_{\text{diversity}}
 
 ---
 
-# 67. 如果所有 Heads 一样会怎样？
+## 67. 如果所有 Heads 一样会怎样？
 
 如果：
 
-\[
+$$
 W_1^Q=W_2^Q
-\]
+$$
 
-\[
+$$
 W_1^K=W_2^K
-\]
+$$
 
-\[
+$$
 W_1^V=W_2^V
-\]
+$$
 
 那么两个 heads 输出就会一样。
 
@@ -2739,15 +2739,15 @@ Concat 只会重复同一信息。
 
 ---
 
-# 68. W^O 能不能完全忽略某个 Head？
+## 68. W^O 能不能完全忽略某个 Head？
 
 可以。
 
 如果最终训练发现某个 head 没用，
 
-\[
+$$
 W^O
-\]
+$$
 
 对应这部分输入的权重可以变小。
 
@@ -2757,15 +2757,15 @@ W^O
 
 还由后续：
 
-\[
+$$
 W^O
-\]
+$$
 
 如何使用它决定。
 
 ---
 
-# 69. 所以看 Attention Map 时不能忽略 W^O
+## 69. 所以看 Attention Map 时不能忽略 W^O
 
 看到某个 head 有很漂亮的 attention pattern，
 
@@ -2773,7 +2773,7 @@ W^O
 
 因为：
 
-> 它产生的 representation 后面还会经过 \(W^O\)、Residual、FFN、多层网络。
+> 它产生的 representation 后面还会经过 $W^O$、Residual、FFN、多层网络。
 
 所以 Attention Map 是：
 
@@ -2783,41 +2783,41 @@ W^O
 
 ---
 
-# 70. Multi-Head Attention 的 Gradient 怎么训练各 Head？
+## 70. Multi-Head Attention 的 Gradient 怎么训练各 Head？
 
 最终输出：
 
-\[
+$$
 O
 =
 Concat(head_1,\ldots,head_h)W^O
-\]
+$$
 
 loss：
 
-\[
+$$
 L
-\]
+$$
 
 会通过：
 
-\[
+$$
 W^O
-\]
+$$
 
 回传到每个：
 
-\[
+$$
 head_r
-\]
+$$
 
 再分别回到：
 
-\[
+$$
 W_r^Q,
 W_r^K,
 W_r^V
-\]
+$$
 
 所以所有 heads：
 
@@ -2827,15 +2827,15 @@ W_r^V
 
 ---
 
-# 71. 为什么不同 Head 可能自然分工？
+## 71. 为什么不同 Head 可能自然分工？
 
 因为参数随机初始化不同，
 
 而且：
 
-\[
+$$
 W^O
-\]
+$$
 
 可以联合利用不同 outputs。
 
@@ -2849,33 +2849,33 @@ W^O
 
 ---
 
-# 72. 一个比较深的视角：MHA 是多个低秩交互通道
+## 72. 一个比较深的视角：MHA 是多个低秩交互通道
 
 单个 head 的 score：
 
-\[
+$$
 XW_QW_K^\top X^\top
-\]
+$$
 
 其中：
 
-\[
+$$
 W_QW_K^\top
-\]
+$$
 
 的 rank 最大受：
 
-\[
+$$
 d_k
-\]
+$$
 
 限制。
 
 当：
 
-\[
+$$
 d_k=d/h
-\]
+$$
 
 时，每个 head 在一个较低维 interaction space 工作。
 
@@ -2885,9 +2885,9 @@ d_k=d/h
 
 然后通过：
 
-\[
+$$
 W^O
-\]
+$$
 
 整合。
 
@@ -2895,27 +2895,27 @@ W^O
 
 ---
 
-# 73. 为什么说“低秩”要谨慎？
+## 73. 为什么说“低秩”要谨慎？
 
 矩阵：
 
-\[
+$$
 W_QW_K^\top
-\]
+$$
 
 如果：
 
-\[
+$$
 W_Q,W_K
 \in
 \mathbb R^{d\times d_k}
-\]
+$$
 
 则：
 
-\[
+$$
 rank(W_QW_K^\top)\le d_k
-\]
+$$
 
 所以从 bilinear form 角度确实有 rank upper bound。
 
@@ -2934,13 +2934,13 @@ rank(W_QW_K^\top)\le d_k
 
 ---
 
-# 74. 一个 Head 64 维，会不会信息太少？
+## 74. 一个 Head 64 维，会不会信息太少？
 
 单个 head 只有：
 
-\[
+$$
 64
-\]
+$$
 
 维，
 
@@ -2948,17 +2948,17 @@ rank(W_QW_K^\top)\le d_k
 
 共有：
 
-\[
+$$
 8
-\]
+$$
 
 个 heads。
 
 Concat 后仍回：
 
-\[
+$$
 512
-\]
+$$
 
 维。
 
@@ -2968,7 +2968,7 @@ Concat 后仍回：
 
 ---
 
-# 75. 为什么不做 8 个 512-D Heads 再 Concat 成 4096？
+## 75. 为什么不做 8 个 512-D Heads 再 Concat 成 4096？
 
 当然可以设计更大的架构。
 
@@ -2984,78 +2984,78 @@ Concat 后仍回：
 
 所以选择：
 
-\[
+$$
 d_h=d/h
-\]
+$$
 
 非常关键。
 
 ---
 
-# 76. 为什么 MHA 最后维度仍保持 d_model？
+## 76. 为什么 MHA 最后维度仍保持 d_model？
 
 Transformer Block 有 Residual：
 
-\[
+$$
 X+\operatorname{MHA}(X)
-\]
+$$
 
 两者必须 shape 一致。
 
 所以：
 
-\[
+$$
 \operatorname{MHA}(X)
-\]
+$$
 
 最终需要回到：
 
-\[
+$$
 d_{\text{model}}
-\]
+$$
 
 维。
 
 这也是：
 
-\[
+$$
 W^O
-\]
+$$
 
 输出 dimension 设为：
 
-\[
+$$
 d_{\text{model}}
-\]
+$$
 
 的重要原因。
 
 ---
 
-# 77. Residual 如何连接 MHA？
+## 77. Residual 如何连接 MHA？
 
 原始 Transformer：
 
-\[
+$$
 \boxed{
 LayerNorm(
 X+
 MHA(X)
 )
 }
-\]
+$$
 
 因此 Multi-Head Attention 的最终 output：
 
-\[
+$$
 [B,N,d_{\text{model}}]
-\]
+$$
 
 与输入：
 
-\[
+$$
 X
-\]
+$$
 
 完全同 shape。
 
@@ -3065,7 +3065,7 @@ X
 
 ---
 
-# 78. MHA 会改变 Sequence Length 吗？
+## 78. MHA 会改变 Sequence Length 吗？
 
 Self-Attention 中：
 
@@ -3073,17 +3073,17 @@ Self-Attention 中：
 
 输入：
 
-\[
+$$
 N
-\]
+$$
 
 个 Queries，
 
 输出仍：
 
-\[
+$$
 N
-\]
+$$
 
 个 representations。
 
@@ -3095,61 +3095,61 @@ Cross-Attention 则输出长度由：
 
 例如：
 
-\[
+$$
 N_q=k
-\]
+$$
 
 个 ACT action queries，
 
 无论 encoder memory 有：
 
-\[
+$$
 1202
-\]
+$$
 
 个 tokens，
 
 Cross-Attention 输出仍是：
 
-\[
+$$
 k
-\]
+$$
 
 个 decoder positions。
 
 ---
 
-# 79. Multi-Head Cross-Attention 的 Matrix Shape
+## 79. Multi-Head Cross-Attention 的 Matrix Shape
 
 假设 ACT：
 
-\[
+$$
 N_q=100
-\]
+$$
 
 action slots，
 
 memory：
 
-\[
+$$
 N_k=1202
-\]
+$$
 
 8 heads。
 
 每头 attention score：
 
-\[
+$$
 [100,1202]
-\]
+$$
 
 全部 heads：
 
-\[
+$$
 \boxed{
 [8,100,1202]
 }
-\]
+$$
 
 忽略 batch。
 
@@ -3159,17 +3159,17 @@ N_k=1202
 
 ---
 
-# 80. 这比“Action Query 看图片”更准确
+## 80. 这比“Action Query 看图片”更准确
 
 实际上 Action Query 并不是只看 images。
 
 它读取的是：
 
-\[
+$$
 \boxed{
 \text{encoder memory}
 }
-\]
+$$
 
 而 encoder memory 已经融合了：
 
@@ -3186,7 +3186,7 @@ N_k=1202
 
 ---
 
-# 81. Multi-Head Attention 和 Mixture of Experts 一样吗？
+## 81. Multi-Head Attention 和 Mixture of Experts 一样吗？
 
 不一样。
 
@@ -3212,7 +3212,7 @@ MHA：
 
 ---
 
-# 82. Multi-Head Attention 和 Ensemble 一样吗？
+## 82. Multi-Head Attention 和 Ensemble 一样吗？
 
 也不一样。
 
@@ -3232,23 +3232,23 @@ MHA heads：
 
 并通过：
 
-\[
+$$
 W^O
-\]
+$$
 
 直接联合。
 
 所以：
 
-\[
+$$
 \boxed{
 MHA\neq Model\ Ensemble
 }
-\]
+$$
 
 ---
 
-# 83. Multi-Head Attention 和 CNN 多个 Channels 有点像吗？
+## 83. Multi-Head Attention 和 CNN 多个 Channels 有点像吗？
 
 作为直觉：
 
@@ -3276,7 +3276,7 @@ Attention head：
 
 ---
 
-# 84. 为什么 Multi-Head Attention 特别适合多模态？
+## 84. 为什么 Multi-Head Attention 特别适合多模态？
 
 不同 modality 的关系可能具有不同性质。
 
@@ -3296,7 +3296,7 @@ action query ↔ wrist camera
 
 ---
 
-# 85. 但 Head 并不知道“这是图像 Head”
+## 85. 但 Head 并不知道“这是图像 Head”
 
 除非 architecture 特别设计，
 
@@ -3315,7 +3315,7 @@ Head 2 = proprioception
 
 ---
 
-# 86. Head Count 是不是一种“解释性参数”？
+## 86. Head Count 是不是一种“解释性参数”？
 
 主要不是。
 
@@ -3327,9 +3327,9 @@ Head 2 = proprioception
 
 但选择：
 
-\[
+$$
 h=8
-\]
+$$
 
 不是为了让人类得到 8 个容易解释的规则。
 
@@ -3339,7 +3339,7 @@ h=8
 
 ---
 
-# 87. 为什么有些现代模型使用更多 Heads？
+## 87. 为什么有些现代模型使用更多 Heads？
 
 因为：
 
@@ -3350,11 +3350,11 @@ h=8
 
 不同模型会选择不同：
 
-\[
+$$
 h,d_h
-\]
+$$
 
-例如更大的 \(d_{\text{model}}\) 往往也配更多 heads。
+例如更大的 $d_{\text{model}}$ 往往也配更多 heads。
 
 但：
 
@@ -3366,7 +3366,7 @@ h,d_h
 
 ---
 
-# 88. Multi-Query Attention 和 Multi-Head Attention 一样吗？
+## 88. Multi-Query Attention 和 Multi-Head Attention 一样吗？
 
 不是。
 
@@ -3390,7 +3390,7 @@ Multi-Query Attention（MQA）则：
 
 ---
 
-# 89. Grouped-Query Attention 又是什么？
+## 89. Grouped-Query Attention 又是什么？
 
 GQA 位于两者之间：
 
@@ -3420,7 +3420,7 @@ GQA:
 
 ---
 
-# 90. 为什么这些现代变体反而证明 Q/K/V 的角色要分清？
+## 90. 为什么这些现代变体反而证明 Q/K/V 的角色要分清？
 
 因为 MQA / GQA 的核心就是：
 
@@ -3440,69 +3440,69 @@ GQA:
 
 ---
 
-# 91. 常见误解一：8 Heads = 做 8 次完整 512-D Attention
+## 91. 常见误解一：8 Heads = 做 8 次完整 512-D Attention
 
 **错误。**
 
 原始 Base：
 
-\[
+$$
 8
 \times
 64\text{-D heads}
-\]
+$$
 
 而不是：
 
-\[
+$$
 8
 \times
 512\text{-D heads}
-\]
+$$
 
 ---
 
-# 92. 常见误解二：Head 1 使用原始 Features 1–64
+## 92. 常见误解二：Head 1 使用原始 Features 1–64
 
 **错误。**
 
 每个 head 通过 learned projection：
 
-\[
+$$
 W_i
-\]
+$$
 
 从完整：
 
-\[
+$$
 512
-\]
+$$
 
 维 representation 生成自己的：
 
-\[
+$$
 64
-\]
+$$
 
 维空间。
 
 ---
 
-# 93. 常见误解三：多个 Heads 只是重复算同一 Attention
+## 93. 常见误解三：多个 Heads 只是重复算同一 Attention
 
 **错误。**
 
 每个 head 有不同：
 
-\[
+$$
 W_i^Q,W_i^K,W_i^V
-\]
+$$
 
 所以 matching、weights、Values 都可不同。
 
 ---
 
-# 94. 常见误解四：每个 Head 一定学一种固定人类语义
+## 94. 常见误解四：每个 Head 一定学一种固定人类语义
 
 **错误。**
 
@@ -3512,21 +3512,21 @@ Architecture 只提供多个 subspaces。
 
 ---
 
-# 95. 常见误解五：Heads 最后直接平均
+## 95. 常见误解五：Heads 最后直接平均
 
 **错误。**
 
 标准原始 Transformer：
 
-\[
+$$
 Concat(head_1,\ldots,head_h)W^O
-\]
+$$
 
 不是直接平均。
 
 ---
 
-# 96. 常见误解六：W^O 只是为了改 Shape
+## 96. 常见误解六：W^O 只是为了改 Shape
 
 **错误。**
 
@@ -3536,15 +3536,15 @@ Concat(head_1,\ldots,head_h)W^O
 
 ---
 
-# 97. 常见误解七：Heads 越多一定越好
+## 97. 常见误解七：Heads 越多一定越好
 
 **错误。**
 
 固定：
 
-\[
+$$
 d_{\text{model}}
-\]
+$$
 
 时，
 
@@ -3552,9 +3552,9 @@ head 越多，
 
 每头：
 
-\[
+$$
 d_h
-\]
+$$
 
 越小。
 
@@ -3562,21 +3562,21 @@ d_h
 
 ---
 
-# 98. 常见误解八：多头让 FLOPs 必然变 h 倍
+## 98. 常见误解八：多头让 FLOPs 必然变 h 倍
 
 **错误。**
 
 标准配置：
 
-\[
+$$
 d_h=d/h
-\]
+$$
 
 所以 Attention arithmetic 总量保持同一数量级。
 
 ---
 
-# 99. 常见误解九：Head 数完全不影响任何 Memory / Runtime
+## 99. 常见误解九：Head 数完全不影响任何 Memory / Runtime
 
 **也错误。**
 
@@ -3590,7 +3590,7 @@ FLOP 数量级相近不代表：
 
 ---
 
-# 100. 常见误解十：MHA 把 Sequence 分成 h 段
+## 100. 常见误解十：MHA 把 Sequence 分成 h 段
 
 **错误。**
 
@@ -3602,7 +3602,7 @@ FLOP 数量级相近不代表：
 
 ---
 
-# 101. 常见误解十一：Multi-Head = Ensemble
+## 101. 常见误解十一：Multi-Head = Ensemble
 
 **错误。**
 
@@ -3610,7 +3610,7 @@ heads 是同一个 layer 内联合训练的 representation components。
 
 ---
 
-# 102. 常见误解十二：Multi-Head = Multi-Query Attention
+## 102. 常见误解十二：Multi-Head = Multi-Query Attention
 
 **错误。**
 
@@ -3618,46 +3618,46 @@ MQA 是后来的 KV-sharing 变体。
 
 ---
 
-# 103. 常见误解十三：Attention Map 漂亮的 Head 一定最重要
+## 103. 常见误解十三：Attention Map 漂亮的 Head 一定最重要
 
 **不一定。**
 
 最终影响还取决于：
 
 - V representation；
-- \(W^O\)；
+- $W^O$；
 - Residual；
 - 后续 layers。
 
 ---
 
-# 104. 用四个步骤记住 Multi-Head Attention
+## 104. 用四个步骤记住 Multi-Head Attention
 
-## Step 1：多套 Projection
+### Step 1：多套 Projection
 
 对于：
 
-\[
+$$
 r=1,\ldots,h
-\]
+$$
 
-\[
+$$
 Q_r=QW_r^Q
-\]
+$$
 
-\[
+$$
 K_r=KW_r^K
-\]
+$$
 
-\[
+$$
 V_r=VW_r^V
-\]
+$$
 
 ---
 
-## Step 2：每个 Head 独立 Attention
+### Step 2：每个 Head 独立 Attention
 
-\[
+$$
 \boxed{
 head_r
 =
@@ -3670,13 +3670,13 @@ Q_rK_r^\top
 }
 \right)V_r
 }
-\]
+$$
 
 ---
 
-## Step 3：Concat
+### Step 3：Concat
 
-\[
+$$
 \boxed{
 H
 =
@@ -3684,124 +3684,124 @@ Concat(
 head_1,\ldots,head_h
 )
 }
-\]
+$$
 
 ---
 
-## Step 4：Output Projection
+### Step 4：Output Projection
 
-\[
+$$
 \boxed{
 O=HW^O
 }
-\]
+$$
 
 这就是：
 
-\[
+$$
 \boxed{
 MultiHead(Q,K,V)
 }
-\]
+$$
 
 ---
 
-# 105. 原始 Transformer Base 的完整 Shape
+## 105. 原始 Transformer Base 的完整 Shape
 
-\[
+$$
 Q,K,V:
 [n,512]
-\]
+$$
 
 经过每个 head：
 
-\[
+$$
 Q_r,K_r,V_r:
 [n,64]
-\]
+$$
 
 共有：
 
-\[
+$$
 8
-\]
+$$
 
 个 heads。
 
 每个：
 
-\[
+$$
 A_r:
 [n,n]
-\]
+$$
 
 每个：
 
-\[
+$$
 head_r:
 [n,64]
-\]
+$$
 
 Concat：
 
-\[
+$$
 [n,512]
-\]
+$$
 
 最后：
 
-\[
+$$
 W^O:
 [512,512]
-\]
+$$
 
 输出：
 
-\[
+$$
 \boxed{
 [n,512]
 }
-\]
+$$
 
 所以整个 MHA 可以无缝接 residual：
 
-\[
+$$
 X+MHA(X)
-\]
+$$
 
 ---
 
-# 106. 一句话理解 Concat + W^O
+## 106. 一句话理解 Concat + W^O
 
-> **每个 head 先在自己的 learned subspace 中独立回答“我从哪里读、读到什么”，Concat 保留所有 head 的回答，\(W^O\) 再学习怎样把这些不同视角重新组合成下一层所需要的统一 hidden representation。**
+> **每个 head 先在自己的 learned subspace 中独立回答“我从哪里读、读到什么”，Concat 保留所有 head 的回答，$W^O$ 再学习怎样把这些不同视角重新组合成下一层所需要的统一 hidden representation。**
 
 ---
 
-# 107. 一句话真正理解 Multi-Head Attention
+## 107. 一句话真正理解 Multi-Head Attention
 
-> **Multi-Head Attention 不是把同一个 Attention 重复很多遍，而是让同一组输入通过多套独立的 Q/K/V learned projections，进入多个较低维的 matching 与 message subspaces，在这些空间中并行产生不同的 attention patterns 和 context representations，再通过 concatenation 与 learned output projection \(W^O\) 将这些互补信息整合回统一的 \(d_{\text{model}}\) 空间。**
+> **Multi-Head Attention 不是把同一个 Attention 重复很多遍，而是让同一组输入通过多套独立的 Q/K/V learned projections，进入多个较低维的 matching 与 message subspaces，在这些空间中并行产生不同的 attention patterns 和 context representations，再通过 concatenation 与 learned output projection $W^O$ 将这些互补信息整合回统一的 $d_{\text{model}}$ 空间。**
 
 而为什么不会简单贵：
 
-\[
+$$
 h
-\]
+$$
 
 倍？
 
 因为标准 Transformer 令：
 
-\[
+$$
 \boxed{
 d_k=d_v=\frac{d_{\text{model}}}{h}
 }
-\]
+$$
 
 所以：
 
-\[
+$$
 h\times d_k=d_{\text{model}}
-\]
+$$
 
 多了 head 数，
 
@@ -3809,7 +3809,7 @@ h\times d_k=d_{\text{model}}
 
 ---
 
-# 108. 下一步：Cross-Attention
+## 108. 下一步：Cross-Attention
 
 现在我们已经理解了：
 
@@ -3833,15 +3833,15 @@ Multi-Head Attention
 
 这篇会把：
 
-\[
+$$
 Q
-\]
+$$
 
 和：
 
-\[
+$$
 K,V
-\]
+$$
 
 来自不同 source 的情况彻底讲透。
 
@@ -3857,7 +3857,7 @@ K,V
 
 ---
 
-## Primary Source
+### Primary Source
 
 Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,  
 Aidan N. Gomez, Łukasz Kaiser, Illia Polosukhin.
@@ -3871,21 +3871,21 @@ Advances in Neural Information Processing Systems 30, 2017.
 
 本文主要依据：
 
-### Section 3.2.2 — Multi-Head Attention
+#### Section 3.2.2 — Multi-Head Attention
 
 原论文定义：
 
-\[
+$$
 \boxed{
 MultiHead(Q,K,V)
 =
 Concat(head_1,\ldots,head_h)W^O
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 \boxed{
 head_i
 =
@@ -3895,61 +3895,61 @@ KW_i^K,
 VW_i^V
 )
 }
-\]
+$$
 
 投影矩阵：
 
-\[
+$$
 W_i^Q
 \in
 \mathbb R^{
 d_{\text{model}}\times d_k
 }
-\]
+$$
 
-\[
+$$
 W_i^K
 \in
 \mathbb R^{
 d_{\text{model}}\times d_k
 }
-\]
+$$
 
-\[
+$$
 W_i^V
 \in
 \mathbb R^{
 d_{\text{model}}\times d_v
 }
-\]
+$$
 
-\[
+$$
 W^O
 \in
 \mathbb R^{
 hd_v\times d_{\text{model}}
 }
-\]
+$$
 
 原始 Base Transformer：
 
-\[
+$$
 \boxed{
 h=8
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 d_k=d_v=d_{\text{model}}/h=64
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 d_{\text{model}}=512
 }
-\]
+$$
 
 论文明确指出：
 
@@ -3961,7 +3961,7 @@ d_{\text{model}}=512
 
 ---
 
-## 与 ACT 的关系
+### 与 ACT 的关系
 
 Tony Z. Zhao, Vikash Kumar, Sergey Levine, Chelsea Finn.  
 **Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware.**  
@@ -3971,25 +3971,25 @@ RSS 2023.
 
 ACT 原始 Transformer 配置使用：
 
-\[
+$$
 \boxed{
 8\text{ attention heads}
 }
-\]
+$$
 
 hidden dimension：
 
-\[
+$$
 512
-\]
+$$
 
 因此和原始 Transformer Base 一样，
 
 每个标准 head 可理解为在：
 
-\[
+$$
 64
-\]
+$$
 
 维 attention subspace 中工作。
 
@@ -4002,9 +4002,9 @@ ACT 中 Multi-Head Attention 用于：
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### 前置
+#### 前置
 
 - [Attention](./attention.md)
 - [Query / Key / Value](./qkv.md)
@@ -4012,7 +4012,7 @@ ACT 中 Multi-Head Attention 用于：
 - [Dot Product](./dot-product.md)
 - [Softmax](./softmax.md)
 
-### Transformer
+#### Transformer
 
 - [Transformer](./transformer.md)
 - [Cross-Attention](./cross-attention.md)
@@ -4021,18 +4021,18 @@ ACT 中 Multi-Head Attention 用于：
 - [Layer Normalization](./layer-normalization.md)
 - [Feed-Forward Network](./feed-forward-network.md)
 
-### 后续扩展
+#### 后续扩展
 
 - Multi-Query Attention
 - Grouped-Query Attention
 - KV Cache
 - FlashAttention
 
-### Robot Learning
+#### Robot Learning
 
 - [ACT Architecture](../robot-learning/act/architecture.md)
 - [ACT Complete Data Flow](../robot-learning/act/complete-data-flow.md)
 
-### 下一步
+#### 下一步
 
 - [Cross-Attention](./cross-attention.md)

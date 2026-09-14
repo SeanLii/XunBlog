@@ -11,17 +11,17 @@ updated: "2026-09-15"
 
 前面我们已经知道 ACT 的网络长什么样：
 
-\[
+$$
 \text{Images} + q_t + z
 \longrightarrow
 \hat a_{t:t+k}
-\]
+$$
 
-也知道训练时 latent \(z\) 不是固定为 0，而是由 CVAE encoder 从 demonstration 中推断：
+也知道训练时 latent $z$ 不是固定为 0，而是由 CVAE encoder 从 demonstration 中推断：
 
-\[
+$$
 q_\phi(z\mid a_{t:t+k},q_t)
-\]
+$$
 
 但“知道网络结构”还不等于“知道模型怎么训练”。真正运行训练代码时，发生的是一条更长的 pipeline：
 
@@ -63,33 +63,33 @@ AdamW
 
 ---
 
-# 1. ACT 训练本质上仍然是监督学习
+## 1. ACT 训练本质上仍然是监督学习
 
 最基本的 Behavior Cloning 数据形式是：
 
-\[
+$$
 (o_t,a_t)
-\]
+$$
 
 ACT 只是把 target 从单步：
 
-\[
+$$
 a_t
-\]
+$$
 
 改成一段未来动作：
 
-\[
+$$
 a_{t:t+k}
-\]
+$$
 
 所以训练 sample 的核心仍然是：
 
-\[
+$$
 \boxed{(o_t,a_{t:t+k})}
-\]
+$$
 
-论文 Algorithm 1 直接写的是：从 demonstration dataset \(\mathcal D\) 中采样当前 observation 与对应 action chunk。
+论文 Algorithm 1 直接写的是：从 demonstration dataset $\mathcal D$ 中采样当前 observation 与对应 action chunk。
 
 因此 ACT 从最外层看仍然是：
 
@@ -99,21 +99,21 @@ a_{t:t+k}
 
 ---
 
-# 2. 一条 Demonstration Episode 中有什么？
+## 2. 一条 Demonstration Episode 中有什么？
 
-一条长度为 \(T\) 的 trajectory 可以抽象写成：
+一条长度为 $T$ 的 trajectory 可以抽象写成：
 
-\[
+$$
 \mathcal E
 =
 \{o_0,a_0,o_1,a_1,\ldots,o_{T-1},a_{T-1}\}
-\]
+$$
 
 其中：
 
-\[
+$$
 o_t=(I_t^{(1)},I_t^{(2)},I_t^{(3)},I_t^{(4)},q_t)
-\]
+$$
 
 包含：
 
@@ -122,9 +122,9 @@ o_t=(I_t^{(1)},I_t^{(2)},I_t^{(3)},I_t^{(4)},q_t)
 
 而动作：
 
-\[
+$$
 a_t\in\mathbb R^{14}
-\]
+$$
 
 表示双臂 target joint positions。
 
@@ -141,7 +141,7 @@ ACT policy 训练实际主要使用 images、qpos 和 action。
 
 ---
 
-# 3. 官方实现不是提前把所有 Action Chunks 保存成独立样本
+## 3. 官方实现不是提前把所有 Action Chunks 保存成独立样本
 
 一个很容易产生的想象是：
 
@@ -173,33 +173,33 @@ start_ts = np.random.choice(episode_len)
 
 即：
 
-\[
+$$
 \boxed{t\sim\text{Uniform discrete episode timesteps}}
-\]
+$$
 
 因此同一个 episode 在不同 epoch 中可以产生完全不同的 training timestep。
 
 ---
 
-# 4. 一个 Dataset Item 实际上是在 Episode 中随机抽一个时刻
+## 4. 一个 Dataset Item 实际上是在 Episode 中随机抽一个时刻
 
 假设：
 
-\[
+$$
 T=400
-\]
+$$
 
 这次随机抽到：
 
-\[
+$$
 t=137
-\]
+$$
 
 dataset 会读取当前 observation：
 
-\[
+$$
 o_{137}
-\]
+$$
 
 即 timestep 137 的：
 
@@ -210,33 +210,33 @@ o_{137}
 
 对于 simulation：
 
-\[
+$$
 a_{137},a_{138},\ldots,a_{399}
-\]
+$$
 
 后面再 padding。到了 policy 中才截到 chunk size：
 
-\[
+$$
 k
-\]
+$$
 
 如果：
 
-\[
+$$
 k=100
-\]
+$$
 
 最终 supervision 大致就是：
 
-\[
+$$
 a_{137:237}
-\]
+$$
 
 这里为了清楚使用半开区间记号。
 
 ---
 
-# 5. 为什么随机采 start timestep？
+## 5. 为什么随机采 start timestep？
 
 因为我们希望 policy 学会：
 
@@ -244,9 +244,9 @@ a_{137:237}
 
 如果永远只训练：
 
-\[
+$$
 t=0
-\]
+$$
 
 模型就会过度集中于任务开头。
 
@@ -270,7 +270,7 @@ episode
 
 ---
 
-# 6. Simulation 和 Real Robot Data 有一个 Action Alignment 差异
+## 6. Simulation 和 Real Robot Data 有一个 Action Alignment 差异
 
 官方 `utils.py` 中，对 simulation：
 
@@ -280,9 +280,9 @@ action = root['/action'][start_ts:]
 
 即：
 
-\[
+$$
 a_{t:}
-\]
+$$
 
 但对真实机器人数据：
 
@@ -302,35 +302,35 @@ action = root['/action'][max(0, start_ts - 1):]
 
 这是原实现的数据对齐细节，不是 ACT 数学定义本身。因此理论上仍然写：
 
-\[
+$$
 (o_t,a_{t:t+k})
-\]
+$$
 
 即可；但如果严格复现 original code，就必须注意这个行为。
 
 ---
 
-# 7. Episode 尾部不够 k 步怎么办？
+## 7. Episode 尾部不够 k 步怎么办？
 
 假设：
 
-\[
+$$
 T=400,
 \qquad
 k=100
-\]
+$$
 
 但随机采到：
 
-\[
+$$
 t=370
-\]
+$$
 
 从这里到 episode 结束只剩：
 
-\[
+$$
 400-370=30
-\]
+$$
 
 个 actions。
 
@@ -342,7 +342,7 @@ t=370
 
 ---
 
-# 8. Padding 如何做？
+## 8. Padding 如何做？
 
 官方代码先创建全零 action array：
 
@@ -378,19 +378,19 @@ a399
 
 随后 policy 再截取前：
 
-\[
+$$
 k=100
-\]
+$$
 
 个位置，因此 shape 始终可以固定成：
 
-\[
+$$
 [100,14]
-\]
+$$
 
 ---
 
-# 9. Padding 的 0 不能当成真实 Ground Truth
+## 9. Padding 的 0 不能当成真实 Ground Truth
 
 如果直接让模型对 padding 位置计算 reconstruction loss，那么模型会被错误监督成：
 
@@ -398,9 +398,9 @@ k=100
 
 所以 dataset 同时生成：
 
-\[
+$$
 \boxed{is\_pad}
-\]
+$$
 
 例如：
 
@@ -410,19 +410,19 @@ False False False ... False True True True ...
 
 其中：
 
-\[
+$$
 is\_pad_i=
 \begin{cases}
 0,&\text{真实 action}\
 1,&\text{padding}
 \end{cases}
-\]
+$$
 
 ---
 
-# 10. Padding Mask 有两个不同用途
+## 10. Padding Mask 有两个不同用途
 
-## 第一处：CVAE Encoder
+### 第一处：CVAE Encoder
 
 训练 latent encoder 时，padding action tokens 不应该参加 self-attention。
 
@@ -432,15 +432,15 @@ is\_pad_i=
 
 传入 CVAE Transformer encoder。
 
-## 第二处：Reconstruction Loss
+### 第二处：Reconstruction Loss
 
 padding positions 不能产生监督。
 
 因此 L1 loss 会乘：
 
-\[
+$$
 \neg is\_pad
-\]
+$$
 
 所以两者要区分：
 
@@ -454,7 +454,7 @@ Loss Mask
 
 ---
 
-# 11. 为什么 [CLS] 和 Joint Token 永远不 Mask？
+## 11. 为什么 [CLS] 和 Joint Token 永远不 Mask？
 
 CVAE encoder 的输入是：
 
@@ -486,7 +486,7 @@ action  → valid / padding
 
 ---
 
-# 12. Dataset 最终返回什么？
+## 12. Dataset 最终返回什么？
 
 官方 `EpisodicDataset` 返回：
 
@@ -499,73 +499,73 @@ is_pad
 
 对于单个 sample，可理解为：
 
-### Images
+#### Images
 
-\[
+$$
 [N_{cam},3,H,W]
-\]
+$$
 
 原始 ALOHA 常见：
 
-\[
+$$
 [4,3,480,640]
-\]
+$$
 
-### Qpos
+#### Qpos
 
-\[
+$$
 [14]
-\]
+$$
 
-### Action Data
+#### Action Data
 
 在 dataset 层先 pad，policy 层再截到：
 
-\[
+$$
 [k,14]
-\]
+$$
 
-### Padding Mask
+#### Padding Mask
 
-\[
+$$
 [k]
-\]
+$$
 
 一个 batch 后：
 
-\[
+$$
 [B,4,3,H,W]
-\]
+$$
 
-\[
+$$
 [B,14]
-\]
+$$
 
-\[
+$$
 [B,k,14]
-\]
+$$
 
-\[
+$$
 [B,k]
-\]
+$$
 
 ---
 
-# 13. 训练前为什么要 Normalize？
+## 13. 训练前为什么要 Normalize？
 
 不同 joint dimensions 的数值范围和变化尺度可能不同。
 
 如果一维典型变化只有：
 
-\[
+$$
 0.02
-\]
+$$
 
 另一维经常变化：
 
-\[
+$$
 2.0
-\]
+$$
 
 那么直接用原始数值训练时，大尺度维度可能更强地影响 loss 与 gradient。
 
@@ -573,51 +573,51 @@ is_pad
 
 ---
 
-# 14. Qpos 和 Action 怎样 Standardize？
+## 14. Qpos 和 Action 怎样 Standardize？
 
 官方统计所有数据中每一维的：
 
-\[
+$$
 \mu_a,\sigma_a
-\]
+$$
 
 然后：
 
-\[
+$$
 \boxed{
 a_{norm}
 =
 \frac{a-\mu_a}{\sigma_a}
 }
-\]
+$$
 
 qpos 同样：
 
-\[
+$$
 \boxed{
 q_{norm}
 =
 \frac{q-\mu_q}{\sigma_q}
 }
-\]
+$$
 
 官方还把 std clip 到至少：
 
-\[
+$$
 10^{-2}
-\]
+$$
 
 避免某个几乎不变化的 dimension 出现：
 
-\[
+$$
 \sigma\approx0
-\]
+$$
 
 导致数值不稳定。
 
 ---
 
-# 15. Qpos 和 Action 分别统计 Mean / Std
+## 15. Qpos 和 Action 分别统计 Mean / Std
 
 虽然 qpos 和 action 都是 14-D joint-related vectors，代码仍分别保存：
 
@@ -639,19 +639,19 @@ action_std
 
 ---
 
-# 16. Image 也有两层预处理
+## 16. Image 也有两层预处理
 
 dataset 先把：
 
-\[
+$$
 0\ldots255
-\]
+$$
 
 除以 255：
 
-\[
+$$
 [0,1]
-\]
+$$
 
 然后 `ACTPolicy` 又执行 ImageNet-style normalization：
 
@@ -662,31 +662,31 @@ std  = [0.229, 0.224, 0.225]
 
 所以视觉输入 pipeline 是：
 
-\[
+$$
 uint8
 \rightarrow
 [0,1]
 \rightarrow
 \text{channel-wise normalized tensor}
-\]
+$$
 
 再进入 ResNet18。
 
 ---
 
-# 17. Train / Validation 怎样划分？
+## 17. Train / Validation 怎样划分？
 
 released code 在 episode level 随机打乱所有 episode id，然后：
 
-\[
+$$
 80\%
-\]
+$$
 
 作为 train，
 
-\[
+$$
 20\%
-\]
+$$
 
 作为 validation。
 
@@ -696,7 +696,7 @@ released code 在 episode level 随机打乱所有 episode id，然后：
 
 ---
 
-# 18. 一个值得知道的实现细节：Normalization Stats 使用全部 Episodes
+## 18. 一个值得知道的实现细节：Normalization Stats 使用全部 Episodes
 
 当前 released implementation 在构造 train / val dataset 前就调用：
 
@@ -718,7 +718,7 @@ get_norm_stats(dataset_dir, num_episodes)
 
 ---
 
-# 19. 一个 Batch 怎样送进 Policy？
+## 19. 一个 Batch 怎样送进 Policy？
 
 训练 loop 中：
 
@@ -751,7 +751,7 @@ actions is not None
 
 ---
 
-# 20. Policy 首先截到 Chunk Size
+## 20. Policy 首先截到 Chunk Size
 
 Dataset 返回的 padded action sequence 可能比 chunk size 长。
 
@@ -764,29 +764,29 @@ is_pad = is_pad[:, :self.model.num_queries]
 
 其中：
 
-\[
+$$
 num\_queries=k
-\]
+$$
 
 于是最终 target：
 
-\[
+$$
 \boxed{
 A_t\in\mathbb R^{B\times k\times14}
 }
-\]
+$$
 
 mask：
 
-\[
+$$
 \boxed{
 M\in\mathbb R^{B\times k}
 }
-\]
+$$
 
 ---
 
-# 21. 进入 CVAE Encoder
+## 21. 进入 CVAE Encoder
 
 训练 branch 中：
 
@@ -810,137 +810,137 @@ z
 
 ---
 
-# 22. CVAE Encoder 的 Shape
+## 22. CVAE Encoder 的 Shape
 
 假设：
 
-\[
+$$
 B=8
-\]
+$$
 
-\[
+$$
 k=100
-\]
+$$
 
-\[
+$$
 d=512
-\]
+$$
 
 qpos：
 
-\[
+$$
 [8,14]
-\]
+$$
 
 投影成：
 
-\[
+$$
 [8,512]
-\]
+$$
 
 actions：
 
-\[
+$$
 [8,100,14]
-\]
+$$
 
 投影成：
 
-\[
+$$
 [8,100,512]
-\]
+$$
 
 再加入 `[CLS]`：
 
-\[
+$$
 [8,1,512]
-\]
+$$
 
 总 sequence：
 
-\[
+$$
 \boxed{[8,102,512]}
-\]
+$$
 
 因为：
 
-\[
+$$
 k+2=102
-\]
+$$
 
 ---
 
-# 23. Encoder 得到 μ 和 logσ²
+## 23. Encoder 得到 μ 和 logσ²
 
 ACT 只取 Transformer encoder 的 `[CLS]` hidden state：
 
-\[
+$$
 h_{CLS}\in\mathbb R^{B\times512}
-\]
+$$
 
 再通过 Linear：
 
-\[
+$$
 512\rightarrow64
-\]
+$$
 
 官方 latent dimension：
 
-\[
+$$
 d_z=32
-\]
+$$
 
 因此拆成：
 
-\[
+$$
 \mu\in\mathbb R^{B\times32}
-\]
+$$
 
 和：
 
-\[
+$$
 \log\sigma^2\in\mathbb R^{B\times32}
-\]
+$$
 
 定义 approximate posterior：
 
-\[
+$$
 q_\phi(z\mid A_t,q_t)
-\]
+$$
 
 ---
 
-# 24. Reparameterization 得到 z
+## 24. Reparameterization 得到 z
 
 先：
 
-\[
+$$
 \sigma
 =
 \exp\left(\frac12\log\sigma^2\right)
-\]
+$$
 
 采：
 
-\[
+$$
 \epsilon\sim\mathcal N(0,I)
-\]
+$$
 
 再：
 
-\[
+$$
 \boxed{
 z
 =
 \mu+\sigma\odot\epsilon
 }
-\]
+$$
 
 shape：
 
-\[
+$$
 [B,32]
-\]
+$$
 
 这一步让 reconstruction gradient 能反向传播到 encoder。
 
@@ -950,7 +950,7 @@ shape：
 
 ---
 
-# 25. z 与 Observation 一起进入 ACT Policy
+## 25. z 与 Observation 一起进入 ACT Policy
 
 现在 policy / CVAE decoder 接收：
 
@@ -976,29 +976,29 @@ Action Head
 
 得到：
 
-\[
+$$
 \boxed{
 \hat A_t
 \in
 \mathbb R^{B\times k\times14}
 }
-\]
+$$
 
 目标是重建 demonstration 中真实：
 
-\[
+$$
 A_t
-\]
+$$
 
 ---
 
-# 26. 第一部分 Loss：Reconstruction
+## 26. 第一部分 Loss：Reconstruction
 
 从 CVAE 概率角度，reconstruction term 对应：
 
-\[
+$$
 -\log p_\theta(A_t\mid o_t,z)
-\]
+$$
 
 ACT 的实际 released implementation 使用：
 
@@ -1016,15 +1016,15 @@ all_l1 = F.l1_loss(
 
 得到：
 
-\[
+$$
 [B,k,14]
-\]
+$$
 
 逐元素 absolute error。
 
 ---
 
-# 27. 为什么不能直接对 all_l1 Mean？
+## 27. 为什么不能直接对 all_l1 Mean？
 
 因为 chunk 尾部可能包含 padding。
 
@@ -1038,7 +1038,7 @@ all_l1 * ~is_pad.unsqueeze(-1)
 
 因此概念上：
 
-\[
+$$
 \boxed{
 L_{recon}
 =
@@ -1047,25 +1047,25 @@ L_{recon}
 |\hat A-A|\cdot M
 \right)
 }
-\]
+$$
 
 其中 mask：
 
-\[
+$$
 M=1
-\]
+$$
 
 代表真实 action，
 
-\[
+$$
 M=0
-\]
+$$
 
 代表 padding。
 
 ---
 
-# 28. 一个很细但真实的 Reduction Detail
+## 28. 一个很细但真实的 Reduction Detail
 
 official code 写的是：
 
@@ -1084,9 +1084,9 @@ l1 = (
 
 这和严格只对 valid elements 求：
 
-\[
+$$
 \frac{\sum |e|M}{\sum M}
-\]
+$$
 
 并不完全相同。
 
@@ -1096,15 +1096,15 @@ l1 = (
 
 ---
 
-# 29. Algorithm 1 写 MSE，为什么这里是 L1？
+## 29. Algorithm 1 写 MSE，为什么这里是 L1？
 
 ACT 论文 Algorithm 1 写：
 
-\[
+$$
 L_{reconst}
 =
 MSE(\hat A,A)
-\]
+$$
 
 但正文 Section IV-C 明确说明：
 
@@ -1122,36 +1122,36 @@ F.l1_loss(...)
 
 应回答：
 
-\[
+$$
 \boxed{L1}
-\]
+$$
 
 而不是机械照抄 Algorithm 1 的 MSE。
 
 ---
 
-# 30. 第二部分 Loss：KL Divergence
+## 30. 第二部分 Loss：KL Divergence
 
 posterior：
 
-\[
+$$
 q_\phi(z\mid A_t,q_t)
 =
 \mathcal N(
 \mu,
 \operatorname{diag}(\sigma^2)
 )
-\]
+$$
 
 prior：
 
-\[
+$$
 p(z)=\mathcal N(0,I)
-\]
+$$
 
 ACT 计算：
 
-\[
+$$
 \boxed{
 L_{KL}
 =
@@ -1162,11 +1162,11 @@ q_\phi(z\mid A_t,q_t)
 \mathcal N(0,I)
 \right)
 }
-\]
+$$
 
 对于 diagonal Gaussian：
 
-\[
+$$
 \boxed{
 D_{KL}
 =
@@ -1182,11 +1182,11 @@ D_{KL}
 1
 \right)
 }
-\]
+$$
 
 ---
 
-# 31. 官方 KL 代码怎样对应公式？
+## 31. 官方 KL 代码怎样对应公式？
 
 ```python
 klds = -0.5 * (
@@ -1199,9 +1199,9 @@ klds = -0.5 * (
 
 因为：
 
-\[
+$$
 \sigma^2=e^{\log\sigma^2}
-\]
+$$
 
 所以与上式完全等价。
 
@@ -1213,15 +1213,15 @@ total_kld = klds.sum(1).mean(0, True)
 
 即：
 
-### 对 latent dimensions 求和
+#### 对 latent dimensions 求和
 
-\[
+$$
 \sum_{j=1}^{32}KLD_{b,j}
-\]
+$$
 
-### 再对 batch 求平均
+#### 再对 batch 求平均
 
-\[
+$$
 \boxed{
 L_{KL}
 =
@@ -1230,11 +1230,11 @@ L_{KL}
 \sum_{j=1}^{32}
 KLD_{b,j}
 }
-\]
+$$
 
 ---
 
-# 32. 最终 ACT Loss
+## 32. 最终 ACT Loss
 
 官方：
 
@@ -1244,7 +1244,7 @@ loss = l1 + kl_weight * kl
 
 因此：
 
-\[
+$$
 \boxed{
 L
 =
@@ -1252,19 +1252,19 @@ L_{L1}
 +
 \beta L_{KL}
 }
-\]
+$$
 
 原论文 Table III：
 
-\[
+$$
 \boxed{\beta=10}
-\]
+$$
 
 所以典型 original ACT：
 
-\[
+$$
 L=L_{L1}+10L_{KL}
-\]
+$$
 
 注意：
 
@@ -1272,37 +1272,37 @@ L=L_{L1}+10L_{KL}
 
 两项原始数值尺度和 reduction 方式不同。
 
-\(\beta\) 只是控制相对权重的 hyperparameter。
+$\beta$ 只是控制相对权重的 hyperparameter。
 
 ---
 
-# 33. β 控制什么？
+## 33. β 控制什么？
 
 如果：
 
-\[
+$$
 \beta=0
-\]
+$$
 
-encoder 可以自由使用 \(z\) 去记 action sequence。
+encoder 可以自由使用 $z$ 去记 action sequence。
 
 这可能带来很好的 reconstruction，
 
 但 training posterior 可能与 test-time prior：
 
-\[
+$$
 \mathcal N(0,I)
-\]
+$$
 
 完全脱节。
 
-如果 \(\beta\) 很大：
+如果 $\beta$ 很大：
 
 posterior 被强烈推向 prior，
 
-\(z\) 能携带的 demonstration-specific information 会减少。
+$z$ 能携带的 demonstration-specific information 会减少。
 
-所以 \(\beta\) 控制：
+所以 $\beta$ 控制：
 
 ```text
 Action Reconstruction
@@ -1314,17 +1314,17 @@ Latent Prior Regularization
 
 论文明确指出：
 
-> higher \(\beta\) means less information transmitted in \(z\).
+> higher $\beta$ means less information transmitted in $z$.
 
 ---
 
-# 34. Reconstruction Gradient 会更新哪些模块？
+## 34. Reconstruction Gradient 会更新哪些模块？
 
 L1 loss 从：
 
-\[
+$$
 \hat A
-\]
+$$
 
 向后传播。
 
@@ -1337,13 +1337,13 @@ L1 loss 从：
 
 同时因为：
 
-\[
+$$
 z=\mu+\sigma\epsilon
-\]
+$$
 
 是可微的，reconstruction gradient 还会继续回到：
 
-- \(\mu\) / `logvar` projection；
+- $\mu$ / `logvar` projection；
 - `[CLS]` representation；
 - CVAE Transformer Encoder；
 - action / joint embedding layers。
@@ -1356,13 +1356,13 @@ z=\mu+\sigma\epsilon
 
 ---
 
-# 35. KL Gradient 会更新哪些模块？
+## 35. KL Gradient 会更新哪些模块？
 
 KL 直接依赖：
 
-\[
+$$
 \mu,\log\sigma^2
-\]
+$$
 
 因此主要沿：
 
@@ -1400,7 +1400,7 @@ KL
 
 ---
 
-# 36. 整个 Loss Graph
+## 36. 整个 Loss Graph
 
 ```text
                    ground-truth action chunk A
@@ -1434,7 +1434,7 @@ q(z|A,q) ───────── KL ───────── N(0,I)
 
 ---
 
-# 37. `loss.backward()` 到底做什么？
+## 37. `loss.backward()` 到底做什么？
 
 官方 training loop：
 
@@ -1445,14 +1445,14 @@ loss.backward()
 
 PyTorch 从 scalar loss 开始，对所有需要学习的 parameter 计算：
 
-\[
+$$
 \frac{\partial L}{\partial w}
-\]
+$$
 
 例如：
 
 - CNN convolution weights；
-- attention 的 \(W_Q,W_K,W_V\)；
+- attention 的 $W_Q,W_K,W_V$；
 - Transformer feed-forward layers；
 - action query embeddings；
 - `[CLS]` embedding；
@@ -1467,7 +1467,7 @@ PyTorch 从 scalar loss 开始，对所有需要学习的 parameter 计算：
 
 ---
 
-# 38. 真正修改 Weight 的是 Optimizer
+## 38. 真正修改 Weight 的是 Optimizer
 
 之后：
 
@@ -1501,11 +1501,11 @@ zero_grad
 
 ---
 
-# 39. 论文写 Adam，但官方代码实际使用 AdamW
+## 39. 论文写 Adam，但官方代码实际使用 AdamW
 
 论文 Algorithm 1 写：
 
-> Update \(\theta,\phi\) with ADAM.
+> Update $\theta,\phi$ with ADAM.
 
 但 released `detr/main.py` 实际是：
 
@@ -1515,43 +1515,43 @@ optimizer = torch.optim.AdamW(...)
 
 因此：
 
-### 讲算法高层
+#### 讲算法高层
 
 可以说：
 
 > Adam-family gradient optimization。
 
-### 精确复现 released code
+#### 精确复现 released code
 
 应该说：
 
-\[
+$$
 \boxed{AdamW}
-\]
+$$
 
 这和前面 MSE / L1 一样，也是论文高层描述与 released implementation 的一个差异。
 
 ---
 
-# 40. Optimizer 把 Backbone 单独分组
+## 40. Optimizer 把 Backbone 单独分组
 
 官方 parameter groups：
 
-## Non-backbone Parameters
+### Non-backbone Parameters
 
 使用：
 
-\[
+$$
 lr
-\]
+$$
 
-## Backbone Parameters
+### Backbone Parameters
 
 使用：
 
-\[
+$$
 lr_{backbone}
-\]
+$$
 
 代码：
 
@@ -1569,7 +1569,7 @@ lr_{backbone}
 
 ---
 
-# 41. ResNet 是 Frozen 吗？
+## 41. ResNet 是 Frozen 吗？
 
 不是。
 
@@ -1585,13 +1585,13 @@ if "backbone" in n and p.requires_grad
 
 ---
 
-# 42. Weight Decay
+## 42. Weight Decay
 
 released `detr/main.py` 默认：
 
-\[
+$$
 \boxed{weight\ decay=10^{-4}}
-\]
+$$
 
 并由 AdamW 使用。
 
@@ -1603,29 +1603,29 @@ released `detr/main.py` 默认：
 
 ---
 
-# 43. 一个 Epoch 实际上看多少 Samples？
+## 43. 一个 Epoch 实际上看多少 Samples？
 
 这是 original dataset loader 一个很特别的地方。
 
 `EpisodicDataset.__len__()` 返回：
 
-\[
+$$
 \#episodes
-\]
+$$
 
 而不是：
 
-\[
+$$
 \#timesteps
-\]
+$$
 
 因此一个 epoch 中，每个 training episode 大致被访问一次。
 
 但每次访问该 episode 时：
 
-\[
+$$
 start\_ts
-\]
+$$
 
 随机变化。
 
@@ -1646,13 +1646,13 @@ episode 7 → t=15
 
 ---
 
-# 44. 这也解释了为什么训练 Epoch 数很大
+## 44. 这也解释了为什么训练 Epoch 数很大
 
 官方 README 的 simulation example 使用：
 
-\[
+$$
 2000
-\]
+$$
 
 epochs。
 
@@ -1668,7 +1668,7 @@ epochs。
 
 ---
 
-# 45. Validation 怎样做？
+## 45. Validation 怎样做？
 
 每个 epoch：
 
@@ -1684,9 +1684,9 @@ with torch.inference_mode():
 
 如果：
 
-\[
+$$
 L_{val}
-\]
+$$
 
 低于历史最好值，就保存：
 
@@ -1702,7 +1702,7 @@ best_state_dict
 
 ---
 
-# 46. Validation 时还会运行 CVAE Encoder 吗？
+## 46. Validation 时还会运行 CVAE Encoder 吗？
 
 会。
 
@@ -1710,21 +1710,21 @@ best_state_dict
 
 所以 validation forward 仍可以计算：
 
-\[
+$$
 q_\phi(z\mid A,q)
-\]
+$$
 
 并得到：
 
-\[
+$$
 L1+\beta KL
-\]
+$$
 
 这与真实 robot rollout inference 不一样。
 
 ---
 
-# 47. Validation Loss 不等于 Robot Success Rate
+## 47. Validation Loss 不等于 Robot Success Rate
 
 validation loss 衡量：
 
@@ -1747,29 +1747,29 @@ validation loss 衡量：
 
 所以：
 
-\[
+$$
 \text{lower validation loss}
-\]
+$$
 
 不严格等价于：
 
-\[
+$$
 \text{higher task success rate}
-\]
+$$
 
 但 original ACT 用 validation loss 作为 checkpoint selection criterion。
 
 ---
 
-# 48. Training 时有 Temporal Ensemble 吗？
+## 48. Training 时有 Temporal Ensemble 吗？
 
 **没有。**
 
 Temporal Ensemble 是：
 
-\[
+$$
 \boxed{\text{Inference Only}}
-\]
+$$
 
 训练 sample 只做：
 
@@ -1791,7 +1791,7 @@ loss
 
 ---
 
-# 49. Training 时会执行预测 Action 吗？
+## 49. Training 时会执行预测 Action 吗？
 
 不会。
 
@@ -1829,25 +1829,25 @@ Loss
 
 ---
 
-# 50. 一次 Training Forward 中有几个 Action Predictions？
+## 50. 一次 Training Forward 中有几个 Action Predictions？
 
 一个当前 observation：
 
-\[
+$$
 o_t
-\]
+$$
 
 得到一个完整 predicted chunk：
 
-\[
+$$
 \hat A_t
 =
 (\hat a_t,\ldots,\hat a_{t+k-1})
-\]
+$$
 
 也就是说：
 
-> 一次 forward 产生 1 个 chunk，chunk 内有 \(k\) 个 future action positions。
+> 一次 forward 产生 1 个 chunk，chunk 内有 $k$ 个 future action positions。
 
 它不是 inference 时那种：
 
@@ -1857,33 +1857,33 @@ o_t
 
 ---
 
-# 51. Training Target Chunks 会不会彼此重叠？
+## 51. Training Target Chunks 会不会彼此重叠？
 
 长期 dataset sampling 中当然会。
 
 例如一次：
 
-\[
+$$
 t=10
-\]
+$$
 
 监督：
 
-\[
+$$
 a_{10:110}
-\]
+$$
 
 另一次：
 
-\[
+$$
 t=11
-\]
+$$
 
 监督：
 
-\[
+$$
 a_{11:111}
-\]
+$$
 
 两者大部分相同。
 
@@ -1895,93 +1895,93 @@ a_{11:111}
 
 ---
 
-# 52. 一个完整 Batch Shape 例子
+## 52. 一个完整 Batch Shape 例子
 
 假设：
 
-\[
+$$
 B=8,
 \quad
 k=100,
 \quad
 d_z=32
-\]
+$$
 
-### Images
+#### Images
 
-\[
+$$
 [8,4,3,480,640]
-\]
+$$
 
-### Qpos
+#### Qpos
 
-\[
+$$
 [8,14]
-\]
+$$
 
-### Target Actions
+#### Target Actions
 
-\[
+$$
 [8,100,14]
-\]
+$$
 
-### Padding Mask
+#### Padding Mask
 
-\[
+$$
 [8,100]
-\]
+$$
 
-### CVAE Sequence
+#### CVAE Sequence
 
-\[
+$$
 [8,102,512]
-\]
+$$
 
-### μ / logσ²
+#### μ / logσ²
 
-\[
+$$
 [8,32]
-\]
+$$
 
-### z
+#### z
 
-\[
+$$
 [8,32]
-\]
+$$
 
-### Policy Output
+#### Policy Output
 
-\[
+$$
 [8,100,14]
-\]
+$$
 
-### L1
+#### L1
 
-\[
+$$
 [8,100,14]
 \rightarrow
 scalar
-\]
+$$
 
-### KL
+#### KL
 
-\[
+$$
 [8,32]
 \rightarrow
 scalar
-\]
+$$
 
 最后得到一个 scalar loss，进行一次 optimizer step。
 
 ---
 
-# 53. 为什么原论文 Batch Size 是 8？
+## 53. 为什么原论文 Batch Size 是 8？
 
 Table III：
 
-\[
+$$
 \boxed{batch\ size=8}
-\]
+$$
 
 意味着一次 optimizer update 同时处理 8 个 sampled episode-timestep examples。
 
@@ -1995,19 +1995,19 @@ Table III：
 
 ---
 
-# 54. 为什么 Image 输入只有当前一帧？
+## 54. 为什么 Image 输入只有当前一帧？
 
 ACT policy 建模：
 
-\[
+$$
 \pi(a_{t:t+k}\mid o_t)
-\]
+$$
 
 而不是显式：
 
-\[
+$$
 \pi(a_t\mid o_{t-h:t})
-\]
+$$
 
 所以 dataset 只取：
 
@@ -2025,15 +2025,15 @@ image[start_ts]
 
 ---
 
-# 55. 为什么 Action Target 是未来一整段？
+## 55. 为什么 Action Target 是未来一整段？
 
 因为 Action Chunking 的核心就是：
 
-\[
+$$
 \boxed{
 \pi_\theta(a_{t:t+k}\mid o_t)
 }
-\]
+$$
 
 所以监督关系是：
 
@@ -2049,7 +2049,7 @@ image[start_ts]
 
 ---
 
-# 56. CVAE Encoder 看到 Future Actions 算不算作弊？
+## 56. CVAE Encoder 看到 Future Actions 算不算作弊？
 
 不算 deployed policy 的 information leakage。
 
@@ -2061,15 +2061,15 @@ image[start_ts]
 
 真正 test-time 使用的是：
 
-\[
+$$
 \pi_\theta(A\mid o,z)
-\]
+$$
 
 而不是：
 
-\[
+$$
 q_\phi(z\mid A,q)
-\]
+$$
 
 推理时 encoder 被丢弃，future target 不会进入 deployed policy。
 
@@ -2077,7 +2077,7 @@ q_\phi(z\mid A,q)
 
 ---
 
-# 57. 如果删掉 CVAE，Training 会变成什么？
+## 57. 如果删掉 CVAE，Training 会变成什么？
 
 大致退化为：
 
@@ -2093,17 +2093,17 @@ L1
 
 也就是：
 
-\[
+$$
 o_t
 \rightarrow
 A_t
-\]
+$$
 
 没有：
 
-- posterior \(q(z|\cdot)\)；
-- \(\mu\)；
-- \(\sigma\)；
+- posterior $q(z|\cdot)$；
+- $\mu$；
+- $\sigma$；
 - reparameterization；
 - KL。
 
@@ -2111,7 +2111,7 @@ A_t
 
 ---
 
-# 58. 官方 Training Loop 可以压缩成什么？
+## 58. 官方 Training Loop 可以压缩成什么？
 
 ```python
 for epoch in range(num_epochs):
@@ -2154,27 +2154,27 @@ L1 + β KL
 
 ---
 
-# 59. 为什么 `optimizer.zero_grad()` 必须存在？
+## 59. 为什么 `optimizer.zero_grad()` 必须存在？
 
 PyTorch 默认 gradients 会累加。
 
 如果不清零：
 
-\[
+$$
 \nabla L_1
-\]
+$$
 
 会和下一 batch：
 
-\[
+$$
 \nabla L_2
-\]
+$$
 
 累积成：
 
-\[
+$$
 \nabla L_1+\nabla L_2
-\]
+$$
 
 除非你故意进行 gradient accumulation。
 
@@ -2182,7 +2182,7 @@ original ACT 不是这样做，因此每次 optimizer step 后清空 gradient。
 
 ---
 
-# 60. Released Code 实际有没有 Gradient Clipping？
+## 60. Released Code 实际有没有 Gradient Clipping？
 
 parser 中虽然存在：
 
@@ -2210,7 +2210,7 @@ clip_grad_norm_
 
 ---
 
-# 61. 有没有 Learning Rate Scheduler？
+## 61. 有没有 Learning Rate Scheduler？
 
 parser 里也保留：
 
@@ -2232,7 +2232,7 @@ original released training loop 没有 scheduler step。
 
 ---
 
-# 62. ACT 是 Joint End-to-End Training
+## 62. ACT 是 Joint End-to-End Training
 
 并不是：
 
@@ -2246,9 +2246,9 @@ original released training loop 没有 scheduler step。
 
 而是一个 total loss：
 
-\[
+$$
 L=L1+\beta KL
-\]
+$$
 
 一次：
 
@@ -2268,19 +2268,19 @@ loss.backward()
 
 ---
 
-# 63. “联合训练”真正意味着什么？
+## 63. “联合训练”真正意味着什么？
 
 reconstruction 要求：
 
-\[
+$$
 \hat A\approx A
-\]
+$$
 
 为了做到这一点，decoder 希望获得一个有用的：
 
-\[
+$$
 z
-\]
+$$
 
 于是 reconstruction gradient 会推动 encoder 学会：
 
@@ -2302,7 +2302,7 @@ z
 
 ---
 
-# 64. 为什么 Loss Plateau 后 Policy 仍可能继续变好？
+## 64. 为什么 Loss Plateau 后 Policy 仍可能继续变好？
 
 official repo 当前 tuning note 特别提醒：
 
@@ -2328,67 +2328,67 @@ official repo 当前 tuning note 特别提醒：
 
 ---
 
-# 65. 原论文 ACT Hyperparameters
+## 65. 原论文 ACT Hyperparameters
 
 Table III 给出的核心设置：
 
-\[
+$$
 \boxed{learning\ rate=10^{-5}}
-\]
+$$
 
-\[
+$$
 \boxed{batch\ size=8}
-\]
+$$
 
-\[
+$$
 \boxed{encoder\ layers=4}
-\]
+$$
 
-\[
+$$
 \boxed{decoder\ layers=7}
-\]
+$$
 
-\[
+$$
 \boxed{feedforward\ dim=3200}
-\]
+$$
 
-\[
+$$
 \boxed{hidden\ dim=512}
-\]
+$$
 
-\[
+$$
 \boxed{attention\ heads=8}
-\]
+$$
 
-\[
+$$
 \boxed{chunk\ size=100}
-\]
+$$
 
-\[
+$$
 \boxed{\beta=10}
-\]
+$$
 
-\[
+$$
 \boxed{dropout=0.1}
-\]
+$$
 
 这些是理解 original ACT training scale 最重要的一组配置。
 
 ---
 
-# 66. 一次 Parameter Update 的完整故事
+## 66. 一次 Parameter Update 的完整故事
 
 现在把所有东西串起来。
 
-## Step 1：DataLoader 取一批 Episodes
+### Step 1：DataLoader 取一批 Episodes
 
 例如：
 
-\[
+$$
 B=8
-\]
+$$
 
-## Step 2：每条 Episode 随机一个 start timestep
+### Step 2：每条 Episode 随机一个 start timestep
 
 例如：
 
@@ -2399,7 +2399,7 @@ episode 15 → t=17
 ...
 ```
 
-## Step 3：读取当前 Observation
+### Step 3：读取当前 Observation
 
 ```text
 4 camera images
@@ -2407,89 +2407,89 @@ episode 15 → t=17
 qpos
 ```
 
-## Step 4：读取未来 Actions
+### Step 4：读取未来 Actions
 
 从该 timestep 开始向后取。
 
-## Step 5：Padding + Mask
+### Step 5：Padding + Mask
 
 不足长度的后面补 0，并标记 `is_pad`。
 
-## Step 6：Normalization
+### Step 6：Normalization
 
-\[
+$$
 q\rightarrow(q-\mu_q)/\sigma_q
-\]
+$$
 
-\[
+$$
 a\rightarrow(a-\mu_a)/\sigma_a
-\]
+$$
 
 image：
 
-\[
+$$
 0\ldots255
 \rightarrow
 0\ldots1
 \rightarrow
 ImageNet normalization
-\]
+$$
 
-## Step 7：截到前 k 个 Actions
+### Step 7：截到前 k 个 Actions
 
-\[
+$$
 A\in[B,k,14]
-\]
+$$
 
-## Step 8：CVAE Encoder
+### Step 8：CVAE Encoder
 
-\[
+$$
 [CLS]+q+A
 \rightarrow
 \mu,\log\sigma^2
-\]
+$$
 
-## Step 9：Reparameterization
+### Step 9：Reparameterization
 
-\[
+$$
 z=\mu+\sigma\epsilon
-\]
+$$
 
-## Step 10：ACT Policy
+### Step 10：ACT Policy
 
-\[
+$$
 (images,q,z)
 \rightarrow
 \hat A
-\]
+$$
 
-## Step 11：Masked L1
+### Step 11：Masked L1
 
-\[
+$$
 L_{L1}
-\]
+$$
 
-## Step 12：KL
+### Step 12：KL
 
-\[
+$$
 L_{KL}
 =
 KL(q_\phi(z|A,q)\|N(0,I))
-\]
+$$
 
-## Step 13：Combine
+### Step 13：Combine
 
-\[
+$$
 L=L_{L1}+10L_{KL}
-\]
+$$
 
-## Step 14：Backprop
+### Step 14：Backprop
 
-\[
+$$
 \nabla_{\theta,\phi}L
-\]
+$$
 
-## Step 15：AdamW Update
+### Step 15：AdamW Update
 
 修改整个模型参数。
 
@@ -2497,7 +2497,7 @@ L=L_{L1}+10L_{KL}
 
 ---
 
-# 67. 完整 Training Diagram
+## 67. 完整 Training Diagram
 
 ```text
                  DEMONSTRATION EPISODE
@@ -2558,21 +2558,21 @@ L=L_{L1}+10L_{KL}
 
 ---
 
-# 68. 常见误解一：训练时所有 Chunk 已经预先切好
+## 68. 常见误解一：训练时所有 Chunk 已经预先切好
 
 **不符合 original released implementation。**
 
 当前 official dataset 每次读取 episode 时随机选择：
 
-\[
+$$
 start\_ts
-\]
+$$
 
 action window 是动态产生的。
 
 ---
 
-# 69. 常见误解二：一个 Epoch 会看到所有 Timesteps
+## 69. 常见误解二：一个 Epoch 会看到所有 Timesteps
 
 **错误。**
 
@@ -2584,7 +2584,7 @@ dataset length 是 episode 数量。
 
 ---
 
-# 70. 常见误解三：Padding 0 是真实 Action
+## 70. 常见误解三：Padding 0 是真实 Action
 
 **错误。**
 
@@ -2597,15 +2597,15 @@ Padding 只是 tensor 对齐。
 
 ---
 
-# 71. 常见误解四：Dataset Normalization 和 LayerNorm 是一回事
+## 71. 常见误解四：Dataset Normalization 和 LayerNorm 是一回事
 
 不是。
 
 Dataset standardization：
 
-\[
+$$
 (x-\mu)/\sigma
-\]
+$$
 
 属于数据预处理。
 
@@ -2615,49 +2615,49 @@ Transformer LayerNorm 是模型内部 normalization layer。
 
 ---
 
-# 72. 常见误解五：ACT Training Loss 就是 MSE + KL
+## 72. 常见误解五：ACT Training Loss 就是 MSE + KL
 
 如果只读 Algorithm 1，会看到 MSE。
 
 但实际 original implementation 使用：
 
-\[
+$$
 \boxed{L1+\beta KL}
-\]
+$$
 
 正文和 code 都支持这一点。
 
 ---
 
-# 73. 常见误解六：KL 是 z 和 0 的距离
+## 73. 常见误解六：KL 是 z 和 0 的距离
 
 **错误。**
 
 KL 比较的是：
 
-\[
+$$
 q_\phi(z|A,q)
-\]
+$$
 
 与：
 
-\[
+$$
 N(0,I)
-\]
+$$
 
 两个 probability distributions。
 
 不是：
 
-\[
+$$
 \|z-0\|
-\]
+$$
 
 这样的 vector distance。
 
 ---
 
-# 74. 常见误解七：β=10 表示 KL 比 L1 重要 10 倍
+## 74. 常见误解七：β=10 表示 KL 比 L1 重要 10 倍
 
 **错误。**
 
@@ -2667,31 +2667,31 @@ N(0,I)
 
 ---
 
-# 75. 常见误解八：Reconstruction Loss 只训练 Decoder
+## 75. 常见误解八：Reconstruction Loss 只训练 Decoder
 
 **错误。**
 
 因为：
 
-\[
+$$
 z=\mu+\sigma\epsilon
-\]
+$$
 
 可微，L1 gradient 会一路传回 CVAE encoder。
 
 ---
 
-# 76. 常见误解九：KL 直接训练 ResNet
+## 76. 常见误解九：KL 直接训练 ResNet
 
 通常没有直接路径。
 
-KL 依赖 \(\mu,\log\sigma^2\)，而 ACT latent encoder 不输入 images。
+KL 依赖 $\mu,\log\sigma^2$，而 ACT latent encoder 不输入 images。
 
 ResNet 主要通过 action reconstruction gradient 被训练。
 
 ---
 
-# 77. 常见误解十：Temporal Ensemble 参与 Training Loss
+## 77. 常见误解十：Temporal Ensemble 参与 Training Loss
 
 **错误。**
 
@@ -2699,7 +2699,7 @@ Temporal Ensemble 是 inference-only。
 
 ---
 
-# 78. 常见误解十一：ACT 是 Reinforcement Learning
+## 78. 常见误解十一：ACT 是 Reinforcement Learning
 
 **错误。**
 
@@ -2709,46 +2709,46 @@ ACT 是 offline supervised imitation learning。
 
 ---
 
-# 79. 常见误解十二：训练时 z 也是 0
+## 79. 常见误解十二：训练时 z 也是 0
 
 **错误。**
 
 training：
 
-\[
+$$
 z=\mu+\sigma\epsilon
-\]
+$$
 
 inference：
 
-\[
+$$
 z=0
-\]
+$$
 
 必须严格区分。
 
 ---
 
-# 80. 常见误解十三：Validation 和真正 Robot Inference 完全相同
+## 80. 常见误解十三：Validation 和真正 Robot Inference 完全相同
 
 不是。
 
 validation 有 ground-truth action，可以运行 CVAE encoder 并计算：
 
-\[
+$$
 L1+\beta KL
-\]
+$$
 
 真正 rollout：
 
 - 没有 target actions；
 - encoder 被丢弃；
-- \(z=0\)；
+- $z=0$；
 - 可能使用 Temporal Ensemble。
 
 ---
 
-# 81. 常见误解十四：Optimizer 只更新 Policy Decoder
+## 81. 常见误解十四：Optimizer 只更新 Policy Decoder
 
 **错误。**
 
@@ -2761,37 +2761,37 @@ original ACT joint optimization 会更新：
 
 ---
 
-# 82. 用四个对象记住 ACT Training
+## 82. 用四个对象记住 ACT Training
 
 如果不想记代码，只需要记四个核心对象。
 
-## Input
+### Input
 
-\[
+$$
 \boxed{
 o_t=(images_t,q_t)
 }
-\]
+$$
 
-## Target
+### Target
 
-\[
+$$
 \boxed{
 A_t=a_{t:t+k}
 }
-\]
+$$
 
-## Training Posterior
+### Training Posterior
 
-\[
+$$
 \boxed{
 q_\phi(z\mid A_t,q_t)
 }
-\]
+$$
 
-## Objective
+### Objective
 
-\[
+$$
 \boxed{
 L
 =
@@ -2805,28 +2805,28 @@ q_\phi(z\mid A_t,q_t)
 N(0,I)
 \right)
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 \hat A_t
 =
 \pi_\theta(o_t,z)
-\]
+$$
 
 这就是 ACT training 的数学核心。
 
 ---
 
-# 83. 一句话重新理解 ACT Training
+## 83. 一句话重新理解 ACT Training
 
-> **ACT 训练时从 demonstration episode 中随机选择一个 timestep，把该时刻的多视角图像和 joint state 作为当前 observation，把随后 \(k\) 个 expert actions 作为 target chunk；CVAE encoder 利用 joint state 与 ground-truth action chunk 推断一个 Gaussian posterior 并重参数化采样 \(z\)，ACT policy 再根据 images、joint state 和 \(z\) 重建 action chunk。模型通过 masked L1 reconstruction 与 \(\beta\)-weighted KL regularization 联合训练，梯度同时更新 CVAE encoder、ResNet 和 Transformer policy。**
+> **ACT 训练时从 demonstration episode 中随机选择一个 timestep，把该时刻的多视角图像和 joint state 作为当前 observation，把随后 $k$ 个 expert actions 作为 target chunk；CVAE encoder 利用 joint state 与 ground-truth action chunk 推断一个 Gaussian posterior 并重参数化采样 $z$，ACT policy 再根据 images、joint state 和 $z$ 重建 action chunk。模型通过 masked L1 reconstruction 与 $\beta$-weighted KL regularization 联合训练，梯度同时更新 CVAE encoder、ResNet 和 Transformer policy。**
 
 而所有：
 
 - Temporal Ensemble；
-- \(z=0\)；
+- $z=0$；
 - overlapping chunks 的加权融合；
 
 都属于：
@@ -2837,7 +2837,7 @@ N(0,I)
 
 ---
 
-# 84. 下一步：ACT Inference
+## 84. 下一步：ACT Inference
 
 现在训练已经完整。
 
@@ -2885,7 +2885,7 @@ Temporal Ensemble
 
 ---
 
-## Primary Source
+### Primary Source
 
 Tony Z. Zhao, Vikash Kumar, Sergey Levine, Chelsea Finn.  
 **Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware.**  
@@ -2905,57 +2905,57 @@ Robotics: Science and Systems (RSS), 2023.
 
 论文 Algorithm 1 的核心训练过程是：
 
-\[
+$$
 (o_t,a_{t:t+k})\sim\mathcal D
-\]
+$$
 
-\[
+$$
 z\sim q_\phi(z\mid a_{t:t+k},\bar o_t)
-\]
+$$
 
-\[
+$$
 \hat a_{t:t+k}
 \sim
 \pi_\theta(\cdot\mid o_t,z)
-\]
+$$
 
 以及：
 
-\[
+$$
 L=L_{reconst}+\beta L_{reg}
-\]
+$$
 
 其中：
 
-\[
+$$
 L_{reg}=D_{KL}(q_\phi\|N(0,I))
-\]
+$$
 
 ---
 
-## Paper / Implementation Notes
+### Paper / Implementation Notes
 
-### Reconstruction Loss
+#### Reconstruction Loss
 
 Algorithm 1 写：
 
-\[
+$$
 MSE
-\]
+$$
 
 但正文 Section IV-C 与 official `policy.py` 实际使用：
 
-\[
+$$
 \boxed{L1}
-\]
+$$
 
 因此本文描述 actual original implementation 时采用：
 
-\[
+$$
 L1+\beta KL
-\]
+$$
 
-### Optimizer
+#### Optimizer
 
 Algorithm 1 写：
 
@@ -2963,11 +2963,11 @@ Algorithm 1 写：
 
 released official code 实际使用：
 
-\[
+$$
 \boxed{AdamW}
-\]
+$$
 
-### Real-Data Alignment
+#### Real-Data Alignment
 
 released `utils.py` 对 real-world data 使用：
 
@@ -2977,13 +2977,13 @@ max(0, start_ts - 1)
 
 作为 action 起始 index，并明确标注为 timestep alignment hack。
 
-### Gradient Clipping / LR Scheduler
+#### Gradient Clipping / LR Scheduler
 
 参数 parser 中保留相关选项，但 original released training path 标注为 `not used`，实际 training loop 没有调用它们。
 
 ---
 
-## Official Implementation
+### Official Implementation
 
 ACT official repository:
 
@@ -3019,11 +3019,11 @@ released code 可确认：
 
 ---
 
-## 原论文 ACT Hyperparameters
+### 原论文 ACT Hyperparameters
 
 | Hyperparameter | Value |
 |---|---:|
-| Learning rate | \(1\times10^{-5}\) |
+| Learning rate | $1\times10^{-5}$ |
 | Batch size | 8 |
 | Encoder layers | 4 |
 | Decoder layers | 7 |
@@ -3031,14 +3031,14 @@ released code 可确认：
 | Hidden dimension | 512 |
 | Attention heads | 8 |
 | Chunk size | 100 |
-| \(\beta\) | 10 |
+| $\beta$ | 10 |
 | Dropout | 0.1 |
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### ACT 主线
+#### ACT 主线
 
 - [ACT 到底解决了什么问题？](./act-what-problem-does-it-solve.md)
 - [Action Chunking](./action-chunking.md)
@@ -3047,7 +3047,7 @@ released code 可确认：
 - [CVAE in ACT](./cvae-in-act.md)
 - [为什么 ACT 推理时令 z = 0？](./why-z-zero-at-inference.md)
 
-### Generative Models
+#### Generative Models
 
 - [Latent Variable](../../generative-models/latent-variable.md)
 - [VAE](../../generative-models/vae.md)
@@ -3055,7 +3055,7 @@ released code 可确认：
 - [CVAE](../../generative-models/cvae.md)
 - [Posterior Collapse](../../generative-models/posterior-collapse.md)
 
-### 数学
+#### 数学
 
 - Mean
 - Variance
@@ -3064,7 +3064,7 @@ released code 可确认：
 - [KL Divergence](../../mathematics/kl-divergence.md)
 - Gradient & Chain Rule
 
-### Deep Learning
+#### Deep Learning
 
 - L1 Loss
 - [Backpropagation](../../deep-learning/backpropagation.md)
@@ -3072,6 +3072,6 @@ released code 可确认：
 - Normalization
 - Padding Mask
 
-### 下一步
+#### 下一步
 
 - [ACT Inference](./inference.md)

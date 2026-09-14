@@ -11,7 +11,7 @@ updated: "2026-09-15"
 
 在上一篇 [Transformer Encoder](./transformer-encoder.md) 中，我们已经把 Encoder Layer 完整组装起来：
 
-\[
+$$
 \boxed{
 \text{Self-Attention}
 \rightarrow
@@ -21,7 +21,7 @@ updated: "2026-09-15"
 \rightarrow
 \text{Residual + LayerNorm}
 }
-\]
+$$
 
 Decoder 看起来非常像 Encoder。
 
@@ -31,11 +31,11 @@ Decoder 看起来非常像 Encoder。
 
 所以原始 Transformer Decoder 比 Encoder 多一个 sub-layer：
 
-\[
+$$
 \boxed{
 \text{Encoder–Decoder Cross-Attention}
 }
-\]
+$$
 
 完整结构变成：
 
@@ -55,7 +55,7 @@ Residual + LayerNorm
 
 原始 Transformer 论文 Section 3.1 明确写道：
 
-> Decoder 也是 \(N=6\) 层；除了 Encoder Layer 原本的两个 sub-layers 外，Decoder 额外插入第三个 sub-layer，用 Multi-Head Attention 读取 Encoder Stack 的输出。
+> Decoder 也是 $N=6$ 层；除了 Encoder Layer 原本的两个 sub-layers 外，Decoder 额外插入第三个 sub-layer，用 Multi-Head Attention 读取 Encoder Stack 的输出。
 
 这句话已经把 Decoder 与 Encoder 的根本差异点出来了。
 
@@ -69,17 +69,17 @@ ACT 同样使用 Transformer Decoder，
 
 它一次放入：
 
-\[
+$$
 k
-\]
+$$
 
 个 action-query slots，
 
 然后并行产生：
 
-\[
+$$
 k
-\]
+$$
 
 个 future action representations。
 
@@ -90,28 +90,28 @@ k
 
 ---
 
-# 1. Encoder 和 Decoder 的职责为什么不同？
+## 1. Encoder 和 Decoder 的职责为什么不同？
 
 先看 Encoder。
 
 Encoder 输入：
 
-\[
+$$
 x_1,\ldots,x_n
-\]
+$$
 
 得到：
 
-\[
+$$
 M=
 [m_1,\ldots,m_n]
-\]
+$$
 
 这份：
 
-\[
+$$
 M
-\]
+$$
 
 就是：
 
@@ -125,13 +125,13 @@ M
 
 Decoder 则要产生：
 
-\[
+$$
 y_1,\ldots,y_m
-\]
+$$
 
 因此它同时面临两个信息源：
 
-### Source 1：自己的输出侧状态
+#### Source 1：自己的输出侧状态
 
 例如已经生成：
 
@@ -145,7 +145,7 @@ y_1,\ldots,y_m
 
 ---
 
-### Source 2：Encoder Memory
+#### Source 2：Encoder Memory
 
 它还必须知道：
 
@@ -157,27 +157,27 @@ I love robots
 
 所以 Decoder 天然需要两次不同性质的信息读取：
 
-\[
+$$
 \boxed{
 \text{Self-Attention}
 }
-\]
+$$
 
 处理 output-side context，
 
 和：
 
-\[
+$$
 \boxed{
 \text{Cross-Attention}
 }
-\]
+$$
 
 读取 input-side memory。
 
 ---
 
-# 2. 为什么 Encoder 只需要两个 Sub-Layers，而 Decoder 要三个？
+## 2. 为什么 Encoder 只需要两个 Sub-Layers，而 Decoder 要三个？
 
 Encoder：
 
@@ -215,40 +215,40 @@ FFN
 
 它解决的是一个 Encoder 根本没有的需求：
 
-\[
+$$
 \boxed{
 \text{output representation must condition on encoded input}
 }
-\]
+$$
 
 ---
 
-# 3. 原始 Transformer Decoder 一层的正式结构
+## 3. 原始 Transformer Decoder 一层的正式结构
 
 输入当前 decoder hidden sequence：
 
-\[
+$$
 H
-\]
+$$
 
 Encoder Memory：
 
-\[
+$$
 M
-\]
+$$
 
 第一个 sub-layer：
 
-\[
+$$
 \boxed{
 S=
 MaskedMHA(H)
 }
-\]
+$$
 
 Post-LN 原论文形式：
 
-\[
+$$
 \boxed{
 H_1=
 LN_1(
@@ -256,13 +256,13 @@ H+
 Dropout(S)
 )
 }
-\]
+$$
 
 ---
 
 第二个 sub-layer：
 
-\[
+$$
 \boxed{
 C=
 CrossMHA(
@@ -271,11 +271,11 @@ K=M,
 V=M
 )
 }
-\]
+$$
 
 然后：
 
-\[
+$$
 \boxed{
 H_2=
 LN_2(
@@ -283,20 +283,20 @@ H_1+
 Dropout(C)
 )
 }
-\]
+$$
 
 ---
 
 第三个 sub-layer：
 
-\[
+$$
 F=
 FFN(H_2)
-\]
+$$
 
 最后：
 
-\[
+$$
 \boxed{
 H_3=
 LN_3(
@@ -304,13 +304,13 @@ H_2+
 Dropout(F)
 )
 }
-\]
+$$
 
 这就是一整个原始 Transformer Decoder Layer。
 
 ---
 
-# 4. 为什么 Decoder 有三个 LayerNorm？
+## 4. 为什么 Decoder 有三个 LayerNorm？
 
 因为有三个 residualized sub-layers：
 
@@ -320,19 +320,19 @@ Dropout(F)
 
 原始 Transformer 对每一个 sub-layer 都使用：
 
-\[
+$$
 \boxed{
 LayerNorm(
 x+Sublayer(x)
 )
 }
-\]
+$$
 
 所以 Decoder 自然有：
 
-\[
+$$
 3
-\]
+$$
 
 次 Add & Norm。
 
@@ -340,15 +340,15 @@ Encoder 只有两个 sub-layers，
 
 所以有：
 
-\[
+$$
 2
-\]
+$$
 
 次。
 
 ---
 
-# 5. Decoder 第一个 Self-Attention 在做什么？
+## 5. Decoder 第一个 Self-Attention 在做什么？
 
 在语言 Transformer 中，
 
@@ -386,7 +386,7 @@ Encoder 只有两个 sub-layers，
 
 ---
 
-# 6. 为什么必须先 Self-Attention，再 Cross-Attention？
+## 6. 为什么必须先 Self-Attention，再 Cross-Attention？
 
 这是一个非常自然的设计。
 
@@ -414,19 +414,19 @@ Encoder 只有两个 sub-layers，
 
 所以先：
 
-\[
+$$
 H
 \rightarrow
 SelfAttention
 \rightarrow
 H_1
-\]
+$$
 
 然后用：
 
-\[
+$$
 H_1
-\]
+$$
 
 产生 Cross-Attention Query。
 
@@ -436,43 +436,43 @@ H_1
 
 ---
 
-# 7. Cross-Attention 中 Q/K/V 来自哪里？
+## 7. Cross-Attention 中 Q/K/V 来自哪里？
 
 原始论文 Section 3.2.3 明确说明：
 
-\[
+$$
 \boxed{
 Q
 \leftarrow
 \text{previous decoder layer / decoder-side representation}
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 K,V
 \leftarrow
 \text{encoder output}
 }
-\]
+$$
 
 更精确地：
 
-\[
+$$
 Q=H_1W_Q
-\]
+$$
 
-\[
+$$
 K=MW_K
-\]
+$$
 
-\[
+$$
 V=MW_V
-\]
+$$
 
 然后：
 
-\[
+$$
 \boxed{
 CrossAttention(H_1,M)
 =
@@ -485,67 +485,67 @@ QK^\top
 }
 \right)V
 }
-\]
+$$
 
 ---
 
-# 8. 为什么 Cross-Attention 输出长度跟 Decoder 走？
+## 8. 为什么 Cross-Attention 输出长度跟 Decoder 走？
 
 如果 Decoder 有：
 
-\[
+$$
 N_q
-\]
+$$
 
 个 positions，
 
 Encoder Memory 有：
 
-\[
+$$
 N_m
-\]
+$$
 
 个 tokens。
 
 则：
 
-\[
+$$
 Q:
 [N_q,d_k]
-\]
+$$
 
-\[
+$$
 K:
 [N_m,d_k]
-\]
+$$
 
 所以：
 
-\[
+$$
 QK^\top:
 [N_q,N_m]
-\]
+$$
 
 再乘：
 
-\[
+$$
 V:
 [N_m,d_v]
-\]
+$$
 
 得到：
 
-\[
+$$
 \boxed{
 [N_q,d_v]
 }
-\]
+$$
 
 因此 Decoder 仍保持：
 
-\[
+$$
 N_q
-\]
+$$
 
 个输出 positions。
 
@@ -555,24 +555,24 @@ Memory 长度只决定：
 
 ---
 
-# 9. Decoder Cross-Attention 不是把 Encoder Memory 替换掉
+## 9. Decoder Cross-Attention 不是把 Encoder Memory 替换掉
 
 Encoder Memory：
 
-\[
+$$
 M
-\]
+$$
 
 保持存在。
 
 Decoder 每个 position 只是从中读取：
 
-\[
+$$
 c_i
 =
 \sum_j
 \alpha_{ij}v_j
-\]
+$$
 
 多个 Decoder positions：
 
@@ -586,21 +586,21 @@ Memory 不会因为被读过一次就被消费掉。
 
 ---
 
-# 10. Cross-Attention 后为什么还需要 Residual？
+## 10. Cross-Attention 后为什么还需要 Residual？
 
 当前 decoder state：
 
-\[
+$$
 H_1
-\]
+$$
 
 已经包含 output-side context。
 
 Cross-Attention 返回：
 
-\[
+$$
 C
-\]
+$$
 
 主要带入：
 
@@ -608,25 +608,25 @@ C
 
 Residual：
 
-\[
+$$
 H_1+C
-\]
+$$
 
 可以理解成：
 
-\[
+$$
 \boxed{
 \text{我当前的输出侧状态}
 +
 \text{我刚从 Encoder Memory 读到的信息}
 }
-\]
+$$
 
 这非常符合 Decoder 的功能。
 
 ---
 
-# 11. 最后 FFN 为什么仍然不可少？
+## 11. 最后 FFN 为什么仍然不可少？
 
 经过 Cross-Attention，
 
@@ -641,53 +641,53 @@ H_1+C
 
 所以：
 
-\[
+$$
 H_2
 \rightarrow
 FFN
-\]
+$$
 
 继续进行：
 
-\[
+$$
 d_{\text{model}}
 \rightarrow
 d_{ff}
 \rightarrow
 d_{\text{model}}
-\]
+$$
 
 的特征加工。
 
 因此三段职责可以非常清楚地写成：
 
-\[
+$$
 \boxed{
 \text{Self-Attention}
 =
 \text{输出 positions 之间交流}
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 \text{Cross-Attention}
 =
 \text{输出 positions 读取 Encoder Memory}
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 \text{FFN}
 =
 \text{每个输出 position 做 nonlinear feature transform}
 }
-\]
+$$
 
 ---
 
-# 12. 一层 Decoder 的信息流
+## 12. 一层 Decoder 的信息流
 
 可以画成：
 
@@ -729,15 +729,15 @@ Decoder Layer Output H₃
 
 ---
 
-# 13. 原始 Transformer Decoder 有多少层？
+## 13. 原始 Transformer Decoder 有多少层？
 
 原始 2017 Transformer：
 
-\[
+$$
 \boxed{
 N=6
 }
-\]
+$$
 
 Decoder stack 由：
 
@@ -758,7 +758,7 @@ Decoder stack 由：
 
 ---
 
-# 14. 为什么要堆 6 层？
+## 14. 为什么要堆 6 层？
 
 一层 Cross-Attention 已经能读取整个 Encoder Memory。
 
@@ -782,21 +782,21 @@ Decoder stack 由：
 
 ---
 
-# 15. 第二层 Cross-Attention 和第一层有什么不同？
+## 15. 第二层 Cross-Attention 和第一层有什么不同？
 
 第一层：
 
-\[
+$$
 Q^{(1)}
 =
 H_1^{(1)}W_Q^{(1)}
-\]
+$$
 
 第二层输入已经是：
 
-\[
+$$
 H^{(2)}
-\]
+$$
 
 其中包含第一层：
 
@@ -808,17 +808,17 @@ H^{(2)}
 
 所以：
 
-\[
+$$
 Q^{(2)}
-\]
+$$
 
 已经代表一个更成熟的 decoder state。
 
 同时第二层还有自己的：
 
-\[
+$$
 W_Q^{(2)},W_K^{(2)},W_V^{(2)}
-\]
+$$
 
 因此它可以：
 
@@ -826,7 +826,7 @@ W_Q^{(2)},W_K^{(2)},W_V^{(2)}
 
 ---
 
-# 16. Decoder 是一种 Iterative Retrieval Process
+## 16. Decoder 是一种 Iterative Retrieval Process
 
 一个有用的 mental model：
 
@@ -850,7 +850,7 @@ W_Q^{(2)},W_K^{(2)},W_V^{(2)}
 
 ---
 
-# 17. 原始语言 Decoder 为什么第一个 Self-Attention 必须 Causal？
+## 17. 原始语言 Decoder 为什么第一个 Self-Attention 必须 Causal？
 
 因为它的 Decoder input 中包含：
 
@@ -862,18 +862,18 @@ W_Q^{(2)},W_K^{(2)},W_V^{(2)}
 
 因此原论文明确把非法 future connections 在 Softmax 前设成：
 
-\[
+$$
 -\infty
-\]
+$$
 
 保证：
 
-\[
+$$
 \boxed{
 P(y_i)
 \text{ only depends on known outputs before }i
 }
-\]
+$$
 
 详见：
 
@@ -881,7 +881,7 @@ P(y_i)
 
 ---
 
-# 18. Cross-Attention 为什么不需要同样的 Causal Mask？
+## 18. Cross-Attention 为什么不需要同样的 Causal Mask？
 
 因为 Encoder source：
 
@@ -913,29 +913,29 @@ robots
 
 ---
 
-# 19. Decoder Output 最后怎样变成 Token Probability？
+## 19. Decoder Output 最后怎样变成 Token Probability？
 
 原始 Transformer：
 
 Decoder 最后一层输出：
 
-\[
+$$
 H^{(N)}
-\]
+$$
 
 每个 target position：
 
-\[
+$$
 h_i
 \in
 \mathbb R^{512}
-\]
+$$
 
 经过 learned linear projection：
 
-\[
+$$
 z_i=W_oh_i+b
-\]
+$$
 
 映射到：
 
@@ -943,9 +943,9 @@ z_i=W_oh_i+b
 
 再：
 
-\[
+$$
 softmax(z_i)
-\]
+$$
 
 得到：
 
@@ -963,38 +963,38 @@ softmax(z_i)
 
 ---
 
-# 20. 这点和 ACT 非常相似
+## 20. 这点和 ACT 非常相似
 
 ACT Decoder 最后一层也不直接输出：
 
-\[
+$$
 14
-\]
+$$
 
 维机器人动作。
 
 它先输出：
 
-\[
+$$
 h_i^{decoder}
 \in
 \mathbb R^{512}
-\]
+$$
 
 然后 action head：
 
-\[
+$$
 \boxed{
 Linear:
 512\rightarrow14
 }
-\]
+$$
 
 得到：
 
-\[
+$$
 \hat a_i
-\]
+$$
 
 所以：
 
@@ -1020,27 +1020,27 @@ Decoder 提供的是：
 
 ---
 
-# 21. 现在正式进入 ACT Decoder
+## 21. 现在正式进入 ACT Decoder
 
 ACT 论文 Section IV-C：
 
 Policy Encoder 产生：
 
-\[
+$$
 \boxed{
 1202\times512
 }
-\]
+$$
 
 observation memory。
 
 Decoder 输入：
 
-\[
+$$
 \boxed{
 k\times512
 }
-\]
+$$
 
 的 output-position representations。
 
@@ -1050,31 +1050,31 @@ Decoder 通过 Cross-Attention：
 
 最后得到：
 
-\[
+$$
 \boxed{
 k\times512
 }
-\]
+$$
 
 再投影：
 
-\[
+$$
 \boxed{
 k\times14
 }
-\]
+$$
 
 对应未来：
 
-\[
+$$
 k
-\]
+$$
 
 步 target joint positions。
 
 ---
 
-# 22. ACT Decoder 的任务和语言 Decoder 根本不同
+## 22. ACT Decoder 的任务和语言 Decoder 根本不同
 
 语言 Decoder：
 
@@ -1086,15 +1086,15 @@ ACT Decoder：
 
 语言输出：
 
-\[
+$$
 y_i\in\text{Vocabulary}
-\]
+$$
 
 ACT 输出：
 
-\[
+$$
 a_i\in\mathbb R^{14}
-\]
+$$
 
 但二者共享：
 
@@ -1102,19 +1102,19 @@ a_i\in\mathbb R^{14}
 
 ---
 
-# 23. ACT 的 Action Query Slot 是什么？
+## 23. ACT 的 Action Query Slot 是什么？
 
 如果：
 
-\[
+$$
 k=100
-\]
+$$
 
 ACT 建立：
 
-\[
+$$
 100
-\]
+$$
 
 个 action query positions。
 
@@ -1141,11 +1141,11 @@ query 99
 
 ---
 
-# 24. Paper 如何描述这些 Queries？
+## 24. Paper 如何描述这些 Queries？
 
 ACT 论文正文写：
 
-> Transformer Decoder 的 input sequence 是 fixed position embedding，维度 \(k\times512\)。
+> Transformer Decoder 的 input sequence 是 fixed position embedding，维度 $k\times512$。
 
 Appendix C 进一步写：
 
@@ -1153,15 +1153,15 @@ Appendix C 进一步写：
 
 所以论文层面的设计是：
 
-\[
+$$
 \boxed{
 \text{fixed positional action-query representations}
 }
-\]
+$$
 
 ---
 
-# 25. Released Code 又是什么？
+## 25. Released Code 又是什么？
 
 当前官方仓库：
 
@@ -1175,31 +1175,31 @@ self.query_embed =
 
 所以 released code：
 
-\[
+$$
 \boxed{
 \text{learned query embeddings}
 }
-\]
+$$
 
 而不是论文附录描述的 fixed sinusoidal first-layer queries。
 
 这是一个明确的：
 
-\[
+$$
 \boxed{
 \text{Paper vs Released-Code difference}
 }
-\]
+$$
 
 ---
 
-# 26. 不管 Fixed 还是 Learned，核心作用是什么？
+## 26. 不管 Fixed 还是 Learned，核心作用是什么？
 
 让：
 
-\[
+$$
 k
-\]
+$$
 
 个 output slots：
 
@@ -1207,9 +1207,9 @@ k
 
 否则如果：
 
-\[
+$$
 q_0=q_1=\cdots=q_{k-1}
-\]
+$$
 
 并且其他初始状态完全对称，
 
@@ -1219,15 +1219,15 @@ Decoder 很难知道：
 
 所以 action query 的重要功能是：
 
-\[
+$$
 \boxed{
 \text{output-slot identity}
 }
-\]
+$$
 
 ---
 
-# 27. ACT Official Code 为什么还有一个 tgt？
+## 27. ACT Official Code 为什么还有一个 tgt？
 
 当前 Transformer forward：
 
@@ -1241,23 +1241,23 @@ tgt =
 
 因此最开始有两件东西：
 
-### `tgt`
+#### `tgt`
 
-\[
+$$
 \boxed{
 0
 }
-\]
+$$
 
 初始化的 decoder content state。
 
-### `query_embed`
+#### `query_embed`
 
-\[
+$$
 \boxed{
 \text{learned slot identity}
 }
-\]
+$$
 
 作为：
 
@@ -1267,15 +1267,15 @@ tgt =
 
 ---
 
-# 28. 为什么 `tgt=0` 还能工作？
+## 28. 为什么 `tgt=0` 还能工作？
 
 这是一个很重要的问题。
 
 因为 Decoder 第一层并不是只拿：
 
-\[
+$$
 tgt
-\]
+$$
 
 做所有事情。
 
@@ -1287,15 +1287,15 @@ q = k = tgt + query_pos
 
 第一层时：
 
-\[
+$$
 tgt=0
-\]
+$$
 
 所以：
 
-\[
+$$
 q=k=query\_pos
-\]
+$$
 
 因此每个 action slot 已经能通过：
 
@@ -1305,7 +1305,7 @@ q=k=query\_pos
 
 ---
 
-# 29. 第一层 Self-Attention 的 Value 是什么？
+## 29. 第一层 Self-Attention 的 Value 是什么？
 
 官方代码：
 
@@ -1327,15 +1327,15 @@ tgt2 =
 
 第一层：
 
-\[
+$$
 tgt=0
-\]
+$$
 
 所以 Value：
 
-\[
+$$
 V
-\]
+$$
 
 来自 zero content states。
 
@@ -1353,15 +1353,15 @@ V
 
 ---
 
-# 30. 那第一层 Self-Attention 输出是不是严格 0？
+## 30. 那第一层 Self-Attention 输出是不是严格 0？
 
 忽略 projection bias / implementation细节时，
 
 如果 Value input：
 
-\[
+$$
 tgt=0
-\]
+$$
 
 则 projected Values 可以受 linear biases 影响。
 
@@ -1388,7 +1388,7 @@ PyTorch `MultiheadAttention` 默认 projection 通常带 bias，
 
 ---
 
-# 31. ACT 第一层 Cross-Attention 才真正读取 Observation
+## 31. ACT 第一层 Cross-Attention 才真正读取 Observation
 
 官方 Post-LN：
 
@@ -1408,29 +1408,29 @@ tgt2 =
 
 所以：
 
-\[
+$$
 \boxed{
 Q
 \leftarrow
 tgt+query\_pos
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 K
 \leftarrow
 memory+pos
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 V
 \leftarrow
 memory
 }
-\]
+$$
 
 这一步把：
 
@@ -1440,62 +1440,62 @@ memory
 
 ---
 
-# 32. ACT Cross-Attention Matrix 是多大？
+## 32. ACT Cross-Attention Matrix 是多大？
 
 论文常用 chunk size：
 
-\[
+$$
 k=100
-\]
+$$
 
 Policy Encoder Memory：
 
-\[
+$$
 1202
-\]
+$$
 
 positions。
 
 每个 head：
 
-\[
+$$
 Q:
 [100,64]
-\]
+$$
 
-\[
+$$
 K:
 [1202,64]
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 QK^\top:
 [100,1202]
 }
-\]
+$$
 
 8 heads：
 
-\[
+$$
 \boxed{
 [8,100,1202]
 }
-\]
+$$
 
 忽略 batch。
 
 ---
 
-# 33. 每一行代表什么？
+## 33. 每一行代表什么？
 
 例如：
 
-\[
+$$
 A_{17,:}
-\]
+$$
 
 表示：
 
@@ -1512,15 +1512,15 @@ A_{17,:}
 
 ---
 
-# 34. 为什么 Memory Token 已经不是 Raw Patch？
+## 34. 为什么 Memory Token 已经不是 Raw Patch？
 
 因为它先经过了 Policy Transformer Encoder。
 
 所以：
 
-\[
+$$
 m_j
-\]
+$$
 
 已经是：
 
@@ -1532,21 +1532,21 @@ m_j
 
 - 其他摄像头；
 - qpos；
-- latent \(z\)；
+- latent $z$；
 
 的信息。
 
 因此 Cross-Attention 读的是：
 
-\[
+$$
 \boxed{
 \text{contextual observation memory}
 }
-\]
+$$
 
 ---
 
-# 35. ACT Decoder Self-Attention 为什么不是 Causal？
+## 35. ACT Decoder Self-Attention 为什么不是 Causal？
 
 当前官方 Transformer 调用：
 
@@ -1575,15 +1575,15 @@ tgt_mask=None
 
 所以：
 
-\[
+$$
 \boxed{
 \text{ACT action-slot self-attention is non-causal}
 }
-\]
+$$
 
 ---
 
-# 36. 为什么这不会偷看 Future Action？
+## 36. 为什么这不会偷看 Future Action？
 
 因为 Decoder 中没有：
 
@@ -1595,9 +1595,9 @@ tgt_mask=None
 
 slot 20 里面并没有真实：
 
-\[
+$$
 a_{t+20}
-\]
+$$
 
 给 slot 5 去抄。
 
@@ -1607,17 +1607,17 @@ a_{t+20}
 
 所以：
 
-\[
+$$
 slot_5
 \leftrightarrow
 slot_{20}
-\]
+$$
 
 不会造成 target leakage。
 
 ---
 
-# 37. 这和语言 Transformer 的区别
+## 37. 这和语言 Transformer 的区别
 
 语言 Decoder training：
 
@@ -1647,7 +1647,7 @@ query₀ query₁ query₂ ...
 
 ---
 
-# 38. ACT Decoder 更接近 DETR-style Query Decoder
+## 38. ACT Decoder 更接近 DETR-style Query Decoder
 
 ACT 官方模型代码直接由 DETR-style architecture 修改而来。
 
@@ -1677,37 +1677,37 @@ action slots
 
 所以 ACT Decoder 更适合理解成：
 
-\[
+$$
 \boxed{
 \text{query-based structured output decoder}
 }
-\]
+$$
 
 而不是：
 
-\[
+$$
 \boxed{
 \text{GPT-like autoregressive action generator}
 }
-\]
+$$
 
 ---
 
-# 39. 为什么 Query Decoder 很适合 ACT？
+## 39. 为什么 Query Decoder 很适合 ACT？
 
 因为 ACT 本来就想一次输出：
 
-\[
+$$
 k
-\]
+$$
 
 个未来动作。
 
 那么自然可以准备：
 
-\[
+$$
 k
-\]
+$$
 
 个 output slots。
 
@@ -1722,53 +1722,53 @@ k
 
 ---
 
-# 40. ACT Decoder 第一层的完整 Post-LN 流程
+## 40. ACT Decoder 第一层的完整 Post-LN 流程
 
 定义：
 
-\[
+$$
 T^{(0)}=0
-\]
+$$
 
 query positions：
 
-\[
+$$
 QPos
-\]
+$$
 
 Memory：
 
-\[
+$$
 M
-\]
+$$
 
 Memory positional representation：
 
-\[
+$$
 P
-\]
+$$
 
 ---
 
-## Sub-layer 1：Self-Attention
+### Sub-layer 1：Self-Attention
 
-\[
+$$
 q=k=
 T^{(0)}+QPos
-\]
+$$
 
-\[
+$$
 S^{(1)}
 =
 MHA_{self}
 (
 q,k,V=T^{(0)}
 )
-\]
+$$
 
 然后：
 
-\[
+$$
 \boxed{
 U^{(1)}
 =
@@ -1778,33 +1778,33 @@ T^{(0)}
 Dropout(S^{(1)})
 )
 }
-\]
+$$
 
 ---
 
-# 41. Sub-layer 2：Cross-Attention
+## 41. Sub-layer 2：Cross-Attention
 
 Query side：
 
-\[
+$$
 U^{(1)}+QPos
-\]
+$$
 
 Memory Key side：
 
-\[
+$$
 M+P
-\]
+$$
 
 Value：
 
-\[
+$$
 M
-\]
+$$
 
 所以：
 
-\[
+$$
 C^{(1)}
 =
 MHA_{cross}
@@ -1813,11 +1813,11 @@ Q=U^{(1)}+QPos,
 K=M+P,
 V=M
 )
-\]
+$$
 
 然后：
 
-\[
+$$
 \boxed{
 V^{(1)}
 =
@@ -1827,25 +1827,25 @@ U^{(1)}
 Dropout(C^{(1)})
 )
 }
-\]
+$$
 
 ---
 
-# 42. Sub-layer 3：FFN
+## 42. Sub-layer 3：FFN
 
 ACT：
 
-\[
+$$
 512
 \rightarrow
 3200
 \rightarrow
 512
-\]
+$$
 
 所以：
 
-\[
+$$
 F^{(1)}
 =
 W_2
@@ -1853,13 +1853,13 @@ ReLU(
 W_1V^{(1)}+b_1
 )
 +b_2
-\]
+$$
 
 带 dropout。
 
 最后：
 
-\[
+$$
 \boxed{
 T^{(1)}
 =
@@ -1869,19 +1869,19 @@ V^{(1)}
 Dropout(F^{(1)})
 )
 }
-\]
+$$
 
 这就是第一层 output。
 
 ---
 
-# 43. 第二层为什么不再是 zero tgt？
+## 43. 第二层为什么不再是 zero tgt？
 
 第二层 input：
 
-\[
+$$
 T^{(1)}
-\]
+$$
 
 已经包含：
 
@@ -1897,27 +1897,27 @@ T^{(1)}
 
 ---
 
-# 44. 第二层 Self-Attention 做的事更有意义
+## 44. 第二层 Self-Attention 做的事更有意义
 
 现在：
 
-\[
+$$
 T^{(1)}_i
-\]
+$$
 
-已经包含第 \(i\) 个 action slot 第一轮 observation理解。
+已经包含第 $i$ 个 action slot 第一轮 observation理解。
 
 第二层 Self-Attention可以让：
 
-\[
+$$
 slot_i
-\]
+$$
 
 读取：
 
-\[
+$$
 slot_j
-\]
+$$
 
 已经形成的内容。
 
@@ -1929,27 +1929,27 @@ action-to-action information exchange 就非常直观：
 
 ---
 
-# 45. 然后第二层再次 Cross-Attend Memory
+## 45. 然后第二层再次 Cross-Attend Memory
 
 第二层根据新的：
 
-\[
+$$
 T^{(1)}
-\]
+$$
 
 构建 Query。
 
 所以：
 
-\[
+$$
 A^{(2)}
-\]
+$$
 
 可以和：
 
-\[
+$$
 A^{(1)}
-\]
+$$
 
 完全不同。
 
@@ -1959,7 +1959,7 @@ A^{(1)}
 
 ---
 
-# 46. 这就是 Deep Decoder 的 Refinement
+## 46. 这就是 Deep Decoder 的 Refinement
 
 可以把 7 层 ACT Decoder 直觉化为：
 
@@ -1986,65 +1986,65 @@ Layer 3:
 
 ---
 
-# 47. ACT 论文 Decoder 有多少层？
+## 47. ACT 论文 Decoder 有多少层？
 
 ACT Table III：
 
-\[
+$$
 \boxed{
 \#decoder\ layers=7
 }
-\]
+$$
 
 同时：
 
-\[
+$$
 \boxed{
 hidden\ dimension=512
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 feedforward\ dimension=3200
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 heads=8
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 dropout=0.1
 }
-\]
+$$
 
 chunk size 论文典型：
 
-\[
+$$
 \boxed{
 100
 }
-\]
+$$
 
 ---
 
-# 48. 为什么 ACT Decoder 比 Encoder 更深？
+## 48. 为什么 ACT Decoder 比 Encoder 更深？
 
 论文配置：
 
-\[
+$$
 4
-\]
+$$
 
 Encoder layers，
 
-\[
+$$
 7
-\]
+$$
 
 Decoder layers。
 
@@ -2062,7 +2062,7 @@ Decoder layers。
 
 ---
 
-# 49. Released Code 的 Layer Stack
+## 49. Released Code 的 Layer Stack
 
 官方：
 
@@ -2101,7 +2101,7 @@ copy.deepcopy(module)
 
 ---
 
-# 50. Decoder Norm 有一个和 Encoder 不同的代码细节
+## 50. Decoder Norm 有一个和 Encoder 不同的代码细节
 
 当前 ACT/DETR-style `Transformer`：
 
@@ -2137,7 +2137,7 @@ encoder_norm =
 
 ---
 
-# 51. 为什么 Return Intermediate？
+## 51. 为什么 Return Intermediate？
 
 官方：
 
@@ -2149,10 +2149,10 @@ return_intermediate_dec=True
 
 概念上：
 
-\[
+$$
 T^{(1)},
 T^{(2)},\ldots,T^{(7)}
-\]
+$$
 
 都可以返回。
 
@@ -2162,7 +2162,7 @@ T^{(2)},\ldots,T^{(7)}
 
 ---
 
-# 52. ACT Official Decoder 返回什么 Shape？
+## 52. ACT Official Decoder 返回什么 Shape？
 
 Decoder：
 
@@ -2172,23 +2172,23 @@ return torch.stack(intermediate)
 
 如果：
 
-\[
+$$
 L=7
-\]
+$$
 
 内部 convention：
 
-\[
+$$
 [k,B,512]
-\]
+$$
 
 那么 stack：
 
-\[
+$$
 \boxed{
 [7,k,B,512]
 }
-\]
+$$
 
 随后 Transformer：
 
@@ -2198,15 +2198,15 @@ hs = hs.transpose(1, 2)
 
 得到：
 
-\[
+$$
 \boxed{
 [7,B,k,512]
 }
-\]
+$$
 
 ---
 
-# 53. 接下来 detr_vae.py 做了什么？
+## 53. 接下来 detr_vae.py 做了什么？
 
 当前官方：
 
@@ -2219,23 +2219,23 @@ hs =
 
 因此当 Transformer 返回：
 
-\[
+$$
 [7,B,k,512]
-\]
+$$
 
 时：
 
-\[
+$$
 [0]
-\]
+$$
 
 会选择：
 
-\[
+$$
 \boxed{
 [B,k,512]
 }
-\]
+$$
 
 对应 stack 的第一个 intermediate entry。
 
@@ -2248,13 +2248,13 @@ a_hat =
 
 得到：
 
-\[
+$$
 [B,k,14]
-\]
+$$
 
 ---
 
-# 54. 这里存在一个值得单独记录的 Released-Code Concern
+## 54. 这里存在一个值得单独记录的 Released-Code Concern
 
 官方 GitHub 长期存在 issue 指出：
 
@@ -2264,9 +2264,9 @@ Issue #25、#52 等都讨论过这一行为。
 
 这与论文 Table III 写：
 
-\[
+$$
 7
-\]
+$$
 
 个 Decoder Layers，
 
@@ -2276,7 +2276,7 @@ Issue #25、#52 等都讨论过这一行为。
 
 ---
 
-# 55. 应该怎样严谨地写这个问题？
+## 55. 应该怎样严谨地写这个问题？
 
 最安全的表达不是：
 
@@ -2288,19 +2288,19 @@ Issue #25、#52 等都讨论过这一行为。
 
 而是分成三层：
 
-### Paper Fact
+#### Paper Fact
 
 论文配置：
 
-\[
+$$
 7
-\]
+$$
 
 decoder layers。
 
 ---
 
-### Released-Code Fact
+#### Released-Code Fact
 
 当前 `transformer.py`：
 
@@ -2312,7 +2312,7 @@ decoder layers。
 
 ---
 
-### Community-Reported Concern
+#### Community-Reported Concern
 
 GitHub issue 提出：
 
@@ -2324,7 +2324,7 @@ GitHub issue 提出：
 
 ---
 
-# 56. 为什么不能直接把社区 Issue 当成论文事实？
+## 56. 为什么不能直接把社区 Issue 当成论文事实？
 
 GitHub issue 是：
 
@@ -2344,11 +2344,11 @@ GitHub issue 是：
 
 ---
 
-# 57. 为什么这个实现细节对理解理论仍然重要？
+## 57. 为什么这个实现细节对理解理论仍然重要？
 
 因为理论 Decoder stack：
 
-\[
+$$
 T^{(1)}
 \rightarrow
 T^{(2)}
@@ -2356,7 +2356,7 @@ T^{(2)}
 \cdots
 \rightarrow
 T^{(7)}
-\]
+$$
 
 的意义就是：
 
@@ -2364,9 +2364,9 @@ T^{(7)}
 
 如果 task head 真的只使用：
 
-\[
+$$
 T^{(1)}
-\]
+$$
 
 那后面层对这个主 action prediction path 的作用就值得重新审查。
 
@@ -2382,7 +2382,7 @@ T^{(1)}
 
 ---
 
-# 58. 本文主线应该以什么为准？
+## 58. 本文主线应该以什么为准？
 
 Canonical Transformer Decoder：
 
@@ -2405,60 +2405,60 @@ Released code：
 
 ---
 
-# 59. ACT Decoder 最后如何变成 Action？
+## 59. ACT Decoder 最后如何变成 Action？
 
 理想结构主线：
 
-\[
+$$
 T^{(7)}
 \in
 [B,k,512]
-\]
+$$
 
 经过：
 
-\[
+$$
 \boxed{
 action\_head:
 512\rightarrow14
 }
-\]
+$$
 
 逐 slot：
 
-\[
+$$
 \hat a_i
 =
 W_aT_i+b_a
-\]
+$$
 
 得到：
 
-\[
+$$
 \boxed{
 \hat A
 \in
 [B,k,14]
 }
-\]
+$$
 
 这就是 predicted action chunk。
 
 ---
 
-# 60. 为什么 Action Head 在所有 Slots 共享参数？
+## 60. 为什么 Action Head 在所有 Slots 共享参数？
 
 `nn.Linear(512,14)` 会对：
 
-\[
+$$
 k
-\]
+$$
 
 个 slots 使用同一套：
 
-\[
+$$
 W_a,b_a
-\]
+$$
 
 不同 future positions 的输出之所以不同，
 
@@ -2468,15 +2468,15 @@ W_a,b_a
 
 而是因为它们的 hidden representations：
 
-\[
+$$
 T_i
-\]
+$$
 
 不同。
 
 ---
 
-# 61. Slot Difference 从哪里来？
+## 61. Slot Difference 从哪里来？
 
 主要来自：
 
@@ -2497,13 +2497,13 @@ T_i
 
 ---
 
-# 62. Action Head 为什么不需要自己知道 t+i？
+## 62. Action Head 为什么不需要自己知道 t+i？
 
 因为：
 
-\[
+$$
 T_i
-\]
+$$
 
 已经通过 query position / decoder computation 编码了：
 
@@ -2515,7 +2515,7 @@ T_i
 
 ---
 
-# 63. ACT 还有一个 is_pad_head
+## 63. ACT 还有一个 is_pad_head
 
 官方：
 
@@ -2539,7 +2539,7 @@ Decoder hidden 还可以投影为：
 
 ---
 
-# 64. Transformer Decoder Output 和 CVAE Decoder 是不是一回事？
+## 64. Transformer Decoder Output 和 CVAE Decoder 是不是一回事？
 
 ACT 论文会说：
 
@@ -2547,13 +2547,13 @@ ACT 论文会说：
 
 这里的：
 
-\[
+$$
 \text{CVAE decoder}
-\]
+$$
 
 是大概念：
 
-> 从 \(z+\) observation 生成 action sequence 的整个 policy network。
+> 从 $z+$ observation 生成 action sequence 的整个 policy network。
 
 它包含：
 
@@ -2566,45 +2566,45 @@ ACT 论文会说：
 
 而：
 
-\[
+$$
 \text{Transformer Decoder}
-\]
+$$
 
 只是这个大 policy 中的一个具体模块。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{CVAE Decoder}
 \neq
 \text{Transformer Decoder}
 }
-\]
+$$
 
 这两个 “decoder” 不要混。
 
 ---
 
-# 65. 为什么这个名字非常容易混乱？
+## 65. 为什么这个名字非常容易混乱？
 
 ACT 同时存在：
 
-### CVAE Encoder
+#### CVAE Encoder
 
-推 posterior \(z\)。
+推 posterior $z$。
 
-### CVAE Decoder / Policy
+#### CVAE Decoder / Policy
 
 预测 action sequence。
 
 而 CVAE Decoder / Policy 内部又包含：
 
-### Transformer Encoder
+#### Transformer Encoder
 
 构建 observation memory。
 
-### Transformer Decoder
+#### Transformer Decoder
 
 生成 action-slot hidden representations。
 
@@ -2627,17 +2627,17 @@ ACT CVAE
 
 ---
 
-# 66. Transformer Decoder 与 CVAE 的概率角色不同
+## 66. Transformer Decoder 与 CVAE 的概率角色不同
 
 CVAE层面：
 
-\[
+$$
 p_\theta(
 A
 \mid
 o,z
 )
-\]
+$$
 
 表示：
 
@@ -2655,25 +2655,25 @@ Transformer Decoder只是实现：
 
 ---
 
-# 67. ACT 推理时 z=0 会怎样进入 Decoder？
+## 67. ACT 推理时 z=0 会怎样进入 Decoder？
 
 先：
 
-\[
+$$
 z=0
-\]
+$$
 
 经过：
 
-\[
+$$
 latent\_out\_proj
-\]
+$$
 
 得到：
 
-\[
+$$
 512
-\]
+$$
 
 维 latent token。
 
@@ -2684,7 +2684,7 @@ latent\_out\_proj
 
 一起进入 Policy Encoder。
 
-所以 \(z\) 不是：
+所以 $z$ 不是：
 
 > 直接塞给每个 action query。
 
@@ -2698,7 +2698,7 @@ Decoder 随后通过 Cross-Attention间接读取：
 
 ---
 
-# 68. 所以 Decoder Query 不直接等于 z
+## 68. 所以 Decoder Query 不直接等于 z
 
 另一个容易混淆的点。
 
@@ -2706,7 +2706,7 @@ Action Query：
 
 > 表示 output slot identity。
 
-Latent \(z\)：
+Latent $z$：
 
 > 表示 CVAE latent style condition。
 
@@ -2732,21 +2732,21 @@ Cross-Attend Memory
 
 所以：
 
-\[
+$$
 \boxed{
 z\neq action\ query
 }
-\]
+$$
 
 ---
 
-# 69. Joint State 也不是 Action Query
+## 69. Joint State 也不是 Action Query
 
 joint：
 
-\[
+$$
 q_t
-\]
+$$
 
 被投影成：
 
@@ -2772,13 +2772,13 @@ action query:
 
 ---
 
-# 70. 为什么 Decoder 能同时利用 Image、Joint 和 z？
+## 70. 为什么 Decoder 能同时利用 Image、Joint 和 z？
 
 因为 Policy Encoder 已经把三者放进统一 Memory：
 
-\[
+$$
 M
-\]
+$$
 
 Decoder Cross-Attention只需面对：
 
@@ -2792,7 +2792,7 @@ Decoder Cross-Attention只需面对：
 
 ---
 
-# 71. Decoder Self-Attention 有什么作用？
+## 71. Decoder Self-Attention 有什么作用？
 
 ACT 论文只高层说：
 
@@ -2802,15 +2802,15 @@ ACT 论文只高层说：
 
 non-causal action-slot Self-Attention允许：
 
-\[
+$$
 slot_i
-\]
+$$
 
 与：
 
-\[
+$$
 slot_j
-\]
+$$
 
 直接交换信息。
 
@@ -2828,7 +2828,7 @@ slot_j
 
 ---
 
-# 72. 为什么 Action Chunk 的 Temporal Order 不会因为 Full Self-Attention 消失？
+## 72. 为什么 Action Chunk 的 Temporal Order 不会因为 Full Self-Attention 消失？
 
 因为每个 slot 有自己的：
 
@@ -2836,15 +2836,15 @@ slot_j
 
 所以虽然：
 
-\[
+$$
 slot_5
-\]
+$$
 
 可以读取：
 
-\[
+$$
 slot_{20}
-\]
+$$
 
 模型仍能区分：
 
@@ -2858,7 +2858,7 @@ Position 与 Causality 是两件事。
 
 ---
 
-# 73. 为什么 ACT 不需要语言式 Shifted Action Input？
+## 73. 为什么 ACT 不需要语言式 Shifted Action Input？
 
 语言 Transformer：
 
@@ -2882,7 +2882,7 @@ Ground-truth previous actions 不被作为：
 
 ---
 
-# 74. 这避免了 Chunk 内 Autoregressive Rollout
+## 74. 这避免了 Chunk 内 Autoregressive Rollout
 
 如果 ACT 这样做：
 
@@ -2897,9 +2897,9 @@ Ground-truth previous actions 不被作为：
 
 chunk 内又产生：
 
-\[
+$$
 O(k)
-\]
+$$
 
 sequential generation dependency。
 
@@ -2915,15 +2915,15 @@ sequential generation dependency。
 
 ---
 
-# 75. Non-Autoregressive 不意味着独立预测
+## 75. Non-Autoregressive 不意味着独立预测
 
 这是必须再次强调的点。
 
 如果只是：
 
-\[
+$$
 k
-\]
+$$
 
 个完全独立 MLP heads，
 
@@ -2935,27 +2935,27 @@ ACT Decoder：
 
 因此动作 slots 是：
 
-\[
+$$
 \boxed{
 \text{parallel but interacting}
 }
-\]
+$$
 
 而不是：
 
-\[
+$$
 \boxed{
 \text{parallel and independent}
 }
-\]
+$$
 
 ---
 
-# 76. Joint Prediction 的高层形式
+## 76. Joint Prediction 的高层形式
 
 可以写成：
 
-\[
+$$
 \boxed{
 \hat A
 =
@@ -2963,11 +2963,11 @@ f_\theta(
 o_t,z
 )
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 \hat A
 =
 [
@@ -2976,26 +2976,26 @@ o_t,z
 \ldots,
 \hat a_{t+k-1}
 ]
-\]
+$$
 
 整个 matrix 同时输出。
 
 这和 autoregressive：
 
-\[
+$$
 \prod_i
 p(
 a_i
 \mid
 a_{<i},o
 )
-\]
+$$
 
 是不同的结构选择。
 
 ---
 
-# 77. ACT 训练时 Decoder 输入会不会使用 Ground-Truth Action？
+## 77. ACT 训练时 Decoder 输入会不会使用 Ground-Truth Action？
 
 Policy Transformer Decoder：
 
@@ -3003,7 +3003,7 @@ Policy Transformer Decoder：
 
 Ground-truth action chunk：
 
-> 用于 CVAE encoder 推 \(z\)，
+> 用于 CVAE encoder 推 $z$，
 
 并用于：
 
@@ -3039,7 +3039,7 @@ Policy Decoder input
 
 ---
 
-# 78. 为什么这仍然不是 Deployment Leakage？
+## 78. 为什么这仍然不是 Deployment Leakage？
 
 因为 CVAE Encoder：
 
@@ -3047,9 +3047,9 @@ Policy Decoder input
 
 推理时：
 
-\[
+$$
 z=0
-\]
+$$
 
 不需要未来 action。
 
@@ -3065,7 +3065,7 @@ z=0
 
 ---
 
-# 79. ACT Decoder Training 和 Inference 结构几乎一致吗？
+## 79. ACT Decoder Training 和 Inference 结构几乎一致吗？
 
 Policy Decoder这部分：
 
@@ -3073,15 +3073,15 @@ Policy Decoder这部分：
 
 训练：
 
-\[
+$$
 Memory(o_t,z_{\text{posterior sample}})
-\]
+$$
 
 推理：
 
-\[
+$$
 Memory(o_t,z=0)
-\]
+$$
 
 然后同一个：
 
@@ -3099,11 +3099,11 @@ Memory(o_t,z=0)
 
 ---
 
-# 80. 为什么这使 ACT 推理很快？
+## 80. 为什么这使 ACT 推理很快？
 
 一次 Policy forward：
 
-> 同时得到 \(k\) 个动作预测。
+> 同时得到 $k$ 个动作预测。
 
 不需要在 neural network 内：
 
@@ -3121,7 +3121,7 @@ Memory(o_t,z=0)
 
 ---
 
-# 81. Decoder 一次输出 k 个动作，为什么最后只执行一个？
+## 81. Decoder 一次输出 k 个动作，为什么最后只执行一个？
 
 如果使用 Temporal Ensemble：
 
@@ -3135,29 +3135,29 @@ Memory(o_t,z=0)
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Decoder output}
 =
 \text{future action chunk}
 }
-\]
+$$
 
 而：
 
-\[
+$$
 \boxed{
 \text{robot execution}
 =
 \text{current action only}
 }
-\]
+$$
 
 二者层级不同。
 
 ---
 
-# 82. Decoder 与 Temporal Ensemble 的关系
+## 82. Decoder 与 Temporal Ensemble 的关系
 
 Decoder：
 
@@ -3179,15 +3179,15 @@ inter-forward execution-time aggregation
 
 ---
 
-# 83. Decoder 与 Action Chunking 的关系
+## 83. Decoder 与 Action Chunking 的关系
 
 Action Chunking规定：
 
-\[
+$$
 o_t
 \rightarrow
 a_{t:t+k-1}
-\]
+$$
 
 这是：
 
@@ -3207,7 +3207,7 @@ ACT 只是选择：
 
 ---
 
-# 84. Decoder 的输出是不是完整 Action Plan？
+## 84. Decoder 的输出是不是完整 Action Plan？
 
 可以把它直觉化为：
 
@@ -3227,7 +3227,7 @@ ACT 并没有显式 dynamics model、cost function、search algorithm。
 
 ---
 
-# 85. Transformer Decoder 和 Planner 不要混淆
+## 85. Transformer Decoder 和 Planner 不要混淆
 
 Planner通常可能显式：
 
@@ -3241,72 +3241,72 @@ ACT Decoder：
 
 所以：
 
-\[
+$$
 \boxed{
 \text{sequence prediction}
 \neq
 \text{explicit planning}
 }
-\]
+$$
 
 ---
 
-# 86. ACT Decoder 的 Shape Flow：假设 k=100
+## 86. ACT Decoder 的 Shape Flow：假设 k=100
 
 Memory：
 
-\[
+$$
 \boxed{
 M:
 [B,1202,512]
 }
-\]
+$$
 
 Query Embedding：
 
-\[
+$$
 \boxed{
 QPos:
 [100,512]
 }
-\]
+$$
 
 repeat batch 后：
 
-\[
+$$
 [100,B,512]
-\]
+$$
 
 `tgt`：
 
-\[
+$$
 \boxed{
 [100,B,512]
 }
-\]
+$$
 
 初始化为 zero。
 
 ---
 
-# 87. Decoder Self-Attention Shape
+## 87. Decoder Self-Attention Shape
 
 8 heads：
 
 每 head：
 
-\[
+$$
 Q,K,V:
 [B,8,100,64]
-\]
+$$
 
 Self-Attention score：
 
-\[
+$$
 \boxed{
 [B,8,100,100]
 }
-\]
+$$
 
 因为 ACT 不 causal：
 
@@ -3314,99 +3314,99 @@ Self-Attention score：
 
 ---
 
-# 88. Cross-Attention Shape
+## 88. Cross-Attention Shape
 
 Query：
 
-\[
+$$
 [B,8,100,64]
-\]
+$$
 
 Memory K/V：
 
-\[
+$$
 [B,8,1202,64]
-\]
+$$
 
 score：
 
-\[
+$$
 \boxed{
 [B,8,100,1202]
 }
-\]
+$$
 
 输出每 head：
 
-\[
+$$
 [B,8,100,64]
-\]
+$$
 
 concat：
 
-\[
+$$
 [B,100,512]
-\]
+$$
 
 ---
 
-# 89. FFN Shape
+## 89. FFN Shape
 
-\[
+$$
 [B,100,512]
-\]
+$$
 
 第一 Linear：
 
-\[
+$$
 \boxed{
 [B,100,3200]
 }
-\]
+$$
 
 ReLU + dropout，
 
 第二 Linear：
 
-\[
+$$
 \boxed{
 [B,100,512]
 }
-\]
+$$
 
 ---
 
-# 90. 一层结束 Shape
+## 90. 一层结束 Shape
 
 仍：
 
-\[
+$$
 \boxed{
 [B,100,512]
 }
-\]
+$$
 
 7 层理论 stack：
 
-\[
+$$
 [B,100,512]
 \rightarrow
 \cdots
 \rightarrow
 [B,100,512]
-\]
+$$
 
 最终 action head：
 
-\[
+$$
 \boxed{
 [B,100,14]
 }
-\]
+$$
 
 ---
 
-# 91. 为什么 Decoder 不改变 Query Count？
+## 91. 为什么 Decoder 不改变 Query Count？
 
 和 Cross-Attention 原理一样：
 
@@ -3414,17 +3414,17 @@ ReLU + dropout，
 
 Self-Attention：
 
-\[
+$$
 100\rightarrow100
-\]
+$$
 
 Cross-Attention：
 
-\[
+$$
 100\text{ queries}
 \times1202\text{ memory}
 \rightarrow100
-\]
+$$
 
 FFN：
 
@@ -3432,51 +3432,51 @@ FFN：
 
 所以整个 Decoder stack一直保留：
 
-\[
+$$
 k
-\]
+$$
 
 个 output slots。
 
 ---
 
-# 92. 为什么 Encoder Memory Length 也不变？
+## 92. 为什么 Encoder Memory Length 也不变？
 
 Decoder只是读取 Memory。
 
 它不会把：
 
-\[
+$$
 M
-\]
+$$
 
 修改回 Encoder。
 
 所以：
 
-\[
+$$
 1202
-\]
+$$
 
 仍然只是 Cross-Attention K/V bank。
 
 Decoder output count：
 
-\[
+$$
 100
-\]
+$$
 
 和 Memory count：
 
-\[
+$$
 1202
-\]
+$$
 
 彼此独立。
 
 ---
 
-# 93. 为什么 Decoder Layer 需要自己的 Self-Attention 和 Cross-Attention 两套 MHA 参数？
+## 93. 为什么 Decoder Layer 需要自己的 Self-Attention 和 Cross-Attention 两套 MHA 参数？
 
 官方代码：
 
@@ -3492,7 +3492,7 @@ self.multihead_attn =
 
 原因很自然：
 
-### Self-Attention
+#### Self-Attention
 
 建立：
 
@@ -3500,7 +3500,7 @@ self.multihead_attn =
 
 matching。
 
-### Cross-Attention
+#### Cross-Attention
 
 建立：
 
@@ -3510,19 +3510,19 @@ matching。
 
 这两个任务不应该被迫共用一套：
 
-\[
+$$
 W_Q,W_K,W_V
-\]
+$$
 
 ---
 
-# 94. Cross-Attention 里的 Q/K/V Width 一样吗？
+## 94. Cross-Attention 里的 Q/K/V Width 一样吗？
 
 每个 head：
 
-\[
+$$
 d_k=d_v=64
-\]
+$$
 
 在 ACT 标准配置下。
 
@@ -3530,17 +3530,17 @@ d_k=d_v=64
 
 Self：
 
-\[
+$$
 100
 \leftrightarrow100
-\]
+$$
 
 Cross：
 
-\[
+$$
 100
 \leftrightarrow1202
-\]
+$$
 
 所以区别主要在：
 
@@ -3548,7 +3548,7 @@ Cross：
 
 ---
 
-# 95. Why Self-Attention Before Cross-Attention in ACT?
+## 95. Why Self-Attention Before Cross-Attention in ACT?
 
 对于 ACT 第一层，
 
@@ -3572,7 +3572,7 @@ Self-Attention可以先协调：
 
 ---
 
-# 96. 如果把 Cross-Attention 放 Self-Attention 前面会怎样？
+## 96. 如果把 Cross-Attention 放 Self-Attention 前面会怎样？
 
 那是另一种 architecture。
 
@@ -3580,7 +3580,7 @@ Self-Attention可以先协调：
 
 但原始 Transformer / DETR-style Decoder选择：
 
-\[
+$$
 \boxed{
 Self
 \rightarrow
@@ -3588,7 +3588,7 @@ Cross
 \rightarrow
 FFN
 }
-\]
+$$
 
 网络会围绕这一 computation order 训练。
 
@@ -3598,35 +3598,35 @@ FFN
 
 ---
 
-# 97. 为什么三次 Residual 都有意义？
+## 97. 为什么三次 Residual 都有意义？
 
-### Self Residual
+#### Self Residual
 
 保留当前 slot state：
 
-\[
+$$
 T+Self(T)
-\]
+$$
 
 ---
 
-### Cross Residual
+#### Cross Residual
 
 保留已有 output-side state：
 
-\[
+$$
 U+Cross(U,M)
-\]
+$$
 
 ---
 
-### FFN Residual
+#### FFN Residual
 
 保留 contextual state：
 
-\[
+$$
 V+FFN(V)
-\]
+$$
 
 每个 sub-layer都更像：
 
@@ -3634,21 +3634,21 @@ V+FFN(V)
 
 ---
 
-# 98. Decoder LayerNorm 和 Encoder 一样是对 Feature Dimension
+## 98. Decoder LayerNorm 和 Encoder 一样是对 Feature Dimension
 
 每个 slot：
 
-\[
+$$
 x_i
 \in
 \mathbb R^{512}
-\]
+$$
 
 LayerNorm 对：
 
-\[
+$$
 512
-\]
+$$
 
 features 求 mean/variance。
 
@@ -3666,7 +3666,7 @@ features 求 mean/variance。
 
 ---
 
-# 99. Decoder Cross-Attention 才是 Observation→Action 的主桥梁
+## 99. Decoder Cross-Attention 才是 Observation→Action 的主桥梁
 
 ACT 中：
 
@@ -3680,7 +3680,7 @@ Decoder：
 
 所以从信息流来看：
 
-\[
+$$
 \boxed{
 Observation
 \rightarrow
@@ -3690,13 +3690,13 @@ Cross-Attention
 \rightarrow
 Action Slots
 }
-\]
+$$
 
 这是 ACT 从 perception/state representation 到 action sequence最核心的神经网络桥梁。
 
 ---
 
-# 100. 但不要把 Cross-Attention 当成唯一 Observation 信息路径
+## 100. 但不要把 Cross-Attention 当成唯一 Observation 信息路径
 
 Action slots 接收到 observation后，
 
@@ -3715,13 +3715,13 @@ Action slots 接收到 observation后，
 
 ---
 
-# 101. 一个 Slot 的最终表示依赖哪些东西？
+## 101. 一个 Slot 的最终表示依赖哪些东西？
 
-第 \(i\) 个最终 Decoder slot：
+第 $i$ 个最终 Decoder slot：
 
-\[
+$$
 T_i^{(L)}
-\]
+$$
 
 理论上可以依赖：
 
@@ -3733,9 +3733,9 @@ T_i^{(L)}
 
 所以最终：
 
-\[
+$$
 T_i^{(L)}
-\]
+$$
 
 是一个复杂的：
 
@@ -3743,27 +3743,27 @@ T_i^{(L)}
 
 ---
 
-# 102. 为什么 Shared Action Head 足够？
+## 102. 为什么 Shared Action Head 足够？
 
 因为复杂性已经在：
 
-\[
+$$
 T_i^{(L)}
-\]
+$$
 
 里。
 
 Action head只需把：
 
-\[
+$$
 512
-\]
+$$
 
 维 representation 映射到：
 
-\[
+$$
 14
-\]
+$$
 
 维 robot joint target。
 
@@ -3775,7 +3775,7 @@ Action head只需把：
 
 ---
 
-# 103. 为什么输出是 Absolute Joint Positions？
+## 103. 为什么输出是 Absolute Joint Positions？
 
 ACT 论文明确：
 
@@ -3787,9 +3787,9 @@ ACT 论文明确：
 
 所以 action head：
 
-\[
+$$
 14
-\]
+$$
 
 维不是：
 
@@ -3805,13 +3805,13 @@ ACT 论文明确：
 
 ---
 
-# 104. Decoder 不负责 PID
+## 104. Decoder 不负责 PID
 
 Transformer Decoder输出：
 
-\[
+$$
 \hat a_t
-\]
+$$
 
 是高层 target joint configuration。
 
@@ -3823,19 +3823,19 @@ Transformer Decoder输出：
 
 所以：
 
-\[
+$$
 \boxed{
 Transformer Decoder
 \neq
 motor torque controller
 }
-\]
+$$
 
 这对理解 robot policy stack 很重要。
 
 ---
 
-# 105. Decoder 预测 k 个动作，不代表机器人一次 Open-Loop 执行 k 步
+## 105. Decoder 预测 k 个动作，不代表机器人一次 Open-Loop 执行 k 步
 
 ACT 原始 naïve chunking可以：
 
@@ -3851,17 +3851,17 @@ ACT 原始 naïve chunking可以：
 
 所以：
 
-\[
+$$
 \boxed{
 \text{chunk prediction}
 \neq
 \text{necessarily chunk execution}
 }
-\]
+$$
 
 ---
 
-# 106. Decoder 里有没有 Temporal Ensemble？
+## 106. Decoder 里有没有 Temporal Ensemble？
 
 **没有。**
 
@@ -3885,37 +3885,37 @@ Decoder内部只负责：
 
 ---
 
-# 107. Decoder Loss 在哪里计算？
+## 107. Decoder Loss 在哪里计算？
 
 Decoder output经 action head：
 
-\[
+$$
 \hat A
-\]
+$$
 
 和 ground truth：
 
-\[
+$$
 A
-\]
+$$
 
 计算 reconstruction loss。
 
 官方 ACT policy 使用：
 
-\[
+$$
 L1
-\]
+$$
 
 再加 CVAE：
 
-\[
+$$
 \beta KL
-\]
+$$
 
 所以梯度：
 
-\[
+$$
 L
 \rightarrow
 action\_head
@@ -3923,29 +3923,29 @@ action\_head
 Decoder
 \rightarrow
 Encoder
-\]
+$$
 
 可以端到端回传。
 
 ---
 
-# 108. Cross-Attention 的 Gradient 也会训练 Encoder
+## 108. Cross-Attention 的 Gradient 也会训练 Encoder
 
 因为 Decoder output依赖：
 
-\[
+$$
 K=MW_K
-\]
+$$
 
-\[
+$$
 V=MW_V
-\]
+$$
 
 而：
 
-\[
+$$
 M
-\]
+$$
 
 来自 Policy Encoder。
 
@@ -3965,7 +3965,7 @@ M
 
 ---
 
-# 109. Decoder Query Embeddings 也会被训练
+## 109. Decoder Query Embeddings 也会被训练
 
 released code：
 
@@ -3979,9 +3979,9 @@ nn.Embedding(num_queries, hidden_dim)
 
 最终 loss 可以更新：
 
-\[
+$$
 QPos_i
-\]
+$$
 
 让每个 output slot学到：
 
@@ -3989,7 +3989,7 @@ QPos_i
 
 ---
 
-# 110. Query Embedding 会不会直接记住一个固定动作？
+## 110. Query Embedding 会不会直接记住一个固定动作？
 
 理论上参数中可以编码 task prior，
 
@@ -4007,7 +4007,7 @@ QPos_i
 
 ---
 
-# 111. 同一个 Query Slot 在所有样本都一样吗？
+## 111. 同一个 Query Slot 在所有样本都一样吗？
 
 初始 learned embedding：
 
@@ -4015,25 +4015,25 @@ QPos_i
 
 例如 slot 20：
 
-\[
+$$
 qpos_{20}
-\]
+$$
 
 对所有 batch samples相同。
 
 但 Cross-Attention面对的：
 
-\[
+$$
 M_b
-\]
+$$
 
 每个样本不同。
 
 所以最终：
 
-\[
+$$
 T_{b,20}
-\]
+$$
 
 会不同。
 
@@ -4045,7 +4045,7 @@ T_{b,20}
 
 ---
 
-# 112. 为什么 Query Slot 数等于 Chunk Size？
+## 112. 为什么 Query Slot 数等于 Chunk Size？
 
 因为：
 
@@ -4053,19 +4053,19 @@ T_{b,20}
 
 ACT 要输出：
 
-\[
+$$
 k
-\]
+$$
 
 个 future actions，
 
 所以：
 
-\[
+$$
 \boxed{
 num\_queries=k
 }
-\]
+$$
 
 代码：
 
@@ -4083,19 +4083,19 @@ self.query_embed =
 
 ---
 
-# 113. 如果 k 从 100 改成 50，会发生什么？
+## 113. 如果 k 从 100 改成 50，会发生什么？
 
 Query count：
 
-\[
+$$
 100\rightarrow50
-\]
+$$
 
 所以：
 
-- decoder self-attention：\(100\times100\rightarrow50\times50\)；
-- cross-attention：\(100\times1202\rightarrow50\times1202\)；
-- output：\(100\times14\rightarrow50\times14\)。
+- decoder self-attention：$100\times100\rightarrow50\times50$；
+- cross-attention：$100\times1202\rightarrow50\times1202$；
+- output：$100\times14\rightarrow50\times14$。
 
 这说明 Action Chunking hyperparameter：
 
@@ -4103,19 +4103,19 @@ Query count：
 
 ---
 
-# 114. k 也会影响 CVAE Encoder
+## 114. k 也会影响 CVAE Encoder
 
 Training 时 target action sequence length也是：
 
-\[
+$$
 k
-\]
+$$
 
 所以 CVAE encoder input：
 
-\[
+$$
 k+2
-\]
+$$
 
 也会改变。
 
@@ -4130,7 +4130,7 @@ k+2
 
 ---
 
-# 115. 原始 Transformer 与 ACT Decoder 对比
+## 115. 原始 Transformer 与 ACT Decoder 对比
 
 | 特性 | Original Transformer Decoder | ACT Decoder |
 |---|---|---|
@@ -4138,9 +4138,9 @@ k+2
 | Query-side input | shifted target embeddings | action query slots |
 | Self-Attention | causal | non-causal |
 | Cross-Attention | reads encoder source | reads observation memory |
-| Output count | target sequence positions | fixed chunk size \(k\) |
+| Output count | target sequence positions | fixed chunk size $k$ |
 | Prediction mode | autoregressive | parallel chunk |
-| Final head | vocab linear + softmax | linear \(512\to14\) |
+| Final head | vocab linear + softmax | linear $512\to14$ |
 | Decoder layers | 6 | 7 |
 | hidden dim | 512 | 512 |
 | FFN dim | 2048 | 3200 |
@@ -4148,13 +4148,13 @@ k+2
 
 ---
 
-# 116. 它们真正共享的核心是什么？
+## 116. 它们真正共享的核心是什么？
 
 虽然 task 完全不同，
 
 两者都保留：
 
-\[
+$$
 \boxed{
 \text{Self-Attention}
 \rightarrow
@@ -4162,7 +4162,7 @@ k+2
 \rightarrow
 \text{FFN}
 }
-\]
+$$
 
 这意味着 Decoder abstraction并不属于语言。
 
@@ -4174,7 +4174,7 @@ k+2
 
 ---
 
-# 117. 常见误解一：Transformer Decoder 就是 Autoregressive Decoder
+## 117. 常见误解一：Transformer Decoder 就是 Autoregressive Decoder
 
 **错误。**
 
@@ -4188,7 +4188,7 @@ ACT 就是 non-autoregressive decoder。
 
 ---
 
-# 118. 常见误解二：Decoder 比 Encoder 多一个 Self-Attention
+## 118. 常见误解二：Decoder 比 Encoder 多一个 Self-Attention
 
 **错误。**
 
@@ -4196,43 +4196,43 @@ Encoder 和 Decoder都有 Self-Attention。
 
 Decoder额外的是：
 
-\[
+$$
 \boxed{
 Cross-Attention
 }
-\]
+$$
 
 ---
 
-# 119. 常见误解三：Cross-Attention 只是第二次 Self-Attention
+## 119. 常见误解三：Cross-Attention 只是第二次 Self-Attention
 
 **错误。**
 
 Self：
 
-\[
+$$
 Q,K,V
-\]
+$$
 
 来自同一 Decoder sequence。
 
 Cross：
 
-\[
+$$
 Q
-\]
+$$
 
 来自 Decoder，
 
-\[
+$$
 K,V
-\]
+$$
 
 来自 Encoder Memory。
 
 ---
 
-# 120. 常见误解四：Decoder 的 Query Embedding 就是最终 Attention Q
+## 120. 常见误解四：Decoder 的 Query Embedding 就是最终 Attention Q
 
 **不严格。**
 
@@ -4240,38 +4240,38 @@ K,V
 
 MultiheadAttention内部还有：
 
-\[
+$$
 W_Q
-\]
+$$
 
 projection。
 
 ---
 
-# 121. 常见误解五：ACT 的 Action Query 一开始就是 14-D Action
+## 121. 常见误解五：ACT 的 Action Query 一开始就是 14-D Action
 
 **错误。**
 
 它是：
 
-\[
+$$
 512
-\]
+$$
 
 维 hidden slot identity。
 
 真正 action 直到：
 
-\[
+$$
 action\_head:
 512\to14
-\]
+$$
 
 才产生。
 
 ---
 
-# 122. 常见误解六：tgt=0 表示 Decoder 没有输入
+## 122. 常见误解六：tgt=0 表示 Decoder 没有输入
 
 **错误。**
 
@@ -4284,7 +4284,7 @@ Cross-Attention会注入 sample-specific observation content。
 
 ---
 
-# 123. 常见误解七：ACT Decoder 的 100 Slots 独立预测
+## 123. 常见误解七：ACT Decoder 的 100 Slots 独立预测
 
 **错误。**
 
@@ -4292,7 +4292,7 @@ Cross-Attention会注入 sample-specific observation content。
 
 ---
 
-# 124. 常见误解八：因为 Slots 代表未来，所以必须 Causal
+## 124. 常见误解八：因为 Slots 代表未来，所以必须 Causal
 
 **错误。**
 
@@ -4304,7 +4304,7 @@ ACT Query Slots 不包含。
 
 ---
 
-# 125. 常见误解九：ACT Ground-Truth Action Chunk 被喂进 Policy Decoder
+## 125. 常见误解九：ACT Ground-Truth Action Chunk 被喂进 Policy Decoder
 
 **错误。**
 
@@ -4317,35 +4317,35 @@ ACT Query Slots 不包含。
 
 ---
 
-# 126. 常见误解十：Decoder 输出 k×512 就已经是动作
+## 126. 常见误解十：Decoder 输出 k×512 就已经是动作
 
 **错误。**
 
 还要：
 
-\[
+$$
 512\rightarrow14
-\]
+$$
 
 task head。
 
 ---
 
-# 127. 常见误解十一：Encoder Memory 有 1202 个位置，所以 Decoder 也输出 1202 个位置
+## 127. 常见误解十一：Encoder Memory 有 1202 个位置，所以 Decoder 也输出 1202 个位置
 
 **错误。**
 
 Decoder output count由：
 
-\[
+$$
 k
-\]
+$$
 
 个 Queries 决定。
 
 ---
 
-# 128. 常见误解十二：Decoder 每层共享参数
+## 128. 常见误解十二：Decoder 每层共享参数
 
 **错误。**
 
@@ -4353,21 +4353,21 @@ k
 
 ---
 
-# 129. 常见误解十三：ACT Decoder FFN 是 2048
+## 129. 常见误解十三：ACT Decoder FFN 是 2048
 
 **论文/典型配置不是。**
 
 ACT Table III：
 
-\[
+$$
 \boxed{
 3200
 }
-\]
+$$
 
 ---
 
-# 130. 常见误解十四：ACT Decoder 只有 1 层
+## 130. 常见误解十四：ACT Decoder 只有 1 层
 
 **论文配置明确是 7 层。**
 
@@ -4375,7 +4375,7 @@ ACT Table III：
 
 ---
 
-# 131. 常见误解十五：GitHub Issue 说是 bug，所以我们可以直接改写官方算法
+## 131. 常见误解十五：GitHub Issue 说是 bug，所以我们可以直接改写官方算法
 
 **不严谨。**
 
@@ -4387,7 +4387,7 @@ ACT Table III：
 
 ---
 
-# 132. 常见误解十六：Cross-Attention 会改变 Encoder Memory
+## 132. 常见误解十六：Cross-Attention 会改变 Encoder Memory
 
 **不会。**
 
@@ -4397,7 +4397,7 @@ ACT Table III：
 
 ---
 
-# 133. 常见误解十七：Cross-Attention 权重就是“最终模型解释”
+## 133. 常见误解十七：Cross-Attention 权重就是“最终模型解释”
 
 **错误。**
 
@@ -4405,7 +4405,7 @@ ACT Table III：
 
 ---
 
-# 134. 常见误解十八：Decoder 负责控制 Motor Torque
+## 134. 常见误解十八：Decoder 负责控制 Motor Torque
 
 **错误。**
 
@@ -4417,7 +4417,7 @@ ACT输出的是：
 
 ---
 
-# 135. 常见误解十九：Decoder 一次输出 100 步，所以机器人一定 Open-Loop 跑 100 步
+## 135. 常见误解十九：Decoder 一次输出 100 步，所以机器人一定 Open-Loop 跑 100 步
 
 **错误。**
 
@@ -4425,7 +4425,7 @@ Temporal Ensemble 模式下 policy 可每 timestep 重新 query。
 
 ---
 
-# 136. 常见误解二十：CVAE Decoder = Transformer Decoder
+## 136. 常见误解二十：CVAE Decoder = Transformer Decoder
 
 **错误。**
 
@@ -4435,51 +4435,51 @@ Transformer Decoder只是 policy 内部模块。
 
 ---
 
-# 137. 用三块记住 Decoder
+## 137. 用三块记住 Decoder
 
-## Block 1：Self-Attention
+### Block 1：Self-Attention
 
-\[
+$$
 \boxed{
 \text{output positions talk to each other}
 }
-\]
+$$
 
 ---
 
-## Block 2：Cross-Attention
+### Block 2：Cross-Attention
 
-\[
+$$
 \boxed{
 \text{output positions read Encoder Memory}
 }
-\]
+$$
 
 ---
 
-## Block 3：FFN
+### Block 3：FFN
 
-\[
+$$
 \boxed{
 \text{each output position transforms its own features}
 }
-\]
+$$
 
 每块外面：
 
-\[
+$$
 \boxed{
 Residual + LayerNorm
 }
-\]
+$$
 
 原始 Transformer就是这样构成一层 Decoder。
 
 ---
 
-# 138. 用一个公式记住原始 Post-LN Decoder
+## 138. 用一个公式记住原始 Post-LN Decoder
 
-\[
+$$
 \boxed{
 H_1
 =
@@ -4488,9 +4488,9 @@ H+
 SelfAttn(H)
 )
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 H_2
 =
@@ -4499,9 +4499,9 @@ H_1+
 CrossAttn(H_1,M)
 )
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 H_3
 =
@@ -4510,47 +4510,47 @@ H_2+
 FFN(H_2)
 )
 }
-\]
+$$
 
 其中 language Decoder 的：
 
-\[
+$$
 SelfAttn
-\]
+$$
 
 带 causal mask。
 
 ---
 
-# 139. 用一个公式记住 ACT Decoder
+## 139. 用一个公式记住 ACT Decoder
 
 设：
 
-\[
+$$
 T^{(0)}=0
-\]
+$$
 
 Action Query Positions：
 
-\[
+$$
 P_q
-\]
+$$
 
 Observation Memory：
 
-\[
+$$
 M
-\]
+$$
 
 Memory Position：
 
-\[
+$$
 P_m
-\]
+$$
 
 一层概念上：
 
-\[
+$$
 \boxed{
 U=
 LN_1(
@@ -4562,9 +4562,9 @@ V=T
 )
 )
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 V=
 LN_2(
@@ -4576,9 +4576,9 @@ V=M
 )
 )
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 T'=
 LN_3(
@@ -4586,35 +4586,35 @@ V+
 FFN(V)
 )
 }
-\]
+$$
 
 然后理论上层层迭代。
 
 最终：
 
-\[
+$$
 \boxed{
 \hat A
 =
 Linear_{512\rightarrow14}(T^{(L)})
 }
-\]
+$$
 
 ---
 
-# 140. 一句话真正理解 Transformer Decoder
+## 140. 一句话真正理解 Transformer Decoder
 
 > **Transformer Decoder 是一个 output-side representation refinement stack：每一层先让各输出位置通过 Self-Attention整合自身 sequence/slot context，再通过 Cross-Attention用当前输出状态作为 Query 去读取 Encoder Memory，最后用 position-wise FFN 做非线性特征加工；三个 sub-layers 都通过 residual connection 与 LayerNorm稳定地写回当前 decoder representation。**
 
 ---
 
-# 141. 一句话真正理解 ACT Decoder
+## 141. 一句话真正理解 ACT Decoder
 
-> **ACT 把语言 Transformer 的 autoregressive target decoder 改造成了一个 non-causal query-based action decoder：\(k\) 个 action slots 以 learned/fixed positional query identity 开始，彼此可以 Full Self-Attend，然后每层都通过 Cross-Attention读取 \(1202\)-token observation memory，并经过 FFN逐层形成 observation-conditioned future-action representations，最后由共享的 \(512\rightarrow14\) action head并行输出整个 action chunk。**
+> **ACT 把语言 Transformer 的 autoregressive target decoder 改造成了一个 non-causal query-based action decoder：$k$ 个 action slots 以 learned/fixed positional query identity 开始，彼此可以 Full Self-Attend，然后每层都通过 Cross-Attention读取 $1202$-token observation memory，并经过 FFN逐层形成 observation-conditioned future-action representations，最后由共享的 $512\rightarrow14$ action head并行输出整个 action chunk。**
 
 ---
 
-# 142. 到这里 Transformer 主骨架已经闭环
+## 142. 到这里 Transformer 主骨架已经闭环
 
 现在你应该已经可以从头读懂：
 
@@ -4664,7 +4664,7 @@ k × 14 Action Chunk
 
 ---
 
-# 143. 下一步：Feed-Forward Network
+## 143. 下一步：Feed-Forward Network
 
 Transformer 大骨架已经讲完。
 
@@ -4680,7 +4680,7 @@ Transformer 大骨架已经讲完。
 
 - 为什么 Position-wise FFN 不做 token mixing；
 - 为什么它仍然占 Transformer 大量参数和 FLOPs；
-- \(512\rightarrow2048\rightarrow512\) / ACT 的 \(512\rightarrow3200\rightarrow512\) 到底增加了什么表示能力；
+- $512\rightarrow2048\rightarrow512$ / ACT 的 $512\rightarrow3200\rightarrow512$ 到底增加了什么表示能力；
 - 为什么没有 activation 时两层 Linear 可以合并；
 - ReLU/GELU/SwiGLU 分别改变什么；
 - 为什么很多现代 LLM 的参数反而主要在 FFN；
@@ -4689,7 +4689,7 @@ Transformer 大骨架已经讲完。
 
 ---
 
-## Primary Source：Transformer
+### Primary Source：Transformer
 
 Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,  
 Aidan N. Gomez, Łukasz Kaiser, Illia Polosukhin.
@@ -4700,39 +4700,39 @@ NeurIPS 2017.
 - arXiv: https://arxiv.org/abs/1706.03762
 - HTML: https://arxiv.org/html/1706.03762
 
-### Section 3.1 — Decoder
+#### Section 3.1 — Decoder
 
 原论文明确写：
 
 - Decoder 也是：
-  \[
+  $$
   N=6
-  \]
+  $$
   层；
 - 相比 Encoder，每层额外插入：
   > Multi-Head Attention over Encoder Stack output；
 - 每个 sub-layer 外：
   > residual connection followed by LayerNorm；
 - Decoder Self-Attention被 mask；
-- 配合 shifted output embeddings，保证 position \(i\) 只依赖此前已知 outputs。
+- 配合 shifted output embeddings，保证 position $i$ 只依赖此前已知 outputs。
 
 ---
 
-### Section 3.2.3 — Encoder–Decoder Attention
+#### Section 3.2.3 — Encoder–Decoder Attention
 
 原论文明确：
 
-\[
+$$
 \boxed{
 Q\leftarrow Decoder
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 K,V\leftarrow Encoder
 }
-\]
+$$
 
 并指出每一个 Decoder position 可以 attend：
 
@@ -4740,11 +4740,11 @@ K,V\leftarrow Encoder
 
 ---
 
-### Section 3.3 — FFN
+#### Section 3.3 — FFN
 
 Decoder 和 Encoder 都使用：
 
-\[
+$$
 \boxed{
 FFN(x)
 =
@@ -4753,21 +4753,21 @@ FFN(x)
 xW_1+b_1
 )W_2+b_2
 }
-\]
+$$
 
 Base Transformer：
 
-\[
+$$
 d_{\text{model}}=512
-\]
+$$
 
-\[
+$$
 d_{ff}=2048
-\]
+$$
 
 ---
 
-## ACT Primary Source
+### ACT Primary Source
 
 Tony Z. Zhao, Vikash Kumar, Sergey Levine, Chelsea Finn.
 
@@ -4784,23 +4784,23 @@ ACT Section IV-C：
   - Transformer Encoder；
   - Transformer Decoder；
 - Encoder input：
-  \[
+  $$
   1202\times512
-  \]
+  $$
 - Decoder通过 Cross-Attention condition on Encoder output；
 - Decoder input/query sequence：
-  \[
+  $$
   k\times512
-  \]
+  $$
 - K/V来自 Encoder；
 - Decoder output：
-  \[
+  $$
   k\times512
-  \]
+  $$
 - 最终投影：
-  \[
+  $$
   k\times14
-  \]
+  $$
 
 Appendix C 进一步写：
 
@@ -4812,61 +4812,61 @@ Appendix C 进一步写：
 
 ---
 
-## ACT Hyperparameters
+### ACT Hyperparameters
 
 ACT Table III：
 
-\[
+$$
 \boxed{
 \#encoder\ layers=4
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 \#decoder\ layers=7
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 feedforward\ dimension=3200
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 hidden\ dimension=512
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 heads=8
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 chunk\ size=100
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 dropout=0.1
 }
-\]
+$$
 
 ---
 
-## Official ACT Implementation
+### Official ACT Implementation
 
 Repository:
 
 https://github.com/tonyzhaozh/act
 
-### `detr/models/detr_vae.py`
+#### `detr/models/detr_vae.py`
 
 Current released code：
 
@@ -4906,7 +4906,7 @@ a_hat =
 
 ---
 
-### `detr/models/transformer.py`
+#### `detr/models/transformer.py`
 
 Decoder 初始化：
 
@@ -4930,7 +4930,7 @@ return_intermediate_dec=True
 
 ---
 
-### Decoder Initialization
+#### Decoder Initialization
 
 ```python
 query_embed =
@@ -4960,11 +4960,11 @@ tgt_mask
 
 因此：
 
-\[
+$$
 \boxed{
 tgt\_mask=None
 }
-\]
+$$
 
 ACT action-query Self-Attention是：
 
@@ -4972,7 +4972,7 @@ ACT action-query Self-Attention是：
 
 ---
 
-### Post-LN Decoder Layer
+#### Post-LN Decoder Layer
 
 当前默认 `normalize_before=False` 时：
 
@@ -5023,7 +5023,7 @@ tgt =
 
 ---
 
-## Released-Code Intermediate Output Note
+### Released-Code Intermediate Output Note
 
 Current official `TransformerDecoder` with：
 
@@ -5062,27 +5062,27 @@ have raised the concern that this means current action prediction uses the first
 
 This should be recorded as:
 
-\[
+$$
 \boxed{
 \text{Released-Code Behavior / Community-Reported Concern}
 }
-\]
+$$
 
 not silently merged into the paper definition.
 
 The ACT paper itself specifies a:
 
-\[
+$$
 7\text{-layer Transformer Decoder}
-\]
+$$
 
 as its architecture.
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### 前置
+#### 前置
 
 - [Transformer](./transformer.md)
 - [Transformer Encoder](./transformer-encoder.md)
@@ -5092,20 +5092,20 @@ as its architecture.
 - [Causal Mask](./causal-mask.md)
 - [Positional Encoding](./positional-encoding.md)
 
-### Decoder Components
+#### Decoder Components
 
 - [Feed-Forward Network](./feed-forward-network.md)
 - [Residual Connection](./residual-connection.md)
 - [Layer Normalization](./layer-normalization.md)
 - [Dropout](./dropout.md)
 
-### Sequence Modeling
+#### Sequence Modeling
 
 - Autoregressive Modeling
 - Teacher Forcing
 - Non-Autoregressive Decoding
 
-### Robot Learning
+#### Robot Learning
 
 - [ACT Architecture](../robot-learning/act/architecture.md)
 - [Action Chunking](../robot-learning/act/action-chunking.md)
@@ -5115,6 +5115,6 @@ as its architecture.
 - [Temporal Ensemble](../robot-learning/act/temporal-ensemble.md)
 - [ACT Complete Data Flow](../robot-learning/act/complete-data-flow.md)
 
-### 下一步
+#### 下一步
 
 - [Feed-Forward Network](./feed-forward-network.md)

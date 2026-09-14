@@ -11,13 +11,13 @@ updated: "2026-09-15"
 
 在 [VAE](./vae.md) 中，我们已经得到一个 approximate posterior：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 经典 Gaussian VAE 通常写成：
 
-\[
+$$
 q_\phi(z\mid x)
 =
 \mathcal N
@@ -25,33 +25,33 @@ q_\phi(z\mid x)
 \mu_\phi(x),
 \operatorname{diag}(\sigma_\phi^2(x))
 \right)
-\]
+$$
 
 训练时，我们需要从这个分布里采样：
 
-\[
+$$
 z\sim q_\phi(z\mid x)
-\]
+$$
 
-再把 \(z\) 输入 decoder：
+再把 $z$ 输入 decoder：
 
-\[
+$$
 z
 \longrightarrow
 p_\theta(x\mid z)
-\]
+$$
 
 然后根据 reconstruction / likelihood term 更新模型。
 
 问题来了：
 
-> **\(z\) 是随机采样出来的，梯度怎么从 decoder 穿过这个随机采样，再回到 encoder？**
+> **$z$ 是随机采样出来的，梯度怎么从 decoder 穿过这个随机采样，再回到 encoder？**
 
 这就是 **Reparameterization Trick（重参数化技巧）** 要解决的问题。
 
 经典 Gaussian VAE 中，它最终变成一句非常有名的公式：
 
-\[
+$$
 \boxed{
 z
 =
@@ -59,13 +59,13 @@ z
 \qquad
 \epsilon\sim\mathcal N(0,I)
 }
-\]
+$$
 
 但如果只是背下这条公式，我们其实仍然不知道：
 
 - 为什么直接采样会有问题？
 - “随机采样不可导”这句话到底准确不准确？
-- \(\epsilon\) 和 \(z\) 有什么区别？
+- $\epsilon$ 和 $z$ 有什么区别？
 - 为什么换一种写法以后分布没有变化？
 - 为什么梯度突然就能传播了？
 - 随机性是不是被消除了？
@@ -75,11 +75,11 @@ z
 
 ---
 
-# 1. 先明确 VAE 中真正需要求的梯度
+## 1. 先明确 VAE 中真正需要求的梯度
 
 VAE 的 ELBO 包含：
 
-\[
+$$
 \mathcal L(\theta,\phi;x)
 =
 \mathbb E_{q_\phi(z\mid x)}
@@ -93,89 +93,89 @@ q_\phi(z\mid x)
 \parallel
 p(z)
 \right)
-\]
+$$
 
 对于经典 Gaussian VAE，KL 项通常有解析解。
 
 真正需要通过 sampling 估计的主要是：
 
-\[
+$$
 \mathbb E_{q_\phi(z\mid x)}
 [
 \log p_\theta(x\mid z)
 ]
-\]
+$$
 
 为了简化符号，把：
 
-\[
+$$
 f_\theta(z)
 =
 \log p_\theta(x\mid z)
-\]
+$$
 
 于是问题变成：
 
-\[
+$$
 \boxed{
 \mathbb E_{z\sim q_\phi(z\mid x)}
 [
 f_\theta(z)
 ]
 }
-\]
+$$
 
 训练时，我们不仅要对 decoder 参数：
 
-\[
+$$
 \theta
-\]
+$$
 
 求梯度。
 
 还要对 encoder 参数：
 
-\[
+$$
 \phi
-\]
+$$
 
 求梯度。
 
 也就是：
 
-\[
+$$
 \nabla_\phi
 \mathbb E_{q_\phi(z\mid x)}
 [
 f_\theta(z)
 ]
-\]
+$$
 
 麻烦就出现在这里。
 
 ---
 
-# 2. 如果 z 不是随机的，一切都很简单
+## 2. 如果 z 不是随机的，一切都很简单
 
 先想一个完全 deterministic 的模型。
 
 假设：
 
-\[
+$$
 z=f_\phi(x)
-\]
+$$
 
 然后：
 
-\[
+$$
 \hat x=g_\theta(z)
-\]
+$$
 
 loss：
 
-\[
+$$
 L(\hat x,x)
-\]
+$$
 
 计算图：
 
@@ -195,20 +195,20 @@ loss
 
 因为：
 
-\[
+$$
 z=f_\phi(x)
-\]
+$$
 
 是一个普通可微函数，
 
 chain rule 可以直接写：
 
-\[
+$$
 \frac{\partial L}{\partial\phi}
 =
 \frac{\partial L}{\partial z}
 \frac{\partial z}{\partial\phi}
-\]
+$$
 
 所以 reconstruction 的梯度可以从 decoder 一路传回 encoder。
 
@@ -216,25 +216,25 @@ chain rule 可以直接写：
 
 ---
 
-# 3. VAE 不一样：z 是“从分布里抽出来的”
+## 3. VAE 不一样：z 是“从分布里抽出来的”
 
 VAE 中不是：
 
-\[
+$$
 z=f_\phi(x)
-\]
+$$
 
 而是：
 
-\[
+$$
 \boxed{
 z\sim q_\phi(z\mid x)
 }
-\]
+$$
 
 例如：
 
-\[
+$$
 z
 \sim
 \mathcal N
@@ -242,7 +242,7 @@ z
 \mu_\phi(x),
 \sigma_\phi^2(x)
 )
-\]
+$$
 
 计算图表面上变成：
 
@@ -270,9 +270,9 @@ loss
 
 就不像之前那样有一个明确的 deterministic equation：
 
-\[
+$$
 z=f(\mu,\sigma)
-\]
+$$
 
 供普通 chain rule 直接穿过去。
 
@@ -280,7 +280,7 @@ z=f(\mu,\sigma)
 
 ---
 
-# 4. 但“随机采样不可导”其实说得太粗糙
+## 4. 但“随机采样不可导”其实说得太粗糙
 
 很多教程会说：
 
@@ -292,7 +292,7 @@ z=f(\mu,\sigma)
 
 真正的问题是：
 
-> **我们需要计算一个分布依赖参数 \(\phi\) 的 expectation 对 \(\phi\) 的梯度，而直接从这个参数化分布采样时，普通 pathwise backpropagation 没有显式的 deterministic sample path 可以沿着传播。**
+> **我们需要计算一个分布依赖参数 $\phi$ 的 expectation 对 $\phi$ 的梯度，而直接从这个参数化分布采样时，普通 pathwise backpropagation 没有显式的 deterministic sample path 可以沿着传播。**
 
 事实上，即使不使用 reparameterization，也存在其他梯度估计方法。
 
@@ -306,11 +306,11 @@ VAE 原论文就写出了一个所谓的 naïve Monte Carlo gradient estimator�
 
 所以：
 
-\[
+$$
 \boxed{
 \text{不是“数学上完全没有梯度”}
 }
-\]
+$$
 
 而是：
 
@@ -320,50 +320,50 @@ Kingma & Welling 明确指出，他们讨论的 naïve estimator 具有 very hig
 
 ---
 
-# 5. 先看看不用 Reparameterization 能怎么办
+## 5. 先看看不用 Reparameterization 能怎么办
 
 考虑：
 
-\[
+$$
 J(\phi)
 =
 \mathbb E_{q_\phi(z)}
 [
 f(z)
 ]
-\]
+$$
 
 写成积分：
 
-\[
+$$
 J(\phi)
 =
 \int
 q_\phi(z)f(z)\,dz
-\]
+$$
 
-对 \(\phi\) 求导：
+对 $\phi$ 求导：
 
-\[
+$$
 \nabla_\phi J
 =
 \int
 \nabla_\phi q_\phi(z)
 f(z)\,dz
-\]
+$$
 
 利用：
 
-\[
+$$
 \nabla_\phi q_\phi(z)
 =
 q_\phi(z)
 \nabla_\phi\log q_\phi(z)
-\]
+$$
 
 得到：
 
-\[
+$$
 \nabla_\phi J
 =
 \int
@@ -371,11 +371,11 @@ q_\phi(z)
 f(z)
 \nabla_\phi\log q_\phi(z)
 \,dz
-\]
+$$
 
 也就是：
 
-\[
+$$
 \boxed{
 \nabla_\phi
 \mathbb E_{q_\phi(z)}
@@ -386,13 +386,13 @@ f(z)
 f(z)\nabla_\phi\log q_\phi(z)
 ]
 }
-\]
+$$
 
 这就是 score-function estimator 的基础。
 
 用 Monte Carlo 可以估计：
 
-\[
+$$
 \nabla_\phi J
 \approx
 \frac1L
@@ -400,14 +400,14 @@ f(z)\nabla_\phi\log q_\phi(z)
 f(z^{(l)})
 \nabla_\phi
 \log q_\phi(z^{(l)})
-\]
+$$
 
 其中：
 
-\[
+$$
 z^{(l)}
 \sim q_\phi(z)
-\]
+$$
 
 所以：
 
@@ -421,29 +421,29 @@ VAE 原论文正是因此寻找另一种更适合连续 latent variable 的方�
 
 ---
 
-# 6. 我们真正想要的是“像普通神经网络一样求梯度”
+## 6. 我们真正想要的是“像普通神经网络一样求梯度”
 
 理想情况是：
 
-\[
+$$
 z
 =
 g_\phi(\text{something})
-\]
+$$
 
 这样：
 
-\[
+$$
 f(z)
 =
 f(g_\phi(\text{something}))
-\]
+$$
 
 然后直接：
 
-\[
+$$
 \nabla_\phi f(g_\phi(\cdot))
-\]
+$$
 
 使用普通 chain rule。
 
@@ -471,63 +471,63 @@ z
 
 ---
 
-# 7. Reparameterization 到底“重新参数化”了什么？
+## 7. Reparameterization 到底“重新参数化”了什么？
 
 原来我们写：
 
-\[
+$$
 \boxed{
 z\sim q_\phi(z\mid x)
 }
-\]
+$$
 
-随机变量 \(z\) 的分布本身依赖：
+随机变量 $z$ 的分布本身依赖：
 
-\[
+$$
 \phi
-\]
+$$
 
 现在我们寻找一个辅助随机变量：
 
-\[
+$$
 \epsilon
-\]
+$$
 
-它来自一个**不依赖 \(\phi\)** 的固定分布：
+它来自一个**不依赖 $\phi$** 的固定分布：
 
-\[
+$$
 \epsilon\sim p(\epsilon)
-\]
+$$
 
 然后定义一个可微 deterministic transformation：
 
-\[
+$$
 \boxed{
 z
 =
 g_\phi(\epsilon,x)
 }
-\]
+$$
 
 要求：
 
-> 当 \(\epsilon\sim p(\epsilon)\) 时，通过 \(g_\phi\) 得到的 \(z\) 恰好服从原来的 \(q_\phi(z\mid x)\)。
+> 当 $\epsilon\sim p(\epsilon)$ 时，通过 $g_\phi$ 得到的 $z$ 恰好服从原来的 $q_\phi(z\mid x)$。
 
 于是原来的：
 
-\[
+$$
 z\sim q_\phi(z\mid x)
-\]
+$$
 
 被改写成：
 
-\[
+$$
 \epsilon\sim p(\epsilon)
-\]
+$$
 
-\[
+$$
 z=g_\phi(\epsilon,x)
-\]
+$$
 
 这就是：
 
@@ -535,11 +535,11 @@ z=g_\phi(\epsilon,x)
 
 ---
 
-# 8. Gaussian 情况最简单
+## 8. Gaussian 情况最简单
 
 经典 VAE 假设：
 
-\[
+$$
 q_\phi(z\mid x)
 =
 \mathcal N
@@ -547,39 +547,39 @@ q_\phi(z\mid x)
 \mu_\phi(x),
 \sigma_\phi^2(x)
 )
-\]
+$$
 
 先只看一维。
 
 原本：
 
-\[
+$$
 z
 \sim
 \mathcal N(\mu,\sigma^2)
-\]
+$$
 
 我们可以改成：
 
-\[
+$$
 \epsilon
 \sim
 \mathcal N(0,1)
-\]
+$$
 
 然后：
 
-\[
+$$
 \boxed{
 z=\mu+\sigma\epsilon
 }
-\]
+$$
 
 这就是 Gaussian reparameterization。
 
 多维 diagonal Gaussian 则是：
 
-\[
+$$
 \boxed{
 \mathbf z
 =
@@ -589,111 +589,111 @@ z=\mu+\sigma\epsilon
 \odot
 \boldsymbol\epsilon
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 \boldsymbol\epsilon
 \sim
 \mathcal N(\mathbf 0,I)
-\]
+$$
 
 而：
 
-\[
+$$
 \odot
-\]
+$$
 
 表示逐元素乘法。
 
 ---
 
-# 9. 为什么 μ + σε 还是 N(μ, σ²)？
+## 9. 为什么 μ + σε 还是 N(μ, σ²)？
 
 这是理解 reparameterization 的关键。
 
 先有：
 
-\[
+$$
 \epsilon\sim\mathcal N(0,1)
-\]
+$$
 
 因此：
 
-\[
+$$
 \mathbb E[\epsilon]=0
-\]
+$$
 
 以及：
 
-\[
+$$
 \operatorname{Var}(\epsilon)=1
-\]
+$$
 
 定义：
 
-\[
+$$
 z=\mu+\sigma\epsilon
-\]
+$$
 
 那么：
 
-## 均值
+### 均值
 
-\[
+$$
 \mathbb E[z]
 =
 \mathbb E[\mu+\sigma\epsilon]
-\]
+$$
 
-\[
+$$
 =
 \mu+\sigma\mathbb E[\epsilon]
-\]
+$$
 
-\[
+$$
 =
 \mu
-\]
+$$
 
 ---
 
-## 方差
+### 方差
 
 因为加常数不改变方差：
 
-\[
+$$
 \operatorname{Var}(z)
 =
 \operatorname{Var}(\sigma\epsilon)
-\]
+$$
 
 根据：
 
-\[
+$$
 \operatorname{Var}(aX)
 =
 a^2\operatorname{Var}(X)
-\]
+$$
 
 得到：
 
-\[
+$$
 \operatorname{Var}(z)
 =
 \sigma^2
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 z
 \sim
 \mathcal N(\mu,\sigma^2)
 }
-\]
+$$
 
 也就是说：
 
@@ -703,13 +703,13 @@ z
 
 ---
 
-# 10. 用更直觉的方式理解：先标准化，再缩放和平移
+## 10. 用更直觉的方式理解：先标准化，再缩放和平移
 
 标准正态：
 
-\[
+$$
 \epsilon\sim\mathcal N(0,1)
-\]
+$$
 
 可以把它理解为一团：
 
@@ -717,35 +717,35 @@ z
 
 先乘：
 
-\[
+$$
 \sigma
-\]
+$$
 
 得到：
 
-\[
+$$
 \sigma\epsilon
-\]
+$$
 
 会改变这团数据的宽度。
 
 标准差变成：
 
-\[
+$$
 \sigma
-\]
+$$
 
 然后加：
 
-\[
+$$
 \mu
-\]
+$$
 
 整个分布整体移动到：
 
-\[
+$$
 \mu
-\]
+$$
 
 附近。
 
@@ -772,29 +772,29 @@ N(μ,σ²)
 
 ---
 
-# 11. 随机性到底去哪了？
+## 11. 随机性到底去哪了？
 
 它没有消失。
 
 原来随机性写在：
 
-\[
+$$
 z
 \sim
 \mathcal N(\mu,\sigma^2)
-\]
+$$
 
 现在随机性写在：
 
-\[
+$$
 \epsilon\sim\mathcal N(0,1)
-\]
+$$
 
 然后：
 
-\[
+$$
 z=\mu+\sigma\epsilon
-\]
+$$
 
 所以变化不是：
 
@@ -824,89 +824,89 @@ z=\mu+\sigma\epsilon
 
 ---
 
-# 12. 这为什么能帮助反向传播？
+## 12. 这为什么能帮助反向传播？
 
 现在：
 
-\[
+$$
 \mu=\mu_\phi(x)
-\]
+$$
 
-\[
+$$
 \sigma=\sigma_\phi(x)
-\]
+$$
 
 以及：
 
-\[
+$$
 \epsilon\sim\mathcal N(0,I)
-\]
+$$
 
 对于一次具体 forward pass，
 
 一旦：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 被采样出来，它在这一次计算中就是一个普通数值 tensor。
 
 于是：
 
-\[
+$$
 z
 =
 \mu_\phi(x)
 +
 \sigma_\phi(x)\odot\epsilon
-\]
+$$
 
 就是关于：
 
-\[
+$$
 \phi
-\]
+$$
 
 的可微函数。
 
 所以 reconstruction loss：
 
-\[
+$$
 L(z)
-\]
+$$
 
-对 \(\phi\) 的梯度可以通过 chain rule：
+对 $\phi$ 的梯度可以通过 chain rule：
 
-\[
+$$
 \frac{\partial L}{\partial\phi}
 =
 \frac{\partial L}{\partial z}
 \frac{\partial z}{\partial\phi}
-\]
+$$
 
 继续展开：
 
-\[
+$$
 \frac{\partial z}{\partial\phi}
 =
 \frac{\partial\mu_\phi(x)}{\partial\phi}
 +
 \epsilon
 \frac{\partial\sigma_\phi(x)}{\partial\phi}
-\]
+$$
 
 于是 decoder 的 reconstruction signal 能够传回：
 
-- \(\mu\) head；
-- \(\sigma\) head；
+- $\mu$ head；
+- $\sigma$ head；
 - encoder backbone。
 
 ---
 
-# 13. 用计算图看最清楚
+## 13. 用计算图看最清楚
 
-## 直接 sampling 的抽象写法
+### 直接 sampling 的抽象写法
 
 ```text
 x
@@ -924,21 +924,21 @@ Loss
 
 如果把 sampling 当作黑盒，普通 autodiff 看不到：
 
-\[
+$$
 z
-\]
+$$
 
 是如何以 deterministic computational path 依赖：
 
-\[
+$$
 \mu,\sigma
-\]
+$$
 
 的。
 
 ---
 
-## Reparameterization 后
+### Reparameterization 后
 
 ```text
 x
@@ -958,119 +958,119 @@ Encoder φ
 
 这里：
 
-\[
+$$
 z=\mu+\sigma\epsilon
-\]
+$$
 
 是显式的可微运算。
 
 所以 autodiff 可以直接知道：
 
-\[
+$$
 \frac{\partial z}{\partial\mu}=1
-\]
+$$
 
 以及：
 
-\[
+$$
 \frac{\partial z}{\partial\sigma}=\epsilon
-\]
+$$
 
 这就是整个技巧在工程上的核心。
 
 ---
 
-# 14. 一个具体数字例子
+## 14. 一个具体数字例子
 
-假设 encoder 对某个输入 \(x\) 输出：
+假设 encoder 对某个输入 $x$ 输出：
 
-\[
+$$
 \mu=2
-\]
+$$
 
-\[
+$$
 \sigma=0.5
-\]
+$$
 
 这次 forward 随机采样：
 
-\[
+$$
 \epsilon=-0.8
-\]
+$$
 
 那么：
 
-\[
+$$
 z
 =
 2+0.5(-0.8)
-\]
+$$
 
-\[
+$$
 =1.6
-\]
+$$
 
 decoder 使用：
 
-\[
+$$
 z=1.6
-\]
+$$
 
 得到 reconstruction loss。
 
 假设反向传播得到：
 
-\[
+$$
 \frac{\partial L}{\partial z}=3
-\]
+$$
 
 那么：
 
-\[
+$$
 \frac{\partial z}{\partial\mu}=1
-\]
+$$
 
 所以：
 
-\[
+$$
 \frac{\partial L}{\partial\mu}
 =
 3\times1
 =
 3
-\]
+$$
 
 而：
 
-\[
+$$
 \frac{\partial z}{\partial\sigma}
 =
 \epsilon
 =
 -0.8
-\]
+$$
 
 所以：
 
-\[
+$$
 \frac{\partial L}{\partial\sigma}
 =
 3\times(-0.8)
 =
 -2.4
-\]
+$$
 
 现在：
 
-\[
+$$
 \mu
-\]
+$$
 
 和：
 
-\[
+$$
 \sigma
-\]
+$$
 
 都得到了明确梯度。
 
@@ -1080,15 +1080,15 @@ z=1.6
 
 ---
 
-# 15. 但 ε 自己需要梯度吗？
+## 15. 但 ε 自己需要梯度吗？
 
 通常不需要。
 
-\[
+$$
 \epsilon
 \sim
 \mathcal N(0,I)
-\]
+$$
 
 只是一个 auxiliary random variable。
 
@@ -1096,35 +1096,35 @@ z=1.6
 
 我们并不优化：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 我们优化的是：
 
-\[
+$$
 \phi
-\]
+$$
 
 也就是生成：
 
-\[
+$$
 \mu_\phi(x)
-\]
+$$
 
 和：
 
-\[
+$$
 \sigma_\phi(x)
-\]
+$$
 
 的 encoder parameters。
 
 所以计算图可以把：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 视为：
 
@@ -1134,34 +1134,34 @@ z=1.6
 
 ---
 
-# 16. 这其实是在做 Pathwise Gradient
+## 16. 这其实是在做 Pathwise Gradient
 
 Reparameterization 后：
 
-\[
+$$
 J(\phi)
 =
 \mathbb E_{\epsilon\sim p(\epsilon)}
 [
 f(g_\phi(\epsilon,x))
 ]
-\]
+$$
 
 注意：
 
-\[
+$$
 p(\epsilon)
-\]
+$$
 
 不依赖：
 
-\[
+$$
 \phi
-\]
+$$
 
 所以可以把参数梯度作用到 expectation 内部的 deterministic transformation：
 
-\[
+$$
 \boxed{
 \nabla_\phi J(\phi)
 =
@@ -1171,26 +1171,26 @@ p(\epsilon)
 f(g_\phi(\epsilon,x))
 ]
 }
-\]
+$$
 
 然后 Monte Carlo 估计：
 
-\[
+$$
 \nabla_\phi J
 \approx
 \frac1L
 \sum_{l=1}^{L}
 \nabla_\phi
 f(g_\phi(\epsilon^{(l)},x))
-\]
+$$
 
 其中：
 
-\[
+$$
 \epsilon^{(l)}
 \sim
 p(\epsilon)
-\]
+$$
 
 这种梯度估计通常叫：
 
@@ -1202,37 +1202,37 @@ p(\epsilon)
 
 因为梯度是沿着具体 sampled path：
 
-\[
+$$
 \epsilon
 \rightarrow
 z
 \rightarrow
 f(z)
-\]
+$$
 
 传播的。
 
 ---
 
-# 17. 和 Score-Function Estimator 到底有什么不同？
+## 17. 和 Score-Function Estimator 到底有什么不同？
 
 两者都可以处理：
 
-\[
+$$
 \nabla_\phi
 \mathbb E_{q_\phi(z)}
 [f(z)]
-\]
+$$
 
 但思路不同。
 
 ---
 
-## Score-Function
+### Score-Function
 
 使用：
 
-\[
+$$
 \boxed{
 \nabla_\phi
 \mathbb E_q[f(z)]
@@ -1242,15 +1242,15 @@ f(z)
 f(z)\nabla_\phi\log q_\phi(z)
 ]
 }
-\]
+$$
 
 它不要求：
 
-\[
+$$
 f(z)
-\]
+$$
 
-对 \(z\) 可微。
+对 $z$ 可微。
 
 这个性质很强。
 
@@ -1258,23 +1258,23 @@ f(z)
 
 ---
 
-## Reparameterization / Pathwise
+### Reparameterization / Pathwise
 
 把：
 
-\[
+$$
 z\sim q_\phi(z)
-\]
+$$
 
 改写为：
 
-\[
+$$
 z=g_\phi(\epsilon)
-\]
+$$
 
 然后：
 
-\[
+$$
 \boxed{
 \nabla_\phi
 \mathbb E_\epsilon
@@ -1282,19 +1282,19 @@ z=g_\phi(\epsilon)
 f(g_\phi(\epsilon))
 ]
 }
-\]
+$$
 
 直接沿：
 
-\[
+$$
 g_\phi
-\]
+$$
 
 的计算路径求导。
 
 它要求：
 
-> \(g_\phi\) 和后续 computation 具有合适的 differentiability。
+> $g_\phi$ 和后续 computation 具有合适的 differentiability。
 
 对于 VAE 的 continuous latent variables，这通常非常方便。
 
@@ -1302,53 +1302,53 @@ VAE 原论文正是利用这种方式构造低方差、可用标准 stochastic g
 
 ---
 
-# 18. Reparameterization 改写的其实是 Expectation
+## 18. Reparameterization 改写的其实是 Expectation
 
 原来的 expectation：
 
-\[
+$$
 \mathbb E_{q_\phi(z\mid x)}
 [
 f(z)
 ]
-\]
+$$
 
 可以写成：
 
-\[
+$$
 \int
 q_\phi(z\mid x)
 f(z)\,dz
-\]
+$$
 
 重参数化后：
 
-\[
+$$
 z
 =
 g_\phi(\epsilon,x)
-\]
+$$
 
 其中：
 
-\[
+$$
 \epsilon\sim p(\epsilon)
-\]
+$$
 
 于是同一个 expectation 可以写成：
 
-\[
+$$
 \boxed{
 \mathbb E_{p(\epsilon)}
 [
 f(g_\phi(\epsilon,x))
 ]
 }
-\]
+$$
 
 Gaussian 情况：
 
-\[
+$$
 \boxed{
 \mathbb E_{
 z\sim\mathcal N(\mu,\sigma^2)
@@ -1364,13 +1364,13 @@ f(z)
 f(\mu+\sigma\epsilon)
 ]
 }
-\]
+$$
 
 这条式子比：
 
-\[
+$$
 z=\mu+\sigma\epsilon
-\]
+$$
 
 本身更能说明 reparameterization 的理论意义。
 
@@ -1380,16 +1380,16 @@ z=\mu+\sigma\epsilon
 
 ---
 
-# 19. Monte Carlo 在这里做什么？
+## 19. Monte Carlo 在这里做什么？
 
 即使 reparameterize 以后：
 
-\[
+$$
 \mathbb E_{\epsilon}
 [
 f(\mu+\sigma\epsilon)
 ]
-\]
+$$
 
 通常仍然没有直接把 expectation 精确算完。
 
@@ -1397,19 +1397,19 @@ f(\mu+\sigma\epsilon)
 
 例如采：
 
-\[
+$$
 L
-\]
+$$
 
 个：
 
-\[
+$$
 \epsilon^{(1)},\ldots,\epsilon^{(L)}
-\]
+$$
 
 然后：
 
-\[
+$$
 \mathbb E_\epsilon[f(\mu+\sigma\epsilon)]
 \approx
 \frac1L
@@ -1417,13 +1417,13 @@ L
 f(
 \mu+\sigma\epsilon^{(l)}
 )
-\]
+$$
 
 VAE 原论文的实验中指出，当 minibatch 足够大时，每个 datapoint 使用：
 
-\[
+$$
 L=1
-\]
+$$
 
 个 latent sample 就可以工作得很好。citeturn453800view0
 
@@ -1438,7 +1438,7 @@ z = mu + std * eps
 
 ---
 
-# 20. 一次 sample 怎么能代表整个 distribution？
+## 20. 一次 sample 怎么能代表整个 distribution？
 
 它不能精确代表。
 
@@ -1453,7 +1453,7 @@ z = mu + std * eps
 - 有很多 datapoints；
 - 有很多 minibatches；
 - 有很多 optimization steps；
-- 每次都会产生新的 \(\epsilon\)。
+- 每次都会产生新的 $\epsilon$。
 
 所以整体上形成 stochastic estimation。
 
@@ -1463,13 +1463,13 @@ z = mu + std * eps
 
 因此：
 
-\[
+$$
 L=1
-\]
+$$
 
 并不意味着：
 
-> “一个 \(z\) 就等于整个 posterior。”
+> “一个 $z$ 就等于整个 posterior。”
 
 而是：
 
@@ -1477,21 +1477,21 @@ L=1
 
 ---
 
-# 21. 为什么不是直接用 μ，不采样？
+## 21. 为什么不是直接用 μ，不采样？
 
 这是一个非常自然的问题。
 
 既然 encoder 已经输出：
 
-\[
+$$
 \mu
-\]
+$$
 
 为什么不直接：
 
-\[
+$$
 z=\mu
-\]
+$$
 
 这样：
 
@@ -1505,34 +1505,34 @@ z=\mu
 
 VAE 希望优化的是：
 
-\[
+$$
 \mathbb E_{q_\phi(z\mid x)}
 [
 \log p_\theta(x\mid z)
 ]
-\]
+$$
 
 这里 expectation 是对整个：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 而言。
 
 如果永远只使用：
 
-\[
+$$
 z=\mu
-\]
+$$
 
 实际上只评估 distribution 中一个特殊点。
 
 variance：
 
-\[
+$$
 \sigma^2
-\]
+$$
 
 对 reconstruction path 的意义会被严重削弱。
 
@@ -1544,27 +1544,27 @@ variance：
 
 ---
 
-# 22. 为什么 z=μ+σε 中 σ 很重要？
+## 22. 为什么 z=μ+σε 中 σ 很重要？
 
 如果：
 
-\[
+$$
 \sigma\rightarrow0
-\]
+$$
 
 那么：
 
-\[
+$$
 z
 =
 \mu+\sigma\epsilon
-\]
+$$
 
 会变成：
 
-\[
+$$
 z\approx\mu
-\]
+$$
 
 随机性很小。
 
@@ -1574,53 +1574,53 @@ posterior 非常集中。
 
 如果：
 
-\[
+$$
 \sigma
-\]
+$$
 
 较大，
 
-同一个 \(x\) 可以产生分散得更开的：
+同一个 $x$ 可以产生分散得更开的：
 
-\[
+$$
 z
-\]
+$$
 
 samples。
 
 例如：
 
-\[
+$$
 \mu=2
-\]
+$$
 
 如果：
 
-\[
+$$
 \sigma=0.1
-\]
+$$
 
 samples 大多在：
 
-\[
+$$
 2
-\]
+$$
 
 附近很窄的范围。
 
 如果：
 
-\[
+$$
 \sigma=2
-\]
+$$
 
 samples 则分散得非常广。
 
 因此：
 
-\[
+$$
 \sigma
-\]
+$$
 
 不是“为了让公式完整才有的”。
 
@@ -1630,7 +1630,7 @@ samples 则分散得非常广。
 
 ---
 
-# 23. 为什么通常输出 log variance？
+## 23. 为什么通常输出 log variance？
 
 VAE encoder 常见：
 
@@ -1647,39 +1647,39 @@ std = torch.exp(0.5 * logvar)
 
 原因是：
 
-\[
+$$
 \sigma^2>0
-\]
+$$
 
 但 neural network 普通 linear output 可以是任意实数。
 
 所以让网络输出：
 
-\[
+$$
 \log\sigma^2
 \in(-\infty,+\infty)
-\]
+$$
 
 再恢复：
 
-\[
+$$
 \sigma
 =
 \exp
 \left(
 \frac12\log\sigma^2
 \right)
-\]
+$$
 
 自然保证：
 
-\[
+$$
 \sigma>0
-\]
+$$
 
 然后：
 
-\[
+$$
 z
 =
 \mu
@@ -1689,11 +1689,11 @@ z
 \frac12\log\sigma^2
 \right)
 \odot\epsilon
-\]
+$$
 
 ---
 
-# 24. PyTorch 中最核心的三行
+## 24. PyTorch 中最核心的三行
 
 ```python
 std = torch.exp(0.5 * logvar)
@@ -1705,42 +1705,42 @@ z = mu + std * eps
 
 逐行对应数学：
 
-### 第一行
+#### 第一行
 
-\[
+$$
 \sigma
 =
 \exp
 \left(
 \frac12\log\sigma^2
 \right)
-\]
+$$
 
 ---
 
-### 第二行
+#### 第二行
 
-\[
+$$
 \epsilon
 \sim
 \mathcal N(0,I)
-\]
+$$
 
 ---
 
-### 第三行
+#### 第三行
 
-\[
+$$
 z
 =
 \mu+\sigma\odot\epsilon
-\]
+$$
 
 这三行就是 Gaussian reparameterization。
 
 ---
 
-# 25. Autograd 到底会对谁求梯度？
+## 25. Autograd 到底会对谁求梯度？
 
 代码：
 
@@ -1751,23 +1751,23 @@ z = mu + std * eps
 
 通常：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 不需要 gradient。
 
 但是：
 
-\[
+$$
 \mu
-\]
+$$
 
 和：
 
-\[
+$$
 std
-\]
+$$
 
 来自 encoder，所以带有 computation graph。
 
@@ -1793,7 +1793,7 @@ z
 
 ---
 
-# 26. 一个最小代码例子
+## 26. 一个最小代码例子
 
 ```python
 import torch
@@ -1834,29 +1834,29 @@ eps
 
 因为：
 
-\[
+$$
 z
-\]
+$$
 
 对：
 
-\[
+$$
 \mu,\log\sigma^2
-\]
+$$
 
 有一条显式可微路径。
 
 ---
 
-# 27. Reparameterization 让结果变 deterministic 了吗？
+## 27. Reparameterization 让结果变 deterministic 了吗？
 
 **没有。**
 
 每次 forward：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 仍可能不同。
 
@@ -1864,65 +1864,65 @@ z
 
 第一次：
 
-\[
+$$
 \epsilon=0.2
-\]
+$$
 
 得到：
 
-\[
+$$
 z_1=\mu+0.2\sigma
-\]
+$$
 
 第二次：
 
-\[
+$$
 \epsilon=-1.1
-\]
+$$
 
 得到：
 
-\[
+$$
 z_2=\mu-1.1\sigma
-\]
+$$
 
 所以：
 
-\[
+$$
 z_1\neq z_2
-\]
+$$
 
 模型仍然是 stochastic 的。
 
 Reparameterization 只是让：
 
-> 对于一次已经抽出的 \(\epsilon\)，从参数到 \(z\) 的路径是 deterministic 且可微的。
+> 对于一次已经抽出的 $\epsilon$，从参数到 $z$ 的路径是 deterministic 且可微的。
 
 这是一个非常重要的表述。
 
 ---
 
-# 28. “固定 ε 后可微”是什么意思？
+## 28. “固定 ε 后可微”是什么意思？
 
 训练一次 forward 时：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 被 sample 成一个具体 tensor。
 
 例如：
 
-\[
+$$
 \epsilon=-0.8
-\]
+$$
 
 这一轮计算里：
 
-\[
+$$
 z=\mu-0.8\sigma
-\]
+$$
 
 现在它就是一个普通函数。
 
@@ -1932,35 +1932,35 @@ z=\mu-0.8\sigma
 
 只需要问：
 
-> “如果 \(\mu\) 稍微变化，这个 \(z\) 会怎么变？”
+> “如果 $\mu$ 稍微变化，这个 $z$ 会怎么变？”
 
 以及：
 
-> “如果 \(\sigma\) 稍微变化，这个 \(z\) 会怎么变？”
+> “如果 $\sigma$ 稍微变化，这个 $z$ 会怎么变？”
 
 答案分别是：
 
-\[
+$$
 \frac{\partial z}{\partial\mu}=1
-\]
+$$
 
-\[
+$$
 \frac{\partial z}{\partial\sigma}=\epsilon
-\]
+$$
 
 因此可以优化。
 
 下一轮再重新 sample 新的：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 即可。
 
 ---
 
-# 29. 一个很好的直觉：把“随机骰子”移到参数外面
+## 29. 一个很好的直觉：把“随机骰子”移到参数外面
 
 原始写法可以直觉看作：
 
@@ -1999,7 +1999,7 @@ encoder parameters 只控制：
 
 ---
 
-# 30. 为什么标准正态特别方便？
+## 30. 为什么标准正态特别方便？
 
 Gaussian 属于：
 
@@ -2007,21 +2007,21 @@ Gaussian 属于：
 
 标准形式：
 
-\[
+$$
 \epsilon\sim\mathcal N(0,1)
-\]
+$$
 
 任意：
 
-\[
+$$
 \mathcal N(\mu,\sigma^2)
-\]
+$$
 
 都可以通过：
 
-\[
+$$
 z=\mu+\sigma\epsilon
-\]
+$$
 
 得到。
 
@@ -2043,41 +2043,41 @@ VAE 原论文指出，这种方法并不只适用于 Gaussian。
 
 ---
 
-# 31. Reparameterization 不只适用于 Gaussian
+## 31. Reparameterization 不只适用于 Gaussian
 
 原论文 Section 2.4 讨论了几类可以构造 differentiable transformation 的情况。
 
 例如某些分布可以通过：
 
-### Inverse CDF
+#### Inverse CDF
 
-\[
+$$
 \epsilon\sim U(0,1)
-\]
+$$
 
 然后：
 
-\[
+$$
 z=F_\phi^{-1}(\epsilon)
-\]
+$$
 
 ---
 
-### Location-Scale Family
+#### Location-Scale Family
 
-\[
+$$
 z
 =
 \text{location}
 +
 \text{scale}\cdot\epsilon
-\]
+$$
 
 Gaussian 就属于这种情况。
 
 ---
 
-### Composition
+#### Composition
 
 某些随机变量可以表达成其他基础随机变量的 transformation。
 
@@ -2087,29 +2087,29 @@ Gaussian 就属于这种情况。
 
 Gaussian 的：
 
-\[
+$$
 z=\mu+\sigma\epsilon
-\]
+$$
 
 只是最经典、最简单的例子。
 
 ---
 
-# 32. 那离散变量怎么办？
+## 32. 那离散变量怎么办？
 
 经典 VAE reparameterization 对 continuous latent variables 特别自然。
 
 但如果：
 
-\[
+$$
 z
-\]
+$$
 
 是离散变量，例如：
 
-\[
+$$
 z\in\{1,2,3\}
-\]
+$$
 
 普通 sampling：
 
@@ -2121,9 +2121,9 @@ choose category 1 / 2 / 3
 
 因此不能直接套：
 
-\[
+$$
 z=\mu+\sigma\epsilon
-\]
+$$
 
 这也是为什么后来出现了其他方法，例如：
 
@@ -2141,7 +2141,7 @@ z=\mu+\sigma\epsilon
 
 ---
 
-# 33. Reparameterization 是不是 VAE 独有的？
+## 33. Reparameterization 是不是 VAE 独有的？
 
 不是。
 
@@ -2151,9 +2151,9 @@ z=\mu+\sigma\epsilon
 
 VAE 让它非常出名，是因为：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 中的 continuous Gaussian latent variable 非常适合用这种技巧。
 
@@ -2177,32 +2177,32 @@ Kingma & Welling 的 AEVB 工作的重要贡献之一，是把这种重参数化
 
 ---
 
-# 34. 为什么它通常比 Score-Function Gradient 更稳定？
+## 34. 为什么它通常比 Score-Function Gradient 更稳定？
 
 只做直觉理解。
 
 Score-function estimator：
 
-\[
+$$
 f(z)
 \nabla_\phi\log q_\phi(z)
-\]
+$$
 
 更多依赖：
 
-> sample 最终得到的整体 reward / function value \(f(z)\)
+> sample 最终得到的整体 reward / function value $f(z)$
 
 来判断 distribution parameters 应该怎么变化。
 
 而 pathwise gradient 直接使用：
 
-\[
+$$
 \frac{\partial f}{\partial z}
-\]
+$$
 
 知道：
 
-> 如果这个 sample \(z\) 往哪个方向稍微移动，loss 会怎样变化。
+> 如果这个 sample $z$ 往哪个方向稍微移动，loss 会怎样变化。
 
 也就是说，它利用了：
 
@@ -2220,20 +2220,20 @@ f(z)
 
 ---
 
-# 35. Reparameterization 和 KL 项是什么关系？
+## 35. Reparameterization 和 KL 项是什么关系？
 
 很多初学者会把它们混在一起。
 
 它们解决的是不同问题。
 
-## KL
+### KL
 
-\[
+$$
 D_{KL}
 (
 q_\phi(z\mid x)\parallel p(z)
 )
-\]
+$$
 
 回答：
 
@@ -2241,13 +2241,13 @@ q_\phi(z\mid x)\parallel p(z)
 
 ---
 
-## Reparameterization
+### Reparameterization
 
-\[
+$$
 z
 =
 \mu+\sigma\epsilon
-\]
+$$
 
 回答：
 
@@ -2267,57 +2267,57 @@ Reparameterization
 
 ---
 
-# 36. Reparameterization 和 μ、σ 的学习是什么关系？
+## 36. Reparameterization 和 μ、σ 的学习是什么关系？
 
 encoder 生成：
 
-\[
+$$
 \mu_\phi(x)
-\]
+$$
 
 和：
 
-\[
+$$
 \sigma_\phi(x)
-\]
+$$
 
 它们受到两条梯度来源影响。
 
 ---
 
-## Reconstruction path
+### Reconstruction path
 
 通过：
 
-\[
+$$
 z
 =
 \mu+\sigma\epsilon
-\]
+$$
 
 reconstruction loss 的梯度可以回到：
 
-\[
+$$
 \mu,\sigma
-\]
+$$
 
 再回到 encoder。
 
 ---
 
-## KL path
+### KL path
 
 KL 通常直接是：
 
-\[
+$$
 \mu,\sigma
-\]
+$$
 
 的解析函数。
 
 例如：
 
-\[
+$$
 D_{KL}
 =
 \frac12
@@ -2325,13 +2325,13 @@ D_{KL}
 (
 \mu_j^2+\sigma_j^2-\log\sigma_j^2-1
 )
-\]
+$$
 
 它也直接对：
 
-\[
+$$
 \mu,\sigma
-\]
+$$
 
 提供梯度。
 
@@ -2349,7 +2349,7 @@ Reparameterization 的作用主要是确保：
 
 ---
 
-# 37. 如果没有 Reparameterization，KL 还能训练 Encoder 吗？
+## 37. 如果没有 Reparameterization，KL 还能训练 Encoder 吗？
 
 对于 Gaussian closed-form KL：
 
@@ -2357,28 +2357,28 @@ Reparameterization 的作用主要是确保：
 
 因为 KL 直接依赖：
 
-\[
+$$
 \mu,\sigma
-\]
+$$
 
 所以：
 
-\[
+$$
 \nabla_\phi KL
-\]
+$$
 
 可以直接计算。
 
 真正困难的是：
 
-\[
+$$
 \mathbb E_{q_\phi(z\mid x)}
 [
 \log p_\theta(x\mid z)
 ]
-\]
+$$
 
-这一部分对 \(\phi\) 的梯度。
+这一部分对 $\phi$ 的梯度。
 
 如果 sampling path 没有合适的 estimator，
 
@@ -2388,73 +2388,73 @@ reconstruction signal 就很难高效传回 encoder。
 
 ---
 
-# 38. 为什么训练中同一个 x 每次可能得到不同 z？
+## 38. 为什么训练中同一个 x 每次可能得到不同 z？
 
 因为每次都会重新 sample：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 例如同一个：
 
-\[
+$$
 x
-\]
+$$
 
 encoder 输出固定：
 
-\[
+$$
 \mu=1
-\]
+$$
 
-\[
+$$
 \sigma=0.5
-\]
+$$
 
 第一次：
 
-\[
+$$
 \epsilon_1=0.2
-\]
+$$
 
 得到：
 
-\[
+$$
 z_1=1.1
-\]
+$$
 
 第二次：
 
-\[
+$$
 \epsilon_2=-0.8
-\]
+$$
 
 得到：
 
-\[
+$$
 z_2=0.6
-\]
+$$
 
 第三次：
 
-\[
+$$
 \epsilon_3=1.0
-\]
+$$
 
 得到：
 
-\[
+$$
 z_3=1.5
-\]
+$$
 
 它们都来自同一个：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
-因此同一个 \(x\) 并不是固定对应一个 \(z\)。
+因此同一个 $x$ 并不是固定对应一个 $z$。
 
 这正是：
 
@@ -2464,21 +2464,21 @@ q_\phi(z\mid x)
 
 ---
 
-# 39. 为什么这反而不会让 decoder 崩掉？
+## 39. 为什么这反而不会让 decoder 崩掉？
 
 因为训练过程中 decoder 不断看到：
 
-> 同一个 \(x\) 对应 posterior 附近的不同 \(z\) samples。
+> 同一个 $x$ 对应 posterior 附近的不同 $z$ samples。
 
 它因此被迫学习：
 
-> posterior 附近的一片 latent region 都应该能够合理解释 / 重建这个 \(x\)。
+> posterior 附近的一片 latent region 都应该能够合理解释 / 重建这个 $x$。
 
 再加上 KL 让不同：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 不要完全散落在 prior 空间的无关位置，
 
@@ -2494,15 +2494,15 @@ q_\phi(z\mid x)
 
 严格的训练目标仍然是：
 
-\[
+$$
 ELBO
-\]
+$$
 
 不能把“latent space 会很光滑”当成无条件数学保证。
 
 ---
 
-# 40. 一个很重要的思想：随机性和可微性可以同时存在
+## 40. 一个很重要的思想：随机性和可微性可以同时存在
 
 初学深度学习时，我们很容易形成：
 
@@ -2524,29 +2524,29 @@ Reparameterization 给出的思想是：
 
 例如：
 
-\[
+$$
 \epsilon\sim p(\epsilon)
-\]
+$$
 
 然后：
 
-\[
+$$
 z=g_\phi(\epsilon)
-\]
+$$
 
 模型整体仍然 stochastic。
 
 但对固定 random draw：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 而言，
 
-\[
+$$
 g_\phi
-\]
+$$
 
 仍然是可微函数。
 
@@ -2554,43 +2554,43 @@ g_\phi
 
 ---
 
-# 41. 现在回到 ACT
+## 41. 现在回到 ACT
 
 ACT 使用 CVAE。
 
 训练阶段，ACT encoder 会输出 latent distribution 的参数：
 
-\[
+$$
 \mu
-\]
+$$
 
 和：
 
-\[
+$$
 \log\sigma^2
-\]
+$$
 
 然后使用同样的 Gaussian reparameterization：
 
-\[
+$$
 \epsilon
 \sim
 \mathcal N(0,I)
-\]
+$$
 
-\[
+$$
 \boxed{
 z
 =
 \mu+\sigma\odot\epsilon
 }
-\]
+$$
 
 接着：
 
-\[
+$$
 z
-\]
+$$
 
 进入 ACT policy / decoder，帮助预测 action chunk。
 
@@ -2602,13 +2602,13 @@ z
 
 ---
 
-# 42. ACT 中为什么训练时需要 sample z？
+## 42. ACT 中为什么训练时需要 sample z？
 
 训练阶段 approximate posterior：
 
-\[
+$$
 q_\phi(z\mid \text{demonstration information})
-\]
+$$
 
 描述的是：
 
@@ -2616,25 +2616,25 @@ q_\phi(z\mid \text{demonstration information})
 
 如果只永远使用：
 
-\[
+$$
 z=\mu
-\]
+$$
 
 就没有真正按照 posterior distribution 进行 stochastic variational training。
 
 所以训练时使用：
 
-\[
+$$
 z=\mu+\sigma\epsilon
-\]
+$$
 
 是 CVAE objective 的组成部分。
 
 而到了 inference，ACT 做了另外一个设计：
 
-\[
+$$
 z=0
-\]
+$$
 
 这不是 Reparameterization Trick 本身规定的。
 
@@ -2646,7 +2646,7 @@ z=0
 
 ---
 
-# 43. Reparameterization 并不能解释 ACT 为什么 z=0
+## 43. Reparameterization 并不能解释 ACT 为什么 z=0
 
 这是知识边界必须分清的地方。
 
@@ -2656,13 +2656,13 @@ Reparameterization 只告诉我们：
 
 它不回答：
 
-> 推理时应该选择哪个 \(z\)。
+> 推理时应该选择哪个 $z$。
 
 ACT 推理：
 
-\[
+$$
 z=0
-\]
+$$
 
 需要结合：
 
@@ -2684,7 +2684,7 @@ z=0
 
 ---
 
-# 44. 常见误解一：Sampling 完全没有梯度
+## 44. 常见误解一：Sampling 完全没有梯度
 
 **不准确。**
 
@@ -2696,117 +2696,117 @@ VAE 原论文甚至明确讨论了 naïve Monte Carlo / score-function estimator
 
 ---
 
-# 45. 常见误解二：Reparameterization 消除了随机性
+## 45. 常见误解二：Reparameterization 消除了随机性
 
 **错误。**
 
 随机性仍然来自：
 
-\[
+$$
 \epsilon\sim\mathcal N(0,I)
-\]
+$$
 
 每次 forward 都可以得到不同的：
 
-\[
+$$
 z
-\]
+$$
 
 改变的只是随机性的表达方式。
 
 ---
 
-# 46. 常见误解三：z 就是 ε
+## 46. 常见误解三：z 就是 ε
 
 **错误。**
 
-\[
+$$
 \epsilon
-\]
+$$
 
 是 auxiliary standard noise。
 
 而：
 
-\[
+$$
 z
 =
 \mu+\sigma\epsilon
-\]
+$$
 
 是 latent sample。
 
 所以：
 
-\[
+$$
 \boxed{
 z\neq\epsilon
 }
-\]
+$$
 
 一般情况下它们的 distribution 也不同。
 
 ---
 
-# 47. 常见误解四：μ 和 σ 也是随机采样出来的
+## 47. 常见误解四：μ 和 σ 也是随机采样出来的
 
 经典 VAE 中不是。
 
 对于给定：
 
-\[
+$$
 x
-\]
+$$
 
 encoder deterministic 地计算：
 
-\[
+$$
 \mu_\phi(x)
-\]
+$$
 
 和：
 
-\[
+$$
 \sigma_\phi(x)
-\]
+$$
 
 随机的是：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 从而使：
 
-\[
+$$
 z
-\]
+$$
 
 随机。
 
 ---
 
-# 48. 常见误解五：Reparameterization 是为了让 z 接近 N(0,I)
+## 48. 常见误解五：Reparameterization 是为了让 z 接近 N(0,I)
 
 **错误。**
 
 让：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 受到 prior：
 
-\[
+$$
 p(z)=\mathcal N(0,I)
-\]
+$$
 
 约束的是：
 
-\[
+$$
 D_{KL}
-\]
+$$
 
 Reparameterization 的任务是：
 
@@ -2816,7 +2816,7 @@ Reparameterization 的任务是：
 
 ---
 
-# 49. 常见误解六：只要写成 μ+σε，模型就一定学得好
+## 49. 常见误解六：只要写成 μ+σε，模型就一定学得好
 
 **错误。**
 
@@ -2837,7 +2837,7 @@ Reparameterization 只是 gradient estimator / sampling mechanism。
 
 ---
 
-# 50. 常见误解七：所有分布都能直接 μ+σε
+## 50. 常见误解七：所有分布都能直接 μ+σε
 
 **错误。**
 
@@ -2856,7 +2856,7 @@ Reparameterization 只是 gradient estimator / sampling mechanism。
 
 ---
 
-# 51. 常见误解八：Reparameterization 让随机 sample 本身变得“可导”
+## 51. 常见误解八：Reparameterization 让随机 sample 本身变得“可导”
 
 这个说法也不够精确。
 
@@ -2872,29 +2872,29 @@ Reparameterization 只是 gradient estimator / sampling mechanism。
 
 我们需要的是：
 
-> 固定一次随机 draw 后，sample value 如何随着 \(\phi\) 改变。
+> 固定一次随机 draw 后，sample value 如何随着 $\phi$ 改变。
 
 这才是 optimization 真正需要的信息。
 
 ---
 
-# 52. 用两条公式记住全部内容
+## 52. 用两条公式记住全部内容
 
 如果整篇只留下两条公式：
 
-## 原始 stochastic variable
+### 原始 stochastic variable
 
-\[
+$$
 \boxed{
 z\sim q_\phi(z\mid x)
 }
-\]
+$$
 
 ---
 
-## Reparameterized form
+### Reparameterized form
 
-\[
+$$
 \boxed{
 z
 =
@@ -2902,11 +2902,11 @@ g_\phi(\epsilon,x),
 \qquad
 \epsilon\sim p(\epsilon)
 }
-\]
+$$
 
 Gaussian VAE 中：
 
-\[
+$$
 \boxed{
 z
 =
@@ -2916,67 +2916,67 @@ z
 \qquad
 \epsilon\sim\mathcal N(0,I)
 }
-\]
+$$
 
 真正重要的思想是：
 
-\[
+$$
 p(\epsilon)
-\]
+$$
 
-**不依赖 \(\phi\)**，
+**不依赖 $\phi$**，
 
 而：
 
-\[
+$$
 g_\phi
-\]
+$$
 
 是可微的。
 
 ---
 
-# 53. 一句话重新理解
+## 53. 一句话重新理解
 
-> **Reparameterization Trick 没有把随机采样变成确定性，也没有删除随机性；它只是把随机性放进一个与模型参数无关的辅助变量 \(\epsilon\)，再通过一个依赖参数且可微的确定性函数生成 \(z\)。**
+> **Reparameterization Trick 没有把随机采样变成确定性，也没有删除随机性；它只是把随机性放进一个与模型参数无关的辅助变量 $\epsilon$，再通过一个依赖参数且可微的确定性函数生成 $z$。**
 
 这样：
 
-\[
+$$
 z
-\]
+$$
 
 仍然具有正确的 stochastic distribution，
 
 但 reconstruction objective 对 encoder 参数：
 
-\[
+$$
 \phi
-\]
+$$
 
 可以通过：
 
-\[
+$$
 z=g_\phi(\epsilon,x)
-\]
+$$
 
 使用普通 backpropagation 高效求梯度。
 
 对于 Gaussian VAE：
 
-\[
+$$
 \epsilon\sim\mathcal N(0,I)
-\]
+$$
 
-\[
+$$
 z=\mu+\sigma\odot\epsilon
-\]
+$$
 
 就是这个思想最经典的形式。
 
 ---
 
-# 54. 下一步
+## 54. 下一步
 
 现在 VAE 链条已经有：
 
@@ -2990,25 +2990,25 @@ Reparameterization Trick
 
 接下来要真正理解 ACT 的 CVAE，还缺一个关键变化：
 
-> **如果我不只想根据 latent \(z\) 生成结果，而是希望在已知某个 condition \(c\) 的情况下生成结果，会发生什么？**
+> **如果我不只想根据 latent $z$ 生成结果，而是希望在已知某个 condition $c$ 的情况下生成结果，会发生什么？**
 
 也就是从：
 
-\[
+$$
 p(x\mid z)
-\]
+$$
 
 变成：
 
-\[
+$$
 p(x\mid z,c)
-\]
+$$
 
 同时 posterior 从：
 
-\[
+$$
 q(z\mid x)
-\]
+$$
 
 变成带条件的形式。
 
@@ -3022,7 +3022,7 @@ q(z\mid x)
 
 ---
 
-## Primary Source
+### Primary Source
 
 Diederik P. Kingma, Max Welling.  
 **Auto-Encoding Variational Bayes.**  
@@ -3041,29 +3041,29 @@ arXiv:1312.6114; ICLR 2014.
 
 原论文的通用重参数化形式为：
 
-\[
+$$
 \widetilde z
 =
 g_\phi(\epsilon,x),
 \qquad
 \epsilon\sim p(\epsilon)
-\]
+$$
 
 并在 Gaussian VAE 例子中使用：
 
-\[
+$$
 z
 =
 \mu+\sigma\odot\epsilon,
 \qquad
 \epsilon\sim\mathcal N(0,I)
-\]
+$$
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### 前置知识
+#### 前置知识
 
 - [Latent Variable](./latent-variable.md)
 - [VAE](./vae.md)
@@ -3073,17 +3073,17 @@ z
 - Mean
 - Variance
 
-### 相关数学
+#### 相关数学
 
 - Monte Carlo Estimation
 - Gradient & Chain Rule
 - [KL Divergence](../mathematics/kl-divergence.md)
 
-### 下一步
+#### 下一步
 
 - [CVAE](./cvae.md)
 
-### Robot Learning
+#### Robot Learning
 
 - [ACT](../robot-learning/act/act-what-problem-does-it-solve.md)
 - [CVAE in ACT](../robot-learning/act/cvae-in-act.md)

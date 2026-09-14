@@ -11,7 +11,7 @@ updated: "2026-09-15"
 
 在上一篇 [MLP](./mlp.md) 里，我们第一次看到了完整的训练闭环：
 
-\[
+$$
 \boxed{
 Forward
 \rightarrow
@@ -23,11 +23,11 @@ Backward
 \rightarrow
 Optimizer
 }
-\]
+$$
 
 我们也手算过一个非常简单的例子：
 
-\[
+$$
 x
 \rightarrow
 w_1
@@ -39,18 +39,18 @@ w_2
 \hat y
 \rightarrow
 L
-\]
+$$
 
 然后利用 Chain Rule：
 
-\[
+$$
 \frac{\partial L}{\partial w_1}
 =
 \frac{\partial L}{\partial \hat y}
 \frac{\partial \hat y}{\partial h}
 \frac{\partial h}{\partial z}
 \frac{\partial z}{\partial w_1}
-\]
+$$
 
 把最终 Loss 对第一层参数的影响算出来。
 
@@ -61,8 +61,8 @@ L
 - ResNet image backbone；
 - joint projection；
 - CVAE Transformer Encoder；
-- \(\mu\)；
-- \(\log\sigma^2\)；
+- $\mu$；
+- $\log\sigma^2$；
 - reparameterization；
 - latent projection；
 - Policy Transformer Encoder；
@@ -107,7 +107,7 @@ Backpropagation最容易被一句不够准确的话概括：
 - 为什么 `.backward()` 默认只能直接作用于 scalar loss？
 - 为什么 Autograd 不需要真的构造巨大的完整 Jacobian？
 - ACT 的 KL Loss 为什么不会直接训练 Action Head？
-- ACT 的 L1 Loss 又为什么可以穿过随机采样 \(z\) 回到 \(\mu\) 和 \(\log\sigma^2\)？
+- ACT 的 L1 Loss 又为什么可以穿过随机采样 $z$ 回到 $\mu$ 和 $\log\sigma^2$？
 - 一个 module明明存在于模型中，为什么有时却没有 gradient？
 
 这一篇的目标就是：
@@ -116,19 +116,19 @@ Backpropagation最容易被一句不够准确的话概括：
 
 ---
 
-# 1. 最先纠正一句话：Backward 传的不是“Loss 数字”
+## 1. 最先纠正一句话：Backward 传的不是“Loss 数字”
 
 假设：
 
-\[
+$$
 L=3.7
-\]
+$$
 
 Backprop 并不是把：
 
-\[
+$$
 3.7
-\]
+$$
 
 复制给上一层，
 
@@ -136,11 +136,11 @@ Backprop 并不是把：
 
 真正向后传播的是：
 
-\[
+$$
 \boxed{
 \text{derivative information}
 }
-\]
+$$
 
 更具体：
 
@@ -148,101 +148,101 @@ Backprop 并不是把：
 
 例如：
 
-\[
+$$
 \frac{\partial L}{\partial h}
-\]
+$$
 
 它回答：
 
-> **如果 \(h\) 增加一个非常小的量，最终 \(L\) 会怎样变化？**
+> **如果 $h$ 增加一个非常小的量，最终 $L$ 会怎样变化？**
 
 ---
 
-# 2. Gradient 是“敏感度”，不是“误差值”
+## 2. Gradient 是“敏感度”，不是“误差值”
 
 假设：
 
-\[
+$$
 \frac{\partial L}{\partial h}=5
-\]
+$$
 
 意思是局部上：
 
-\[
+$$
 h\rightarrow h+\Delta h
-\]
+$$
 
 会造成：
 
-\[
+$$
 L
 \rightarrow
 L+5\Delta h
-\]
+$$
 
 近似成立。
 
 如果：
 
-\[
+$$
 \frac{\partial L}{\partial h}=-2
-\]
+$$
 
 则增加一点：
 
-\[
+$$
 h
-\]
+$$
 
 反而会让：
 
-\[
+$$
 L
-\]
+$$
 
 下降。
 
 所以 gradient真正表达的是：
 
-\[
+$$
 \boxed{
 \text{Loss 对变量的局部变化率}
 }
-\]
+$$
 
 ---
 
-# 3. Backprop 的真正目标
+## 3. Backprop 的真正目标
 
 训练一个模型有参数：
 
-\[
+$$
 \theta
-\]
+$$
 
 Loss：
 
-\[
+$$
 L(\theta)
-\]
+$$
 
 Optimizer真正需要的是：
 
-\[
+$$
 \boxed{
 \nabla_\theta L
 }
-\]
+$$
 
 即：
 
-\[
+$$
 [
 \frac{\partial L}{\partial\theta_1},
 \frac{\partial L}{\partial\theta_2},
 \ldots
 ]
-\]
+$$
 
 Backpropagation就是：
 
@@ -252,17 +252,17 @@ Backpropagation就是：
 
 ---
 
-# 4. Backprop 和 Optimizer 再严格区分
+## 4. Backprop 和 Optimizer 再严格区分
 
-## Backpropagation
+### Backpropagation
 
 计算：
 
-\[
+$$
 \boxed{
 \nabla_\theta L
 }
-\]
+$$
 
 PyTorch：
 
@@ -272,19 +272,19 @@ loss.backward()
 
 ---
 
-## Optimizer
+### Optimizer
 
 使用这些 gradients修改参数。
 
 最简单 Gradient Descent：
 
-\[
+$$
 \boxed{
 \theta
 \leftarrow
 \theta-\eta\nabla_\theta L
 }
-\]
+$$
 
 PyTorch：
 
@@ -294,17 +294,17 @@ optimizer.step()
 
 所以：
 
-\[
+$$
 \boxed{
 backward
 \neq
 parameter\ update
 }
-\]
+$$
 
 ---
 
-# 5. 为什么还要 `zero_grad()`？
+## 5. 为什么还要 `zero_grad()`？
 
 PyTorch默认会：
 
@@ -341,7 +341,7 @@ optimizer.zero_grad()
 
 ---
 
-# 6. 为什么 PyTorch 要默认 Accumulate？
+## 6. 为什么 PyTorch 要默认 Accumulate？
 
 因为有些计算图里：
 
@@ -361,7 +361,7 @@ optimizer.zero_grad()
 
 ---
 
-# 7. 从 Computational Graph 开始
+## 7. 从 Computational Graph 开始
 
 Backprop最清楚的语言不是：
 
@@ -369,11 +369,11 @@ Backprop最清楚的语言不是：
 
 而是：
 
-\[
+$$
 \boxed{
 \text{Computational Graph}
 }
-\]
+$$
 
 每一个节点：
 
@@ -385,21 +385,21 @@ Backprop最清楚的语言不是：
 
 ---
 
-# 8. 最简单计算图
+## 8. 最简单计算图
 
 假设：
 
-\[
+$$
 a=wx
-\]
+$$
 
-\[
+$$
 b=a+c
-\]
+$$
 
-\[
+$$
 L=b^2
-\]
+$$
 
 图：
 
@@ -416,17 +416,17 @@ Forward时：
 
 Backward时：
 
-> 从 \(L\) 出发，沿依赖关系反向算 derivatives。
+> 从 $L$ 出发，沿依赖关系反向算 derivatives。
 
 ---
 
-# 9. Backward 不是“把 Forward 倒着执行一次”
+## 9. Backward 不是“把 Forward 倒着执行一次”
 
 Forward的 operation例如：
 
-\[
+$$
 b=a+c
-\]
+$$
 
 Backward不会执行：
 
@@ -434,55 +434,55 @@ Backward不会执行：
 
 它执行的是：
 
-\[
+$$
 \frac{\partial b}{\partial a}
-\]
+$$
 
 以及：
 
-\[
+$$
 \frac{\partial b}{\partial c}
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \text{reverse graph traversal}
 \neq
 \text{inverse function computation}
 }
-\]
+$$
 
 ---
 
-# 10. 很多 Forward Operation 根本不可逆
+## 10. 很多 Forward Operation 根本不可逆
 
 ReLU：
 
-\[
+$$
 -5,-1,0
-\]
+$$
 
 都可能变：
 
-\[
+$$
 0
-\]
+$$
 
 所以无法从：
 
-\[
+$$
 0
-\]
+$$
 
 恢复原始 input。
 
 但仍然可以定义 backward derivative convention：
 
-\[
+$$
 \frac{\partial ReLU(x)}{\partial x}
-\]
+$$
 
 所以 Backprop根本不需要：
 
@@ -490,48 +490,48 @@ ReLU：
 
 ---
 
-# 11. Chain Rule 是整个 Backprop 的数学核心
+## 11. Chain Rule 是整个 Backprop 的数学核心
 
 设：
 
-\[
+$$
 y=g(x)
-\]
+$$
 
-\[
+$$
 L=f(y)
-\]
+$$
 
 那么：
 
-\[
+$$
 L=f(g(x))
-\]
+$$
 
 Chain Rule：
 
-\[
+$$
 \boxed{
 \frac{dL}{dx}
 =
 \frac{dL}{dy}
 \frac{dy}{dx}
 }
-\]
+$$
 
 这就是 Backprop最小核心。
 
 ---
 
-# 12. 两个导数分别是什么？
+## 12. 两个导数分别是什么？
 
-\[
+$$
 \frac{dL}{dy}
-\]
+$$
 
 表示：
 
-> downstream Loss 对当前 output \(y\) 的敏感度。
+> downstream Loss 对当前 output $y$ 的敏感度。
 
 通常称为：
 
@@ -539,9 +539,9 @@ Chain Rule：
 
 而：
 
-\[
+$$
 \frac{dy}{dx}
-\]
+$$
 
 是：
 
@@ -549,7 +549,7 @@ Chain Rule：
 
 两者相乘：
 
-\[
+$$
 \boxed{
 \text{upstream gradient}
 \times
@@ -557,11 +557,11 @@ Chain Rule：
 =
 \text{gradient to previous node}
 }
-\]
+$$
 
 ---
 
-# 13. Backprop 的核心口诀
+## 13. Backprop 的核心口诀
 
 对每个 operation：
 
@@ -577,87 +577,87 @@ send gradient to inputs
 
 ---
 
-# 14. 一个极简单的例子
+## 14. 一个极简单的例子
 
-\[
+$$
 y=3x
-\]
+$$
 
-\[
+$$
 L=y^2
-\]
+$$
 
 假设：
 
-\[
+$$
 x=2
-\]
+$$
 
 Forward：
 
-\[
+$$
 y=6
-\]
+$$
 
-\[
+$$
 L=36
-\]
+$$
 
 ---
 
-# 15. 从 L 回到 y
+## 15. 从 L 回到 y
 
-\[
+$$
 L=y^2
-\]
+$$
 
 所以：
 
-\[
+$$
 \frac{dL}{dy}=2y=12
-\]
+$$
 
 这就是传到：
 
-\[
+$$
 y
-\]
+$$
 
 节点的 upstream gradient。
 
 ---
 
-# 16. y = 3x 的 Local Derivative
+## 16. y = 3x 的 Local Derivative
 
-\[
+$$
 \frac{dy}{dx}=3
-\]
+$$
 
 所以：
 
-\[
+$$
 \frac{dL}{dx}
 =
 12\times3
-\]
+$$
 
-\[
+$$
 \boxed{
 =36
 }
-\]
+$$
 
 ---
 
-# 17. 每个节点不需要知道整个网络
+## 17. 每个节点不需要知道整个网络
 
 这是 Backprop非常漂亮的地方。
 
 节点：
 
-\[
+$$
 y=3x
-\]
+$$
 
 不需要知道：
 
@@ -665,33 +665,33 @@ y=3x
 
 它只收到：
 
-\[
+$$
 \frac{dL}{dy}=12
-\]
+$$
 
 然后知道自己的 local derivative：
 
-\[
+$$
 3
-\]
+$$
 
 就能计算：
 
-\[
+$$
 \frac{dL}{dx}=36
-\]
+$$
 
 ---
 
-# 18. 这叫 Local Computation
+## 18. 这叫 Local Computation
 
 每个 primitive只负责：
 
-\[
+$$
 \boxed{
 \text{自己的局部 Jacobian / derivative rule}
 }
-\]
+$$
 
 整个网络的 global gradient：
 
@@ -701,79 +701,79 @@ y=3x
 
 ---
 
-# 19. 再看一个 MLP 节点
+## 19. 再看一个 MLP 节点
 
 Linear：
 
-\[
+$$
 y=Wx+b
-\]
+$$
 
 收到：
 
-\[
+$$
 g_y
 =
 \nabla_yL
-\]
+$$
 
 那么：
 
-\[
+$$
 \boxed{
 \nabla_xL=W^\top g_y
 }
-\]
+$$
 
 同时：
 
-\[
+$$
 \boxed{
 \nabla_WL=g_yx^\top
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 \nabla_bL=g_y
 }
-\]
+$$
 
 ---
 
-# 20. ReLU 节点
+## 20. ReLU 节点
 
-\[
+$$
 h=ReLU(z)
-\]
+$$
 
 收到：
 
-\[
+$$
 g_h
 =
 \nabla_hL
-\]
+$$
 
 local derivative：
 
-\[
+$$
 1[z>0]
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 g_z
 =
 g_h\odot1[z>0]
 }
-\]
+$$
 
 ---
 
-# 21. 两个 Local Rules 一接起来
+## 21. 两个 Local Rules 一接起来
 
 ```text
 x
@@ -801,7 +801,7 @@ Backward：
 
 ---
 
-# 22. Computational Graph 为什么比“Layers”更一般？
+## 22. Computational Graph 为什么比“Layers”更一般？
 
 因为现实模型会有：
 
@@ -824,29 +824,29 @@ Graph language可以自然描述。
 
 ---
 
-# 23. 一个 Branching Graph
+## 23. 一个 Branching Graph
 
 假设：
 
-\[
+$$
 u=x^2
-\]
+$$
 
 然后：
 
-\[
+$$
 a=3u
-\]
+$$
 
-\[
+$$
 b=u+5
-\]
+$$
 
 最后：
 
-\[
+$$
 L=a+b
-\]
+$$
 
 图：
 
@@ -858,35 +858,35 @@ x → u=x² ────┤            ├→ L=a+b
 
 ---
 
-# 24. u 对 Loss 有两条路径
+## 24. u 对 Loss 有两条路径
 
 通过：
 
-\[
+$$
 u\rightarrow a\rightarrow L
-\]
+$$
 
 和：
 
-\[
+$$
 u\rightarrow b\rightarrow L
-\]
+$$
 
 所以：
 
-\[
+$$
 \frac{dL}{du}
-\]
+$$
 
 不能只算其中一条。
 
 ---
 
-# 25. Gradient Contributions 要相加
+## 25. Gradient Contributions 要相加
 
 一般：
 
-\[
+$$
 \boxed{
 \frac{dL}{du}
 =
@@ -896,7 +896,7 @@ u\rightarrow b\rightarrow L
 \frac{\partial L}{\partial b}
 \frac{\partial b}{\partial u}
 }
-\]
+$$
 
 这就是：
 
@@ -904,49 +904,49 @@ u\rightarrow b\rightarrow L
 
 ---
 
-# 26. 代入这个例子
+## 26. 代入这个例子
 
-\[
+$$
 L=a+b
-\]
+$$
 
 所以：
 
-\[
+$$
 \frac{\partial L}{\partial a}=1
-\]
+$$
 
-\[
+$$
 \frac{\partial L}{\partial b}=1
-\]
+$$
 
 ---
 
-\[
+$$
 a=3u
-\]
+$$
 
 所以：
 
-\[
+$$
 \frac{\partial a}{\partial u}=3
-\]
+$$
 
 ---
 
-\[
+$$
 b=u+5
-\]
+$$
 
 所以：
 
-\[
+$$
 \frac{\partial b}{\partial u}=1
-\]
+$$
 
 因此：
 
-\[
+$$
 \boxed{
 \frac{dL}{du}
 =
@@ -954,25 +954,25 @@ b=u+5
 =
 4
 }
-\]
+$$
 
 ---
 
-# 27. 再回到 x
+## 27. 再回到 x
 
-\[
+$$
 u=x^2
-\]
+$$
 
 所以：
 
-\[
+$$
 \frac{du}{dx}=2x
-\]
+$$
 
 于是：
 
-\[
+$$
 \boxed{
 \frac{dL}{dx}
 =
@@ -980,11 +980,11 @@ u=x^2
 =
 8x
 }
-\]
+$$
 
 ---
 
-# 28. 这就是为什么 Gradient 会“相加”
+## 28. 这就是为什么 Gradient 会“相加”
 
 不是 PyTorch随便决定：
 
@@ -996,54 +996,54 @@ u=x^2
 
 ---
 
-# 29. Residual Connection 正是典型 Branch
+## 29. Residual Connection 正是典型 Branch
 
-\[
+$$
 y=x+F(x)
-\]
+$$
 
 这里：
 
-\[
+$$
 x
-\]
+$$
 
 有两条路径到：
 
-\[
+$$
 y
-\]
+$$
 
-### Path 1
+#### Path 1
 
 identity：
 
-\[
+$$
 x\rightarrow y
-\]
+$$
 
-### Path 2
+#### Path 2
 
-\[
+$$
 x\rightarrow F(x)\rightarrow y
-\]
+$$
 
 ---
 
-# 30. 所以 Gradient
+## 30. 所以 Gradient
 
-\[
+$$
 \boxed{
 \frac{\partial y}{\partial x}
 =
 I+
 J_F(x)
 }
-\]
+$$
 
 然后：
 
-\[
+$$
 \boxed{
 \nabla_xL
 =
@@ -1052,13 +1052,13 @@ I+J_F
 \right)^\top
 \nabla_yL
 }
-\]
+$$
 
 这正是 Residual Connection 的 backward结构。
 
 ---
 
-# 31. 为什么 Gradient Accumulation 特别重要？
+## 31. 为什么 Gradient Accumulation 特别重要？
 
 因为现代模型大量使用：
 
@@ -1078,17 +1078,17 @@ Backward必须：
 
 ---
 
-# 32. 多个 Loss 也是同样
+## 32. 多个 Loss 也是同样
 
 假设：
 
-\[
+$$
 L=L_1+\beta L_2
-\]
+$$
 
 那么：
 
-\[
+$$
 \boxed{
 \nabla_\theta L
 =
@@ -1096,17 +1096,17 @@ L=L_1+\beta L_2
 +
 \beta\nabla_\theta L_2
 }
-\]
+$$
 
 这对 ACT尤其重要。
 
 ---
 
-# 33. ACT 的总 Loss
+## 33. ACT 的总 Loss
 
 官方当前代码：
 
-\[
+$$
 \boxed{
 L
 =
@@ -1114,7 +1114,7 @@ L_{L1}
 +
 \beta L_{KL}
 }
-\]
+$$
 
 代码：
 
@@ -1128,35 +1128,35 @@ loss_dict['loss'] =
 
 canonical配置：
 
-\[
+$$
 \beta=10
-\]
+$$
 
 ---
 
-# 34. 因此一个共享参数可能同时收到两种 Gradient
+## 34. 因此一个共享参数可能同时收到两种 Gradient
 
 如果某参数：
 
-\[
+$$
 \theta
-\]
+$$
 
 同时影响：
 
-\[
+$$
 L_{L1}
-\]
+$$
 
 和：
 
-\[
+$$
 L_{KL}
-\]
+$$
 
 那么：
 
-\[
+$$
 \boxed{
 \frac{\partial L}{\partial\theta}
 =
@@ -1165,7 +1165,7 @@ L_{KL}
 \beta
 \frac{\partial L_{KL}}{\partial\theta}
 }
-\]
+$$
 
 Optimizer看到的：
 
@@ -1173,7 +1173,7 @@ Optimizer看到的：
 
 ---
 
-# 35. 但不是所有 ACT 参数都同时收到两条 Loss
+## 35. 但不是所有 ACT 参数都同时收到两条 Loss
 
 关键是：
 
@@ -1183,41 +1183,41 @@ Optimizer看到的：
 
 ---
 
-# 36. 现在进入 Vector 情况
+## 36. 现在进入 Vector 情况
 
 神经网络中的节点通常不是 scalar，
 
 而是：
 
-\[
+$$
 x\in\mathbb R^n
-\]
+$$
 
-\[
+$$
 y=f(x)\in\mathbb R^m
-\]
+$$
 
 这时：
 
-\[
+$$
 \frac{\partial y}{\partial x}
-\]
+$$
 
 不再是一个数。
 
 而是：
 
-\[
+$$
 \boxed{
 Jacobian
 }
-\]
+$$
 
 ---
 
-# 37. Jacobian 定义
+## 37. Jacobian 定义
 
-\[
+$$
 J_f
 =
 \frac{\partial y}{\partial x}
@@ -1241,76 +1241,76 @@ J_f
 &
 \frac{\partial y_m}{\partial x_n}
 \end{bmatrix}
-\]
+$$
 
 shape：
 
-\[
+$$
 \boxed{
 [m,n]
 }
-\]
+$$
 
 ---
 
-# 38. 如果最终 Loss 是 Scalar
+## 38. 如果最终 Loss 是 Scalar
 
-\[
+$$
 L\in\mathbb R
-\]
+$$
 
 我们已经有：
 
-\[
+$$
 g_y
 =
 \nabla_yL
 \in
 \mathbb R^m
-\]
+$$
 
 那么：
 
-\[
+$$
 \boxed{
 \nabla_xL
 =
 J_f(x)^\top
 g_y
 }
-\]
+$$
 
 ---
 
-# 39. 这就是 Reverse-Mode 的核心运算
+## 39. 这就是 Reverse-Mode 的核心运算
 
 它并不要求真的把：
 
-\[
+$$
 J_f
-\]
+$$
 
 整个矩阵 materialize出来。
 
 只需要计算：
 
-\[
+$$
 \boxed{
 J_f^\top g_y
 }
-\]
+$$
 
 这就是 reverse-mode automatic differentiation 的关键效率来源。
 
 ---
 
-# 40. VJP 到底是什么？
+## 40. VJP 到底是什么？
 
 很多 autodiff文献用 row-vector cotangent notation：
 
-\[
+$$
 g_y^\top J_f
-\]
+$$
 
 称：
 
@@ -1318,9 +1318,9 @@ g_y^\top J_f
 
 如果我们用 column-vector gradient：
 
-\[
+$$
 J_f^\top g_y
-\]
+$$
 
 是同一个数学 contraction的转置表示。
 
@@ -1333,39 +1333,39 @@ J_f^\top g_y
 
 ---
 
-# 41. 为什么不直接构造整个 Jacobian？
+## 41. 为什么不直接构造整个 Jacobian？
 
 假设：
 
-\[
+$$
 x
-\]
+$$
 
 有：
 
-\[
+$$
 1,000,000
-\]
+$$
 
 维，
 
-\[
+$$
 y
-\]
+$$
 
 也有：
 
-\[
+$$
 1,000,000
-\]
+$$
 
 维。
 
 完整 Jacobian：
 
-\[
+$$
 10^{12}
-\]
+$$
 
 entries。
 
@@ -1379,46 +1379,46 @@ entries。
 
 ---
 
-# 42. Linear 就是最好例子
+## 42. Linear 就是最好例子
 
-\[
+$$
 y=Wx+b
-\]
+$$
 
 Jacobian：
 
-\[
+$$
 J=W
-\]
+$$
 
 所以：
 
-\[
+$$
 J^\top g
 =
 W^\top g
-\]
+$$
 
 不需要另外构造任何 Jacobian。
 
 ---
 
-# 43. ReLU 也一样
+## 43. ReLU 也一样
 
 Jacobian：
 
-\[
+$$
 D=
 diag(
 1[z_i>0]
 )
-\]
+$$
 
 但根本不需要构造巨大的 diagonal matrix。
 
 直接：
 
-\[
+$$
 \boxed{
 g_z
 =
@@ -1426,33 +1426,33 @@ g_h
 \odot
 1[z>0]
 }
-\]
+$$
 
 即可。
 
 ---
 
-# 44. Softmax 也不需要显式 Jacobian
+## 44. Softmax 也不需要显式 Jacobian
 
 Softmax Jacobian：
 
-\[
+$$
 J
 =
 diag(p)-pp^\top
-\]
+$$
 
 但 autodiff实现可以直接计算：
 
-\[
+$$
 J^\top g
-\]
+$$
 
 而不是先分配：
 
-\[
+$$
 n\times n
-\]
+$$
 
 矩阵。
 
@@ -1460,7 +1460,7 @@ n\times n
 
 ---
 
-# 45. LayerNorm 也是同样
+## 45. LayerNorm 也是同样
 
 LayerNorm对一个512-D token的 Jacobian：
 
@@ -1468,9 +1468,9 @@ LayerNorm对一个512-D token的 Jacobian：
 
 实际 backward不会笨拙地创建：
 
-\[
+$$
 512\times512
-\]
+$$
 
 矩阵再乘。
 
@@ -1480,11 +1480,11 @@ LayerNorm对一个512-D token的 Jacobian：
 
 ---
 
-# 46. Backprop 本质是“局部 VJP 的反向组合”
+## 46. Backprop 本质是“局部 VJP 的反向组合”
 
 非常精确地说：
 
-\[
+$$
 \boxed{
 \text{Backprop}
 =
@@ -1494,39 +1494,39 @@ LayerNorm对一个512-D token的 Jacobian：
 +
 \text{gradient accumulation at branches}
 }
-\]
+$$
 
 这比“误差往回传”精确得多。
 
 ---
 
-# 47. 为什么 Reverse Mode 特别适合 Neural Network Training？
+## 47. 为什么 Reverse Mode 特别适合 Neural Network Training？
 
 训练通常：
 
 - 参数数量：
-  \[
+  $$
   P\gg1
-  \]
+  $$
 - 最终 Loss：
-  \[
+  $$
   L\in\mathbb R
-  \]
+  $$
 
 也就是说：
 
-\[
+$$
 \mathbb R^P
 \rightarrow
 \mathbb R
-\]
+$$
 
 我们想一次得到：
 
-\[
+$$
 \nabla_\theta L
 \in\mathbb R^P
-\]
+$$
 
 Reverse mode特别适合：
 
@@ -1534,7 +1534,7 @@ Reverse mode特别适合：
 
 ---
 
-# 48. Forward-Mode 更适合什么直觉？
+## 48. Forward-Mode 更适合什么直觉？
 
 Forward mode更自然地传播：
 
@@ -1555,7 +1555,7 @@ Neural network training恰好相反：
 
 ---
 
-# 49. Backprop 与 Reverse-Mode AD 什么关系？
+## 49. Backprop 与 Reverse-Mode AD 什么关系？
 
 现代语言里：
 
@@ -1571,7 +1571,7 @@ Automatic differentiation是更一般的框架。
 
 ---
 
-# 50. Backprop 不是 Symbolic Differentiation
+## 50. Backprop 不是 Symbolic Differentiation
 
 Symbolic differentiation可能产生：
 
@@ -1585,11 +1585,11 @@ Autodiff则：
 
 ---
 
-# 51. Backprop 也不是 Numerical Differentiation
+## 51. Backprop 也不是 Numerical Differentiation
 
 Finite difference：
 
-\[
+$$
 \frac{\partial L}{\partial\theta_i}
 \approx
 \frac{
@@ -1599,7 +1599,7 @@ L(\theta_i-\epsilon)
 }{
 2\epsilon
 }
-\]
+$$
 
 每个参数都要额外 forward。
 
@@ -1614,19 +1614,19 @@ L(\theta_i-\epsilon)
 
 ---
 
-# 52. Finite Difference 主要用于 Gradient Check
+## 52. Finite Difference 主要用于 Gradient Check
 
 小模型中可以比较：
 
-\[
+$$
 gradient_{autograd}
-\]
+$$
 
 和：
 
-\[
+$$
 gradient_{finite\ difference}
-\]
+$$
 
 确认自定义 backward是否正确。
 
@@ -1636,7 +1636,7 @@ gradient_{finite\ difference}
 
 ---
 
-# 53. 为什么 Forward 要保存一些东西？
+## 53. 为什么 Forward 要保存一些东西？
 
 Backward local derivative常需要：
 
@@ -1644,25 +1644,25 @@ Backward local derivative常需要：
 
 例如 ReLU backward需要知道：
 
-\[
+$$
 z>0?
-\]
+$$
 
 Sigmoid backward可能需要：
 
-\[
+$$
 \sigma(z)
-\]
+$$
 
 Linear weight gradient需要：
 
-\[
+$$
 x
-\]
+$$
 
 ---
 
-# 54. 所以 Training 比 Pure Inference 更吃 Memory
+## 54. 所以 Training 比 Pure Inference 更吃 Memory
 
 Training forward不能所有 intermediate都立即丢掉。
 
@@ -1670,17 +1670,17 @@ Training forward不能所有 intermediate都立即丢掉。
 
 这就是：
 
-\[
+$$
 \boxed{
 \text{activation memory}
 }
-\]
+$$
 
 的重要来源。
 
 ---
 
-# 55. PyTorch 的 `save_for_backward`
+## 55. PyTorch 的 `save_for_backward`
 
 自定义 `autograd.Function` 中，
 
@@ -1696,7 +1696,7 @@ PyTorch也会为内置 operations管理相应的 saved tensors。
 
 ---
 
-# 56. Memory-Time Tradeoff
+## 56. Memory-Time Tradeoff
 
 可以选择：
 
@@ -1710,7 +1710,7 @@ PyTorch也会为内置 operations管理相应的 saved tensors。
 
 ---
 
-# 57. Gradient Checkpointing
+## 57. Gradient Checkpointing
 
 对很深网络，
 
@@ -1724,17 +1724,17 @@ Backward时：
 
 于是：
 
-\[
+$$
 \boxed{
 \text{more compute}
 \leftrightarrow
 \text{less memory}
 }
-\]
+$$
 
 ---
 
-# 58. 这和 Backprop 原理不冲突
+## 58. 这和 Backprop 原理不冲突
 
 Chain Rule完全一样。
 
@@ -1744,7 +1744,7 @@ Chain Rule完全一样。
 
 ---
 
-# 59. PyTorch Autograd 如何记录 Graph？
+## 59. PyTorch Autograd 如何记录 Graph？
 
 当某个 operation的至少一个输入：
 
@@ -1768,7 +1768,7 @@ grad_fn
 
 ---
 
-# 60. 什么是 Leaf Tensor？
+## 60. 什么是 Leaf Tensor？
 
 简化理解：
 
@@ -1784,7 +1784,7 @@ nn.Parameter
 
 ---
 
-# 61. 参数为什么默认 `requires_grad=True`？
+## 61. 参数为什么默认 `requires_grad=True`？
 
 `nn.Parameter`注册到 module后，
 
@@ -1792,15 +1792,15 @@ nn.Parameter
 
 所以模型 weights：
 
-\[
+$$
 W,b
-\]
+$$
 
 是 autograd需要追踪的 leaf parameters。
 
 ---
 
-# 62. Non-Leaf Tensor 是什么？
+## 62. Non-Leaf Tensor 是什么？
 
 例如：
 
@@ -1810,17 +1810,17 @@ z = x @ W.T + b
 
 如果：
 
-\[
+$$
 W
-\]
+$$
 
 requires grad，
 
 那么：
 
-\[
+$$
 z
-\]
+$$
 
 是 computation产生的中间 tensor。
 
@@ -1834,7 +1834,7 @@ grad_fn
 
 ---
 
-# 63. `.grad` 默认存在哪里？
+## 63. `.grad` 默认存在哪里？
 
 PyTorch backward时，
 
@@ -1851,7 +1851,7 @@ b.grad
 
 ---
 
-# 64. 为什么中间 Activation 的 `.grad` 常是 None？
+## 64. 为什么中间 Activation 的 `.grad` 常是 None？
 
 并不是因为：
 
@@ -1869,7 +1869,7 @@ b.grad
 
 ---
 
-# 65. 想查看 Non-Leaf Gradient 怎么办？
+## 65. 想查看 Non-Leaf Gradient 怎么办？
 
 可以：
 
@@ -1893,7 +1893,7 @@ h.grad
 
 ---
 
-# 66. `requires_grad=True` 到底是什么意思？
+## 66. `requires_grad=True` 到底是什么意思？
 
 表示：
 
@@ -1909,7 +1909,7 @@ h.grad
 
 ---
 
-# 67. `grad_fn` 又是什么？
+## 67. `grad_fn` 又是什么？
 
 它表示：
 
@@ -1927,7 +1927,7 @@ y = x * 2
 
 ---
 
-# 68. PyTorch 的 Graph 是 Dynamic 的
+## 68. PyTorch 的 Graph 是 Dynamic 的
 
 PyTorch eager autograd：
 
@@ -1948,7 +1948,7 @@ for ...
 
 ---
 
-# 69. 为什么一次 `backward()` 后 Graph 常被释放？
+## 69. 为什么一次 `backward()` 后 Graph 常被释放？
 
 默认情况下，
 
@@ -1966,7 +1966,7 @@ retain_graph=True
 
 ---
 
-# 70. 为什么正常 Training 不需要 Retain Graph？
+## 70. 为什么正常 Training 不需要 Retain Graph？
 
 因为下一个 batch会：
 
@@ -1990,7 +1990,7 @@ step
 
 ---
 
-# 71. `retain_graph=True` 不应该随便开
+## 71. `retain_graph=True` 不应该随便开
 
 如果一直保留 graph：
 
@@ -2005,15 +2005,15 @@ step
 
 ---
 
-# 72. Multiple Loss 一定需要 Retain Graph 吗？
+## 72. Multiple Loss 一定需要 Retain Graph 吗？
 
 不一定。
 
 最简单：
 
-\[
+$$
 L=L_1+L_2
-\]
+$$
 
 直接：
 
@@ -2026,7 +2026,7 @@ loss.backward()
 
 ---
 
-# 73. 如果分开 Backward
+## 73. 如果分开 Backward
 
 ```python
 loss1.backward(retain_graph=True)
@@ -2047,7 +2047,7 @@ Gradient会：
 
 ---
 
-# 74. ACT 正是先组成一个 Total Loss
+## 74. ACT 正是先组成一个 Total Loss
 
 ```python
 loss =
@@ -2068,7 +2068,7 @@ loss.backward()
 
 ---
 
-# 75. `detach()` 是什么？
+## 75. `detach()` 是什么？
 
 如果：
 
@@ -2078,15 +2078,15 @@ y = x.detach()
 
 得到：
 
-\[
+$$
 y
-\]
+$$
 
 与：
 
-\[
+$$
 x
-\]
+$$
 
 共享/关联数值语义，
 
@@ -2096,9 +2096,9 @@ x
 
 后续使用：
 
-\[
+$$
 y
-\]
+$$
 
 不会把 gradient传回：
 
@@ -2106,7 +2106,7 @@ y
 
 ---
 
-# 76. 计算图上的直觉
+## 76. 计算图上的直觉
 
 原本：
 
@@ -2128,19 +2128,19 @@ b_detached → c → L
 
 那么 backward到：
 
-\[
+$$
 b_{\text{detached}}
-\]
+$$
 
 就不会继续穿回：
 
-\[
+$$
 a
-\]
+$$
 
 ---
 
-# 77. `detach()` 并不把数值设成0
+## 77. `detach()` 并不把数值设成0
 
 这是常见误解。
 
@@ -2154,13 +2154,13 @@ a
 
 ---
 
-# 78. Stop-Gradient 的概念
+## 78. Stop-Gradient 的概念
 
 很多论文写：
 
-\[
+$$
 sg(x)
-\]
+$$
 
 或：
 
@@ -2182,7 +2182,7 @@ detach()
 
 ---
 
-# 79. `torch.no_grad()` 又是什么？
+## 79. `torch.no_grad()` 又是什么？
 
 在：
 
@@ -2203,9 +2203,9 @@ with torch.no_grad():
 
 ---
 
-# 80. `no_grad()` 和 `detach()` 的区别
+## 80. `no_grad()` 和 `detach()` 的区别
 
-### `detach()`
+#### `detach()`
 
 针对：
 
@@ -2213,7 +2213,7 @@ with torch.no_grad():
 
 ---
 
-### `no_grad()`
+#### `no_grad()`
 
 针对：
 
@@ -2225,7 +2225,7 @@ with torch.no_grad():
 
 ---
 
-# 81. `model.eval()` 又不是这两个
+## 81. `model.eval()` 又不是这两个
 
 这一点必须再强调。
 
@@ -2242,15 +2242,15 @@ model.eval()
 
 它：
 
-\[
+$$
 \boxed{
 \text{不会自动关闭 autograd}
 }
-\]
+$$
 
 ---
 
-# 82. 所以标准 Inference 常写
+## 82. 所以标准 Inference 常写
 
 ```python
 model.eval()
@@ -2272,7 +2272,7 @@ torch.inference_mode()
 
 ---
 
-# 83. ACT Validation 使用 `torch.inference_mode()`
+## 83. ACT Validation 使用 `torch.inference_mode()`
 
 官方 training loop：
 
@@ -2297,7 +2297,7 @@ policy.train()
 
 ---
 
-# 84. 为什么 Validation 不需要 Backward？
+## 84. 为什么 Validation 不需要 Backward？
 
 因为 validation只想估计：
 
@@ -2311,27 +2311,27 @@ policy.train()
 
 ---
 
-# 85. Non-Scalar Tensor 为什么不能直接 `.backward()`？
+## 85. Non-Scalar Tensor 为什么不能直接 `.backward()`？
 
 假设：
 
-\[
+$$
 y
 \in
 \mathbb R^m
-\]
+$$
 
 而不是 scalar。
 
-“\(y\) 对 \(x\) 的 gradient”是什么？
+“$y$ 对 $x$ 的 gradient”是什么？
 
 实际上是：
 
-\[
+$$
 \boxed{
 Jacobian
 }
-\]
+$$
 
 不是单一 gradient vector。
 
@@ -2341,7 +2341,7 @@ Jacobian
 
 ---
 
-# 86. PyTorch 需要一个 `gradient` Argument
+## 86. PyTorch 需要一个 `gradient` Argument
 
 如果：
 
@@ -2351,45 +2351,45 @@ y.backward(v)
 
 其中：
 
-\[
+$$
 v
-\]
+$$
 
 shape与：
 
-\[
+$$
 y
-\]
+$$
 
 相同，
 
 PyTorch计算的本质是：
 
-\[
+$$
 \boxed{
 J_y(x)^\top v
 }
-\]
+$$
 
 在 column-gradient notation中。
 
 ---
 
-# 87. Scalar Loss 为什么最方便？
+## 87. Scalar Loss 为什么最方便？
 
 如果：
 
-\[
+$$
 L
-\]
+$$
 
 只有一个元素，
 
 初始 seed gradient自然：
 
-\[
+$$
 \frac{\partial L}{\partial L}=1
-\]
+$$
 
 所以：
 
@@ -2401,33 +2401,33 @@ loss.backward()
 
 Backward从：
 
-\[
+$$
 \boxed{
 1
 }
-\]
+$$
 
 开始向图中传播。
 
 ---
 
-# 88. Backprop 的真正起点就是 1
+## 88. Backprop 的真正起点就是 1
 
 这是一个很漂亮的事实。
 
 因为：
 
-\[
+$$
 \boxed{
 \frac{dL}{dL}=1
 }
-\]
+$$
 
 所以 root节点的 upstream gradient：
 
-\[
+$$
 1
-\]
+$$
 
 然后每个 operation：
 
@@ -2435,7 +2435,7 @@ Backward从：
 
 ---
 
-# 89. 一个完整 Scalar Graph
+## 89. 一个完整 Scalar Graph
 
 ```text
 x
@@ -2449,41 +2449,41 @@ L
 
 Backward seed：
 
-\[
+$$
 \bar L=1
-\]
+$$
 
 其中：
 
-\[
+$$
 \bar b
 =
 \frac{\partial L}{\partial b}
-\]
+$$
 
-\[
+$$
 \bar a
 =
 \frac{\partial L}{\partial a}
-\]
+$$
 
-\[
+$$
 \bar x
 =
 \frac{\partial L}{\partial x}
-\]
+$$
 
 有些 autodiff文献用：
 
-\[
+$$
 \bar x
-\]
+$$
 
 表示 adjoint/cotangent。
 
 ---
 
-# 90. 为什么叫 Upstream Gradient？
+## 90. 为什么叫 Upstream Gradient？
 
 在 backward方向看，
 
@@ -2501,29 +2501,29 @@ Loss在“上游”。
 
 最安全还是看：
 
-\[
+$$
 \boxed{
 \frac{\partial L}{\partial \text{current output}}
 }
-\]
+$$
 
 ---
 
-# 91. Local Gradient 是什么？
+## 91. Local Gradient 是什么？
 
 某 operation：
 
-\[
+$$
 y=f(x)
-\]
+$$
 
 local derivative：
 
-\[
+$$
 \boxed{
 \frac{\partial y}{\partial x}
 }
-\]
+$$
 
 它只描述：
 
@@ -2533,13 +2533,13 @@ local derivative：
 
 ---
 
-# 92. Global Gradient 是什么？
+## 92. Global Gradient 是什么？
 
-\[
+$$
 \boxed{
 \frac{\partial L}{\partial x}
 }
-\]
+$$
 
 它整合：
 
@@ -2551,29 +2551,29 @@ Backprop就是：
 
 ---
 
-# 93. 为什么 Branch 会导致求和？
+## 93. 为什么 Branch 会导致求和？
 
 如果：
 
-\[
+$$
 x
-\]
+$$
 
 被：
 
-\[
+$$
 f(x)
-\]
+$$
 
 和：
 
-\[
+$$
 g(x)
-\]
+$$
 
 同时使用，
 
-那么 \(x\) 对 Loss 的总影响：
+那么 $x$ 对 Loss 的总影响：
 
 > 是沿所有 downstream usages的 contribution总和。
 
@@ -2581,27 +2581,27 @@ Autograd engine会自动完成这个 accumulation。
 
 ---
 
-# 94. 一个 Parameter 被重复使用也一样
+## 94. 一个 Parameter 被重复使用也一样
 
 例如 RNN weight在多个 time steps共享。
 
 同一个：
 
-\[
+$$
 W
-\]
+$$
 
 在：
 
-\[
+$$
 t=1,2,\ldots,T
-\]
+$$
 
 反复出现。
 
 总 gradient：
 
-\[
+$$
 \boxed{
 \frac{\partial L}{\partial W}
 =
@@ -2610,33 +2610,33 @@ t=1,2,\ldots,T
 \frac{\partial L}{\partial W}
 \right|_t
 }
-\]
+$$
 
 这就是 parameter sharing 下的梯度累积。
 
 ---
 
-# 95. Transformer Position-Wise MLP 也共享参数
+## 95. Transformer Position-Wise MLP 也共享参数
 
 同一个：
 
-\[
+$$
 W_1
-\]
+$$
 
 被所有：
 
-\[
+$$
 N
-\]
+$$
 
 tokens使用。
 
 所以：
 
-\[
+$$
 \nabla_{W_1}L
-\]
+$$
 
 会累积来自：
 
@@ -2646,7 +2646,7 @@ tokens使用。
 
 ---
 
-# 96. 这就是“参数共享”怎样被训练
+## 96. 这就是“参数共享”怎样被训练
 
 共享不是：
 
@@ -2658,21 +2658,21 @@ tokens使用。
 
 ---
 
-# 97. Batch Gradient 也是求和/平均形式
+## 97. Batch Gradient 也是求和/平均形式
 
 如果：
 
-\[
+$$
 L
 =
 \frac1B
 \sum_{i=1}^{B}
 L_i
-\]
+$$
 
 那么：
 
-\[
+$$
 \boxed{
 \nabla_\theta L
 =
@@ -2680,7 +2680,7 @@ L_i
 \sum_i
 \nabla_\theta L_i
 }
-\]
+$$
 
 所以每个 mini-batch update：
 
@@ -2688,32 +2688,32 @@ L_i
 
 ---
 
-# 98. Mean vs Sum Loss 会改变 Gradient Scale
+## 98. Mean vs Sum Loss 会改变 Gradient Scale
 
 如果：
 
-\[
+$$
 L_{sum}
 =
 \sum_iL_i
-\]
+$$
 
 而：
 
-\[
+$$
 L_{mean}
 =
 \frac1B\sum_iL_i
-\]
+$$
 
 则：
 
-\[
+$$
 \nabla L_{mean}
 =
 \frac1B
 \nabla L_{sum}
-\]
+$$
 
 方向相同，
 
@@ -2728,7 +2728,7 @@ scale不同。
 
 ---
 
-# 99. ACT 的 L1 Masking 有一个实现细节
+## 99. ACT 的 L1 Masking 有一个实现细节
 
 官方：
 
@@ -2758,31 +2758,31 @@ l1 =
 
 ---
 
-# 100. 被 Mask 成 0 的 Element Gradient
+## 100. 被 Mask 成 0 的 Element Gradient
 
 对于某 padded position：
 
-\[
+$$
 mask=0
-\]
+$$
 
 则对应：
 
-\[
+$$
 0\times |a-\hat a|
-\]
+$$
 
 对：
 
-\[
+$$
 \hat a
-\]
+$$
 
 的 gradient：
 
-\[
+$$
 0
-\]
+$$
 
 所以 padded targets：
 
@@ -2790,7 +2790,7 @@ mask=0
 
 ---
 
-# 101. 但 Denominator 仍然是 Entire Tensor Mean
+## 101. 但 Denominator 仍然是 Entire Tensor Mean
 
 由于代码先 mask再：
 
@@ -2814,38 +2814,38 @@ mean denominator仍按整个 tensor元素数量计算，
 
 ---
 
-# 102. L1 的 Local Derivative
+## 102. L1 的 Local Derivative
 
 单个 element：
 
-\[
+$$
 \ell=
 |\hat a-a|
-\]
+$$
 
 如果：
 
-\[
+$$
 \hat a>a
-\]
+$$
 
 则：
 
-\[
+$$
 \frac{\partial\ell}{\partial\hat a}=1
-\]
+$$
 
 如果：
 
-\[
+$$
 \hat a<a
-\]
+$$
 
 则：
 
-\[
+$$
 -1
-\]
+$$
 
 在完全相等点不可导，
 
@@ -2859,7 +2859,7 @@ framework采用subgradient convention。
 
 ---
 
-# 103. 现在把 ACT 训练 Graph 画出来
+## 103. 现在把 ACT 训练 Graph 画出来
 
 简化：
 
@@ -2921,67 +2921,67 @@ L = L1 + β L_KL
 
 ---
 
-# 104. `loss.backward()` 从哪里开始？
+## 104. `loss.backward()` 从哪里开始？
 
 Total scalar：
 
-\[
+$$
 L
 =
 L_{L1}
 +
 \beta L_{KL}
-\]
+$$
 
 seed：
 
-\[
+$$
 \frac{\partial L}{\partial L}=1
-\]
+$$
 
 Addition节点把 gradient分别送给：
 
-\[
+$$
 L_{L1}
-\]
+$$
 
 和：
 
-\[
+$$
 L_{KL}
-\]
+$$
 
 ---
 
-# 105. 对 L1 Branch
+## 105. 对 L1 Branch
 
-\[
+$$
 \frac{\partial L}{\partial L_{L1}}
 =
 1
-\]
+$$
 
 所以 L1 branch gradient未额外缩放。
 
 ---
 
-# 106. 对 KL Branch
+## 106. 对 KL Branch
 
-\[
+$$
 \frac{\partial L}{\partial L_{KL}}
 =
 \beta
-\]
+$$
 
 所以 KL产生的所有 upstream gradients：
 
-> 在进入共享上游 graph前被 \(\beta\) 缩放。
+> 在进入共享上游 graph前被 $\beta$ 缩放。
 
 ACT canonical：
 
-\[
+$$
 \beta=10
-\]
+$$
 
 因此：
 
@@ -2991,31 +2991,31 @@ ACT canonical：
 
 ---
 
-# 107. β=10 不代表 KL Gradient 永远比 L1 大10倍
+## 107. β=10 不代表 KL Gradient 永远比 L1 大10倍
 
 因为：
 
-\[
+$$
 \nabla L
 =
 \nabla L_1
 +
 10\nabla L_{KL}
-\]
+$$
 
 如果：
 
-\[
+$$
 \|\nabla L_{KL}\|
-\]
+$$
 
 本来很小，
 
 乘10后仍可能比：
 
-\[
+$$
 \nabla L_1
-\]
+$$
 
 小。
 
@@ -3027,25 +3027,25 @@ ACT canonical：
 
 ---
 
-# 108. L1 Gradient 首先训练谁？
+## 108. L1 Gradient 首先训练谁？
 
-\[
+$$
 L1
-\]
+$$
 
 直接依赖：
 
-\[
+$$
 a_{hat}
-\]
+$$
 
 而：
 
-\[
+$$
 a_{hat}
 =
 action\_head(hs)
-\]
+$$
 
 所以最直接收到 gradient的是：
 
@@ -3053,28 +3053,28 @@ action\_head(hs)
 
 ---
 
-# 109. 然后 Gradient 进入 Decoder Hidden State
+## 109. 然后 Gradient 进入 Decoder Hidden State
 
 Linear backward：
 
-\[
+$$
 \nabla_{hs}L_1
 =
 W_{action}^\top
 \nabla_{a_{hat}}L_1
-\]
+$$
 
 所以 decoder output：
 
-\[
+$$
 hs
-\]
+$$
 
 收到 gradient。
 
 ---
 
-# 110. 然后穿过 Transformer Decoder
+## 110. 然后穿过 Transformer Decoder
 
 Decoder内部有：
 
@@ -3095,31 +3095,31 @@ Decoder内部有：
 
 ---
 
-# 111. Cross-Attention 让 L1 进入 Policy Encoder
+## 111. Cross-Attention 让 L1 进入 Policy Encoder
 
 Decoder Cross-Attention读取：
 
-\[
+$$
 memory
-\]
+$$
 
 作为 K/V。
 
 因此：
 
-\[
+$$
 a_{hat}
-\]
+$$
 
 依赖：
 
-\[
+$$
 memory
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 L1
 \rightarrow
@@ -3129,13 +3129,13 @@ CrossAttention
 \rightarrow
 Policy\ Encoder
 }
-\]
+$$
 
 存在可微路径。
 
 ---
 
-# 112. Policy Encoder 再连接到 Images
+## 112. Policy Encoder 再连接到 Images
 
 Policy Encoder memory依赖：
 
@@ -3150,7 +3150,7 @@ Policy Encoder memory依赖：
 
 ---
 
-# 113. L1 也回到 qpos Projection
+## 113. L1 也回到 qpos Projection
 
 Policy输入里有：
 
@@ -3158,9 +3158,9 @@ Policy输入里有：
 
 所以：
 
-\[
+$$
 L1
-\]
+$$
 
 也会训练：
 
@@ -3172,21 +3172,21 @@ input_proj_robot_state
 
 ---
 
-# 114. L1 还会进入 Latent Input
+## 114. L1 还会进入 Latent Input
 
 Policy Transformer同时依赖：
 
-\[
+$$
 latent\_input
 =
 latent\_out\_proj(z)
-\]
+$$
 
 所以：
 
-\[
+$$
 L1
-\]
+$$
 
 会反向进入：
 
@@ -3196,115 +3196,115 @@ latent_out_proj
 
 ---
 
-# 115. 然后遇到随机采样 z
+## 115. 然后遇到随机采样 z
 
 Training：
 
-\[
+$$
 z
 =
 \mu+\sigma\epsilon
-\]
+$$
 
 其中：
 
-\[
+$$
 \sigma
 =
 e^{\frac12\log\sigma^2}
-\]
+$$
 
-\[
+$$
 \epsilon
 \sim\mathcal N(0,I)
-\]
+$$
 
 在本次 forward中：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 被当作采样得到的固定随机 tensor。
 
 ---
 
-# 116. 为什么 L1 Gradient 能穿过 Sampling？
+## 116. 为什么 L1 Gradient 能穿过 Sampling？
 
 因为 reparameterization把：
 
-\[
+$$
 z
-\]
+$$
 
 写成：
 
-> 对 \(\mu,\logvar\) 的 differentiable deterministic function，条件是当前 \(\epsilon\) 固定。
+> 对 $\mu,\logvar$ 的 differentiable deterministic function，条件是当前 $\epsilon$ 固定。
 
 所以：
 
-\[
+$$
 \frac{\partial z}{\partial\mu}=1
-\]
+$$
 
 ---
 
-# 117. 对 logvar 的 Gradient
+## 117. 对 logvar 的 Gradient
 
-\[
+$$
 \sigma
 =
 e^{\frac12\logvar}
-\]
+$$
 
-\[
+$$
 z=
 \mu+\sigma\epsilon
-\]
+$$
 
 所以：
 
-\[
+$$
 \frac{\partial z}{\partial\logvar}
 =
 \epsilon
 \frac{\partial\sigma}{\partial\logvar}
-\]
+$$
 
 而：
 
-\[
+$$
 \frac{\partial\sigma}{\partial\logvar}
 =
 \frac12
 e^{\frac12\logvar}
 =
 \frac12\sigma
-\]
+$$
 
 因此：
 
-\[
+$$
 \boxed{
 \frac{\partial z}{\partial\logvar}
 =
 \frac12\sigma\epsilon
 }
-\]
+$$
 
 ---
 
-# 118. 所以 Reconstruction/L1 直接训练 μ 和 logvar
+## 118. 所以 Reconstruction/L1 直接训练 μ 和 logvar
 
 通过：
 
-\[
+$$
 L1
 \rightarrow
 z
 \rightarrow
 \mu,\logvar
-\]
+$$
 
 CVAE encoder不仅收到：
 
@@ -3318,7 +3318,7 @@ CVAE encoder不仅收到：
 
 ---
 
-# 119. 如果直接做不可重参数化的采样会怎样？
+## 119. 如果直接做不可重参数化的采样会怎样？
 
 若 sampling operation被当成：
 
@@ -3328,25 +3328,25 @@ CVAE encoder不仅收到：
 
 Reparameterization正是：
 
-> 把随机源移到独立的 \(\epsilon\) 上。
+> 把随机源移到独立的 $\epsilon$ 上。
 
 我们在 [Reparameterization Trick](../generative-models/reparameterization-trick.md) 已详细讲过。
 
 ---
 
-# 120. L1 继续进入 latent_proj
+## 120. L1 继续进入 latent_proj
 
-\[
+$$
 \mu,\logvar
-\]
+$$
 
 来自：
 
-\[
+$$
 latent\_info
 =
 latent\_proj(h_{CLS})
-\]
+$$
 
 所以：
 
@@ -3354,11 +3354,11 @@ latent\_proj(h_{CLS})
 
 ---
 
-# 121. 再进入 CVAE Transformer Encoder
+## 121. 再进入 CVAE Transformer Encoder
 
-\[
+$$
 h_{CLS}
-\]
+$$
 
 来自：
 
@@ -3370,17 +3370,17 @@ h_{CLS}
 
 这很重要：
 
-\[
+$$
 \boxed{
 \text{CVAE Encoder不是只靠 KL 学习}
 }
-\]
+$$
 
 它同时要帮助 reconstruction。
 
 ---
 
-# 122. L1 最后还能回到 Demonstration Action Projection
+## 122. L1 最后还能回到 Demonstration Action Projection
 
 CVAE Encoder输入包括：
 
@@ -3400,7 +3400,7 @@ encoder_joint_proj
 
 ---
 
-# 123. 但 Demonstration Action Tensor 本身需要 Gradient 吗？
+## 123. 但 Demonstration Action Tensor 本身需要 Gradient 吗？
 
 通常：
 
@@ -3408,9 +3408,9 @@ encoder_joint_proj
 
 Training target：
 
-\[
+$$
 actions
-\]
+$$
 
 是数据，不是可训练 parameter。
 
@@ -3428,7 +3428,7 @@ requires_grad=False
 
 ---
 
-# 124. Input 不需要 requires_grad，不代表 Model Parameters 无法训练
+## 124. Input 不需要 requires_grad，不代表 Model Parameters 无法训练
 
 这是常见误区。
 
@@ -3440,21 +3440,21 @@ x.requires_grad == False
 
 只要：
 
-\[
+$$
 W.requires\_grad=True
-\]
+$$
 
 operation：
 
-\[
+$$
 y=Wx
-\]
+$$
 
 仍会记录足够信息来计算：
 
-\[
+$$
 \frac{\partial L}{\partial W}
-\]
+$$
 
 因为我们需要训练：
 
@@ -3464,17 +3464,17 @@ y=Wx
 
 ---
 
-# 125. KL Branch 又走哪里？
+## 125. KL Branch 又走哪里？
 
 KL只直接依赖：
 
-\[
+$$
 \mu,\logvar
-\]
+$$
 
 官方：
 
-\[
+$$
 KL
 =
 -\frac12
@@ -3484,40 +3484,40 @@ KL
 -\mu_j^2
 -e^{\logvar_j}
 \right)
-\]
+$$
 
 再做 batch reduction。
 
 ---
 
-# 126. KL 对 μ 的 Derivative
+## 126. KL 对 μ 的 Derivative
 
 单维：
 
-\[
+$$
 KL_j
 =
 -\frac12
 (
 1+\logvar_j-\mu_j^2-e^{\logvar_j}
 )
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \frac{\partial KL_j}{\partial\mu_j}
 =
 \mu_j
 }
-\]
+$$
 
 ---
 
-# 127. KL 对 logvar
+## 127. KL 对 logvar
 
-\[
+$$
 \boxed{
 \frac{\partial KL_j}{\partial\logvar_j}
 =
@@ -3526,28 +3526,28 @@ KL_j
 e^{\logvar_j}-1
 )
 }
-\]
+$$
 
 因此：
 
-- \(\mu\)偏离0：
+- $\mu$偏离0：
   > gradient拉回；
 - variance偏离1：
   > gradient相应调整 logvar。
 
 ---
 
-# 128. β 再把 KL Gradient 缩放
+## 128. β 再把 KL Gradient 缩放
 
 总 loss：
 
-\[
+$$
 L=L1+\beta KL
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \left.
 \frac{\partial L}{\partial\mu}
@@ -3555,11 +3555,11 @@ L=L1+\beta KL
 =
 \beta\mu
 }
-\]
+$$
 
 以及：
 
-\[
+$$
 \boxed{
 \left.
 \frac{\partial L}{\partial\logvar}
@@ -3570,17 +3570,17 @@ L=L1+\beta KL
 e^{\logvar}-1
 )
 }
-\]
+$$
 
 忽略 reduction scale。
 
 ---
 
-# 129. μ/logvar 收到两条 Branch
+## 129. μ/logvar 收到两条 Branch
 
 所以真正：
 
-\[
+$$
 \boxed{
 \nabla_\mu L
 =
@@ -3588,9 +3588,9 @@ e^{\logvar}-1
 +
 \beta\nabla_\mu KL
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 \nabla_{\logvar}L
 =
@@ -3598,61 +3598,61 @@ e^{\logvar}-1
 +
 \beta\nabla_{\logvar}KL
 }
-\]
+$$
 
 这就是 CVAE training的 tradeoff在 gradient层面的真实形式。
 
 ---
 
-# 130. Reconstruction Branch 想让 z 编码有用信息
+## 130. Reconstruction Branch 想让 z 编码有用信息
 
 如果某种 latent variation能帮助：
 
-\[
+$$
 a_{hat}
-\]
+$$
 
 更接近 demonstration actions，
 
 L1会推动：
 
-> \(\mu,\logvar\) 产生更有利于 reconstruction的 latent samples。
+> $\mu,\logvar$ 产生更有利于 reconstruction的 latent samples。
 
 ---
 
-# 131. KL Branch 想让 Posterior 靠近 Prior
+## 131. KL Branch 想让 Posterior 靠近 Prior
 
 KL则鼓励：
 
-\[
+$$
 q(z|x,y)
-\]
+$$
 
 靠近：
 
-\[
+$$
 \mathcal N(0,I)
-\]
+$$
 
 所以二者可能存在：
 
 > gradient tension。
 
-这就是 \(\beta\) 需要权衡的原因。
+这就是 $\beta$ 需要权衡的原因。
 
 ---
 
-# 132. 这比“KL 让 μ=0, var=1”更准确
+## 132. 这比“KL 让 μ=0, var=1”更准确
 
 因为每次参数更新看到的是真正总 gradient：
 
-\[
+$$
 \boxed{
 \nabla L_{recon}
 +
 \beta\nabla L_{KL}
 }
-\]
+$$
 
 不是：
 
@@ -3660,29 +3660,29 @@ q(z|x,y)
 
 所以某个样本：
 
-\[
+$$
 \mu\neq0
-\]
+$$
 
 完全正常。
 
 ---
 
-# 133. KL Branch 会训练 Action Head 吗？
+## 133. KL Branch 会训练 Action Head 吗？
 
 **不会直接训练。**
 
 原因：
 
-\[
+$$
 KL
-\]
+$$
 
 只依赖：
 
-\[
+$$
 \mu,\logvar
-\]
+$$
 
 而它们在计算图上位于：
 
@@ -3690,23 +3690,23 @@ KL
 
 不存在：
 
-\[
+$$
 KL\rightarrow action\_head
-\]
+$$
 
 依赖路径。
 
 所以：
 
-\[
+$$
 \boxed{
 \frac{\partial KL}{\partial W_{action}}=0
 }
-\]
+$$
 
 ---
 
-# 134. KL 会训练 Policy Decoder 吗？
+## 134. KL 会训练 Policy Decoder 吗？
 
 同样：
 
@@ -3714,21 +3714,21 @@ KL\rightarrow action\_head
 
 KL在：
 
-\[
+$$
 \mu,\logvar
-\]
+$$
 
 处就结束。
 
 Policy decoder是：
 
-> \(z\) 之后的 downstream reconstruction branch。
+> $z$ 之后的 downstream reconstruction branch。
 
 所以 KL不依赖 decoder output。
 
 ---
 
-# 135. 但 Decoder 可以间接影响未来 Encoder Learning 吗？
+## 135. 但 Decoder 可以间接影响未来 Encoder Learning 吗？
 
 在同一个 instantaneous gradient graph中：
 
@@ -3744,15 +3744,15 @@ Policy decoder是：
 
 所以“没有直接 gradient path”：
 
-\[
+$$
 \neq
-\]
+$$
 
 “训练过程中完全无相互影响”。
 
 ---
 
-# 136. 计算图 Path 与长期 Optimization Coupling 要区分
+## 136. 计算图 Path 与长期 Optimization Coupling 要区分
 
 当前 backward：
 
@@ -3766,7 +3766,7 @@ Policy decoder是：
 
 ---
 
-# 137. ACT 的一个极好的 Graph 例子：`is_pad_head`
+## 137. ACT 的一个极好的 Graph 例子：`is_pad_head`
 
 Model forward计算：
 
@@ -3782,7 +3782,7 @@ is_pad_hat =
 
 ---
 
-# 138. 但当前 Official Policy Loss 用了谁？
+## 138. 但当前 Official Policy Loss 用了谁？
 
 `policy.py` 中：
 
@@ -3810,37 +3810,37 @@ is_pad_hat
 
 ---
 
-# 139. 因此 `is_pad_head` 会怎样？
+## 139. 因此 `is_pad_head` 会怎样？
 
 如果：
 
-\[
+$$
 is\_pad\_hat
-\]
+$$
 
 不再被其他 loss使用，
 
 那么 total loss：
 
-\[
+$$
 L
-\]
+$$
 
 不依赖：
 
-\[
+$$
 W_{is\_pad}
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \frac{\partial L}{\partial W_{is\_pad}}
 =
 0
 }
-\]
+$$
 
 更具体在 Autograd中：
 
@@ -3848,15 +3848,15 @@ W_{is\_pad}
 
 ---
 
-# 140. 这说明“Module 存在”不等于“Module 被训练”
+## 140. 这说明“Module 存在”不等于“Module 被训练”
 
 真正条件：
 
-\[
+$$
 \boxed{
 \text{parameter must lie on a differentiable path to the loss}
 }
-\]
+$$
 
 如果 output被计算出来但最终：
 
@@ -3866,7 +3866,7 @@ W_{is\_pad}
 
 ---
 
-# 141. 同理：打印一个 Tensor 不会让它被训练
+## 141. 同理：打印一个 Tensor 不会让它被训练
 
 只有：
 
@@ -3878,11 +3878,11 @@ W_{is\_pad}
 
 ---
 
-# 142. 如果给 `is_pad_hat` 加 BCE Loss 呢？
+## 142. 如果给 `is_pad_hat` 加 BCE Loss 呢？
 
 例如：
 
-\[
+$$
 L
 =
 L1
@@ -3890,26 +3890,26 @@ L1
 \beta KL
 +
 \lambda L_{pad}
-\]
+$$
 
 其中：
 
-\[
+$$
 L_{pad}
 =
 BCE(
 is\_pad\_hat,
 is\_pad
 )
-\]
+$$
 
 那么：
 
 `is_pad_head` 会收到：
 
-\[
+$$
 \lambda\nabla L_{pad}
-\]
+$$
 
 并且这条 loss还会继续回到：
 
@@ -3917,13 +3917,13 @@ is\_pad
 
 ---
 
-# 143. Shared Trunk 会收到所有 Head Loss 的和
+## 143. Shared Trunk 会收到所有 Head Loss 的和
 
 如果：
 
-\[
+$$
 hs
-\]
+$$
 
 同时送到：
 
@@ -3934,7 +3934,7 @@ hs
 
 那么：
 
-\[
+$$
 \boxed{
 \nabla_{hs}L
 =
@@ -3942,22 +3942,22 @@ hs
 +
 \nabla_{hs}L_{pad}
 }
-\]
+$$
 
 这就是 multi-task learning最基本的 gradient merge。
 
 ---
 
-# 144. Gradient Conflict 是什么？
+## 144. Gradient Conflict 是什么？
 
 如果两条 loss希望 shared parameter往不同方向走，
 
 可能出现：
 
-\[
+$$
 \nabla L_1^\top
 \nabla L_2<0
-\]
+$$
 
 即 gradient方向有冲突。
 
@@ -3971,21 +3971,21 @@ ACT当前主要的两条 objective：
 
 ---
 
-# 145. 为什么 KL Weight 会影响 Representation？
+## 145. 为什么 KL Weight 会影响 Representation？
 
 因为它直接改变：
 
-\[
+$$
 \nabla_{\theta_{encoder}} L
-\]
+$$
 
 中 KL contribution比例。
 
 所以：
 
-\[
+$$
 \beta
-\]
+$$
 
 不是只改变打印出来的 loss数值。
 
@@ -3995,7 +3995,7 @@ ACT当前主要的两条 objective：
 
 ---
 
-# 146. Loss Value Scale 与 Gradient Scale 不完全等同
+## 146. Loss Value Scale 与 Gradient Scale 不完全等同
 
 一个 loss项数值很大：
 
@@ -4005,11 +4005,11 @@ ACT当前主要的两条 objective：
 
 训练真正推动参数的是：
 
-\[
+$$
 \boxed{
 \nabla_\theta L
 }
-\]
+$$
 
 所以分析 multi-loss模型时，
 
@@ -4017,7 +4017,7 @@ gradient norms有时比 raw loss values更有信息。
 
 ---
 
-# 147. 为什么 `loss.backward()` 不会训练 Input Image 本身？
+## 147. 为什么 `loss.backward()` 不会训练 Input Image 本身？
 
 Image tensor通常：
 
@@ -4029,21 +4029,21 @@ requires_grad=False
 
 最终不会把：
 
-\[
+$$
 image.grad
-\]
+$$
 
 作为训练目标积累。
 
 ---
 
-# 148. 如果故意设置 `image.requires_grad=True` 呢？
+## 148. 如果故意设置 `image.requires_grad=True` 呢？
 
 那么可以计算：
 
-\[
+$$
 \frac{\partial L}{\partial image}
-\]
+$$
 
 这就是很多：
 
@@ -4059,7 +4059,7 @@ Backprop不仅能对 parameters求 gradient，
 
 ---
 
-# 149. 所以 Backprop 并不天然只服务“训练 Weight”
+## 149. 所以 Backprop 并不天然只服务“训练 Weight”
 
 它更一般地计算：
 
@@ -4071,19 +4071,19 @@ Goodfellow 等教材也强调：
 
 ---
 
-# 150. 为什么 Gradient-Based Interpretability 会用 Backprop？
+## 150. 为什么 Gradient-Based Interpretability 会用 Backprop？
 
 例如：
 
-\[
+$$
 \nabla_xL
-\]
+$$
 
 或：
 
-\[
+$$
 \nabla_xscore
-\]
+$$
 
 衡量：
 
@@ -4093,7 +4093,7 @@ Captum等解释工具大量利用这个机制。
 
 ---
 
-# 151. 但 Gradient 不自动等于 Causal Explanation
+## 151. 但 Gradient 不自动等于 Causal Explanation
 
 Gradient是：
 
@@ -4109,34 +4109,34 @@ Gradient是：
 
 不能直接把：
 
-\[
+$$
 |\nabla_x|
-\]
+$$
 
 叫做完整因果解释。
 
 ---
 
-# 152. Backprop 到 Attention 时发生什么？
+## 152. Backprop 到 Attention 时发生什么？
 
 Attention：
 
-\[
+$$
 A=
 softmax(
 QK^\top/\sqrt{d_k}
 )
-\]
+$$
 
-\[
+$$
 O=AV
-\]
+$$
 
 Loss对：
 
-\[
+$$
 O
-\]
+$$
 
 的 gradient会分成多个参数路径：
 
@@ -4145,88 +4145,88 @@ O
 
 ---
 
-# 153. V Path
+## 153. V Path
 
 因为：
 
-\[
+$$
 O=AV
-\]
+$$
 
 所以 gradient会进入：
 
-\[
+$$
 V
-\]
+$$
 
 进而进入：
 
-\[
+$$
 W_V
-\]
+$$
 
 和 source hidden states。
 
 ---
 
-# 154. Attention Weight Path
+## 154. Attention Weight Path
 
 同一个：
 
-\[
+$$
 O=AV
-\]
+$$
 
 也给：
 
-\[
+$$
 A
-\]
+$$
 
 gradient。
 
 然后：
 
-\[
+$$
 A=softmax(S)
-\]
+$$
 
 gradient穿过 Softmax进入：
 
-\[
+$$
 S
-\]
+$$
 
 ---
 
-# 155. 再穿过 Score
+## 155. 再穿过 Score
 
-\[
+$$
 S=
 QK^\top/\sqrt{d_k}
-\]
+$$
 
 于是 gradient分别进入：
 
-\[
+$$
 Q
-\]
+$$
 
 和：
 
-\[
+$$
 K
-\]
+$$
 
 最终训练：
 
-\[
+$$
 W_Q,W_K
-\]
+$$
 
 ---
 
-# 156. 所以 Q/K/V Roles 也是 Backprop 塑造出来的
+## 156. 所以 Q/K/V Roles 也是 Backprop 塑造出来的
 
 Loss没有单独标签：
 
@@ -4242,7 +4242,7 @@ Loss没有单独标签：
 
 这就是我们前面说：
 
-\[
+$$
 \boxed{
 Role
 \leftarrow
@@ -4250,37 +4250,37 @@ computation\ graph
 +
 gradient
 }
-\]
+$$
 
 的真正训练机制。
 
 ---
 
-# 157. Backprop 到 Softmax 为什么会 Coupling？
+## 157. Backprop 到 Softmax 为什么会 Coupling？
 
 Softmax：
 
-\[
+$$
 p_i
 =
 \frac{e^{z_i}}{\sum_je^{z_j}}
-\]
+$$
 
 一个 logit：
 
-\[
+$$
 z_j
-\]
+$$
 
 改变会影响：
 
-> 所有 \(p_i\)。
+> 所有 $p_i$。
 
 所以 Softmax Jacobian有 off-diagonal terms：
 
-\[
+$$
 -p_ip_j
-\]
+$$
 
 Backward自然把一个 position的变化：
 
@@ -4288,21 +4288,21 @@ Backward自然把一个 position的变化：
 
 ---
 
-# 158. Backprop 到 LayerNorm 为什么会 Coupling？
+## 158. Backprop 到 LayerNorm 为什么会 Coupling？
 
 LayerNorm：
 
-\[
+$$
 \mu,\sigma^2
-\]
+$$
 
 由一个 token全部 features共同决定。
 
 所以某个：
 
-\[
+$$
 x_j
-\]
+$$
 
 改变：
 
@@ -4314,24 +4314,24 @@ x_j
 
 ---
 
-# 159. Backprop 到 Dropout 呢？
+## 159. Backprop 到 Dropout 呢？
 
 Training中已经采样 mask：
 
-\[
+$$
 m
-\]
+$$
 
 inverted dropout：
 
-\[
+$$
 y=
 \frac{m\odot x}{q}
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \nabla_xL
 =
@@ -4339,35 +4339,35 @@ y=
 \odot
 \nabla_yL
 }
-\]
+$$
 
 被 drop的位置：
 
-\[
+$$
 m=0
-\]
+$$
 
 gradient也是：
 
-\[
+$$
 0
-\]
+$$
 
 ---
 
-# 160. Eval 时 Dropout 是 Identity
+## 160. Eval 时 Dropout 是 Identity
 
 所以：
 
-\[
+$$
 y=x
-\]
+$$
 
 local derivative：
 
-\[
+$$
 I
-\]
+$$
 
 但 evaluation通常：
 
@@ -4375,17 +4375,17 @@ I
 
 ---
 
-# 161. Backprop 经过 Residual 时为什么更容易有直接路径？
+## 161. Backprop 经过 Residual 时为什么更容易有直接路径？
 
-\[
+$$
 y=x+F(x)
-\]
+$$
 
 upstream：
 
-\[
+$$
 g_y
-\]
+$$
 
 addition backward会：
 
@@ -4394,11 +4394,11 @@ addition backward会：
 
 所以至少有：
 
-\[
+$$
 \boxed{
 g_y
 }
-\]
+$$
 
 这个直接 contribution回到 x，
 
@@ -4406,19 +4406,19 @@ g_y
 
 ---
 
-# 162. Post-LN 时为什么又更复杂？
+## 162. Post-LN 时为什么又更复杂？
 
 原始 Transformer：
 
-\[
+$$
 y=LN(x+F(x))
-\]
+$$
 
 upstream gradient先经过：
 
-\[
+$$
 J_{LN}^\top
-\]
+$$
 
 再在 residual addition处分叉。
 
@@ -4430,29 +4430,29 @@ J_{LN}^\top
 
 ---
 
-# 163. Pre-LN
+## 163. Pre-LN
 
-\[
+$$
 y=x+F(LN(x))
-\]
+$$
 
 这里 outermost addition直接给：
 
-\[
+$$
 x
-\]
+$$
 
 一个 identity gradient branch：
 
-\[
+$$
 g_y
-\]
+$$
 
 因此 backward结构不同。
 
 ---
 
-# 164. Backprop 其实把我们之前所有模块串起来了
+## 164. Backprop 其实把我们之前所有模块串起来了
 
 之前分别学：
 
@@ -4477,7 +4477,7 @@ Backprop告诉我们：
 
 ---
 
-# 165. “End-to-End Differentiable” 到底是什么意思？
+## 165. “End-to-End Differentiable” 到底是什么意思？
 
 大致指：
 
@@ -4505,33 +4505,33 @@ L1
 
 ---
 
-# 166. 只要 Graph 中有一个 `detach()` 会怎样？
+## 166. 只要 Graph 中有一个 `detach()` 会怎样？
 
 那条 path在该处停止 gradient。
 
 例如：
 
-\[
+$$
 h_{det}=detach(h)
-\]
+$$
 
 后续：
 
-\[
+$$
 L=f(h_{det})
-\]
+$$
 
 不会给产生：
 
-\[
+$$
 h
-\]
+$$
 
 的上游 parameters传 gradient。
 
 ---
 
-# 167. 但如果 h 还有另一条未 detach 的 Loss Path 呢？
+## 167. 但如果 h 还有另一条未 detach 的 Loss Path 呢？
 
 那上游仍可能：
 
@@ -4543,7 +4543,7 @@ h
 
 ---
 
-# 168. Non-Differentiable Operation 会怎样？
+## 168. Non-Differentiable Operation 会怎样？
 
 有些 operation：
 
@@ -4572,7 +4572,7 @@ h
 
 ---
 
-# 169. 为什么 `argmax` 很难反传？
+## 169. 为什么 `argmax` 很难反传？
 
 输出 index会在大部分小扰动下：
 
@@ -4590,39 +4590,39 @@ h
 
 ---
 
-# 170. ACT 为什么不在训练中做实际 Environment Rollout 再 Backprop？
+## 170. ACT 为什么不在训练中做实际 Environment Rollout 再 Backprop？
 
 ACT是 imitation learning。
 
 Training loss直接比较：
 
-\[
+$$
 a_{hat}
-\]
+$$
 
 和 demonstration：
 
-\[
+$$
 a
-\]
+$$
 
 不需要把 action送进真实机器人 dynamics并对 environment求 gradient。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{policy supervised loss is differentiable internally}
 }
-\]
+$$
 
 ---
 
-# 171. 这和 Model-Based Differentiable Control 不一样
+## 171. 这和 Model-Based Differentiable Control 不一样
 
 有些方法会有：
 
-\[
+$$
 a
 \rightarrow
 dynamics
@@ -4630,7 +4630,7 @@ dynamics
 future\ state
 \rightarrow
 loss
-\]
+$$
 
 如果 dynamics model可微，
 
@@ -4640,7 +4640,7 @@ ACT canonical training没有这条路径。
 
 ---
 
-# 172. Temporal Ensemble 参与 Backprop 吗？
+## 172. Temporal Ensemble 参与 Backprop 吗？
 
 不参与 canonical training。
 
@@ -4654,15 +4654,15 @@ Training loss针对：
 
 所以：
 
-\[
+$$
 \boxed{
 TE\text{ has no training gradient path}
 }
-\]
+$$
 
 ---
 
-# 173. PID Robot Controller 参与 Backprop 吗？
+## 173. PID Robot Controller 参与 Backprop 吗？
 
 也不参与 ACT policy training。
 
@@ -4674,15 +4674,15 @@ TE\text{ has no training gradient path}
 
 所以 controller不在：
 
-\[
+$$
 loss.backward()
-\]
+$$
 
 graph里。
 
 ---
 
-# 174. 为什么把 Training Graph 和 Execution Graph 区分很重要？
+## 174. 为什么把 Training Graph 和 Execution Graph 区分很重要？
 
 模型训练：
 
@@ -4702,7 +4702,7 @@ graph里。
 
 ---
 
-# 175. Optimizer 看不到 Computation Graph 吗？
+## 175. Optimizer 看不到 Computation Graph 吗？
 
 Optimizer通常只拿：
 
@@ -4720,23 +4720,23 @@ optimizer.step()
 
 Backprop已经把所有信息压缩成：
 
-\[
+$$
 \boxed{
 parameter.grad
 }
-\]
+$$
 
 ---
 
-# 176. Adam 做的不是 Backprop
+## 176. Adam 做的不是 Backprop
 
 Adam读取：
 
-\[
+$$
 g_t
 =
 \nabla_\theta L_t
-\]
+$$
 
 然后维护：
 
@@ -4747,21 +4747,21 @@ g_t
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Backprop computes }g_t
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 \text{Adam decides how to use }g_t
 }
-\]
+$$
 
 ---
 
-# 177. Learning Rate 属于哪里？
+## 177. Learning Rate 属于哪里？
 
 属于：
 
@@ -4775,7 +4775,7 @@ g_t
 
 ---
 
-# 178. Gradient Clipping 又在哪里？
+## 178. Gradient Clipping 又在哪里？
 
 通常发生在：
 
@@ -4792,7 +4792,7 @@ optimizer.step之前
 
 ---
 
-# 179. Weight Decay 呢？
+## 179. Weight Decay 呢？
 
 可能通过：
 
@@ -4803,9 +4803,9 @@ optimizer.step之前
 
 若作为 explicit loss：
 
-\[
+$$
 L+\lambda\|W\|^2
-\]
+$$
 
 则它通过 Backprop产生额外 gradient。
 
@@ -4815,7 +4815,7 @@ L+\lambda\|W\|^2
 
 ---
 
-# 180. “Gradient Flow”是什么意思？
+## 180. “Gradient Flow”是什么意思？
 
 通常指：
 
@@ -4833,11 +4833,11 @@ L+\lambda\|W\|^2
 
 ---
 
-# 181. Gradient Vanishing
+## 181. Gradient Vanishing
 
 深链：
 
-\[
+$$
 \frac{\partial L}{\partial x}
 =
 J_n^\top
@@ -4845,25 +4845,25 @@ J_{n-1}^\top
 \cdots
 J_1^\top
 g
-\]
+$$
 
 如果很多 Jacobian的 effective singular values：
 
-\[
+$$
 <1
-\]
+$$
 
 梯度可能指数式衰减。
 
 ---
 
-# 182. Gradient Exploding
+## 182. Gradient Exploding
 
 如果连乘中 effective amplification：
 
-\[
+$$
 >1
-\]
+$$
 
 反复出现，
 
@@ -4871,15 +4871,15 @@ gradient norm可能迅速增大。
 
 ---
 
-# 183. 所以 Chain Rule 既让 Deep Learning 可训练，也创造了 Deep Optimization 问题
+## 183. 所以 Chain Rule 既让 Deep Learning 可训练，也创造了 Deep Optimization 问题
 
 同一个：
 
-\[
+$$
 \boxed{
 \text{Jacobian product}
 }
-\]
+$$
 
 机制，
 
@@ -4894,13 +4894,13 @@ gradient norm可能迅速增大。
 
 ---
 
-# 184. ReLU 为什么有帮助但不彻底解决？
+## 184. ReLU 为什么有帮助但不彻底解决？
 
 active区：
 
-\[
+$$
 ReLU'=1
-\]
+$$
 
 不会额外缩小 gradient。
 
@@ -4919,14 +4919,14 @@ ReLU'=1
 
 ---
 
-# 185. Residual 为什么重要？
+## 185. Residual 为什么重要？
 
 因为：
 
-\[
+$$
 J=
 I+J_F
-\]
+$$
 
 给 gradient一个 identity component，
 
@@ -4936,7 +4936,7 @@ I+J_F
 
 ---
 
-# 186. LayerNorm 为什么又影响 Backprop？
+## 186. LayerNorm 为什么又影响 Backprop？
 
 因为它对 activation尺度和 Jacobian结构进行重参数化。
 
@@ -4946,7 +4946,7 @@ Pre/Post placement甚至决定：
 
 ---
 
-# 187. Backprop 是精确 Gradient 吗？
+## 187. Backprop 是精确 Gradient 吗？
 
 对当前浮点计算图与定义的 local backward rules而言：
 
@@ -4965,7 +4965,7 @@ Pre/Post placement甚至决定：
 
 ---
 
-# 188. Dropout 下的 Gradient 是什么？
+## 188. Dropout 下的 Gradient 是什么？
 
 每次 training forward随机采样一个 mask。
 
@@ -4979,19 +4979,19 @@ Backward计算：
 
 ---
 
-# 189. CVAE z Sampling 同理
+## 189. CVAE z Sampling 同理
 
 每次：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 不同。
 
 Backward得到：
 
-> 当前 \(\epsilon\) sample下的 reparameterized gradient estimate。
+> 当前 $\epsilon$ sample下的 reparameterized gradient estimate。
 
 多次 stochastic batches/samples：
 
@@ -4999,7 +4999,7 @@ Backward得到：
 
 ---
 
-# 190. 这就是 Stochastic Gradient 的另一个来源
+## 190. 这就是 Stochastic Gradient 的另一个来源
 
 不仅 mini-batch sampling会造成 stochasticity。
 
@@ -5015,7 +5015,7 @@ ACT training还可能有：
 
 ---
 
-# 191. Noise 并不意味着 Gradient 没有方向
+## 191. Noise 并不意味着 Gradient 没有方向
 
 如果 estimator合理，
 
@@ -5027,7 +5027,7 @@ ACT training还可能有：
 
 ---
 
-# 192. `detach_dict` 为什么常用于 Logging？
+## 192. `detach_dict` 为什么常用于 Logging？
 
 ACT training会把 forward dict detach后存 history。
 
@@ -5043,7 +5043,7 @@ ACT training会把 forward dict detach后存 history。
 
 ---
 
-# 193. 一个重要工程原则
+## 193. 一个重要工程原则
 
 当某 tensor只用于：
 
@@ -5069,15 +5069,15 @@ tensor.item()
 
 ---
 
-# 194. `.item()` 和 `.detach()` 区别
+## 194. `.item()` 和 `.detach()` 区别
 
-### `.detach()`
+#### `.detach()`
 
 仍是 tensor，
 
 但与 graph断开。
 
-### `.item()`
+#### `.item()`
 
 将单元素 tensor转成：
 
@@ -5087,7 +5087,7 @@ tensor.item()
 
 ---
 
-# 195. 不要在 Loss 计算中乱用 `.item()`
+## 195. 不要在 Loss 计算中乱用 `.item()`
 
 例如：
 
@@ -5097,9 +5097,9 @@ loss = loss1.item() + loss2
 
 那么：
 
-\[
+$$
 loss1
-\]
+$$
 
 已经变成 Python数值，
 
@@ -5113,7 +5113,7 @@ loss1
 
 ---
 
-# 196. 同理 NumPy Conversion 也可能切 Graph
+## 196. 同理 NumPy Conversion 也可能切 Graph
 
 通常：
 
@@ -5131,7 +5131,7 @@ tensor.detach().cpu().numpy()
 
 ---
 
-# 197. 所以 End-to-End Graph 必须保持在 Autograd 支持的 Operations 中
+## 197. 所以 End-to-End Graph 必须保持在 Autograd 支持的 Operations 中
 
 如果中间调用：
 
@@ -5148,7 +5148,7 @@ gradient可能断掉。
 
 ---
 
-# 198. 自定义 `autograd.Function`
+## 198. 自定义 `autograd.Function`
 
 如果实现一个新 operation：
 
@@ -5166,7 +5166,7 @@ Backward接收：
 
 ---
 
-# 199. 为什么 Custom Backward 容易写错？
+## 199. 为什么 Custom Backward 容易写错？
 
 需要确保：
 
@@ -5185,56 +5185,56 @@ Backward接收：
 
 ---
 
-# 200. Broadcasting 的 Backward 为什么需要 Sum？
+## 200. Broadcasting 的 Backward 为什么需要 Sum？
 
 例：
 
-\[
+$$
 y=x+b
-\]
+$$
 
 其中：
 
-\[
+$$
 x:
 [B,D]
-\]
+$$
 
-\[
+$$
 b:
 [D]
-\]
+$$
 
 Forward把 b broadcast到：
 
-\[
+$$
 B
-\]
+$$
 
 个 samples。
 
 所以 backward：
 
-\[
+$$
 \boxed{
 \nabla_bL
 =
 \sum_{i=1}^{B}
 \nabla_{y_i}L
 }
-\]
+$$
 
 这又是 gradient accumulation。
 
 ---
 
-# 201. Linear Bias Gradient 就是典型 Broadcast Reduction
+## 201. Linear Bias Gradient 就是典型 Broadcast Reduction
 
 一个 bias：
 
-\[
+$$
 b_j
-\]
+$$
 
 被：
 
@@ -5248,13 +5248,13 @@ b_j
 
 ---
 
-# 202. 为什么 FFN Bias 能从所有 1202 Tokens 学习？
+## 202. 为什么 FFN Bias 能从所有 1202 Tokens 学习？
 
 因为：
 
-\[
+$$
 b
-\]
+$$
 
 在每个 token forward中都被加一次。
 
@@ -5264,13 +5264,13 @@ Backward时：
 
 ---
 
-# 203. Attention Projection Weight 同样如此
+## 203. Attention Projection Weight 同样如此
 
 同一个：
 
-\[
+$$
 W_Q
-\]
+$$
 
 处理所有 tokens。
 
@@ -5280,7 +5280,7 @@ W_Q
 
 ---
 
-# 204. 一个参数为什么有时 Gradient 恰好是0？
+## 204. 一个参数为什么有时 Gradient 恰好是0？
 
 可能原因很多：
 
@@ -5303,15 +5303,15 @@ grad == 0
 
 ---
 
-# 205. `grad is None` 和 `grad == 0` 也不同
+## 205. `grad is None` 和 `grad == 0` 也不同
 
-### `grad is None`
+#### `grad is None`
 
 可能表示：
 
 > parameter没有参与这次 backward path，或尚未 backward/grad被设None。
 
-### `grad` 是全零 tensor
+#### `grad` 是全零 tensor
 
 表示：
 
@@ -5321,7 +5321,7 @@ Debug时要区分。
 
 ---
 
-# 206. `is_pad_head` 是一个很适合检查 `grad is None` 的例子
+## 206. `is_pad_head` 是一个很适合检查 `grad is None` 的例子
 
 如果 official total loss完全不依赖它，
 
@@ -5333,7 +5333,7 @@ Debug时要区分。
 
 ---
 
-# 207. Freeze Parameter 又是什么？
+## 207. Freeze Parameter 又是什么？
 
 如果：
 
@@ -5354,7 +5354,7 @@ param.requires_grad_(False)
 
 ---
 
-# 208. Freeze 之后下游还能训练吗？
+## 208. Freeze 之后下游还能训练吗？
 
 可以。
 
@@ -5376,7 +5376,7 @@ Head parameters仍然可以：
 
 ---
 
-# 209. 如果只 Freeze Backbone Parameters，输入还可能需要 Gradient 吗？
+## 209. 如果只 Freeze Backbone Parameters，输入还可能需要 Gradient 吗？
 
 如果另有可训练 upstream path或对 input求 gradient：
 
@@ -5388,7 +5388,7 @@ Head parameters仍然可以：
 
 ---
 
-# 210. ACT 如果 Freeze ResNet 会怎样？
+## 210. ACT 如果 Freeze ResNet 会怎样？
 
 L1仍训练：
 
@@ -5404,7 +5404,7 @@ L1仍训练：
 
 ---
 
-# 211. Why Backprop Is Efficient：Shared Subexpressions
+## 211. Why Backprop Is Efficient：Shared Subexpressions
 
 Goodfellow 等教材强调：
 
@@ -5418,9 +5418,9 @@ Backprop存储并复用 forward/intermediate derivative information，
 
 ---
 
-# 212. 一个链
+## 212. 一个链
 
-\[
+$$
 w
 \rightarrow
 x=f(w)
@@ -5428,45 +5428,45 @@ x=f(w)
 y=f(x)
 \rightarrow
 z=f(y)
-\]
+$$
 
 Derivative：
 
-\[
+$$
 \frac{dz}{dw}
 =
 f'(y)
 f'(x)
 f'(w)
-\]
+$$
 
 如果符号展开：
 
-\[
+$$
 f'(f(f(w)))
 f'(f(w))
 f'(w)
-\]
+$$
 
 会重复出现：
 
-\[
+$$
 f(w)
-\]
+$$
 
 等 expressions。
 
 Forward先保存：
 
-\[
+$$
 x,y
-\]
+$$
 
 Backward直接复用。
 
 ---
 
-# 213. 所以 Forward 和 Backward 是一对
+## 213. 所以 Forward 和 Backward 是一对
 
 Forward不仅产生：
 
@@ -5480,7 +5480,7 @@ Forward不仅产生：
 
 ---
 
-# 214. Backward Complexity 大致如何？
+## 214. Backward Complexity 大致如何？
 
 Goodfellow教材指出，
 
@@ -5496,7 +5496,7 @@ Backprop访问 graph edges并执行 local derivative products，
 
 ---
 
-# 215. 这就是为什么百万参数也能训练
+## 215. 这就是为什么百万参数也能训练
 
 如果每个参数都单独 finite-difference：
 
@@ -5512,7 +5512,7 @@ Backprop：
 
 ---
 
-# 216. 历史上 1986 论文的重要性
+## 216. 历史上 1986 论文的重要性
 
 Rumelhart、Hinton、Williams 1986：
 
@@ -5526,7 +5526,7 @@ Rumelhart、Hinton、Williams 1986：
 
 ---
 
-# 217. 但不要说“1986发明了 Chain Rule”
+## 217. 但不要说“1986发明了 Chain Rule”
 
 Chain Rule远早于神经网络。
 
@@ -5534,11 +5534,11 @@ Automatic differentiation、reverse accumulation、neural-network gradient方法
 
 所以更严谨：
 
-\[
+$$
 \boxed{
 \text{1986 paper is a landmark popularization/application of backprop to learning hidden representations}
 }
-\]
+$$
 
 而不是：
 
@@ -5546,21 +5546,21 @@ Automatic differentiation、reverse accumulation、neural-network gradient方法
 
 ---
 
-# 218. Common Misconception 1：Backprop 是把 Loss 数值倒着传
+## 218. Common Misconception 1：Backprop 是把 Loss 数值倒着传
 
 **错误。**
 
 传播的是：
 
-\[
+$$
 \boxed{
 \text{derivatives / gradient information}
 }
-\]
+$$
 
 ---
 
-# 219. Common Misconception 2：Backprop 就是 Gradient Descent
+## 219. Common Misconception 2：Backprop 就是 Gradient Descent
 
 **错误。**
 
@@ -5574,7 +5574,7 @@ Gradient Descent / Adam：
 
 ---
 
-# 220. Common Misconception 3：`loss.backward()` 会直接改 Parameters
+## 220. Common Misconception 3：`loss.backward()` 会直接改 Parameters
 
 **错误。**
 
@@ -5592,7 +5592,7 @@ optimizer.step()
 
 ---
 
-# 221. Common Misconception 4：`optimizer.step()` 会自己算 Gradient
+## 221. Common Misconception 4：`optimizer.step()` 会自己算 Gradient
 
 标准使用中：
 
@@ -5606,7 +5606,7 @@ param.grad
 
 ---
 
-# 222. Common Misconception 5：Backward 是把 Forward Operation 逆过来
+## 222. Common Misconception 5：Backward 是把 Forward Operation 逆过来
 
 **错误。**
 
@@ -5614,7 +5614,7 @@ param.grad
 
 ---
 
-# 223. Common Misconception 6：Operation 必须可逆才能 Backprop
+## 223. Common Misconception 6：Operation 必须可逆才能 Backprop
 
 **错误。**
 
@@ -5624,7 +5624,7 @@ ReLU不可逆，
 
 ---
 
-# 224. Common Misconception 7：所有函数必须 Everywhere Differentiable
+## 224. Common Misconception 7：所有函数必须 Everywhere Differentiable
 
 **错误。**
 
@@ -5632,7 +5632,7 @@ ReLU/L1等不可导点可以采用 subgradient/convention。
 
 ---
 
-# 225. Common Misconception 8：Backprop 会构造整个 Jacobian Matrix
+## 225. Common Misconception 8：Backprop 会构造整个 Jacobian Matrix
 
 通常：
 
@@ -5640,15 +5640,15 @@ ReLU/L1等不可导点可以采用 subgradient/convention。
 
 它计算：
 
-\[
+$$
 J^\top g
-\]
+$$
 
 这类 local products。
 
 ---
 
-# 226. Common Misconception 9：Vector Output 可以直接 `backward()` 而无需说明方向
+## 226. Common Misconception 9：Vector Output 可以直接 `backward()` 而无需说明方向
 
 通常：
 
@@ -5660,53 +5660,53 @@ Non-scalar需要指定：
 
 ---
 
-# 227. Common Misconception 10：Scalar Loss backward 没有初始 Gradient
+## 227. Common Misconception 10：Scalar Loss backward 没有初始 Gradient
 
 其实 seed：
 
-\[
+$$
 \boxed{
 \frac{\partial L}{\partial L}=1
 }
-\]
+$$
 
 ---
 
-# 228. Common Misconception 11：一个节点多条 downstream paths 时随便选一条
+## 228. Common Misconception 11：一个节点多条 downstream paths 时随便选一条
 
 **错误。**
 
 所有 path gradient contributions要：
 
-\[
+$$
 \boxed{
 \text{sum}
 }
-\]
+$$
 
 ---
 
-# 229. Common Misconception 12：Residual Gradient 只来自 Shortcut
+## 229. Common Misconception 12：Residual Gradient 只来自 Shortcut
 
 **错误。**
 
 总 gradient包括：
 
-\[
+$$
 I
-\]
+$$
 
 path和：
 
-\[
+$$
 F
-\]
+$$
 
 branch contribution。
 
 ---
 
-# 230. Common Misconception 13：`.grad` 里只有最后一次 backward结果
+## 230. Common Misconception 13：`.grad` 里只有最后一次 backward结果
 
 PyTorch默认：
 
@@ -5720,7 +5720,7 @@ zero_grad()
 
 ---
 
-# 231. Common Misconception 14：Non-Leaf `.grad=None` 说明没有 Gradient 经过它
+## 231. Common Misconception 14：Non-Leaf `.grad=None` 说明没有 Gradient 经过它
 
 **错误。**
 
@@ -5728,7 +5728,7 @@ zero_grad()
 
 ---
 
-# 232. Common Misconception 15：`requires_grad=True` 说明 Tensor 已经有 Gradient
+## 232. Common Misconception 15：`requires_grad=True` 说明 Tensor 已经有 Gradient
 
 **错误。**
 
@@ -5736,7 +5736,7 @@ zero_grad()
 
 ---
 
-# 233. Common Misconception 16：`model.eval()` 会关闭 Backprop
+## 233. Common Misconception 16：`model.eval()` 会关闭 Backprop
 
 **错误。**
 
@@ -5744,7 +5744,7 @@ zero_grad()
 
 ---
 
-# 234. Common Misconception 17：`torch.no_grad()` 等于 `model.eval()`
+## 234. Common Misconception 17：`torch.no_grad()` 等于 `model.eval()`
 
 **错误。**
 
@@ -5754,7 +5754,7 @@ zero_grad()
 
 ---
 
-# 235. Common Misconception 18：`detach()` 会把 Tensor 变0
+## 235. Common Misconception 18：`detach()` 会把 Tensor 变0
 
 **错误。**
 
@@ -5764,7 +5764,7 @@ gradient history断开。
 
 ---
 
-# 236. Common Misconception 19：`.item()` 可以安全放进 Loss 公式而不影响 Training
+## 236. Common Misconception 19：`.item()` 可以安全放进 Loss 公式而不影响 Training
 
 **错误。**
 
@@ -5772,7 +5772,7 @@ gradient history断开。
 
 ---
 
-# 237. Common Misconception 20：Input 不 requires_grad，模型就不能训练
+## 237. Common Misconception 20：Input 不 requires_grad，模型就不能训练
 
 **错误。**
 
@@ -5780,7 +5780,7 @@ Model parameters只要 requires_grad即可计算 parameter gradients。
 
 ---
 
-# 238. Common Misconception 21：KL Loss 会直接训练 Action Head
+## 238. Common Misconception 21：KL Loss 会直接训练 Action Head
 
 **错误。**
 
@@ -5788,7 +5788,7 @@ Model parameters只要 requires_grad即可计算 parameter gradients。
 
 ---
 
-# 239. Common Misconception 22：L1 Loss 只训练 Decoder
+## 239. Common Misconception 22：L1 Loss 只训练 Decoder
 
 **错误。**
 
@@ -5796,47 +5796,47 @@ Model parameters只要 requires_grad即可计算 parameter gradients。
 
 ---
 
-# 240. Common Misconception 23：Random Sampling z 会把 Gradient 完全切断
+## 240. Common Misconception 23：Random Sampling z 会把 Gradient 完全切断
 
 ACT使用：
 
-\[
+$$
 z=\mu+\sigma\epsilon
-\]
+$$
 
 reparameterization，
 
 所以 pathwise gradient可传回：
 
-\[
+$$
 \mu,\logvar
-\]
+$$
 
 ---
 
-# 241. Common Misconception 24：KL 是唯一训练 μ/logvar 的 Loss
+## 241. Common Misconception 24：KL 是唯一训练 μ/logvar 的 Loss
 
 **错误。**
 
 Reconstruction/L1也通过：
 
-\[
+$$
 z
-\]
+$$
 
 训练它们。
 
 ---
 
-# 242. Common Misconception 25：β=10 表示 KL 对参数影响一定是 L1 的10倍
+## 242. Common Misconception 25：β=10 表示 KL 对参数影响一定是 L1 的10倍
 
 **错误。**
 
 它只是把：
 
-\[
+$$
 \nabla KL
-\]
+$$
 
 乘10。
 
@@ -5844,7 +5844,7 @@ z
 
 ---
 
-# 243. Common Misconception 26：Module 只要存在于模型里就一定被训练
+## 243. Common Misconception 26：Module 只要存在于模型里就一定被训练
 
 **错误。**
 
@@ -5852,7 +5852,7 @@ z
 
 ---
 
-# 244. Common Misconception 27：ACT `is_pad_head` 算出来了，所以一定收到当前 Loss Gradient
+## 244. Common Misconception 27：ACT `is_pad_head` 算出来了，所以一定收到当前 Loss Gradient
 
 当前 official `policy.py` total loss：
 
@@ -5864,7 +5864,7 @@ z
 
 ---
 
-# 245. Common Misconception 28：Temporal Ensemble 参与 ACT Backprop
+## 245. Common Misconception 28：Temporal Ensemble 参与 ACT Backprop
 
 **错误。**
 
@@ -5872,7 +5872,7 @@ z
 
 ---
 
-# 246. Common Misconception 29：机器人 Environment/PID 在 ACT Loss Graph 中
+## 246. Common Misconception 29：机器人 Environment/PID 在 ACT Loss Graph 中
 
 **错误。**
 
@@ -5880,7 +5880,7 @@ Canonical ACT是 offline imitation learning。
 
 ---
 
-# 247. Common Misconception 30：Backprop 只适用于 MLP
+## 247. Common Misconception 30：Backprop 只适用于 MLP
 
 **错误。**
 
@@ -5897,7 +5897,7 @@ Canonical ACT是 offline imitation learning。
 
 ---
 
-# 248. 一张图记住 Backprop
+## 248. 一张图记住 Backprop
 
 ```text
 FORWARD
@@ -5941,7 +5941,7 @@ upstream × local derivative
 
 ---
 
-# 249. 一张图记住 Branch Gradient
+## 249. 一张图记住 Branch Gradient
 
 ```text
           ┌→ branch A ──→ L
@@ -5951,7 +5951,7 @@ x ────────┤
 
 那么：
 
-\[
+$$
 \boxed{
 \nabla_xL
 =
@@ -5959,11 +5959,11 @@ x ────────┤
 +
 \nabla_xL|_B
 }
-\]
+$$
 
 ---
 
-# 250. 一张图记住 Reverse-Mode AD
+## 250. 一张图记住 Reverse-Mode AD
 
 ```text
 Forward:
@@ -5975,23 +5975,23 @@ cotangents / gradients flow ←←←
 
 每个 node只做：
 
-\[
+$$
 \boxed{
 local\ VJP
 }
-\]
+$$
 
 整个 graph自动组合成：
 
-\[
+$$
 \boxed{
 \nabla_\theta L
 }
-\]
+$$
 
 ---
 
-# 251. 一张图记住 ACT Gradient Flow
+## 251. 一张图记住 ACT Gradient Flow
 
 ```text
                      demonstration actions
@@ -6063,17 +6063,17 @@ gradients add.
 
 ---
 
-# 252. ACT 最值得记住的 Gradient 结构
+## 252. ACT 最值得记住的 Gradient 结构
 
 对于 CVAE encoder parameters：
 
-\[
+$$
 \theta_E
-\]
+$$
 
 有：
 
-\[
+$$
 \boxed{
 \nabla_{\theta_E}L
 =
@@ -6082,31 +6082,31 @@ gradients add.
 \beta
 \nabla_{\theta_E}L_{KL}
 }
-\]
+$$
 
 ---
 
 对于 Action Head：
 
-\[
+$$
 \theta_A
-\]
+$$
 
 只有：
 
-\[
+$$
 \boxed{
 \nabla_{\theta_A}L
 =
 \nabla_{\theta_A}L_{L1}
 }
-\]
+$$
 
 因为：
 
-\[
+$$
 KL
-\]
+$$
 
 不依赖 Action Head。
 
@@ -6114,51 +6114,51 @@ KL
 
 对于 Policy Transformer：
 
-\[
+$$
 \theta_P
-\]
+$$
 
 同样主要：
 
-\[
+$$
 \boxed{
 \nabla_{\theta_P}L
 =
 \nabla_{\theta_P}L_{L1}
 }
-\]
+$$
 
 KL不经过它。
 
 ---
 
-# 253. 一句话真正理解 Backpropagation
+## 253. 一句话真正理解 Backpropagation
 
-> **Backpropagation 不是把“预测误差”这个数值从输出层原样倒着传，而是在 forward computation graph 上从 scalar loss 的种子梯度 \(\partial L/\partial L=1\) 开始，按反向拓扑顺序让每个 operation把收到的 upstream gradient与自己的 local Jacobian组合成对输入的 gradient；当一个变量通过多条路径影响 loss 时，这些 contribution自动相加。这样无需显式构造巨大 Jacobian，就能通过一系列局部 VJP 高效得到数百万参数的 \(\nabla_\theta L\)。**
+> **Backpropagation 不是把“预测误差”这个数值从输出层原样倒着传，而是在 forward computation graph 上从 scalar loss 的种子梯度 $\partial L/\partial L=1$ 开始，按反向拓扑顺序让每个 operation把收到的 upstream gradient与自己的 local Jacobian组合成对输入的 gradient；当一个变量通过多条路径影响 loss 时，这些 contribution自动相加。这样无需显式构造巨大 Jacobian，就能通过一系列局部 VJP 高效得到数百万参数的 $\nabla_\theta L$。**
 
 ---
 
-# 254. 一句话理解为什么 Hidden Layer 能学东西
+## 254. 一句话理解为什么 Hidden Layer 能学东西
 
 > **Hidden layer没有自己的人工标签也没有关系：只要它处在 output loss 的可微路径上，最终 loss 对 hidden activation 的敏感度就能通过 Chain Rule继续转化为对该层 weights 的敏感度，因此 supervision可以穿过很多中间模块间接塑造内部 representations；这就是 end-to-end representation learning 的数学基础。**
 
 ---
 
-# 255. 一句话理解 ACT 的 Backprop
+## 255. 一句话理解 ACT 的 Backprop
 
-> **ACT 训练时把 L1 reconstruction 与 \(\beta KL\) 合成一个 scalar loss后只需一次 `loss.backward()`：L1从 action prediction沿 Action Head、Decoder、Cross-Attention、Policy Encoder、视觉 backbone与 latent branch反向传播，并通过 reparameterization继续进入 \(\mu/\logvar\) 和 CVAE Encoder；KL则从 \(\mu/\logvar\) 直接进入 latent projection与 CVAE Encoder，两条 gradient在共享 latent-encoder parameters处相加，因此 CVAE必须同时满足“帮助动作重建”和“靠近 prior”两个训练压力。**
+> **ACT 训练时把 L1 reconstruction 与 $\beta KL$ 合成一个 scalar loss后只需一次 `loss.backward()`：L1从 action prediction沿 Action Head、Decoder、Cross-Attention、Policy Encoder、视觉 backbone与 latent branch反向传播，并通过 reparameterization继续进入 $\mu/\logvar$ 和 CVAE Encoder；KL则从 $\mu/\logvar$ 直接进入 latent projection与 CVAE Encoder，两条 gradient在共享 latent-encoder parameters处相加，因此 CVAE必须同时满足“帮助动作重建”和“靠近 prior”两个训练压力。**
 
 ---
 
-# 256. 下一篇：Gradient Descent
+## 256. 下一篇：Gradient Descent
 
 现在我们已经解决：
 
-\[
+$$
 \boxed{
 \text{Gradient 是怎样算出来的}
 }
-\]
+$$
 
 但是还没有解决另一个问题：
 
@@ -6170,13 +6170,13 @@ KL不经过它。
 
 会从最基础：
 
-\[
+$$
 \theta_{t+1}
 =
 \theta_t
 -
 \eta\nabla_\theta L
-\]
+$$
 
 开始解释：
 
@@ -6198,7 +6198,7 @@ KL不经过它。
 
 ---
 
-## Primary Historical Source
+### Primary Historical Source
 
 David E. Rumelhart, Geoffrey E. Hinton, Ronald J. Williams.
 
@@ -6220,7 +6220,7 @@ Nature 323, 533–536, 1986.
 
 ---
 
-## Core Textbook Source
+### Core Textbook Source
 
 Ian Goodfellow, Yoshua Bengio, Aaron Courville.
 
@@ -6251,7 +6251,7 @@ Section 6.5 系统介绍：
 
 ---
 
-## PyTorch Autograd Primary Reference
+### PyTorch Autograd Primary Reference
 
 PyTorch:
 
@@ -6276,7 +6276,7 @@ Forward执行时会记录产生 tensors 的 operation graph；从 graph roots向
 
 ---
 
-## PyTorch `backward`
+### PyTorch `backward`
 
 - https://docs.pytorch.org/docs/stable/generated/torch.Tensor.backward.html
 - https://docs.pytorch.org/docs/stable/generated/torch.autograd.backward.html
@@ -6295,7 +6295,7 @@ PyTorch计算的是 Jacobian与给定 gradient vector的乘积，而不是默认
 
 ---
 
-## PyTorch Detach / No-Grad
+### PyTorch Detach / No-Grad
 
 - Autograd mechanics:
   https://docs.pytorch.org/docs/stable/notes/autograd
@@ -6306,19 +6306,19 @@ PyTorch计算的是 Jacobian与给定 gradient vector的乘积，而不是默认
 
 重要区别：
 
-### `requires_grad=False`
+#### `requires_grad=False`
 
 控制某些 leaf parameters/tensors是否参与 gradient tracking。
 
-### `detach()`
+#### `detach()`
 
 从当前 graph中切断一个 tensor的 autograd history。
 
-### `torch.no_grad()`
+#### `torch.no_grad()`
 
 让一个代码区域的 operations不被记录到 backward graph。
 
-### `model.eval()`
+#### `model.eval()`
 
 改变 Dropout/BatchNorm等 module behavior，
 
@@ -6326,7 +6326,7 @@ PyTorch计算的是 Jacobian与给定 gradient vector的乘积，而不是默认
 
 ---
 
-## ACT Primary Source
+### ACT Primary Source
 
 Tony Z. Zhao, Vikash Kumar, Sergey Levine, Chelsea Finn.
 
@@ -6342,7 +6342,7 @@ ACT使用 CVAE style objective，将 action-chunk reconstruction与 KL regulariz
 
 ---
 
-## ACT Official Loss
+### ACT Official Loss
 
 Official repository:
 
@@ -6397,7 +6397,7 @@ loss_dict['loss'] =
 
 因此实际优化：
 
-\[
+$$
 \boxed{
 L
 =
@@ -6405,13 +6405,13 @@ L_{L1}
 +
 \beta L_{KL}
 }
-\]
+$$
 
 而不是论文 Algorithm 1 中简写的 MSE reconstruction。
 
 ---
 
-## ACT Reparameterization
+### ACT Reparameterization
 
 `detr/models/detr_vae.py`:
 
@@ -6443,7 +6443,7 @@ def reparametrize(
 
 数学：
 
-\[
+$$
 \boxed{
 z
 =
@@ -6452,27 +6452,27 @@ z
 e^{\frac12\logvar}
 \epsilon
 }
-\]
+$$
 
 因此当前 sampled：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 被当作独立随机 source，
 
 而：
 
-\[
+$$
 z
-\]
+$$
 
 对：
 
-\[
+$$
 \mu,\logvar
-\]
+$$
 
 保持 differentiable path。
 
@@ -6480,7 +6480,7 @@ z
 
 ---
 
-## ACT Training Loop
+### ACT Training Loop
 
 `imitate_episodes.py`:
 
@@ -6514,7 +6514,7 @@ for batch_idx, data in enumerate(
 
 这个顺序正好对应：
 
-\[
+$$
 \boxed{
 Forward
 \rightarrow
@@ -6526,7 +6526,7 @@ Optimizer\ Step
 \rightarrow
 Clear\ Gradients
 }
-\]
+$$
 
 Validation则：
 
@@ -6539,7 +6539,7 @@ with torch.inference_mode():
 
 ---
 
-## ACT `is_pad_head` Gradient Caveat
+### ACT `is_pad_head` Gradient Caveat
 
 Official `detr_vae.py`：
 
@@ -6571,12 +6571,12 @@ is_pad_hat
 
 因此从这条 official objective的 computation graph看：
 
-\[
+$$
 \boxed{
 is\_pad\_head
 \text{ 没有通过 }is\_pad\_hat\text{ 接到 total loss}
 }
-\]
+$$
 
 这是理解 Backprop最直接的真实代码例子之一：
 
@@ -6584,9 +6584,9 @@ is\_pad\_head
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### 数学
+#### 数学
 
 - Derivative
 - Partial Derivative
@@ -6596,7 +6596,7 @@ is\_pad\_head
 - Vector-Jacobian Product
 - Computational Graph
 
-### Deep Learning
+#### Deep Learning
 
 - [Linear Layer](./linear-layer.md)
 - [ReLU](./relu.md)
@@ -6610,7 +6610,7 @@ is\_pad\_head
 - [Layer Normalization](./layer-normalization.md)
 - [Dropout](./dropout.md)
 
-### Transformer
+#### Transformer
 
 - [Attention](./attention.md)
 - [Softmax](./softmax.md)
@@ -6618,20 +6618,20 @@ is\_pad\_head
 - [Transformer Encoder](./transformer-encoder.md)
 - [Transformer Decoder](./transformer-decoder.md)
 
-### Generative Modeling
+#### Generative Modeling
 
 - [VAE](../generative-models/vae.md)
 - [CVAE](../generative-models/cvae.md)
 - [Reparameterization Trick](../generative-models/reparameterization-trick.md)
 - [KL Divergence](../mathematics/kl-divergence.md)
 
-### Robot Learning
+#### Robot Learning
 
 - [ACT Architecture](../robot-learning/act/architecture.md)
 - [CVAE in ACT](../robot-learning/act/cvae-in-act.md)
 - [ACT Training](../robot-learning/act/training.md)
 - [ACT Complete Data Flow](../robot-learning/act/complete-data-flow.md)
 
-### 下一步
+#### 下一步
 
 - Gradient Descent

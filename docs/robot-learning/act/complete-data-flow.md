@@ -15,7 +15,7 @@ updated: "2026-09-15"
 - [Action Chunking](./action-chunking.md)
 - [Temporal Ensemble](./temporal-ensemble.md)
 - [CVAE in ACT](./cvae-in-act.md)
-- [为什么 ACT 推理时令 \(z=0\)？](./why-z-zero-at-inference.md)
+- [为什么 ACT 推理时令 $z=0$？](./why-z-zero-at-inference.md)
 - [ACT Architecture](./architecture.md)
 - [ACT Training](./training.md)
 - [ACT Inference](./inference.md)
@@ -32,45 +32,45 @@ updated: "2026-09-15"
 
 为了让所有 index 都能直接写出来，本文使用一个很小的教学例子：
 
-\[
+$$
 \boxed{k=4}
-\]
+$$
 
 真实 ACT 论文常用：
 
-\[
+$$
 k=100
-\]
+$$
 
-但 \(k=4\) 和 \(k=100\) 的算法逻辑完全相同。
+但 $k=4$ 和 $k=100$ 的算法逻辑完全相同。
 
 ---
 
-# 1. 先约定本文的记号
+## 1. 先约定本文的记号
 
 为了避免论文记号：
 
-\[
+$$
 a_{t:t+k}
-\]
+$$
 
 可能带来的端点歧义，本文明确规定：
 
-> 一个长度为 \(k\) 的 action chunk 覆盖：
+> 一个长度为 $k$ 的 action chunk 覆盖：
 >
-> \[
+> $$
 > t,t+1,\ldots,t+k-1
-> \]
+> $$
 
 因此当：
 
-\[
+$$
 k=4
-\]
+$$
 
 时：
 
-\[
+$$
 A_t
 =
 [
@@ -79,46 +79,46 @@ a_{t+1},
 a_{t+2},
 a_{t+3}
 ]
-\]
+$$
 
 可以把它写成半开区间：
 
-\[
+$$
 a_{t:t+4}
-\]
+$$
 
 本文所有例子都遵守这个 convention。
 
 ---
 
-# 2. 我们先构造一条非常短的 Demonstration
+## 2. 我们先构造一条非常短的 Demonstration
 
 假设一条 human demonstration 有 8 个 timestep：
 
-\[
+$$
 t=0,1,\ldots,7
-\]
+$$
 
 每个 timestep 都记录：
 
-\[
+$$
 o_t
 =
 (
 I_t,q_t
 )
-\]
+$$
 
 其中：
 
-- \(I_t\)：4 路 RGB images；
-- \(q_t\in\mathbb R^{14}\)：当前双臂 joint positions。
+- $I_t$：4 路 RGB images；
+- $q_t\in\mathbb R^{14}$：当前双臂 joint positions。
 
 专家还给出 action：
 
-\[
+$$
 a_t\in\mathbb R^{14}
-\]
+$$
 
 所以整条 episode：
 
@@ -135,61 +135,61 @@ t=7   o7   a7
 
 ACT 的任务不是学习：
 
-\[
+$$
 o_t\rightarrow a_t
-\]
+$$
 
 而是学习：
 
-\[
+$$
 \boxed{
 o_t
 \rightarrow
 [a_t,a_{t+1},a_{t+2},a_{t+3}]
 }
-\]
+$$
 
-在我们的 \(k=4\) 例子里。
+在我们的 $k=4$ 例子里。
 
 ---
 
-# 3. Training Sample：随机抽到 t=2
+## 3. Training Sample：随机抽到 t=2
 
 假设这次 dataset 随机选择：
 
-\[
+$$
 t=2
-\]
+$$
 
 那么当前 observation 是：
 
-\[
+$$
 o_2
-\]
+$$
 
 即：
 
-\[
+$$
 o_2=(I_2,q_2)
-\]
+$$
 
 target action chunk 是：
 
-\[
+$$
 \boxed{
 A_2
 =
 [a_2,a_3,a_4,a_5]
 }
-\]
+$$
 
 所以这一条监督样本可以先粗略写成：
 
-\[
+$$
 \boxed{
 (o_2,A_2)
 }
-\]
+$$
 
 这已经体现了 Action Chunking：
 
@@ -197,25 +197,25 @@ A_2
 
 ---
 
-# 4. 先做数据预处理
+## 4. 先做数据预处理
 
 真实机器人 qpos：
 
-\[
+$$
 q_2
-\]
+$$
 
 不会直接送进模型。
 
 训练集已经统计：
 
-\[
+$$
 \mu_q,\sigma_q
-\]
+$$
 
 所以：
 
-\[
+$$
 \tilde q_2
 =
 \frac{
@@ -223,17 +223,17 @@ q_2-\mu_q
 }{
 \sigma_q
 }
-\]
+$$
 
 同样，每一个 action：
 
-\[
+$$
 a_i
-\]
+$$
 
 也变成 normalized：
 
-\[
+$$
 \tilde a_i
 =
 \frac{
@@ -241,11 +241,11 @@ a_i-\mu_a
 }{
 \sigma_a
 }
-\]
+$$
 
 所以模型真正看到的 target chunk 是：
 
-\[
+$$
 \tilde A_2
 =
 [
@@ -254,21 +254,21 @@ a_i-\mu_a
 \tilde a_4,
 \tilde a_5
 ]
-\]
+$$
 
 图片也经过与训练一致的 image preprocessing。
 
 ---
 
-# 5. 第一次分叉：Training 时 Target Action 有两个用途
+## 5. 第一次分叉：Training 时 Target Action 有两个用途
 
 这是理解 ACT 非常重要的一点。
 
 ground-truth chunk：
 
-\[
+$$
 \tilde A_2
-\]
+$$
 
 一方面是：
 
@@ -276,7 +276,7 @@ ground-truth chunk：
 
 但它还有另一个用途：
 
-> **送进 CVAE encoder，帮助推断 training latent \(z\)。**
+> **送进 CVAE encoder，帮助推断 training latent $z$。**
 
 也就是说，同一份 expert action chunk 会走两条路：
 
@@ -296,7 +296,7 @@ ground-truth A₂ ─────┤
 
 ---
 
-# 6. CVAE Encoder 的输入序列
+## 6. CVAE Encoder 的输入序列
 
 Training 时 encoder 输入：
 
@@ -311,57 +311,57 @@ a₅
 
 因为：
 
-\[
+$$
 k=4
-\]
+$$
 
 所以 sequence length：
 
-\[
+$$
 k+2=6
-\]
+$$
 
 每一个 qpos / action 原本是：
 
-\[
+$$
 14
-\]
+$$
 
 维。
 
 经过 Linear projection 后变成：
 
-\[
+$$
 512
-\]
+$$
 
 维 token。
 
 所以 CVAE encoder 输入可以写成：
 
-\[
+$$
 X_{\text{CVAE}}
 \in
 \mathbb R^{6\times512}
-\]
+$$
 
 忽略 batch dimension。
 
 ---
 
-# 7. Transformer Encoder 让 [CLS] 汇总这条 Demonstration
+## 7. Transformer Encoder 让 [CLS] 汇总这条 Demonstration
 
 经过 BERT-like Transformer encoder：
 
-\[
+$$
 X_{\text{CVAE}}
 \longrightarrow
 H_{\text{CVAE}}
-\]
+$$
 
 仍然有 6 个 contextual hidden states：
 
-\[
+$$
 [
 h_{\mathrm{CLS}},
 h_q,
@@ -370,47 +370,47 @@ h_{a_3},
 h_{a_4},
 h_{a_5}
 ]
-\]
+$$
 
 ACT 只取：
 
-\[
+$$
 \boxed{
 h_{\mathrm{CLS}}
 }
-\]
+$$
 
 然后：
 
-\[
+$$
 h_{\mathrm{CLS}}
 \rightarrow
 \mu,\log\sigma^2
-\]
+$$
 
 官方 latent dimension 为：
 
-\[
+$$
 32
-\]
+$$
 
 所以：
 
-\[
+$$
 \mu\in\mathbb R^{32}
-\]
+$$
 
-\[
+$$
 \log\sigma^2\in\mathbb R^{32}
-\]
+$$
 
 ---
 
-# 8. 现在模型得到的是一个 Distribution，不是一个固定 z
+## 8. 现在模型得到的是一个 Distribution，不是一个固定 z
 
 CVAE encoder 定义：
 
-\[
+$$
 q_\phi(
 z\mid
 \tilde A_2,\tilde q_2
@@ -421,7 +421,7 @@ z\mid
 \mu,
 \operatorname{diag}(\sigma^2)
 \right)
-\]
+$$
 
 这句话非常重要。
 
@@ -431,52 +431,52 @@ Encoder 并不是说：
 
 而是：
 
-> “给定这条 demonstration，我认为合理的 latent \(z\) 分布是这个 Gaussian。”
+> “给定这条 demonstration，我认为合理的 latent $z$ 分布是这个 Gaussian。”
 
 ---
 
-# 9. Reparameterization：从 Posterior 中采样
+## 9. Reparameterization：从 Posterior 中采样
 
 采：
 
-\[
+$$
 \epsilon
 \sim
 \mathcal N(0,I)
-\]
+$$
 
 然后：
 
-\[
+$$
 \boxed{
 z
 =
 \mu+\sigma\odot\epsilon
 }
-\]
+$$
 
 得到：
 
-\[
+$$
 z\in\mathbb R^{32}
-\]
+$$
 
-这个 \(z\)：
+这个 $z$：
 
 - 不是 `[CLS]`；
-- 不是 \(\mu\)；
-- 不是 \(\epsilon\)；
+- 不是 $\mu$；
+- 不是 $\epsilon$；
 - 是从 learned posterior 中得到的 latent sample。
 
 ---
 
-# 10. 到这里，CVAE Encoder 的工作结束了
+## 10. 到这里，CVAE Encoder 的工作结束了
 
 现在 Training Branch 已经得到：
 
-\[
+$$
 z
-\]
+$$
 
 接下来进入真正负责动作预测的：
 
@@ -484,15 +484,15 @@ z
 
 它的输入是：
 
-\[
+$$
 (I_2,\tilde q_2,z)
-\]
+$$
 
 而不是：
 
-\[
+$$
 A_2
-\]
+$$
 
 注意：
 
@@ -500,121 +500,121 @@ A_2
 
 它只通过：
 
-\[
+$$
 z
-\]
+$$
 
 间接影响 training policy。
 
 ---
 
-# 11. 4 张图片进入 ResNet18
+## 11. 4 张图片进入 ResNet18
 
 当前时刻：
 
-\[
+$$
 t=2
-\]
+$$
 
 有 4 张：
 
-\[
+$$
 480\times640
-\]
+$$
 
 RGB images。
 
 每张经过 ResNet18：
 
-\[
+$$
 480\times640\times3
 \rightarrow
 15\times20\times512
-\]
+$$
 
 flatten spatial dimensions：
 
-\[
+$$
 15\times20=300
-\]
+$$
 
 所以每张：
 
-\[
+$$
 300\times512
-\]
+$$
 
 四张合起来：
 
-\[
+$$
 \boxed{
 1200\times512
 }
-\]
+$$
 
 visual tokens。
 
 ---
 
-# 12. qpos 和 z 也变成 Token
+## 12. qpos 和 z 也变成 Token
 
 normalized qpos：
 
-\[
+$$
 \tilde q_2\in\mathbb R^{14}
-\]
+$$
 
 投影：
 
-\[
+$$
 14\rightarrow512
-\]
+$$
 
 得到：
 
-\[
+$$
 e_q\in\mathbb R^{512}
-\]
+$$
 
 latent：
 
-\[
+$$
 z\in\mathbb R^{32}
-\]
+$$
 
 投影：
 
-\[
+$$
 32\rightarrow512
-\]
+$$
 
 得到：
 
-\[
+$$
 e_z\in\mathbb R^{512}
-\]
+$$
 
 于是 policy encoder 输入一共：
 
-\[
+$$
 1200+1+1
 =
 1202
-\]
+$$
 
 个 token。
 
 ---
 
-# 13. Policy Transformer Encoder 融合 Current Context
+## 13. Policy Transformer Encoder 融合 Current Context
 
 输入：
 
-\[
+$$
 X_{\text{policy}}
 \in
 \mathbb R^{1202\times512}
-\]
+$$
 
 其中包含：
 
@@ -626,49 +626,49 @@ joint token
 
 经过多层 self-attention：
 
-\[
+$$
 X_{\text{policy}}
 \longrightarrow
 M_2
-\]
+$$
 
 得到：
 
-\[
+$$
 \boxed{
 M_2\in\mathbb R^{1202\times512}
 }
-\]
+$$
 
 这个：
 
-\[
+$$
 M_2
-\]
+$$
 
 就是当前时刻：
 
-\[
+$$
 t=2
-\]
+$$
 
 的 observation memory。
 
 ---
 
-# 14. k=4，所以 Decoder 有 4 个 Action Slots
+## 14. k=4，所以 Decoder 有 4 个 Action Slots
 
 现在我们需要预测：
 
-\[
+$$
 [
 a_2,a_3,a_4,a_5
 ]
-\]
+$$
 
 所以 decoder 有 4 个 action query positions：
 
-\[
+$$
 Q=
 [
 q^{action}_0,
@@ -676,7 +676,7 @@ q^{action}_1,
 q^{action}_2,
 q^{action}_3
 ]
-\]
+$$
 
 可以直觉理解为：
 
@@ -695,15 +695,15 @@ query 3 → chunk 第 3 个 action
 
 ---
 
-# 15. Decoder 读取 Encoder Memory
+## 15. Decoder 读取 Encoder Memory
 
 每个 action slot 通过 cross-attention：
 
-\[
+$$
 Q
 \rightarrow
 M_2
-\]
+$$
 
 读取：
 
@@ -713,21 +713,21 @@ M_2
 
 得到：
 
-\[
+$$
 H_{\text{dec}}
 \in
 \mathbb R^{4\times512}
-\]
+$$
 
 然后 action head：
 
-\[
+$$
 512\rightarrow14
-\]
+$$
 
 所以输出：
 
-\[
+$$
 \boxed{
 \hat A_2
 =
@@ -740,19 +740,19 @@ H_{\text{dec}}
 \in
 \mathbb R^{4\times14}
 }
-\]
+$$
 
 ---
 
-# 16. 训练时不会真正执行这 4 个预测
+## 16. 训练时不会真正执行这 4 个预测
 
 这是训练和 inference 最根本的区别之一。
 
 Training 时：
 
-\[
+$$
 \hat A_2
-\]
+$$
 
 只是一个 prediction。
 
@@ -766,19 +766,19 @@ Training 时：
 
 而是直接与 demonstration target：
 
-\[
+$$
 \tilde A_2
-\]
+$$
 
 比较。
 
 ---
 
-# 17. Reconstruction Loss
+## 17. Reconstruction Loss
 
 实际 ACT implementation 使用 L1：
 
-\[
+$$
 \boxed{
 L_{\text{recon}}
 =
@@ -788,7 +788,7 @@ L_{\text{recon}}
 \tilde A_2
 )
 }
-\]
+$$
 
 如果 episode 尾部存在 padding，
 
@@ -796,42 +796,42 @@ L_{\text{recon}}
 
 我们的例子：
 
-\[
+$$
 t=2
-\]
+$$
 
 离 episode 结尾还够远，
 
 所以：
 
-\[
+$$
 a_2,a_3,a_4,a_5
-\]
+$$
 
 全部是真实动作，不需要 padding。
 
 ---
 
-# 18. 同时计算 KL
+## 18. 同时计算 KL
 
 posterior：
 
-\[
+$$
 q_\phi(
 z\mid
 \tilde A_2,\tilde q_2
 )
-\]
+$$
 
 被 regularize toward：
 
-\[
+$$
 p(z)=\mathcal N(0,I)
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 L_{KL}
 =
@@ -842,11 +842,11 @@ q_\phi(z|\cdot)
 \mathcal N(0,I)
 \right)
 }
-\]
+$$
 
 最终：
 
-\[
+$$
 \boxed{
 L
 =
@@ -854,23 +854,23 @@ L_{\text{recon}}
 +
 \beta L_{KL}
 }
-\]
+$$
 
 原始 ACT：
 
-\[
+$$
 \beta=10
-\]
+$$
 
 ---
 
-# 19. 一次 Backward 会同时训练哪些东西？
+## 19. 一次 Backward 会同时训练哪些东西？
 
 从 L1：
 
-\[
+$$
 L_{\text{recon}}
-\]
+$$
 
 梯度会经过：
 
@@ -886,9 +886,9 @@ ResNet / qpos projection / z projection
 
 同时由于：
 
-\[
+$$
 z=\mu+\sigma\epsilon
-\]
+$$
 
 reconstruction gradient 还能继续：
 
@@ -902,9 +902,9 @@ CVAE Encoder
 
 而 KL 又直接训练：
 
-\[
+$$
 \mu,\sigma
-\]
+$$
 
 对应的 posterior。
 
@@ -914,7 +914,7 @@ CVAE Encoder
 
 ---
 
-# 20. 这一个 Training Sample 做完之后发生什么？
+## 20. 这一个 Training Sample 做完之后发生什么？
 
 optimizer：
 
@@ -933,29 +933,29 @@ parameters change
 
 例如下一次可能选：
 
-\[
+$$
 t=3
-\]
+$$
 
 则 target 变成：
 
-\[
+$$
 A_3
 =
 [a_3,a_4,a_5,a_6]
-\]
+$$
 
 你会发现：
 
-\[
+$$
 A_2
-\]
+$$
 
 和：
 
-\[
+$$
 A_3
-\]
+$$
 
 高度 overlap。
 
@@ -963,7 +963,7 @@ A_3
 
 ---
 
-# 21. Training 到这里结束，下面进入 Inference
+## 21. Training 到这里结束，下面进入 Inference
 
 现在假设模型已经训练好了。
 
@@ -980,19 +980,19 @@ CVAE training encoder 仍然存在于 checkpoint 参数中，
 
 ---
 
-# 22. Inference t=0：第一次看到环境
+## 22. Inference t=0：第一次看到环境
 
 机器人刚 reset。
 
 获得：
 
-\[
+$$
 o_0=(I_0,q_0)
-\]
+$$
 
 qpos normalize：
 
-\[
+$$
 \tilde q_0
 =
 \frac{
@@ -1000,38 +1000,38 @@ q_0-\mu_q
 }{
 \sigma_q
 }
-\]
+$$
 
 图片做相同 preprocessing。
 
 然后：
 
-\[
+$$
 \boxed{z=0}
-\]
+$$
 
 注意：
 
-- 不计算 \(\mu\)；
-- 不计算 \(\sigma\)；
+- 不计算 $\mu$；
+- 不计算 $\sigma$；
 - 不运行 CVAE encoder；
 - 不需要 future ground-truth actions。
 
 ---
 
-# 23. t=0：Policy 输出第一个 Chunk
+## 23. t=0：Policy 输出第一个 Chunk
 
 policy：
 
-\[
+$$
 \pi_\theta(
 o_0,z=0
 )
-\]
+$$
 
 得到：
 
-\[
+$$
 \hat A_0^{(0)}
 =
 [
@@ -1040,13 +1040,13 @@ o_0,z=0
 \hat a_2^{(0)},
 \hat a_3^{(0)}
 ]
-\]
+$$
 
 这里我把整个 chunk 上标也写成：
 
-\[
+$$
 (0)
-\]
+$$
 
 表示：
 
@@ -1054,7 +1054,7 @@ o_0,z=0
 
 ---
 
-# 24. t=0：Buffer 里有什么？
+## 24. t=0：Buffer 里有什么？
 
 目前只有一个 chunk。
 
@@ -1069,35 +1069,35 @@ query 0   a₀⁰     a₁⁰     a₂⁰     a₃⁰
 
 当前 execution time：
 
-\[
+$$
 t=0
-\]
+$$
 
 只有：
 
-\[
+$$
 \hat a_0^{(0)}
-\]
+$$
 
 所以 Temporal Ensemble 退化成：
 
-\[
+$$
 a_0^{norm}
 =
 \hat a_0^{(0)}
-\]
+$$
 
 没有真正的“ensemble”。
 
 ---
 
-# 25. t=0：De-normalize 并执行
+## 25. t=0：De-normalize 并执行
 
 policy output 仍在 normalized action space。
 
 所以：
 
-\[
+$$
 a_0
 =
 a_0^{norm}
@@ -1105,13 +1105,13 @@ a_0^{norm}
 \sigma_a
 +
 \mu_a
-\]
+$$
 
 得到真实：
 
-\[
+$$
 14
-\]
+$$
 
 维 target joint positions。
 
@@ -1131,7 +1131,7 @@ robot moves
 
 ---
 
-# 26. t=1：ACT 不会直接执行刚才 Chunk 中的 a₁⁰
+## 26. t=1：ACT 不会直接执行刚才 Chunk 中的 a₁⁰
 
 这是最终 ACT 与 naive chunk execution 的关键区别。
 
@@ -1139,9 +1139,9 @@ robot moves
 
 > 现在直接执行：
 
-\[
+$$
 \hat a_1^{(0)}
-\]
+$$
 
 就行。
 
@@ -1151,17 +1151,17 @@ robot moves
 
 获取：
 
-\[
+$$
 o_1
-\]
+$$
 
 然后再运行 policy。
 
 ---
 
-# 27. t=1：产生第二个 Chunk
+## 27. t=1：产生第二个 Chunk
 
-\[
+$$
 \hat A_1^{(1)}
 =
 [
@@ -1170,7 +1170,7 @@ o_1
 \hat a_3^{(1)},
 \hat a_4^{(1)}
 ]
-\]
+$$
 
 现在 buffer：
 
@@ -1185,77 +1185,77 @@ query 1           a₁¹     a₂¹     a₃¹     a₄¹
 
 ---
 
-# 28. t=1：为什么有两个候选？
+## 28. t=1：为什么有两个候选？
 
 因为 execution time：
 
-\[
+$$
 1
-\]
+$$
 
 已经被两个 chunks 预测过：
 
-### query 0 的旧预测
+#### query 0 的旧预测
 
-\[
+$$
 \hat a_1^{(0)}
-\]
+$$
 
 它是在：
 
-\[
+$$
 o_0
-\]
+$$
 
 基础上提前一步预测的。
 
-### query 1 的新预测
+#### query 1 的新预测
 
-\[
+$$
 \hat a_1^{(1)}
-\]
+$$
 
 它已经看到了最新：
 
-\[
+$$
 o_1
-\]
+$$
 
 ---
 
-# 29. t=1：Temporal Ensemble
+## 29. t=1：Temporal Ensemble
 
 按照从旧到新排列：
 
-\[
+$$
 A_1=
 [
 \hat a_1^{(0)},
 \hat a_1^{(1)}
 ]
-\]
+$$
 
 权重：
 
-\[
+$$
 w_0=e^{-m\cdot0}=1
-\]
+$$
 
-\[
+$$
 w_1=e^{-m}
-\]
+$$
 
 归一化：
 
-\[
+$$
 \alpha_i
 =
 \frac{w_i}{w_0+w_1}
-\]
+$$
 
 最终：
 
-\[
+$$
 \boxed{
 a_1^{norm}
 =
@@ -1265,29 +1265,29 @@ a_1^{norm}
 \alpha_1
 \hat a_1^{(1)}
 }
-\]
+$$
 
 然后 de-normalize 并执行。
 
 ---
 
-# 30. t=2：第三次 Re-plan
+## 30. t=2：第三次 Re-plan
 
 机器人执行完：
 
-\[
+$$
 a_1
-\]
+$$
 
 后，环境来到：
 
-\[
+$$
 o_2
-\]
+$$
 
 重新 forward：
 
-\[
+$$
 \hat A_2^{(2)}
 =
 [
@@ -1296,7 +1296,7 @@ o_2
 \hat a_4^{(2)},
 \hat a_5^{(2)}
 ]
-\]
+$$
 
 现在：
 
@@ -1312,49 +1312,49 @@ q2                         a₂²     a₃²     a₄²     a₅²
 
 当前：
 
-\[
+$$
 t=2
-\]
+$$
 
 有三个候选：
 
-\[
+$$
 \hat a_2^{(0)}
-\]
+$$
 
-\[
+$$
 \hat a_2^{(1)}
-\]
+$$
 
-\[
+$$
 \hat a_2^{(2)}
-\]
+$$
 
 ---
 
-# 31. t=2：三个不同 Observation 对同一个执行时刻投票
+## 31. t=2：三个不同 Observation 对同一个执行时刻投票
 
 注意它们的目标都是：
 
-\[
+$$
 \boxed{
 \text{execution time}=2
 }
-\]
+$$
 
 但产生它们时看到的信息分别是：
 
-\[
+$$
 o_0
-\]
+$$
 
-\[
+$$
 o_1
-\]
+$$
 
-\[
+$$
 o_2
-\]
+$$
 
 所以可以想成：
 
@@ -1373,75 +1373,75 @@ Temporal Ensemble 把三者组合。
 
 ---
 
-# 32. t=3：第一次积累满 k=4 个候选
+## 32. t=3：第一次积累满 k=4 个候选
 
 在：
 
-\[
+$$
 t=3
-\]
+$$
 
 新 chunk：
 
-\[
+$$
 [
 \hat a_3^{(3)},
 \hat a_4^{(3)},
 \hat a_5^{(3)},
 \hat a_6^{(3)}
 ]
-\]
+$$
 
 现在 execution time 3 的候选：
 
-\[
+$$
 \boxed{
 \hat a_3^{(0)},
 \hat a_3^{(1)},
 \hat a_3^{(2)},
 \hat a_3^{(3)}
 }
-\]
+$$
 
 正好：
 
-\[
+$$
 4=k
-\]
+$$
 
 从此进入 episode 中间以后，
 
 当前 timestep 通常最多保持：
 
-\[
+$$
 k
-\]
+$$
 
 个候选。
 
 ---
 
-# 33. 为什么 t=4 时不会变成 5 个？
+## 33. 为什么 t=4 时不会变成 5 个？
 
 看覆盖：
 
 query 0 的 chunk：
 
-\[
+$$
 0,1,2,3
-\]
+$$
 
 它并没有预测：
 
-\[
+$$
 t=4
-\]
+$$
 
 所以到了：
 
-\[
+$$
 t=4
-\]
+$$
 
 候选来自：
 
@@ -1452,9 +1452,9 @@ t=4
 
 仍然是：
 
-\[
+$$
 4
-\]
+$$
 
 个。
 
@@ -1473,7 +1473,7 @@ t=5:
 
 ---
 
-# 34. 这就是 ACT 的 Rolling Action-Chunk Window
+## 34. 这就是 ACT 的 Rolling Action-Chunk Window
 
 从整个 rollout 看：
 
@@ -1496,13 +1496,13 @@ t=4          [4 5 6 7]
 
 ---
 
-# 35. Training 和 Inference 中“同一个 Chunk”其实角色不同
+## 35. Training 和 Inference 中“同一个 Chunk”其实角色不同
 
 Training：
 
-\[
+$$
 A_t
-\]
+$$
 
 是：
 
@@ -1510,19 +1510,19 @@ A_t
 
 模型的任务：
 
-\[
+$$
 \hat A_t
 \approx
 A_t
-\]
+$$
 
 ---
 
 Inference：
 
-\[
+$$
 \hat A_t
-\]
+$$
 
 是：
 
@@ -1546,15 +1546,15 @@ Inference：
 
 ---
 
-# 36. Training 和 Inference 中 z 的角色也不同
+## 36. Training 和 Inference 中 z 的角色也不同
 
-## Training
+### Training
 
-\[
+$$
 z
 \sim
 q_\phi(z\mid A_t,q_t)
-\]
+$$
 
 它可以随不同 demonstration 改变。
 
@@ -1564,11 +1564,11 @@ q_\phi(z\mid A_t,q_t)
 
 ---
 
-## Inference
+### Inference
 
-\[
+$$
 \boxed{z=0}
-\]
+$$
 
 固定。
 
@@ -1588,28 +1588,28 @@ fixed canonical latent
 
 ---
 
-# 37. 一个非常重要的总关系
+## 37. 一个非常重要的总关系
 
 ACT 真正 deployed 的 policy 不是：
 
-\[
+$$
 o_t
 \rightarrow a_t
-\]
+$$
 
 而是：
 
-\[
+$$
 \boxed{
 (o_t,z=0)
 \rightarrow
 \hat A_t
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 \hat A_t
 =
 [
@@ -1617,7 +1617,7 @@ o_t
 \ldots,
 \hat a_{t+k-1}
 ]
-\]
+$$
 
 然后 execution layer 再把：
 
@@ -1625,33 +1625,33 @@ o_t
 
 组合成当前：
 
-\[
+$$
 a_t
-\]
+$$
 
 所以 ACT 有两个明显层次：
 
-## Prediction Layer
+### Prediction Layer
 
-\[
+$$
 o_t
 \rightarrow
 \text{action chunk}
-\]
+$$
 
-## Execution Layer
+### Execution Layer
 
-\[
+$$
 \text{overlapping chunks}
 \rightarrow
 \text{current action}
-\]
+$$
 
 Temporal Ensemble 属于第二层。
 
 ---
 
-# 38. Transformer 在这条完整链里到底负责什么？
+## 38. Transformer 在这条完整链里到底负责什么？
 
 现在可以非常清楚地回答。
 
@@ -1667,17 +1667,17 @@ Transformer **不是**：
 
 ---
 
-## CVAE Transformer Encoder
+### CVAE Transformer Encoder
 
 Training only：
 
-\[
+$$
 [CLS]+q+A
 \rightarrow
 h_{CLS}
 \rightarrow
 \mu,\log\sigma^2
-\]
+$$
 
 目的：
 
@@ -1685,7 +1685,7 @@ h_{CLS}
 
 ---
 
-## Policy Transformer
+### Policy Transformer
 
 Training + Inference：
 
@@ -1707,7 +1707,7 @@ future action sequence
 
 ---
 
-# 39. ResNet 在整条链里只负责视觉编码
+## 39. ResNet 在整条链里只负责视觉编码
 
 ResNet 不知道：
 
@@ -1717,11 +1717,11 @@ ResNet 不知道：
 
 它只做：
 
-\[
+$$
 I_t
 \rightarrow
 \text{visual feature sequence}
-\]
+$$
 
 然后这些 features 才进入 Transformer。
 
@@ -1746,47 +1746,47 @@ Temporal Ensemble
 
 ---
 
-# 40. Action Chunking 到底发生在哪？
+## 40. Action Chunking 到底发生在哪？
 
 其实存在三个层面的体现。
 
-## 数据层
+### 数据层
 
 training target：
 
-\[
+$$
 A_t
 =
 [a_t,\ldots,a_{t+k-1}]
-\]
+$$
 
 ---
 
-## 网络层
+### 网络层
 
 decoder 有：
 
-\[
+$$
 k
-\]
+$$
 
 个 action-query positions，
 
 一次输出：
 
-\[
+$$
 k\times14
-\]
+$$
 
 ---
 
-## 推理层
+### 推理层
 
 每次 query 都产生长度：
 
-\[
+$$
 k
-\]
+$$
 
 的 future prediction window。
 
@@ -1798,7 +1798,7 @@ k
 
 ---
 
-# 41. Temporal Ensemble 到底发生在哪？
+## 41. Temporal Ensemble 到底发生在哪？
 
 只发生在：
 
@@ -1813,17 +1813,17 @@ k
 
 可以写成：
 
-\[
+$$
 \boxed{
 \text{Temporal Ensemble}
 =
 \text{post-policy inference aggregation}
 }
-\]
+$$
 
 ---
 
-# 42. KL 到底发生在哪？
+## 42. KL 到底发生在哪？
 
 只发生在：
 
@@ -1831,15 +1831,15 @@ k
 
 它约束：
 
-\[
+$$
 q_\phi(z\mid A,q)
-\]
+$$
 
 靠近：
 
-\[
+$$
 N(0,I)
-\]
+$$
 
 它不直接平滑动作，
 
@@ -1847,33 +1847,33 @@ N(0,I)
 
 ---
 
-# 43. Normalization 到底发生在哪？
+## 43. Normalization 到底发生在哪？
 
 它横跨 train 和 test。
 
 Training：
 
-\[
+$$
 q,a
 \rightarrow
 \text{normalized coordinates}
-\]
+$$
 
 Inference input：
 
-\[
+$$
 q_{\text{physical}}
 \rightarrow
 q_{\text{norm}}
-\]
+$$
 
 Inference output：
 
-\[
+$$
 a_{\text{norm}}
 \rightarrow
 a_{\text{physical}}
-\]
+$$
 
 所以 normalization statistics 实际上也是：
 
@@ -1881,13 +1881,13 @@ a_{\text{physical}}
 
 ---
 
-# 44. 一个从训练到部署的完整生命周期
+## 44. 一个从训练到部署的完整生命周期
 
 可以把 ACT 整个项目理解成 4 个阶段。
 
 ---
 
-## Phase 1：Collect Demonstrations
+### Phase 1：Collect Demonstrations
 
 Human：
 
@@ -1901,19 +1901,19 @@ record leader joint positions as actions
 
 得到：
 
-\[
+$$
 \mathcal D
-\]
+$$
 
 ---
 
-## Phase 2：Train
+### Phase 2：Train
 
 不断采：
 
-\[
+$$
 (o_t,A_t)
-\]
+$$
 
 然后：
 
@@ -1930,20 +1930,20 @@ L1 + β KL
 
 ---
 
-## Phase 3：Select Checkpoint
+### Phase 3：Select Checkpoint
 
 validation：
 
-\[
+$$
 \rightarrow
 policy\_best.ckpt
-\]
+$$
 
 保存 normalization stats。
 
 ---
 
-## Phase 4：Rollout
+### Phase 4：Rollout
 
 每 timestep：
 
@@ -1963,21 +1963,21 @@ new observation
 
 ---
 
-# 45. 为什么 ACT 不是“训练时预测 Chunk，推理时预测单步”？
+## 45. 为什么 ACT 不是“训练时预测 Chunk，推理时预测单步”？
 
 因为 inference policy forward 仍然输出：
 
-\[
+$$
 k
-\]
+$$
 
 个 actions。
 
 只是 execution layer 最终只从 overlapping chunks 中选出：
 
-\[
+$$
 \text{current timestep}
-\]
+$$
 
 真正执行的一个 action。
 
@@ -1989,31 +1989,31 @@ execution layer 才把多个 chunk prediction 转成逐 timestep 控制。
 
 ---
 
-# 46. 为什么每一步重新 Query 不破坏“预测未来”的意义？
+## 46. 为什么每一步重新 Query 不破坏“预测未来”的意义？
 
 假设：
 
-\[
+$$
 t=0
-\]
+$$
 
 模型预测：
 
-\[
+$$
 a_0,a_1,a_2,a_3
-\]
+$$
 
 虽然它最终马上只执行：
 
-\[
+$$
 a_0
-\]
+$$
 
 但在形成：
 
-\[
+$$
 a_0
-\]
+$$
 
 对应 hidden representation 时，
 
@@ -2031,17 +2031,17 @@ decoder 的 future action slots 可以相互 self-attend。
 
 ---
 
-# 47. 为什么 ACT 可以理解成“局部计划 + 高频重规划”？
+## 47. 为什么 ACT 可以理解成“局部计划 + 高频重规划”？
 
 这是非常好的高层直觉。
 
 每个 forward：
 
-\[
+$$
 o_t
 \rightarrow
 \hat A_t
-\]
+$$
 
 可以看成：
 
@@ -2075,7 +2075,7 @@ re-plan
 
 ---
 
-# 48. 一个完整 k=4 Timeline
+## 48. 一个完整 k=4 Timeline
 
 现在把 training 与 rollout 放进一张图。
 
@@ -2178,7 +2178,7 @@ weighted average
 
 ---
 
-# 49. 如果把所有复杂名词都拿掉，ACT 实际上在做什么？
+## 49. 如果把所有复杂名词都拿掉，ACT 实际上在做什么？
 
 训练：
 
@@ -2186,7 +2186,7 @@ weighted average
 
 但 human demonstrations 不完全一致，
 
-所以训练时额外允许一个受约束 latent \(z\) 去解释 variation。
+所以训练时额外允许一个受约束 latent $z$ 去解释 variation。
 
 ---
 
@@ -2206,7 +2206,7 @@ ACT 把它们做 weighted ensemble，
 
 ---
 
-# 50. 为什么这套设计适合 Fine Manipulation？
+## 50. 为什么这套设计适合 Fine Manipulation？
 
 论文的问题背景是：
 
@@ -2214,7 +2214,7 @@ ACT 把它们做 weighted ensemble，
 
 这意味着同时需要：
 
-### 长一点的行为结构
+#### 长一点的行为结构
 
 不能只把每一步当作完全独立动作。
 
@@ -2224,7 +2224,7 @@ ACT 把它们做 weighted ensemble，
 
 ---
 
-### 高频反馈
+#### 高频反馈
 
 机器人实际执行总会有偏差。
 
@@ -2234,7 +2234,7 @@ ACT 把它们做 weighted ensemble，
 
 ---
 
-### 平滑切换
+#### 平滑切换
 
 不能每一步完全突然抛弃之前的规划。
 
@@ -2244,7 +2244,7 @@ ACT 把它们做 weighted ensemble，
 
 ---
 
-### Human Demonstration Variability
+#### Human Demonstration Variability
 
 人类数据不是完全 deterministic。
 
@@ -2254,7 +2254,7 @@ ACT 把它们做 weighted ensemble，
 
 ---
 
-### 高维视觉
+#### 高维视觉
 
 需要直接从多视角 pixels 做闭环控制。
 
@@ -2264,7 +2264,7 @@ ACT 把它们做 weighted ensemble，
 
 ---
 
-# 51. 一张“问题 → 设计”总表
+## 51. 一张“问题 → 设计”总表
 
 | 问题 | ACT 的设计 |
 |---|---|
@@ -2273,23 +2273,23 @@ ACT 把它们做 weighted ensemble，
 | Naive chunk execution 缺少高频反馈 | Every-step re-query |
 | Overlapping chunks 怎样决定当前动作 | Temporal Ensemble |
 | Human demonstrations 有 variability | CVAE |
-| Training posterior 与 test-time latent 要接得上 | KL to \(N(0,I)\) |
-| Test-time 不想随机选择 style | \(z=0\) prior mean |
+| Training posterior 与 test-time latent 要接得上 | KL to $N(0,I)$ |
+| Test-time 不想随机选择 style | $z=0$ prior mean |
 | 多路视觉 + proprioception + latent 要融合 | Transformer Encoder |
-| 要一次产生未来 \(k\) 个动作 | Transformer Decoder + \(k\) queries |
+| 要一次产生未来 $k$ 个动作 | Transformer Decoder + $k$ queries |
 | 高分辨率图片 token 太多 | ResNet18 visual backbone |
 
 这张表比背 architecture 名字更重要。
 
 ---
 
-# 52. 哪些东西属于“训练辅助机制”，哪些属于“部署机制”？
+## 52. 哪些东西属于“训练辅助机制”，哪些属于“部署机制”？
 
-## Training Only
+### Training Only
 
 - ground-truth future action chunk；
 - CVAE encoder；
-- \(\mu,\sigma^2\)；
+- $\mu,\sigma^2$；
 - stochastic posterior sampling；
 - KL；
 - L1 loss；
@@ -2298,7 +2298,7 @@ ACT 把它们做 weighted ensemble，
 
 ---
 
-## Training + Inference
+### Training + Inference
 
 - ResNet18；
 - qpos projection；
@@ -2309,9 +2309,9 @@ ACT 把它们做 weighted ensemble，
 
 ---
 
-## Inference Only
+### Inference Only
 
-- fixed \(z=0\) choice；
+- fixed $z=0$ choice；
 - repeated every-step query；
 - action prediction buffer；
 - Temporal Ensemble；
@@ -2322,7 +2322,7 @@ ACT 把它们做 weighted ensemble，
 
 ---
 
-# 53. 一个常见大误解：ACT 是“CVAE 先生成动作，再 Transformer 修正”
+## 53. 一个常见大误解：ACT 是“CVAE 先生成动作，再 Transformer 修正”
 
 **错误。**
 
@@ -2355,15 +2355,15 @@ ACT Transformer Policy
 
 ---
 
-# 54. 另一个大误解：Temporal Ensemble 在 Transformer 内部
+## 54. 另一个大误解：Temporal Ensemble 在 Transformer 内部
 
 **错误。**
 
 Transformer 一次 forward 只输出：
 
-\[
+$$
 \hat A_t
-\]
+$$
 
 Temporal Ensemble 是：
 
@@ -2371,7 +2371,7 @@ Temporal Ensemble 是：
 
 所以执行顺序：
 
-\[
+$$
 \boxed{
 Transformer
 \rightarrow
@@ -2379,33 +2379,33 @@ Action Chunks
 \rightarrow
 Temporal Ensemble
 }
-\]
+$$
 
 不是：
 
-\[
+$$
 Temporal Ensemble
 \rightarrow
 Transformer
-\]
+$$
 
 ---
 
-# 55. 另一个大误解：z 决定动作，Observation 只是辅助
+## 55. 另一个大误解：z 决定动作，Observation 只是辅助
 
 不是。
 
 policy：
 
-\[
+$$
 \pi(a\mid o,z)
-\]
+$$
 
 中：
 
-\[
+$$
 o
-\]
+$$
 
 包含非常丰富的：
 
@@ -2414,59 +2414,59 @@ o
 
 尤其推理时：
 
-\[
+$$
 z=0
-\]
+$$
 
 固定，
 
 真正随环境变化、驱动 closed-loop behavior 的核心输入就是：
 
-\[
+$$
 o_t
-\]
+$$
 
 所以更正确的理解是：
 
-> \(z\) 是额外 latent conditioning，而 observation 是实时控制的主要信息来源。
+> $z$ 是额外 latent conditioning，而 observation 是实时控制的主要信息来源。
 
 ---
 
-# 56. 另一个大误解：Training 里有 Temporal Ensemble
+## 56. 另一个大误解：Training 里有 Temporal Ensemble
 
 没有。
 
 Training sample：
 
-\[
+$$
 (o_t,A_t)
-\]
+$$
 
 一次 forward 只产生：
 
-\[
+$$
 \hat A_t
-\]
+$$
 
 然后直接和：
 
-\[
+$$
 A_t
-\]
+$$
 
 算 loss。
 
 不会收集：
 
-\[
+$$
 t-1,t-2,\ldots
-\]
+$$
 
 的其他预测。
 
 ---
 
-# 57. 另一个大误解：Inference z=0 意味着模型退化成普通 BC
+## 57. 另一个大误解：Inference z=0 意味着模型退化成普通 BC
 
 也不能这样说。
 
@@ -2474,9 +2474,9 @@ t-1,t-2,\ldots
 
 但最终 policy parameters：
 
-\[
+$$
 \theta
-\]
+$$
 
 是在：
 
@@ -2488,9 +2488,9 @@ t-1,t-2,\ldots
 
 所以：
 
-\[
+$$
 \pi_\theta(o,0)
-\]
+$$
 
 不是简单等同于：
 
@@ -2500,7 +2500,7 @@ t-1,t-2,\ldots
 
 ---
 
-# 58. 一个非常值得记住的“信息流”视角
+## 58. 一个非常值得记住的“信息流”视角
 
 Training 时 information flow：
 
@@ -2547,33 +2547,33 @@ new observation
 
 ---
 
-# 59. 从概率模型角度再压缩一次
+## 59. 从概率模型角度再压缩一次
 
 Training：
 
-\[
+$$
 q_\phi(z\mid A_t,q_t)
-\]
+$$
 
 近似 latent posterior。
 
 然后：
 
-\[
+$$
 \pi_\theta(A_t\mid o_t,z)
-\]
+$$
 
 重建 expert chunk。
 
 通过：
 
-\[
+$$
 KL(
 q_\phi
 \parallel
 N(0,I)
 )
-\]
+$$
 
 regularize posterior。
 
@@ -2581,17 +2581,17 @@ regularize posterior。
 
 Inference：
 
-\[
+$$
 z^\star=0
-\]
+$$
 
 然后：
 
-\[
+$$
 \hat A_t
 =
 \pi_\theta(o_t,z^\star)
-\]
+$$
 
 所以最终 deployed model 只需要：
 
@@ -2599,35 +2599,35 @@ z^\star=0
 
 ---
 
-# 60. 从控制角度再压缩一次
+## 60. 从控制角度再压缩一次
 
 每一步：
 
-\[
+$$
 o_t
-\]
+$$
 
 产生一个短期 future plan：
 
-\[
+$$
 \hat A_t
-\]
+$$
 
 但只执行当前：
 
-\[
+$$
 a_t
-\]
+$$
 
 执行后再读取：
 
-\[
+$$
 o_{t+1}
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \text{observe}
 \rightarrow
@@ -2637,7 +2637,7 @@ o_{t+1}
 \rightarrow
 \text{observe again}
 }
-\]
+$$
 
 Temporal Ensemble 负责：
 
@@ -2645,72 +2645,72 @@ Temporal Ensemble 负责：
 
 ---
 
-# 61. 从 Tensor 角度再压缩一次
+## 61. 从 Tensor 角度再压缩一次
 
 Training sample：
 
-\[
+$$
 images:
 [4,3,480,640]
-\]
+$$
 
-\[
+$$
 q:
 [14]
-\]
+$$
 
-\[
+$$
 A:
 [k,14]
-\]
+$$
 
 CVAE posterior：
 
-\[
+$$
 \mu,\logvar:
 [32]
-\]
+$$
 
-\[
+$$
 z:
 [32]
-\]
+$$
 
 policy visual sequence：
 
-\[
+$$
 [1200,512]
-\]
+$$
 
 加 q/z：
 
-\[
+$$
 [1202,512]
-\]
+$$
 
 decoder：
 
-\[
+$$
 [k,512]
-\]
+$$
 
 output：
 
-\[
+$$
 \boxed{
 [k,14]
 }
-\]
+$$
 
 ---
 
-# 62. 从时间轴角度再压缩一次
+## 62. 从时间轴角度再压缩一次
 
 对于：
 
-\[
+$$
 k=4
-\]
+$$
 
 ```text
 query 0 → predicts 0 1 2 3
@@ -2721,36 +2721,36 @@ query 3 → predicts       3 4 5 6
 
 execution time 3：
 
-\[
+$$
 \boxed{
 4\text{ candidate predictions}
 }
-\]
+$$
 
 然后：
 
-\[
+$$
 \boxed{
 a_3
 =
 weighted\ average
 }
-\]
+$$
 
 ---
 
-# 63. 如果你能回答下面 10 个问题，就已经真正理解 ACT 主流程
+## 63. 如果你能回答下面 10 个问题，就已经真正理解 ACT 主流程
 
-1. 为什么 ACT 不只预测 \(a_t\)，而预测 \(a_{t:t+k}\)？
+1. 为什么 ACT 不只预测 $a_t$，而预测 $a_{t:t+k}$？
 2. 为什么 training encoder 能看 ground-truth action sequence？
-3. `[CLS]` 最终为什么能用来预测 \(\mu,\sigma^2\)？
-4. \(z\) 和 \(\epsilon\) 有什么区别？
-5. KL 为什么要把 posterior 拉向 \(N(0,I)\)？
+3. `[CLS]` 最终为什么能用来预测 $\mu,\sigma^2$？
+4. $z$ 和 $\epsilon$ 有什么区别？
+5. KL 为什么要把 posterior 拉向 $N(0,I)$？
 6. 为什么推理时 CVAE encoder 被丢弃？
-7. 为什么 \(z=0\) 不等于“模型没有 latent input”？
+7. 为什么 $z=0$ 不等于“模型没有 latent input”？
 8. 为什么每个 timestep 都重新 query，Action Chunking 仍然存在？
 9. Temporal Ensemble 为什么平均的是同一 execution timestep 的 predictions？
-10. 为什么 policy 一次输出 \(k\) 个动作，但机器人当前只执行一个？
+10. 为什么 policy 一次输出 $k$ 个动作，但机器人当前只执行一个？
 
 如果这些问题都能自己解释，
 
@@ -2758,7 +2758,7 @@ ACT 的主干就已经真正打通了。
 
 ---
 
-# 64. 最终一张 ACT 全景图
+## 64. 最终一张 ACT 全景图
 
 ```text
 ════════════════════════════════════════════════════
@@ -2861,9 +2861,9 @@ new observation o_{t+1}
 
 ---
 
-# 65. 一句话真正概括 ACT
+## 65. 一句话真正概括 ACT
 
-> **ACT 是一个从当前多视角视觉和机器人状态出发、一次预测未来一段 target joint actions 的 imitation-learning policy；训练时用 CVAE latent variable 帮助建模 human demonstration variation，并用 KL 将 latent posterior 约束到标准高斯 prior；部署时固定 \(z=0\)，每个 timestep 根据最新 observation 重新预测一个 action chunk，再对多个 overlapping chunks 对当前 timestep 的预测做 Temporal Ensemble，只执行融合后的当前 action，从而同时保留 action-sequence modeling 与高频 closed-loop feedback。**
+> **ACT 是一个从当前多视角视觉和机器人状态出发、一次预测未来一段 target joint actions 的 imitation-learning policy；训练时用 CVAE latent variable 帮助建模 human demonstration variation，并用 KL 将 latent posterior 约束到标准高斯 prior；部署时固定 $z=0$，每个 timestep 根据最新 observation 重新预测一个 action chunk，再对多个 overlapping chunks 对当前 timestep 的预测做 Temporal Ensemble，只执行融合后的当前 action，从而同时保留 action-sequence modeling 与高频 closed-loop feedback。**
 
 如果这句话里的每一个部分你都能展开解释，
 
@@ -2871,7 +2871,7 @@ new observation o_{t+1}
 
 ---
 
-# 66. 下一步应该学什么？
+## 66. 下一步应该学什么？
 
 ACT 主流程到这里已经闭环。
 
@@ -2898,7 +2898,7 @@ ACT 主流程到这里已经闭环。
 
 ---
 
-## Primary Source
+### Primary Source
 
 Tony Z. Zhao, Vikash Kumar, Sergey Levine, Chelsea Finn.  
 **Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware.**  
@@ -2922,22 +2922,22 @@ Robotics: Science and Systems (RSS), 2023.
 
 论文核心流程包括：
 
-\[
+$$
 (o_t,a_{t:t+k})
 \sim
 \mathcal D
-\]
+$$
 
-\[
+$$
 z
 \sim
 q_\phi(
 z\mid
 a_{t:t+k},\bar o_t
 )
-\]
+$$
 
-\[
+$$
 \hat a_{t:t+k}
 \sim
 \pi_\theta(
@@ -2945,36 +2945,36 @@ a_{t:t+k},\bar o_t
 \mid
 o_t,z
 )
-\]
+$$
 
 训练目标包含 reconstruction 与：
 
-\[
+$$
 D_{KL}
 (
 q_\phi
 \parallel
 N(0,I)
 )
-\]
+$$
 
 而 inference 时：
 
-\[
+$$
 z=0
-\]
+$$
 
 并在每个 timestep 对 overlapping action chunks 使用：
 
-\[
+$$
 w_i=e^{-mi}
-\]
+$$
 
 进行 Temporal Ensemble。
 
 ---
 
-## Official Implementation
+### Official Implementation
 
 ACT official repository:
 
@@ -2998,7 +2998,7 @@ detr/models/transformer.py
 - reparameterization；
 - ACT Transformer policy；
 - normalized action prediction；
-- inference \(z=0\)；
+- inference $z=0$；
 - every-step policy query under temporal aggregation；
 - `all_time_actions` overlapping prediction storage；
 - exponential Temporal Ensemble；
@@ -3007,9 +3007,9 @@ detr/models/transformer.py
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### ACT 专题
+#### ACT 专题
 
 - [ACT 到底解决了什么问题？](./act-what-problem-does-it-solve.md)
 - [Action Chunking](./action-chunking.md)
@@ -3021,14 +3021,14 @@ detr/models/transformer.py
 - [ACT Training](./training.md)
 - [ACT Inference](./inference.md)
 
-### Generative Models
+#### Generative Models
 
 - [Latent Variable](../../generative-models/latent-variable.md)
 - [VAE](../../generative-models/vae.md)
 - [Reparameterization Trick](../../generative-models/reparameterization-trick.md)
 - [CVAE](../../generative-models/cvae.md)
 
-### Deep Learning
+#### Deep Learning
 
 - [Transformer](../../deep-learning/transformer.md)
 - [Attention](../../deep-learning/attention.md)
@@ -3038,19 +3038,19 @@ detr/models/transformer.py
 - [Transformer Decoder](../../deep-learning/transformer-decoder.md)
 - ResNet
 
-### Mathematics
+#### Mathematics
 
 - [Normal Distribution](../../mathematics/normal-distribution.md)
 - Standard Normal Distribution
 - [KL Divergence](../../mathematics/kl-divergence.md)
 - Weighted Average
 
-### Robot Learning
+#### Robot Learning
 
 - [Imitation Learning](../imitation-learning.md)
 - [Behavior Cloning](../imitation-learning/behavior-cloning-distribution-shift.md)
 - Closed-Loop Control
 
-### 后续
+#### 后续
 
 - Minimal ACT Implementation

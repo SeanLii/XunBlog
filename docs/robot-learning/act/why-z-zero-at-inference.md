@@ -17,9 +17,9 @@ latent_sample = torch.zeros(...)
 
 也就是推理阶段直接：
 
-\[
+$$
 \boxed{z=0}
-\]
+$$
 
 但训练时明明不是这样。
 
@@ -30,25 +30,25 @@ latent_sample = torch.zeros(...)
 
 预测：
 
-\[
+$$
 \mu
-\]
+$$
 
 和：
 
-\[
+$$
 \log\sigma^2
-\]
+$$
 
 再通过：
 
-\[
+$$
 z=\mu+\sigma\odot\epsilon,
 \qquad
 \epsilon\sim\mathcal N(0,I)
-\]
+$$
 
-随机采出一个 latent \(z\)。
+随机采出一个 latent $z$。
 
 于是自然会产生一个非常合理的问题：
 
@@ -56,7 +56,7 @@ z=\mu+\sigma\odot\epsilon,
 
 甚至更尖锐一点：
 
-> **如果推理时永远不用训练时推断出来的 \(z\)，那训练 CVAE 到底有什么意义？**
+> **如果推理时永远不用训练时推断出来的 $z$，那训练 CVAE 到底有什么意义？**
 
 要真正回答这个问题，必须把下面几件事放在同一张图里：
 
@@ -70,42 +70,42 @@ z=\mu+\sigma\odot\epsilon,
 
 ---
 
-# 1. 先把训练和推理的 z 来源摆在一起
+## 1. 先把训练和推理的 z 来源摆在一起
 
 训练时：
 
-\[
+$$
 q_\phi(
 z
 \mid
 a_{t:t+k}, q_t
 )
-\]
+$$
 
 会根据 ground-truth action sequence 和当前 proprioception 产生一个 Gaussian posterior：
 
-\[
+$$
 q_\phi(z|\cdot)
 =
 \mathcal N(
 \mu,
 \operatorname{diag}(\sigma^2)
 )
-\]
+$$
 
 然后：
 
-\[
+$$
 z
 =
 \mu+\sigma\odot\epsilon
-\]
+$$
 
 其中：
 
-\[
+$$
 \epsilon\sim\mathcal N(0,I)
-\]
+$$
 
 ---
 
@@ -113,47 +113,47 @@ z
 
 ACT 原论文直接规定：
 
-\[
+$$
 \boxed{
 z=0
 }
-\]
+$$
 
 论文原话对应的含义是：
 
-> 在 test time，把 \(z\) 设为 prior distribution 的均值，也就是 0，从而 deterministic decode。
+> 在 test time，把 $z$ 设为 prior distribution 的均值，也就是 0，从而 deterministic decode。
 
 所以第一件必须确认的事实是：
 
-> **ACT 并不是在推理时从 encoder 得到一个 \(\mu\)，然后令 \(z=\mu\)。**
+> **ACT 并不是在推理时从 encoder 得到一个 $\mu$，然后令 $z=\mu$。**
 
 推理阶段：
 
 - CVAE encoder 被丢弃；
-- \(\mu\) 不计算；
-- \(\sigma^2\) 不计算；
+- $\mu$ 不计算；
+- $\sigma^2$ 不计算；
 - ground-truth future action 不存在；
 - 直接使用 zero vector。
 
 ---
 
-# 2. 为什么推理时根本不能继续用 Training Encoder？
+## 2. 为什么推理时根本不能继续用 Training Encoder？
 
 训练 encoder 是：
 
-\[
+$$
 q_\phi(
 z
 \mid
 a_{t:t+k},q_t
 )
-\]
+$$
 
 注意它需要：
 
-\[
+$$
 a_{t:t+k}
-\]
+$$
 
 也就是：
 
@@ -181,17 +181,17 @@ a_{t:t+k}
 
 因此：
 
-\[
+$$
 a_{t:t+k}
-\]
+$$
 
 正是未知答案。
 
 如果还想运行：
 
-\[
+$$
 q_\phi(z\mid a_{t:t+k},q_t)
-\]
+$$
 
 就变成：
 
@@ -219,75 +219,75 @@ q_\phi(z\mid a_{t:t+k},q_t)
 
 ---
 
-# 3. 那一般 CVAE 推理时怎么办？
+## 3. 那一般 CVAE 推理时怎么办？
 
 一般 fixed-prior CVAE 中，训练时可能有：
 
-\[
+$$
 q_\phi(z\mid c,y)
-\]
+$$
 
-而测试时 ground-truth \(y\) 不存在。
+而测试时 ground-truth $y$ 不存在。
 
 于是通常从 prior：
 
-\[
+$$
 p(z)
-\]
+$$
 
 中得到 latent。
 
 例如：
 
-\[
+$$
 p(z)
 =
 \mathcal N(0,I)
-\]
+$$
 
 那么最自然的生成方式是：
 
-\[
+$$
 z\sim\mathcal N(0,I)
-\]
+$$
 
 然后：
 
-\[
+$$
 y\sim p_\theta(y\mid c,z)
-\]
+$$
 
 如果每次采不同：
 
-\[
+$$
 z_1,z_2,z_3
-\]
+$$
 
 就可能产生不同输出：
 
-\[
+$$
 y_1,y_2,y_3
-\]
+$$
 
 这正是 generative model 的典型用法。
 
 ---
 
-# 4. 但 ACT 不想在机器人控制时随机抽“风格”
+## 4. 但 ACT 不想在机器人控制时随机抽“风格”
 
 ACT 论文没有选择：
 
-\[
+$$
 z\sim\mathcal N(0,I)
-\]
+$$
 
 而是：
 
-\[
+$$
 \boxed{
 z=0
 }
-\]
+$$
 
 论文给出的直接目的非常清楚：
 
@@ -330,57 +330,57 @@ z₃
 
 所以 ACT 选择一个固定 latent：
 
-\[
+$$
 z=0
-\]
+$$
 
 让这一部分随机性消失。
 
 ---
 
-# 5. 为什么偏偏是 0？
+## 5. 为什么偏偏是 0？
 
 因为 ACT 使用的 prior 是：
 
-\[
+$$
 \boxed{
 p(z)=\mathcal N(0,I)
 }
-\]
+$$
 
 对于一维 standard normal：
 
-\[
+$$
 z\sim\mathcal N(0,1)
-\]
+$$
 
 均值：
 
-\[
+$$
 \mathbb E[z]=0
-\]
+$$
 
-对于 \(d\) 维标准高斯：
+对于 $d$ 维标准高斯：
 
-\[
+$$
 z\sim\mathcal N(0,I)
-\]
+$$
 
 均值向量：
 
-\[
+$$
 \mathbb E[z]
 =
 \mathbf 0
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 z=0
 }
-\]
+$$
 
 就是：
 
@@ -396,7 +396,7 @@ z=0
 
 ---
 
-# 6. 现在真正困难的问题来了
+## 6. 现在真正困难的问题来了
 
 你可能会说：
 
@@ -404,7 +404,7 @@ z=0
 
 但是：
 
-> **训练时 encoder 为不同 demonstration 学到的 \(z\) 明明可能不是 0。为什么 decoder 在测试时突然只看到 \(z=0\)，还能够工作？**
+> **训练时 encoder 为不同 demonstration 学到的 $z$ 明明可能不是 0。为什么 decoder 在测试时突然只看到 $z=0$，还能够工作？**
 
 这个问题的答案就是：
 
@@ -412,13 +412,13 @@ z=0
 
 ---
 
-# 7. 训练时 Posterior 不是可以随便跑
+## 7. 训练时 Posterior 不是可以随便跑
 
 训练阶段，encoder 给出：
 
-\[
+$$
 q_\phi(z\mid a,q)
-\]
+$$
 
 如果完全没有限制，
 
@@ -442,18 +442,18 @@ reconstruction loss 可能就很满意。
 
 ---
 
-# 8. 所以 ACT 给 Encoder 加了一个 Prior Constraint
+## 8. 所以 ACT 给 Encoder 加了一个 Prior Constraint
 
 ACT 的 loss 包含：
 
-\[
+$$
 D_{KL}
 \left(
 q_\phi(z\mid a,q)
 \parallel
 \mathcal N(0,I)
 \right)
-\]
+$$
 
 也就是说：
 
@@ -461,15 +461,15 @@ q_\phi(z\mid a,q)
 
 它被持续鼓励：
 
-\[
+$$
 q_\phi(z\mid a,q)
-\]
+$$
 
 不要离：
 
-\[
+$$
 \mathcal N(0,I)
-\]
+$$
 
 太远。
 
@@ -479,23 +479,23 @@ q_\phi(z\mid a,q)
 
 而：
 
-\[
+$$
 z=0
-\]
+$$
 
 恰好位于这个 prior 的中心。
 
 所以 test time 使用：
 
-\[
+$$
 z=0
-\]
+$$
 
 不是突然把 decoder 扔到一个完全陌生的位置。
 
 ---
 
-# 9. 这就是 KL 和 z=0 之间真正的关系
+## 9. 这就是 KL 和 z=0 之间真正的关系
 
 可以画成：
 
@@ -521,13 +521,13 @@ qφ(z | action, qpos)
 
 因此训练过程中：
 
-> decoder 一边学习根据 \(z\) 和 observation 重建 action chunk，
+> decoder 一边学习根据 $z$ 和 observation 重建 action chunk，
 
 同时 encoder 的 posterior 又被拉向：
 
-\[
+$$
 \mathcal N(0,I)
-\]
+$$
 
 ---
 
@@ -547,7 +547,7 @@ ACT decoder
 
 中间的桥梁就是：
 
-\[
+$$
 \boxed{
 D_{KL}
 (
@@ -556,35 +556,35 @@ q_\phi(z|\cdot)
 p(z)
 )
 }
-\]
+$$
 
 ---
 
-# 10. 但要非常严谨：KL 不保证 z=0 是“最优风格”
+## 10. 但要非常严谨：KL 不保证 z=0 是“最优风格”
 
 这是一个必须划清的边界。
 
 KL 确实鼓励：
 
-\[
+$$
 q_\phi(z|\cdot)
-\]
+$$
 
 靠近：
 
-\[
+$$
 \mathcal N(0,I)
-\]
+$$
 
 但不能因此推出：
 
-\[
+$$
 \boxed{
 z=0
 =
 \text{数学意义上的最佳 action style}
 }
-\]
+$$
 
 论文没有证明这种 theorem。
 
@@ -606,35 +606,35 @@ z=0
 
 ---
 
-# 11. 一个直觉例子：训练时学习“允许的变化范围”
+## 11. 一个直觉例子：训练时学习“允许的变化范围”
 
-假设为了直觉，我们把 \(z\) 简化成一维。
+假设为了直觉，我们把 $z$ 简化成一维。
 
 不同 human demonstrations 可能形成 posterior：
 
-\[
+$$
 q_1(z)
 =
 \mathcal N(-0.4,0.3^2)
-\]
+$$
 
-\[
+$$
 q_2(z)
 =
 \mathcal N(0.2,0.4^2)
-\]
+$$
 
-\[
+$$
 q_3(z)
 =
 \mathcal N(0.5,0.3^2)
-\]
+$$
 
 因为 KL 要求这些 distribution 不要离：
 
-\[
+$$
 \mathcal N(0,1)
-\]
+$$
 
 太远，
 
@@ -651,9 +651,9 @@ q_3(z)
 
 推理时：
 
-\[
+$$
 z=0
-\]
+$$
 
 位于训练 latent space 的中心区域。
 
@@ -661,26 +661,26 @@ z=0
 
 ---
 
-# 12. 但不要把这张图理解得太机械
+## 12. 但不要把这张图理解得太机械
 
 真实 ACT 中：
 
-\[
+$$
 z\in\mathbb R^{32}
-\]
+$$
 
 是高维 latent vector。
 
 而且 posterior 是 diagonal Gaussian：
 
-\[
+$$
 q_\phi(z|\cdot)
 =
 \mathcal N(
 \mu,
 \operatorname{diag}(\sigma^2)
 )
-\]
+$$
 
 所以真实情况不是简单的一条数轴。
 
@@ -692,15 +692,15 @@ q_\phi(z|\cdot)
 
 ---
 
-# 13. “z=0 就是没有 Style”吗？
+## 13. “z=0 就是没有 Style”吗？
 
 这是一个很自然的误解。
 
 因为：
 
-\[
+$$
 0
-\]
+$$
 
 听起来像：
 
@@ -708,9 +708,9 @@ q_\phi(z|\cdot)
 
 但在 latent space 里：
 
-\[
+$$
 0
-\]
+$$
 
 不是“空”。
 
@@ -720,10 +720,10 @@ q_\phi(z|\cdot)
 
 例如：
 
-\[
+$$
 z=
 [0,0,\ldots,0]
-\]
+$$
 
 经过：
 
@@ -737,17 +737,17 @@ latent_out_proj(z)
 
 即使输入是全零：
 
-\[
+$$
 z=0
-\]
+$$
 
 输出也不一定是全零：
 
-\[
+$$
 Wz+b
 =
 b
-\]
+$$
 
 所以从网络计算角度：
 
@@ -757,7 +757,7 @@ policy 仍然得到一个确定的 latent conditioning representation。
 
 ---
 
-# 14. 这个代码细节非常有意思
+## 14. 这个代码细节非常有意思
 
 官方实现：
 
@@ -772,25 +772,25 @@ latent_input =
 
 Linear：
 
-\[
+$$
 e_z
 =
 Wz+b
-\]
+$$
 
 当：
 
-\[
+$$
 z=0
-\]
+$$
 
 时：
 
-\[
+$$
 \boxed{
 e_z=b
 }
-\]
+$$
 
 因此 policy Transformer 实际接收到的是：
 
@@ -804,11 +804,11 @@ e_z=b
 
 ---
 
-# 15. 那 z 训练时到底学了什么？
+## 15. 那 z 训练时到底学了什么？
 
 这里要非常谨慎。
 
-ACT 论文把 \(z\) 称为：
+ACT 论文把 $z$ 称为：
 
 > style variable
 
@@ -816,15 +816,15 @@ ACT 论文把 \(z\) 称为：
 
 但我们不能说：
 
-> \(z\) 明确学到了“昨晚睡得好不好”“力气大小”“动作速度”等具体因素。
+> $z$ 明确学到了“昨晚睡得好不好”“力气大小”“动作速度”等具体因素。
 
 因为没有这种 supervision。
 
 更准确地说：
 
-\[
+$$
 z
-\]
+$$
 
 可以承载：
 
@@ -845,7 +845,7 @@ z
 
 ---
 
-# 16. 一个你可能会有的直觉：z 用来编码“额外小因素”
+## 16. 一个你可能会有的直觉：z 用来编码“额外小因素”
 
 这个直觉有一部分是有价值的。
 
@@ -859,9 +859,9 @@ z
 
 CVAE 允许：
 
-\[
+$$
 z
-\]
+$$
 
 帮助表示这些“剩余 variation”。
 
@@ -869,19 +869,19 @@ z
 
 但是下一步如果说：
 
-> “推理时 \(z=0\)，就是把这些额外因素消除掉”
+> “推理时 $z=0$，就是把这些额外因素消除掉”
 
 就需要修正。
 
 ---
 
-# 17. 为什么“z=0 = 消除额外因素”不够准确？
+## 17. 为什么“z=0 = 消除额外因素”不够准确？
 
 因为 latent space 的坐标：
 
-\[
+$$
 z_1,z_2,\ldots,z_{32}
-\]
+$$
 
 没有被监督成：
 
@@ -894,9 +894,9 @@ z₃ = 操作者紧张程度
 
 因此：
 
-\[
+$$
 z=0
-\]
+$$
 
 不能解释成：
 
@@ -908,15 +908,15 @@ z=0
 
 它是模型内部 latent coordinate system 中的：
 
-\[
+$$
 \mathbf 0
-\]
+$$
 
 不是现实世界所有 nuisance factors 的“零值”。
 
 ---
 
-# 18. 用“搬水弯腰”的例子重新修正这个直觉
+## 18. 用“搬水弯腰”的例子重新修正这个直觉
 
 假设为了教学，我们有一个模型预测：
 
@@ -942,13 +942,13 @@ z=0
 -微小姿态变化；
 - 演示随机性。
 
-模型可能利用 \(z\) 帮助 reconstruction 这些不同轨迹。
+模型可能利用 $z$ 帮助 reconstruction 这些不同轨迹。
 
 但：
 
-\[
+$$
 z=0
-\]
+$$
 
 不能严格解释为：
 
@@ -964,15 +964,15 @@ z=0
 
 ---
 
-# 19. z=0 会不会意味着“平均风格”？
+## 19. z=0 会不会意味着“平均风格”？
 
 也要小心。
 
 因为：
 
-\[
+$$
 0
-\]
+$$
 
 是 Gaussian prior 的 mean。
 
@@ -986,25 +986,25 @@ z=0
 
 这两个概念完全不同。
 
-\[
+$$
 \mathbb E[z]=0
-\]
+$$
 
 并不意味着：
 
-\[
+$$
 \pi(o,\mathbb E[z])
 =
 \mathbb E_z[\pi(o,z)]
-\]
+$$
 
 一般非线性神经网络中：
 
-\[
+$$
 f(\mathbb E[z])
 \neq
 \mathbb E[f(z)]
-\]
+$$
 
 所以：
 
@@ -1014,61 +1014,61 @@ f(\mathbb E[z])
 
 ---
 
-# 20. 为什么 f(E[z]) 不等于 E[f(z)]？
+## 20. 为什么 f(E[z]) 不等于 E[f(z)]？
 
 假设一个非常简单的 nonlinear decoder：
 
-\[
+$$
 f(z)=z^2
-\]
+$$
 
 如果：
 
-\[
+$$
 z\sim\mathcal N(0,1)
-\]
+$$
 
 那么：
 
-\[
+$$
 \mathbb E[z]=0
-\]
+$$
 
 所以：
 
-\[
+$$
 f(\mathbb E[z])
 =
 f(0)
 =
 0
-\]
+$$
 
 但是：
 
-\[
+$$
 \mathbb E[f(z)]
 =
 \mathbb E[z^2]
 =
 1
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 f(\mathbb E[z])
 \neq
 \mathbb E[f(z)]
 }
-\]
+$$
 
 因此 ACT 的：
 
-\[
+$$
 z=0
-\]
+$$
 
 不要理解成：
 
@@ -1080,23 +1080,23 @@ z=0
 
 ---
 
-# 21. 那为什么不从 Prior 随机采样，然后多跑几次选最好的？
+## 21. 那为什么不从 Prior 随机采样，然后多跑几次选最好的？
 
 理论上可以设计这样的系统。
 
 例如：
 
-\[
+$$
 z_1,z_2,\ldots,z_M
 \sim
 \mathcal N(0,I)
-\]
+$$
 
 得到多个 action chunks：
 
-\[
+$$
 A_1,A_2,\ldots,A_M
-\]
+$$
 
 然后再用一个 critic / cost function / verifier 选择。
 
@@ -1104,7 +1104,7 @@ A_1,A_2,\ldots,A_M
 
 它选择：
 
-> 简单、确定、容易评估的 \(z=0\)。
+> 简单、确定、容易评估的 $z=0$。
 
 所以如果以后看到某个 ACT 变体使用：
 
@@ -1119,22 +1119,22 @@ A_1,A_2,\ldots,A_M
 
 ---
 
-# 22. β 在这里扮演什么角色？
+## 22. β 在这里扮演什么角色？
 
 ACT 使用：
 
-\[
+$$
 L
 =
 L_{\text{recon}}
 +
 \beta
 L_{\text{KL}}
-\]
+$$
 
 其中：
 
-\[
+$$
 L_{\text{KL}}
 =
 D_{KL}
@@ -1143,9 +1143,9 @@ q_\phi(z|\cdot)
 \parallel
 \mathcal N(0,I)
 )
-\]
+$$
 
-\(\beta\) 控制：
+$\beta$ 控制：
 
 > KL regularization 有多强。
 
@@ -1153,13 +1153,13 @@ q_\phi(z|\cdot)
 
 如果：
 
-\[
+$$
 \beta
-\]
+$$
 
 很小，
 
-encoder 可以更自由地利用 \(z\)：
+encoder 可以更自由地利用 $z$：
 
 ```text
 不同 demonstrations
@@ -1175,9 +1175,9 @@ encoder 可以更自由地利用 \(z\)：
 
 那么 test time 直接使用：
 
-\[
+$$
 z=0
-\]
+$$
 
 可能更容易进入 training 较少使用的 latent region。
 
@@ -1185,9 +1185,9 @@ z=0
 
 如果：
 
-\[
+$$
 \beta
-\]
+$$
 
 较大：
 
@@ -1201,27 +1201,27 @@ posterior
 
 但如果过强：
 
-> \(z\) 可能几乎不携带 demonstration information。
+> $z$ 可能几乎不携带 demonstration information。
 
 所以：
 
-\[
+$$
 \beta
-\]
+$$
 
 控制的是一个非常重要的 trade-off。
 
 ---
 
-# 23. 为什么 β 不是越大越好？
+## 23. 为什么 β 不是越大越好？
 
 如果只优化 KL：
 
-\[
+$$
 q_\phi(z|\cdot)
 =
 \mathcal N(0,I)
-\]
+$$
 
 对所有 samples 都一样，
 
@@ -1229,9 +1229,9 @@ KL 可以做到非常小。
 
 但这时：
 
-\[
+$$
 z
-\]
+$$
 
 无法告诉 decoder：
 
@@ -1243,15 +1243,15 @@ CVAE encoder 几乎失去作用。
 
 反过来，如果完全没有 KL：
 
-> encoder 可以把 action sequence 几乎当作秘密密码塞进 \(z\)。
+> encoder 可以把 action sequence 几乎当作秘密密码塞进 $z$。
 
 reconstruction 可能很好，
 
 但 test time：
 
-\[
+$$
 z=0
-\]
+$$
 
 完全接不上。
 
@@ -1271,7 +1271,7 @@ KL
 
 ---
 
-# 24. 为什么 ACT 的 CVAE 对 Human Data 特别重要？
+## 24. 为什么 ACT 的 CVAE 对 Human Data 特别重要？
 
 论文指出 human demonstrations 本身具有 stochasticity。
 
@@ -1291,13 +1291,13 @@ KL
 
 CVAE 提供了一个机制：
 
-> 训练时允许 demonstration-specific variation 被 latent \(z\) 吸收一部分，
+> 训练时允许 demonstration-specific variation 被 latent $z$ 吸收一部分，
 
 而 decoder 同时学习 observation-conditioned action generation。
 
 ---
 
-# 25. 一个很重要的观点：z 的作用主要发生在训练过程中
+## 25. 一个很重要的观点：z 的作用主要发生在训练过程中
 
 这可能是理解 ACT 最关键的一句话之一。
 
@@ -1307,45 +1307,45 @@ CVAE 提供了一个机制：
 
 并不是。
 
-CVAE 的 \(z\) 在 ACT 中一个非常重要的作用是：
+CVAE 的 $z$ 在 ACT 中一个非常重要的作用是：
 
 > **改变训练问题的组织方式。**
 
 训练时模型面对的不是简单：
 
-\[
+$$
 o_t
 \rightarrow
 a_{t:t+k}
-\]
+$$
 
 而是：
 
-\[
+$$
 (o_t,z)
 \rightarrow
 a_{t:t+k}
-\]
+$$
 
-其中 \(z\) 来自：
+其中 $z$ 来自：
 
-\[
+$$
 q_\phi(z\mid a_{t:t+k},q_t)
-\]
+$$
 
 于是不同 demonstrations 中的一部分 variation 可以通过 latent channel 被解释。
 
 即使推理时最后固定：
 
-\[
+$$
 z=0
-\]
+$$
 
 decoder 参数：
 
-\[
+$$
 \theta
-\]
+$$
 
 也已经是在这种 CVAE objective 下学出来的。
 
@@ -1355,7 +1355,7 @@ decoder 参数：
 
 ---
 
-# 26. 一个类比：训练辅助变量不一定要在推理时保持同样形式
+## 26. 一个类比：训练辅助变量不一定要在推理时保持同样形式
 
 这里只做帮助理解的类比。
 
@@ -1379,40 +1379,40 @@ ACT 的 CVAE 当然不是这些技术中的任何一个。
 
 ---
 
-# 27. 为什么 z=0 仍然让 Observation 起主要作用？
+## 27. 为什么 z=0 仍然让 Observation 起主要作用？
 
 ACT policy 是：
 
-\[
+$$
 \pi_\theta(
 a_{t:t+k}
 \mid
 o_t,z
 )
-\]
+$$
 
 即使：
 
-\[
+$$
 z=0
-\]
+$$
 
 仍然有：
 
-\[
+$$
 o_t
-\]
+$$
 
-而 \(o_t\) 包括：
+而 $o_t$ 包括：
 
 - 4 camera images；
 - current joint positions。
 
 所以：
 
-\[
+$$
 z=0
-\]
+$$
 
 并没有让模型失去环境信息。
 
@@ -1422,7 +1422,7 @@ z=0
 
 的主要信息仍然来自 observation。
 
-\(z\) 是：
+$z$ 是：
 
 > **额外 conditioning variable**
 
@@ -1430,13 +1430,13 @@ z=0
 
 ---
 
-# 28. 如果 z=0，模型为什么还能产生复杂动作？
+## 28. 如果 z=0，模型为什么还能产生复杂动作？
 
 因为复杂动作知识存在于：
 
-\[
+$$
 \theta
-\]
+$$
 
 也就是训练好的网络参数中。
 
@@ -1454,43 +1454,43 @@ action sequence
 
 推理时：
 
-\[
+$$
 z=0
-\]
+$$
 
 只是固定最后这一项。
 
 真正的 learned behavior 并没有存储在：
 
-> 某个 test-time \(z\) 里面。
+> 某个 test-time $z$ 里面。
 
-\(z\) 不是一个“动作数据库”。
+$z$ 不是一个“动作数据库”。
 
 它只是 policy input space 的一个 latent axis / latent condition。
 
 ---
 
-# 29. 一个极端思想实验
+## 29. 一个极端思想实验
 
 假设 decoder 完全忽略：
 
-\[
+$$
 z
-\]
+$$
 
 也就是说：
 
-\[
+$$
 \pi_\theta(a\mid o,z)
 \approx
 \pi_\theta(a\mid o)
-\]
+$$
 
 那么：
 
-\[
+$$
 z=0
-\]
+$$
 
 当然完全没问题。
 
@@ -1498,27 +1498,27 @@ z=0
 
 另一个极端：
 
-decoder 极度依赖 \(z\)，
+decoder 极度依赖 $z$，
 
 并且 training posteriors 都远离：
 
-\[
+$$
 0
-\]
+$$
 
 那么 test time 突然：
 
-\[
+$$
 z=0
-\]
+$$
 
 就会很危险。
 
 ACT 的训练目标通过：
 
-\[
+$$
 KL(q||N(0,I))
-\]
+$$
 
 正是在避免第二种极端：
 
@@ -1528,29 +1528,29 @@ KL(q||N(0,I))
 
 ---
 
-# 30. 这也解释了为什么“Posterior Collapse”并不一定简单
+## 30. 这也解释了为什么“Posterior Collapse”并不一定简单
 
 如果：
 
-\[
+$$
 q_\phi(z|\cdot)
 \approx
 \mathcal N(0,I)
-\]
+$$
 
 对所有 demonstration 都几乎一样，
 
 decoder 可能学会：
 
-> 完全不使用 \(z\)。
+> 完全不使用 $z$。
 
 这就是 posterior collapse 风格的退化。
 
 此时 test time：
 
-\[
+$$
 z=0
-\]
+$$
 
 当然也能工作，
 
@@ -1558,7 +1558,7 @@ z=0
 
 ---
 
-而如果 \(z\) 携带太多信息，
+而如果 $z$ 携带太多信息，
 
 posterior 与 prior 差异过大，
 
@@ -1566,31 +1566,31 @@ test time 又可能出现 mismatch。
 
 所以理想状态是：
 
-> \(z\) 有用，但受到 prior 约束。
+> $z$ 有用，但受到 prior 约束。
 
 这也是 KL-weighted CVAE 的核心 trade-off。
 
 ---
 
-# 31. “为什么不直接训练时也一直 z=0？”
+## 31. “为什么不直接训练时也一直 z=0？”
 
 这是一个非常好的问题。
 
 如果训练时永远：
 
-\[
+$$
 z=0
-\]
+$$
 
 那么模型退化为：
 
-\[
+$$
 \pi_\theta(
 a_{t:t+k}
 \mid
 o_t
 )
-\]
+$$
 
 CVAE encoder 完全没有作用。
 
@@ -1624,19 +1624,19 @@ CVAE encoder 完全没有作用。
 
 ---
 
-# 32. 为什么不训练时 z 随机从 N(0,I) 采，而不用 Encoder？
+## 32. 为什么不训练时 z 随机从 N(0,I) 采，而不用 Encoder？
 
 如果训练一开始就：
 
-\[
+$$
 z\sim\mathcal N(0,I)
-\]
+$$
 
-且这个 \(z\) 与当前 action chunk 没有任何关系，
+且这个 $z$ 与当前 action chunk 没有任何关系，
 
 那么 decoder 不知道：
 
-> 这次 random \(z\) 应该对应 demonstration 中哪一种 variation。
+> 这次 random $z$ 应该对应 demonstration 中哪一种 variation。
 
 例如同一个 sample：
 
@@ -1646,29 +1646,29 @@ ground-truth trajectory A
 
 今天随机：
 
-\[
+$$
 z=1.2
-\]
+$$
 
 明天又随机：
 
-\[
+$$
 z=-0.7
-\]
+$$
 
 完全没有 consistent relationship。
 
 模型最简单的做法可能就是：
 
-> 忽略 \(z\)。
+> 忽略 $z$。
 
 ---
 
 而 training encoder：
 
-\[
+$$
 q_\phi(z\mid a,q)
-\]
+$$
 
 让 latent 与当前 demonstration 建立学习到的关系。
 
@@ -1682,20 +1682,20 @@ q_\phi(z\mid a,q)
 
 ---
 
-# 33. 那为什么 Training Posterior 还要有 σ，不直接用 μ 表示 Style？
+## 33. 那为什么 Training Posterior 还要有 σ，不直接用 μ 表示 Style？
 
 因为 ACT 使用的是 VAE/CVAE objective。
 
 posterior 是：
 
-\[
+$$
 q_\phi(z|\cdot)
 =
 \mathcal N(
 \mu,
 \operatorname{diag}(\sigma^2)
 )
-\]
+$$
 
 不是一个 deterministic point。
 
@@ -1708,9 +1708,9 @@ q_\phi(z|\cdot)
 
 如果直接：
 
-\[
+$$
 z=\mu
-\]
+$$
 
 就变成 deterministic latent encoder，
 
@@ -1718,17 +1718,17 @@ z=\mu
 
 ---
 
-# 34. z=0 和 Reparameterization 没有直接因果关系
+## 34. z=0 和 Reparameterization 没有直接因果关系
 
 必须再次强调。
 
 训练时：
 
-\[
+$$
 z
 =
 \mu+\sigma\epsilon
-\]
+$$
 
 是：
 
@@ -1740,9 +1740,9 @@ z
 
 推理时：
 
-\[
+$$
 z=0
-\]
+$$
 
 是：
 
@@ -1760,61 +1760,61 @@ z=0
 
 ---
 
-# 35. z=0 和 KL 也不是“直接推导”的关系
+## 35. z=0 和 KL 也不是“直接推导”的关系
 
 同样不能写：
 
-\[
+$$
 KL
 \Rightarrow
 z=0
-\]
+$$
 
 KL 的数学作用是：
 
-\[
+$$
 q_\phi(z|\cdot)
-\]
+$$
 
 接近：
 
-\[
+$$
 p(z)=\mathcal N(0,I)
-\]
+$$
 
 而从：
 
-\[
+$$
 p(z)
-\]
+$$
 
 中，ACT 仍然有很多可能选择：
 
-### 随机采样
+#### 随机采样
 
-\[
+$$
 z\sim p(z)
-\]
+$$
 
-### 使用均值
+#### 使用均值
 
-\[
+$$
 z=\mathbb E[z]=0
-\]
+$$
 
-### 多样本生成
+#### 多样本生成
 
-\[
+$$
 z_1,\ldots,z_M\sim p(z)
-\]
+$$
 
 等等。
 
 ACT **人为选择**：
 
-\[
+$$
 z=0
-\]
+$$
 
 以获得 deterministic decoding。
 
@@ -1834,7 +1834,7 @@ deterministic decoding
 
 ---
 
-# 36. 这条逻辑链非常重要
+## 36. 这条逻辑链非常重要
 
 可以把整个故事浓缩成：
 
@@ -1875,50 +1875,50 @@ deterministic policy output
 
 ACT 的：
 
-\[
+$$
 z=0
-\]
+$$
 
 就不再反直觉了。
 
 ---
 
-# 37. 一个更形式化的视角
+## 37. 一个更形式化的视角
 
 训练时，decoder 学的是：
 
-\[
+$$
 \pi_\theta(a\mid o,z)
-\]
+$$
 
-其中 \(z\) 的 training distribution 来自：
+其中 $z$ 的 training distribution 来自：
 
-\[
+$$
 q_\phi(z\mid a,q)
-\]
+$$
 
 同时优化：
 
-\[
+$$
 D_{KL}
 (
 q_\phi(z\mid a,q)
 \parallel
 p(z)
 )
-\]
+$$
 
 使：
 
-\[
+$$
 q_\phi
-\]
+$$
 
 不要离：
 
-\[
+$$
 p(z)
-\]
+$$
 
 太远。
 
@@ -1926,70 +1926,70 @@ p(z)
 
 test time 则选择：
 
-\[
+$$
 z^\star
 =
 \mathbb E_{p(z)}[z]
-\]
+$$
 
 由于：
 
-\[
+$$
 p(z)=\mathcal N(0,I)
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 z^\star=0
 }
-\]
+$$
 
 最终 policy：
 
-\[
+$$
 \boxed{
 \pi_\theta(a\mid o,z^\star)
 =
 \pi_\theta(a\mid o,0)
 }
-\]
+$$
 
 这就是 ACT test-time decoder。
 
 ---
 
-# 38. 注意：这不是在计算条件期望动作
+## 38. 注意：这不是在计算条件期望动作
 
 ACT 并没有计算：
 
-\[
+$$
 \mathbb E_{z\sim p(z)}
 [
 \pi_\theta(a\mid o,z)
 ]
-\]
+$$
 
 它计算的是：
 
-\[
+$$
 \pi_\theta(
 a\mid o,\mathbb E[z]
 )
-\]
+$$
 
 也就是：
 
-\[
+$$
 \pi_\theta(a\mid o,0)
-\]
+$$
 
 由于 decoder 是 nonlinear neural network，
 
 一般：
 
-\[
+$$
 \boxed{
 \pi_\theta(a\mid o,\mathbb E[z])
 \neq
@@ -1997,7 +1997,7 @@ a\mid o,\mathbb E[z]
 \pi_\theta(a\mid o,z)
 ]
 }
-\]
+$$
 
 所以：
 
@@ -2007,15 +2007,15 @@ a\mid o,\mathbb E[z]
 
 ---
 
-# 39. 那 0 是不是最常出现的 z？
+## 39. 那 0 是不是最常出现的 z？
 
 对连续 Gaussian 来说，这个问题也要说得精确。
 
 对于一维：
 
-\[
+$$
 \mathcal N(0,1)
-\]
+$$
 
 0 同时是：
 
@@ -2025,9 +2025,9 @@ a\mid o,\mathbb E[z]
 
 多维 standard Gaussian 的 density 最大点也是：
 
-\[
+$$
 \mathbf 0
-\]
+$$
 
 所以可以说：
 
@@ -2035,13 +2035,13 @@ a\mid o,\mathbb E[z]
 
 但连续分布中：
 
-> “精确采到 \(z=0\) 的概率”
+> “精确采到 $z=0$ 的概率”
 
 仍然是：
 
-\[
+$$
 0
-\]
+$$
 
 因为单个点的概率质量为 0。
 
@@ -2061,13 +2061,13 @@ a\mid o,\mathbb E[z]
 
 ---
 
-# 40. 这一点进一步解释了为什么 decoder 能处理 zero
+## 40. 这一点进一步解释了为什么 decoder 能处理 zero
 
 虽然 training 时精确：
 
-\[
+$$
 z=0
-\]
+$$
 
 这个 32 维点几乎不会被随机命中，
 
@@ -2079,9 +2079,9 @@ neural network 是连续函数，
 
 而：
 
-\[
+$$
 0
-\]
+$$
 
 正处于 Gaussian 的中心高密度区域。
 
@@ -2093,7 +2093,7 @@ neural network 是连续函数，
 
 ---
 
-# 41. 一个重要问题：如果 KL 很弱，z=0 会不会变差？
+## 41. 一个重要问题：如果 KL 很弱，z=0 会不会变差？
 
 从原理上：
 
@@ -2103,17 +2103,17 @@ neural network 是连续函数，
 
 training posterior 可以远离：
 
-\[
+$$
 \mathcal N(0,I)
-\]
+$$
 
 那么 decoder 主要在一些偏离 zero 的 latent regions 上训练。
 
 test time 突然：
 
-\[
+$$
 z=0
-\]
+$$
 
 可能产生更大的 train-test mismatch。
 
@@ -2129,23 +2129,23 @@ z=0
 
 ---
 
-# 42. 如果 KL 很强，为什么 z=0 可能更自然？
+## 42. 如果 KL 很强，为什么 z=0 可能更自然？
 
 如果 posterior distributions 都被较强地约束到：
 
-\[
+$$
 \mathcal N(0,I)
-\]
+$$
 
 附近，
 
-那么 decoder 训练时见到的 \(z\) 会更多覆盖 prior 的高密度区域。
+那么 decoder 训练时见到的 $z$ 会更多覆盖 prior 的高密度区域。
 
 test time 选择：
 
-\[
+$$
 0
-\]
+$$
 
 与 training latent geometry 更一致。
 
@@ -2161,15 +2161,15 @@ test time 选择：
 
 ---
 
-# 43. 可以把 z 理解成“Residual Information”吗？
+## 43. 可以把 z 理解成“Residual Information”吗？
 
 作为直觉，可以谨慎使用。
 
 observation：
 
-\[
+$$
 o_t
-\]
+$$
 
 已经包含：
 
@@ -2179,7 +2179,7 @@ o_t
 
 如果这些信息已经决定了大部分动作，
 
-那么 \(z\) 可以帮助解释：
+那么 $z$ 可以帮助解释：
 
 > demonstration 中没有被 observation 唯一确定的剩余变化。
 
@@ -2189,17 +2189,17 @@ o_t
 
 但必须保留两个限定：
 
-1. 这是直觉，不是 \(z\) 的数学定义；
-2. \(z\) 具体编码了什么没有可解释性保证。
+1. 这是直觉，不是 $z$ 的数学定义；
+2. $z$ 具体编码了什么没有可解释性保证。
 
 ---
 
-# 44. 为什么说“推理时消除 variation”只能作为粗略直觉？
+## 44. 为什么说“推理时消除 variation”只能作为粗略直觉？
 
 ACT 确实：
 
-- 训练时允许 stochastic \(z\)；
-- 推理时固定 \(z=0\)。
+- 训练时允许 stochastic $z$；
+- 推理时固定 $z=0$。
 
 所以高层上可以说：
 
@@ -2227,11 +2227,11 @@ ACT 确实：
 
 ---
 
-# 45. 这也是“Deterministic Decode”真正的意思
+## 45. 这也是“Deterministic Decode”真正的意思
 
 论文说：
 
-> set \(z\) to prior mean to deterministically decode.
+> set $z$ to prior mean to deterministically decode.
 
 这里的 deterministic 指：
 
@@ -2239,11 +2239,11 @@ ACT 确实：
 
 因此模型 forward：
 
-\[
+$$
 o_t
 \rightarrow
 a_{t:t+k}
-\]
+$$
 
 在相同参数和确定性算子下会给相同输出。
 
@@ -2266,21 +2266,21 @@ a_{t:t+k}
 
 ---
 
-# 46. 为什么这对 Temporal Ensemble 也很方便？
+## 46. 为什么这对 Temporal Ensemble 也很方便？
 
 ACT 在 inference 时每个 timestep 都重新 query policy：
 
-\[
+$$
 o_t
 \rightarrow
 \hat a_{t:t+k}
-\]
+$$
 
 如果每次 query 还额外随机：
 
-\[
+$$
 z_t\sim\mathcal N(0,I)
-\]
+$$
 
 那么 overlapping chunks 之间的差异会同时来自：
 
@@ -2289,19 +2289,19 @@ z_t\sim\mathcal N(0,I)
 
 Temporal Ensemble 聚合时会多一个随机 variation source。
 
-原论文没有把这一点作为 \(z=0\) 的正式动机来展开，
+原论文没有把这一点作为 $z=0$ 的正式动机来展开，
 
 所以不能说这是论文明确证明的理由。
 
 但从系统设计直觉上：
 
-> 固定 \(z\) 会让 overlapping predictions 的变化主要来自 observation，而不是额外 latent sampling。
+> 固定 $z$ 会让 overlapping predictions 的变化主要来自 observation，而不是额外 latent sampling。
 
 这与 deterministic control 的目标是相容的。
 
 ---
 
-# 47. 一个常见误解：z=0 是 Normalization
+## 47. 一个常见误解：z=0 是 Normalization
 
 不是。
 
@@ -2311,9 +2311,9 @@ Normalization 通常指：
 
 ACT 的：
 
-\[
+$$
 z=0
-\]
+$$
 
 不是在 normalize test input。
 
@@ -2325,33 +2325,33 @@ z=0
 
 ---
 
-# 48. 常见误解一：训练时模型努力让所有 z 都等于 0
+## 48. 常见误解一：训练时模型努力让所有 z 都等于 0
 
 **错误。**
 
 KL 鼓励的是：
 
-\[
+$$
 q_\phi(z|\cdot)
-\]
+$$
 
 接近：
 
-\[
+$$
 \mathcal N(0,I)
-\]
+$$
 
 而：
 
-\[
+$$
 \mathcal N(0,I)
-\]
+$$
 
 不是：
 
-\[
+$$
 z=0
-\]
+$$
 
 这个单点。
 
@@ -2359,15 +2359,15 @@ z=0
 
 ---
 
-# 49. 常见误解二：N(0,I) 就是所有 z 都在 0
+## 49. 常见误解二：N(0,I) 就是所有 z 都在 0
 
 **错误。**
 
 一维：
 
-\[
+$$
 z\sim\mathcal N(0,1)
-\]
+$$
 
 意味着：
 
@@ -2376,23 +2376,23 @@ z\sim\mathcal N(0,1)
 
 样本可能是：
 
-\[
+$$
 -0.4,\;0.7,\;1.2,\;-1.8,\ldots
-\]
+$$
 
 多维同理。
 
 所以：
 
-\[
+$$
 p(z)=\mathcal N(0,I)
-\]
+$$
 
 与：
 
-\[
+$$
 z=0
-\]
+$$
 
 是：
 
@@ -2406,7 +2406,7 @@ z=0
 
 ---
 
-# 50. 常见误解三：推理时 z=0，因为 Encoder 学会输出 μ=0
+## 50. 常见误解三：推理时 z=0，因为 Encoder 学会输出 μ=0
 
 **错误。**
 
@@ -2414,9 +2414,9 @@ z=0
 
 所以不存在：
 
-\[
+$$
 \mu_{\text{test}}
-\]
+$$
 
 官方代码直接创建：
 
@@ -2426,21 +2426,21 @@ torch.zeros(...)
 
 ---
 
-# 51. 常见误解四：z=0 等于没有 z
+## 51. 常见误解四：z=0 等于没有 z
 
 **错误。**
 
 zero vector 仍然进入：
 
-\[
+$$
 latent\_out\_proj
-\]
+$$
 
 而：
 
-\[
+$$
 W0+b=b
-\]
+$$
 
 所以 Transformer 仍然接收一个固定 latent embedding。
 
@@ -2450,23 +2450,23 @@ W0+b=b
 
 ---
 
-# 52. 常见误解五：z=0 等于所有 demonstration 的平均动作
+## 52. 常见误解五：z=0 等于所有 demonstration 的平均动作
 
 **错误。**
 
 一般：
 
-\[
+$$
 f(\mathbb E[z])
 \neq
 \mathbb E[f(z)]
-\]
+$$
 
 所以：
 
-\[
+$$
 \pi(o,0)
-\]
+$$
 
 不是：
 
@@ -2474,7 +2474,7 @@ f(\mathbb E[z])
 
 ---
 
-# 53. 常见误解六：z=0 把 human noise 全部删除了
+## 53. 常见误解六：z=0 把 human noise 全部删除了
 
 **过度解释。**
 
@@ -2486,29 +2486,29 @@ human demonstration variability 已经参与训练并塑造 model weights。
 
 ---
 
-# 54. 常见误解七：一般 CVAE 都应该推理 z=0
+## 54. 常见误解七：一般 CVAE 都应该推理 z=0
 
 **错误。**
 
 一般 CVAE 常常：
 
-\[
+$$
 z\sim p(z)
-\]
+$$
 
 以产生 diverse outputs。
 
 ACT 选择：
 
-\[
+$$
 z=0
-\]
+$$
 
 是它自己的 deterministic control design。
 
 ---
 
-# 55. 常见误解八：既然测试不用随机 z，CVAE 完全可以删掉
+## 55. 常见误解八：既然测试不用随机 z，CVAE 完全可以删掉
 
 论文 ablation 表明：
 
@@ -2526,7 +2526,7 @@ training objective 本身就会改变最终 policy。
 
 ---
 
-# 56. 用一个完整训练例子再走一遍
+## 56. 用一个完整训练例子再走一遍
 
 假设某时刻 observation 大致相似。
 
@@ -2538,25 +2538,25 @@ action chunk A
 
 encoder 得到：
 
-\[
+$$
 q_A(z)
 =
 \mathcal N(\mu_A,\sigma_A^2)
-\]
+$$
 
 sample：
 
-\[
+$$
 z_A
-\]
+$$
 
 decoder 学：
 
-\[
+$$
 (o,z_A)
 \rightarrow
 A
-\]
+$$
 
 ---
 
@@ -2568,35 +2568,35 @@ action chunk B
 
 encoder 得到：
 
-\[
+$$
 q_B(z)
-\]
+$$
 
 sample：
 
-\[
+$$
 z_B
-\]
+$$
 
 decoder 学：
 
-\[
+$$
 (o,z_B)
 \rightarrow
 B
-\]
+$$
 
 同时：
 
-\[
+$$
 q_A(z),q_B(z)
-\]
+$$
 
 都被 KL 拉向：
 
-\[
+$$
 \mathcal N(0,I)
-\]
+$$
 
 ---
 
@@ -2606,27 +2606,27 @@ q_A(z),q_B(z)
 
 所以不问：
 
-> “这次应该用 \(q_A\) 还是 \(q_B\)？”
+> “这次应该用 $q_A$ 还是 $q_B$？”
 
 ACT 直接：
 
-\[
+$$
 z=0
-\]
+$$
 
 然后：
 
-\[
+$$
 (o,0)
 \rightarrow
 \text{一个 deterministic action chunk}
-\]
+$$
 
 这就是完整逻辑。
 
 ---
 
-# 57. 为什么 Decoder 能学会在 z=0 附近工作？
+## 57. 为什么 Decoder 能学会在 z=0 附近工作？
 
 因为训练不是：
 
@@ -2645,9 +2645,9 @@ z=0
 
 同时这些 Gaussian 又被 KL regularize toward：
 
-\[
+$$
 N(0,I)
-\]
+$$
 
 所以训练本身鼓励：
 
@@ -2657,7 +2657,7 @@ N(0,I)
 
 ---
 
-# 58. 一个更严格的“睡得好”例子
+## 58. 一个更严格的“睡得好”例子
 
 假设 human demonstration 的 variation 确实部分与操作者当天状态相关。
 
@@ -2681,17 +2681,17 @@ observation
 
 所以我们最多可以说：
 
-> \(z\) 有能力帮助表示 demonstration 中 observation 未解释的 variation。
+> $z$ 有能力帮助表示 demonstration 中 observation 未解释的 variation。
 
 不能说：
 
-> \(z\) 的某一维就是睡眠质量。
+> $z$ 的某一维就是睡眠质量。
 
 因此 test time：
 
-\[
+$$
 z=0
-\]
+$$
 
 也不是：
 
@@ -2705,31 +2705,31 @@ z=0
 
 ---
 
-# 59. 那你之前的理解怎样修正成严谨版本？
+## 59. 那你之前的理解怎样修正成严谨版本？
 
 一个比较好的版本可以是：
 
-> **训练时，ACT 使用 latent \(z\) 来帮助解释同一类 observation 下 human action sequence 中额外的、没有被 observation 唯一决定的变化。KL 又限制这些 latent posteriors 不要脱离标准高斯 prior。推理时，因为 ground-truth future actions 不存在，训练 encoder 无法使用；ACT 因此不再推断某条具体 demonstration 的 style，而固定使用 prior 的中心 \(z=0\)，得到一个 deterministic 的 canonical latent condition。**
+> **训练时，ACT 使用 latent $z$ 来帮助解释同一类 observation 下 human action sequence 中额外的、没有被 observation 唯一决定的变化。KL 又限制这些 latent posteriors 不要脱离标准高斯 prior。推理时，因为 ground-truth future actions 不存在，训练 encoder 无法使用；ACT 因此不再推断某条具体 demonstration 的 style，而固定使用 prior 的中心 $z=0$，得到一个 deterministic 的 canonical latent condition。**
 
 这个理解：
 
-- 保留了“\(z\) 处理额外 variation”的直觉；
-- 但没有把 \(z\) 强行解释成具体现实因素；
-- 也没有说 \(z=0\) 是“把所有因素消除”。
+- 保留了“$z$ 处理额外 variation”的直觉；
+- 但没有把 $z$ 强行解释成具体现实因素；
+- 也没有说 $z=0$ 是“把所有因素消除”。
 
 这是更准确的 mental model。
 
 ---
 
-# 60. 用四层关系记住全部内容
+## 60. 用四层关系记住全部内容
 
-## 第一层：Posterior
+### 第一层：Posterior
 
 训练时：
 
-\[
+$$
 q_\phi(z\mid a,q)
-\]
+$$
 
 回答：
 
@@ -2737,13 +2737,13 @@ q_\phi(z\mid a,q)
 
 ---
 
-## 第二层：Prior
+### 第二层：Prior
 
 规定：
 
-\[
+$$
 p(z)=\mathcal N(0,I)
-\]
+$$
 
 回答：
 
@@ -2751,11 +2751,11 @@ p(z)=\mathcal N(0,I)
 
 ---
 
-## 第三层：KL
+### 第三层：KL
 
-\[
+$$
 D_{KL}(q_\phi\parallel p)
-\]
+$$
 
 回答：
 
@@ -2763,11 +2763,11 @@ D_{KL}(q_\phi\parallel p)
 
 ---
 
-## 第四层：Inference Choice
+### 第四层：Inference Choice
 
-\[
+$$
 z=\mathbb E_{p(z)}[z]=0
-\]
+$$
 
 回答：
 
@@ -2779,28 +2779,28 @@ z=\mathbb E_{p(z)}[z]=0
 
 ---
 
-# 61. 用三条公式记住
+## 61. 用三条公式记住
 
 如果最后只记住三条公式：
 
 ---
 
-## Training Posterior
+### Training Posterior
 
-\[
+$$
 \boxed{
 q_\phi(
 z\mid
 a_{t:t+k},q_t
 )
 }
-\]
+$$
 
 ---
 
-## Prior Regularization
+### Prior Regularization
 
-\[
+$$
 \boxed{
 D_{KL}
 \left(
@@ -2809,13 +2809,13 @@ q_\phi(z|\cdot)
 \mathcal N(0,I)
 \right)
 }
-\]
+$$
 
 ---
 
-## Test-Time Latent
+### Test-Time Latent
 
-\[
+$$
 \boxed{
 z
 =
@@ -2825,7 +2825,7 @@ z
 =
 0
 }
-\]
+$$
 
 它们连起来就是：
 
@@ -2839,23 +2839,23 @@ test time uses prior mean
 
 ---
 
-# 62. 一句话重新理解
+## 62. 一句话重新理解
 
-> **ACT 推理时令 \(z=0\)，不是因为 latent variable 没有用，也不是因为模型把所有“额外因素”都清除了，而是因为 training encoder 依赖 ground-truth future actions、测试时无法使用；CVAE 训练通过 KL 把 posterior 约束到标准高斯 prior 附近，因此 ACT 在 test time 选择这个 prior 的均值 \(0\) 作为一个固定的 canonical latent condition，从而得到 deterministic policy output。**
+> **ACT 推理时令 $z=0$，不是因为 latent variable 没有用，也不是因为模型把所有“额外因素”都清除了，而是因为 training encoder 依赖 ground-truth future actions、测试时无法使用；CVAE 训练通过 KL 把 posterior 约束到标准高斯 prior 附近，因此 ACT 在 test time 选择这个 prior 的均值 $0$ 作为一个固定的 canonical latent condition，从而得到 deterministic policy output。**
 
 训练时：
 
-\[
+$$
 z
-\]
+$$
 
 帮助模型解释 demonstration variability。
 
 推理时：
 
-\[
+$$
 z=0
-\]
+$$
 
 则取消 latent sampling 这一额外随机来源。
 
@@ -2869,7 +2869,7 @@ z=0
 
 ---
 
-# 63. 下一步
+## 63. 下一步
 
 现在 ACT 的 CVAE 主线已经完整：
 
@@ -2941,7 +2941,7 @@ k × 14
 
 ---
 
-## Primary Source
+### Primary Source
 
 Tony Z. Zhao, Vikash Kumar, Sergey Levine, Chelsea Finn.  
 **Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware.**  
@@ -2961,15 +2961,15 @@ Robotics: Science and Systems (RSS), 2023.
 
 论文明确规定：
 
-\[
+$$
 z
-\]
+$$
 
 在 test time 被设置为 prior distribution 的 mean，即：
 
-\[
+$$
 z=0
-\]
+$$
 
 以 deterministic decode。
 
@@ -2979,7 +2979,7 @@ Appendix 进一步说明：
 
 ---
 
-## Official Implementation
+### Official Implementation
 
 ACT official repository:
 
@@ -3009,7 +3009,7 @@ latent_input =
 这确认：
 
 - test time 不运行 CVAE encoder；
-- 不计算 \(\mu\)；
+- 不计算 $\mu$；
 - 不计算 `logvar`；
 - 不从 prior 随机采样；
 - 直接使用 zero latent vector；
@@ -3017,9 +3017,9 @@ latent_input =
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### 前置知识
+#### 前置知识
 
 - [Latent Variable](../../generative-models/latent-variable.md)
 - [VAE](../../generative-models/vae.md)
@@ -3027,7 +3027,7 @@ latent_input =
 - [CVAE](../../generative-models/cvae.md)
 - [CVAE in ACT](./cvae-in-act.md)
 
-### 数学基础
+#### 数学基础
 
 - Probability Distribution
 - [Normal Distribution](../../mathematics/normal-distribution.md)
@@ -3037,13 +3037,13 @@ latent_input =
 - Expectation
 - [KL Divergence](../../mathematics/kl-divergence.md)
 
-### ACT
+#### ACT
 
 - [ACT 到底解决了什么问题？](./act-what-problem-does-it-solve.md)
 - [Action Chunking](./action-chunking.md)
 - [Temporal Ensemble](./temporal-ensemble.md)
 
-### 下一步
+#### 下一步
 
 - [ACT Architecture](./architecture.md)
 - [ACT Training](./training.md)

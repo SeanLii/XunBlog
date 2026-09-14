@@ -21,11 +21,11 @@ updated: "2026-09-15"
 
 这就是：
 
-\[
+$$
 \boxed{
 \text{Causal Mask}
 }
-\]
+$$
 
 它解决的不是：
 
@@ -37,23 +37,23 @@ updated: "2026-09-15"
 
 如果模型正在预测第：
 
-\[
+$$
 t
-\]
+$$
 
 个 token，
 
 它只能依赖：
 
-\[
+$$
 y_1,\ldots,y_{t-1}
-\]
+$$
 
 而不能偷看：
 
-\[
+$$
 y_t,y_{t+1},\ldots
-\]
+$$
 
 的真实答案。
 
@@ -63,19 +63,19 @@ y_t,y_{t+1},\ldots
 
 Section 3.2.3 又进一步说明：
 
-> 对非法连接，在 Softmax 输入处把对应值设为 \(-\infty\)。
+> 对非法连接，在 Softmax 输入处把对应值设为 $-\infty$。
 
 最终目的就是保留：
 
-\[
+$$
 \boxed{
 \text{autoregressive property}
 }
-\]
+$$
 
 ---
 
-# 1. 先从 Autoregressive 到底是什么意思开始
+## 1. 先从 Autoregressive 到底是什么意思开始
 
 假设要生成一句：
 
@@ -85,15 +85,15 @@ I love robots
 
 一个 autoregressive model 不直接一次定义：
 
-\[
+$$
 P(
 I,\ love,\ robots
 )
-\]
+$$
 
 而是根据概率链式法则写成：
 
-\[
+$$
 \boxed{
 P(y_1,\ldots,y_T)
 =
@@ -104,31 +104,31 @@ y_t
 y_1,\ldots,y_{t-1}
 )
 }
-\]
+$$
 
 也就是：
 
-\[
+$$
 P(y_1)
-\]
+$$
 
 乘：
 
-\[
+$$
 P(y_2\mid y_1)
-\]
+$$
 
 乘：
 
-\[
+$$
 P(y_3\mid y_1,y_2)
-\]
+$$
 
 ……
 
 所以：
 
-> 第 \(t\) 个 token 的预测只能使用过去。
+> 第 $t$ 个 token 的预测只能使用过去。
 
 这不是 Transformer 独有。
 
@@ -136,7 +136,7 @@ P(y_3\mid y_1,y_2)
 
 ---
 
-# 2. 为什么不能让模型看未来？
+## 2. 为什么不能让模型看未来？
 
 假设训练句子：
 
@@ -176,15 +176,15 @@ robots
 
 这就叫：
 
-\[
+$$
 \boxed{
 \text{information leakage}
 }
-\]
+$$
 
 ---
 
-# 3. 一个更极端的例子
+## 3. 一个更极端的例子
 
 训练输入如果直接是：
 
@@ -202,15 +202,15 @@ I love robots
 
 Self-Attention 可以让：
 
-\[
+$$
 position\ 2
-\]
+$$
 
 直接 attend：
 
-\[
+$$
 position\ 2
-\]
+$$
 
 甚至直接复制当前目标 token 的 representation。
 
@@ -223,7 +223,7 @@ position\ 2
 
 ---
 
-# 4. Transformer Decoder 的 Target 为什么要右移一位？
+## 4. Transformer Decoder 的 Target 为什么要右移一位？
 
 原始 Transformer 论文写道：
 
@@ -254,13 +254,13 @@ Decoder input:   <BOS>   I      love    robots
 Target:          I       love   robots  <EOS>
 ```
 
-于是 position \(t\) 的输入只提供：
+于是 position $t$ 的输入只提供：
 
 > 前一个已知 target token。
 
 ---
 
-# 5. 为什么 Shift 之后仍然需要 Causal Mask？
+## 5. 为什么 Shift 之后仍然需要 Causal Mask？
 
 这是最容易误解的一点。
 
@@ -319,91 +319,91 @@ love
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Shift alone is not enough}
 }
-\]
+$$
 
 必须再加：
 
-\[
+$$
 \boxed{
 \text{Causal Mask}
 }
-\]
+$$
 
 ---
 
-# 6. Shift 和 Mask 分别负责什么？
+## 6. Shift 和 Mask 分别负责什么？
 
-## Shift
+### Shift
 
-让 position \(t\) 的本地 input：
+让 position $t$ 的本地 input：
 
 > 是上一个 token，而不是当前目标 token。
 
 ---
 
-## Causal Mask
+### Causal Mask
 
-保证 position \(t\) 的 Self-Attention：
+保证 position $t$ 的 Self-Attention：
 
-> 只能读取 position \(\le t\) 的 decoder inputs。
+> 只能读取 position $\le t$ 的 decoder inputs。
 
 二者配合，
 
 原论文才能保证：
 
-> 对 position \(i\) 的预测只依赖小于 \(i\) 的已知 outputs。
+> 对 position $i$ 的预测只依赖小于 $i$ 的已知 outputs。
 
 ---
 
-# 7. 一个 4-Token 的可见性矩阵
+## 7. 一个 4-Token 的可见性矩阵
 
 假设 Decoder input 有 4 个位置：
 
-\[
+$$
 0,1,2,3
-\]
+$$
 
 我们要求：
 
-### Query 0
+#### Query 0
 
 只能看：
 
-\[
+$$
 0
-\]
+$$
 
-### Query 1
+#### Query 1
 
 可以看：
 
-\[
+$$
 0,1
-\]
+$$
 
-### Query 2
+#### Query 2
 
 可以看：
 
-\[
+$$
 0,1,2
-\]
+$$
 
-### Query 3
+#### Query 3
 
 可以看：
 
-\[
+$$
 0,1,2,3
-\]
+$$
 
 所以 allowed matrix：
 
-\[
+$$
 \boxed{
 \begin{bmatrix}
 1&0&0&0\\
@@ -412,7 +412,7 @@ love
 1&1&1&1
 \end{bmatrix}
 }
-\]
+$$
 
 这是一个：
 
@@ -420,7 +420,7 @@ love
 
 ---
 
-# 8. 为什么常说是 Upper-Triangular Mask？
+## 8. 为什么常说是 Upper-Triangular Mask？
 
 因为“允许矩阵”是下三角，
 
@@ -430,7 +430,7 @@ love
 
 所以 mask matrix 可以写成：
 
-\[
+$$
 M=
 \begin{bmatrix}
 0&-\infty&-\infty&-\infty\\
@@ -438,11 +438,11 @@ M=
 0&0&0&-\infty\\
 0&0&0&0
 \end{bmatrix}
-\]
+$$
 
 也就是：
 
-> upper triangular part 被设成 \(-\infty\)。
+> upper triangular part 被设成 $-\infty$。
 
 所以两种说法其实是在讲同一个结构：
 
@@ -456,11 +456,11 @@ strict upper triangular
 
 ---
 
-# 9. Causal Mask 到底加在哪里？
+## 9. Causal Mask 到底加在哪里？
 
 Attention 原始 logits：
 
-\[
+$$
 S
 =
 \frac{
@@ -468,45 +468,45 @@ QK^\top
 }{
 \sqrt{d_k}
 }
-\]
+$$
 
 加入 mask：
 
-\[
+$$
 \boxed{
 \tilde S=S+M
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 M_{ij}
 =
 \begin{cases}
 0,&j\le i\\
 -\infty,&j>i
 \end{cases}
-\]
+$$
 
 然后：
 
-\[
+$$
 \boxed{
 A=
 softmax(
 \tilde S
 )
 }
-\]
+$$
 
 ---
 
-# 10. 为什么使用 -∞？
+## 10. 为什么使用 -∞？
 
 因为 Softmax：
 
-\[
+$$
 softmax(z_j)
 =
 \frac{
@@ -514,33 +514,33 @@ e^{z_j}
 }{
 \sum_k e^{z_k}
 }
-\]
+$$
 
 如果：
 
-\[
+$$
 z_j=-\infty
-\]
+$$
 
 那么：
 
-\[
+$$
 e^{-\infty}=0
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 A_{ij}=0
 }
-\]
+$$
 
 该位置对最终：
 
-\[
+$$
 AV
-\]
+$$
 
 完全没有贡献。
 
@@ -550,7 +550,7 @@ AV
 
 ---
 
-# 11. 为什么不是 Mask 后再把 Weight 改成 0？
+## 11. 为什么不是 Mask 后再把 Weight 改成 0？
 
 理论上你可以：
 
@@ -562,9 +562,9 @@ AV
 
 在 logits 阶段直接加：
 
-\[
+$$
 -\infty
-\]
+$$
 
 一次 Softmax 就自动同时完成：
 
@@ -575,54 +575,54 @@ AV
 
 ---
 
-# 12. 一个具体数值例子
+## 12. 一个具体数值例子
 
 假设 Query 1 的 raw logits：
 
-\[
+$$
 [2,5,10,7]
-\]
+$$
 
 但它只允许看：
 
-\[
+$$
 position\ 0,1
-\]
+$$
 
 mask：
 
-\[
+$$
 [0,0,-\infty,-\infty]
-\]
+$$
 
 得到：
 
-\[
+$$
 [2,5,-\infty,-\infty]
-\]
+$$
 
 Softmax 后：
 
-\[
+$$
 \approx
 [0.0474,0.9526,0,0]
-\]
+$$
 
 注意：
 
 虽然未来 position 2 原始 score：
 
-\[
+$$
 10
-\]
+$$
 
 甚至最大，
 
 mask 后仍然：
 
-\[
+$$
 0
-\]
+$$
 
 所以 Causal Mask 是：
 
@@ -634,7 +634,7 @@ mask 后仍然：
 
 ---
 
-# 13. 为什么不能让模型自己学“不要作弊”？
+## 13. 为什么不能让模型自己学“不要作弊”？
 
 如果训练数据里未来答案就在输入中，
 
@@ -654,7 +654,7 @@ mask 后仍然：
 
 ---
 
-# 14. Causal Mask 不是一种 Regularization
+## 14. Causal Mask 不是一种 Regularization
 
 它不是：
 
@@ -662,31 +662,31 @@ mask 后仍然：
 
 它定义了模型的条件依赖结构：
 
-\[
+$$
 P(y_t\mid y_{<t})
-\]
+$$
 
 而不是：
 
-\[
+$$
 P(y_t\mid y_1,\ldots,y_T)
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Causal Mask}
 =
 \text{model factorization constraint}
 }
-\]
+$$
 
 而不是普通 dropout-like regularization。
 
 ---
 
-# 15. 为什么叫 Causal？
+## 15. 为什么叫 Causal？
 
 这里的 “causal” 主要表示：
 
@@ -702,15 +702,15 @@ P(y_t\mid y_1,\ldots,y_T)
 
 即：
 
-\[
+$$
 j>i
-\]
+$$
 
-的 future key 对 query \(i\) 不可见。
+的 future key 对 query $i$ 不可见。
 
 ---
 
-# 16. Causal Mask 会允许看自己吗？
+## 16. Causal Mask 会允许看自己吗？
 
 标准 next-token Transformer training：
 
@@ -718,9 +718,9 @@ j>i
 
 即：
 
-\[
+$$
 j=i
-\]
+$$
 
 合法。
 
@@ -738,19 +738,19 @@ j=i
 
 ---
 
-# 17. 这里 Shift 再次非常关键
+## 17. 这里 Shift 再次非常关键
 
 假设预测 target：
 
-\[
+$$
 y_i
-\]
+$$
 
-Decoder position \(i\) 上实际输入的是：
+Decoder position $i$ 上实际输入的是：
 
-\[
+$$
 y_{i-1}
-\]
+$$
 
 所以允许 attention 到自己：
 
@@ -758,19 +758,19 @@ y_{i-1}
 
 并没有泄漏：
 
-\[
+$$
 y_i
-\]
+$$
 
 ---
 
-# 18. 如果不 Shift，却只做包含对角线的 Causal Mask 会怎样？
+## 18. 如果不 Shift，却只做包含对角线的 Causal Mask 会怎样？
 
-如果 Decoder position \(i\) 输入正好就是：
+如果 Decoder position $i$ 输入正好就是：
 
-\[
+$$
 y_i
-\]
+$$
 
 那么它可以看到自己的 Value。
 
@@ -778,13 +778,13 @@ y_i
 
 这说明：
 
-\[
+$$
 \boxed{
 \text{Shifted Input}
 +
 \text{Causal Mask}
 }
-\]
+$$
 
 是配套设计。
 
@@ -792,7 +792,7 @@ y_i
 
 ---
 
-# 19. 为什么训练时整个 Target Sentence 已经在 Tensor 里？
+## 19. 为什么训练时整个 Target Sentence 已经在 Tensor 里？
 
 这是很多初学者最反直觉的地方。
 
@@ -826,31 +826,31 @@ Causal Mask 规定了每个位置的信息通路。
 
 ---
 
-# 20. 这就是训练可以并行的关键
+## 20. 这就是训练可以并行的关键
 
 对于所有 positions：
 
-\[
+$$
 1,\ldots,T
-\]
+$$
 
 我们可以一次算：
 
-\[
+$$
 Q,K,V
-\]
+$$
 
 一次算：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 得到整个：
 
-\[
+$$
 T\times T
-\]
+$$
 
 score matrix。
 
@@ -858,39 +858,39 @@ score matrix。
 
 于是所有 positions 的 loss：
 
-\[
+$$
 L_1,\ldots,L_T
-\]
+$$
 
 可以同时计算。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Autoregressive objective}
 \neq
 \text{training must be sequential}
 }
-\]
+$$
 
 ---
 
-# 21. 为什么这和 RNN 不同？
+## 21. 为什么这和 RNN 不同？
 
 RNN training 即使有完整 ground truth，
 
 hidden state：
 
-\[
+$$
 h_t
-\]
+$$
 
 仍然依赖：
 
-\[
+$$
 h_{t-1}
-\]
+$$
 
 所以 sequence 内部 computation 存在真正的 recurrent dependency。
 
@@ -906,13 +906,13 @@ mask 只限制信息流。
 
 ---
 
-# 22. 那为什么 Inference 还是 Sequential？
+## 22. 那为什么 Inference 还是 Sequential？
 
 训练时我们知道真实：
 
-\[
+$$
 y_1,\ldots,y_T
-\]
+$$
 
 所以可以构造完整 shifted input。
 
@@ -948,23 +948,23 @@ robots
 
 所以：
 
-\[
+$$
 \boxed{
 \text{training can parallelize positions}
 }
-\]
+$$
 
 但：
 
-\[
+$$
 \boxed{
 \text{standard autoregressive inference generates sequentially}
 }
-\]
+$$
 
 ---
 
-# 23. 这是不是矛盾？
+## 23. 这是不是矛盾？
 
 不矛盾。
 
@@ -978,17 +978,17 @@ robots
 
 同一个 probability factorization：
 
-\[
+$$
 P(y)
 =
 \prod_tP(y_t\mid y_{<t})
-\]
+$$
 
 在训练和推理阶段有不同计算条件。
 
 ---
 
-# 24. Teacher Forcing 到底是什么？
+## 24. Teacher Forcing 到底是什么？
 
 在经典序列模型语境里，
 
@@ -1020,25 +1020,25 @@ Transformer 训练中 shifted target sequence：
 
 ---
 
-# 25. Training 和 Inference 的 Prefix 不同
+## 25. Training 和 Inference 的 Prefix 不同
 
-## Training
+### Training
 
 模型看到：
 
-\[
+$$
 y_{<t}^{groundtruth}
-\]
+$$
 
 ---
 
-## Inference
+### Inference
 
 模型看到：
 
-\[
+$$
 \hat y_{<t}^{model}
-\]
+$$
 
 所以训练和推理存在：
 
@@ -1052,19 +1052,19 @@ y_{<t}^{groundtruth}
 
 Causal Mask 只负责：
 
-> 确保 position \(t\) 不读取未来。
+> 确保 position $t$ 不读取未来。
 
 ---
 
-# 26. Causal Mask 和 Teacher Forcing 不是一回事
+## 26. Causal Mask 和 Teacher Forcing 不是一回事
 
-### Teacher Forcing
+#### Teacher Forcing
 
 回答：
 
 > 已知过去 token 是 ground truth 还是 model prediction？
 
-### Causal Mask
+#### Causal Mask
 
 回答：
 
@@ -1072,27 +1072,27 @@ Causal Mask 只负责：
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Teacher Forcing}
 \neq
 \text{Causal Mask}
 }
-\]
+$$
 
 训练时通常二者同时出现。
 
 ---
 
-# 27. Causal Mask 和 Positional Encoding 也不是一回事
+## 27. Causal Mask 和 Positional Encoding 也不是一回事
 
-### Positional Encoding
+#### Positional Encoding
 
 告诉模型：
 
 > token 在哪里。
 
-### Causal Mask
+#### Causal Mask
 
 规定：
 
@@ -1100,35 +1100,35 @@ Causal Mask 只负责：
 
 所以：
 
-\[
+$$
 \boxed{
 Position
 =
 \text{where am I?}
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 Mask
 =
 \text{what am I allowed to see?}
 }
-\]
+$$
 
 这是一个非常好用的区分。
 
 ---
 
-# 28. 为什么有 Mask 之后仍然需要 Position？
+## 28. 为什么有 Mask 之后仍然需要 Position？
 
 考虑 Query 3。
 
 它被允许读取：
 
-\[
+$$
 0,1,2,3
-\]
+$$
 
 但仅靠 mask，
 
@@ -1147,7 +1147,7 @@ Mask
 
 ---
 
-# 29. 为什么有 Position 之后仍然需要 Mask？
+## 29. 为什么有 Position 之后仍然需要 Mask？
 
 因为即使 position 2 知道：
 
@@ -1155,9 +1155,9 @@ Mask
 
 如果 full Attention 仍允许：
 
-\[
+$$
 2\rightarrow3
-\]
+$$
 
 模型仍然可以读取真实未来 representation。
 
@@ -1165,34 +1165,34 @@ Mask
 
 ---
 
-# 30. Causal Mask 的 Matrix 形式
+## 30. Causal Mask 的 Matrix 形式
 
 设 sequence length：
 
-\[
+$$
 T
-\]
+$$
 
 mask：
 
-\[
+$$
 M_{ij}
 =
 \begin{cases}
 0,&j\le i\\
 -\infty,&j>i
 \end{cases}
-\]
+$$
 
 例如：
 
-\[
+$$
 T=5
-\]
+$$
 
 ：
 
-\[
+$$
 \boxed{
 M=
 \begin{bmatrix}
@@ -1203,15 +1203,15 @@ M=
 0&0&0&0&0
 \end{bmatrix}
 }
-\]
+$$
 
 ---
 
-# 31. 最终 Attention 公式
+## 31. 最终 Attention 公式
 
 标准 full Attention：
 
-\[
+$$
 A
 =
 softmax
@@ -1222,11 +1222,11 @@ QK^\top
 \sqrt{d_k}
 }
 \right)
-\]
+$$
 
 Causal Attention：
 
-\[
+$$
 \boxed{
 A
 =
@@ -1241,23 +1241,23 @@ QK^\top
 M
 \right)
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 M
-\]
+$$
 
 就是 causal mask。
 
 ---
 
-# 32. 一个完整 4×4 数值结构
+## 32. 一个完整 4×4 数值结构
 
 raw logits：
 
-\[
+$$
 S=
 \begin{bmatrix}
 s_{00}&s_{01}&s_{02}&s_{03}\\
@@ -1265,11 +1265,11 @@ s_{10}&s_{11}&s_{12}&s_{13}\\
 s_{20}&s_{21}&s_{22}&s_{23}\\
 s_{30}&s_{31}&s_{32}&s_{33}
 \end{bmatrix}
-\]
+$$
 
 加入 mask：
 
-\[
+$$
 S+M=
 \begin{bmatrix}
 s_{00}&-\infty&-\infty&-\infty\\
@@ -1277,11 +1277,11 @@ s_{10}&s_{11}&-\infty&-\infty\\
 s_{20}&s_{21}&s_{22}&-\infty\\
 s_{30}&s_{31}&s_{32}&s_{33}
 \end{bmatrix}
-\]
+$$
 
 row-wise Softmax 后：
 
-\[
+$$
 A=
 \begin{bmatrix}
 1&0&0&0\\
@@ -1289,29 +1289,29 @@ A=
 *&*&*&0\\
 *&*&*&*
 \end{bmatrix}
-\]
+$$
 
 其中每一行的：
 
-\[
+$$
 *
-\]
+$$
 
 加起来等于：
 
-\[
+$$
 1
-\]
+$$
 
 ---
 
-# 33. 为什么第一行一定是 [1,0,0,0]？
+## 33. 为什么第一行一定是 [1,0,0,0]？
 
 因为 Query 0 只有：
 
-\[
+$$
 Key\ 0
-\]
+$$
 
 合法。
 
@@ -1319,17 +1319,17 @@ Softmax 候选只有一个。
 
 所以无论：
 
-\[
+$$
 s_{00}
-\]
+$$
 
 是多少，
 
 归一化后：
 
-\[
+$$
 A_{00}=1
-\]
+$$
 
 这也说明：
 
@@ -1337,21 +1337,21 @@ A_{00}=1
 
 ---
 
-# 34. 为什么最后一行没有任何 Mask？
+## 34. 为什么最后一行没有任何 Mask？
 
 因为最后 position：
 
-\[
+$$
 T-1
-\]
+$$
 
 已经位于 sequence 尾部。
 
 它允许读取：
 
-\[
+$$
 0,\ldots,T-1
-\]
+$$
 
 所有当前与过去 positions。
 
@@ -1359,7 +1359,7 @@ T-1
 
 ---
 
-# 35. Causal Attention 是一种 Directed Graph
+## 35. Causal Attention 是一种 Directed Graph
 
 可以把 sequence positions 当 nodes。
 
@@ -1388,7 +1388,7 @@ Causal：
 
 ---
 
-# 36. 多层之后 Future 真的完全不能影响 Past 吗？
+## 36. 多层之后 Future 真的完全不能影响 Past 吗？
 
 如果每一层都严格 causal，
 
@@ -1398,9 +1398,9 @@ Causal：
 
 因为每层都只允许：
 
-\[
+$$
 j\le i
-\]
+$$
 
 信息流。
 
@@ -1408,13 +1408,13 @@ j\le i
 
 ---
 
-# 37. 为什么 Residual Connection 不会绕过 Mask？
+## 37. 为什么 Residual Connection 不会绕过 Mask？
 
 Residual：
 
-\[
+$$
 x_i+Attention_i
-\]
+$$
 
 只把：
 
@@ -1428,7 +1428,7 @@ x_i+Attention_i
 
 ---
 
-# 38. FFN 会不会泄漏 Future？
+## 38. FFN 会不会泄漏 Future？
 
 Transformer position-wise FFN：
 
@@ -1442,7 +1442,7 @@ FFN 也不会创建 future-to-past information flow。
 
 ---
 
-# 39. Cross-Attention 呢？
+## 39. Cross-Attention 呢？
 
 原始 translation Decoder 的 Cross-Attention：
 
@@ -1464,27 +1464,27 @@ English source
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Decoder Self-Attention}
 \rightarrow
 \text{causal}
 }
-\]
+$$
 
 而：
 
-\[
+$$
 \boxed{
 \text{Encoder–Decoder Cross-Attention}
 \rightarrow
 \text{usually full source visibility}
 }
-\]
+$$
 
 ---
 
-# 40. Encoder 为什么通常也不需要 Causal Mask？
+## 40. Encoder 为什么通常也不需要 Causal Mask？
 
 原始 Transformer Encoder 任务是：
 
@@ -1502,19 +1502,19 @@ English source
 
 ---
 
-# 41. Decoder 为什么特殊？
+## 41. Decoder 为什么特殊？
 
 因为 Decoder target sequence：
 
 > 是模型要生成的答案。
 
-在生成第 \(t\) 个 target token 时，
+在生成第 $t$ 个 target token 时，
 
 未来 target：
 
-\[
+$$
 y_{>t}
-\]
+$$
 
 在真实推理场景不存在。
 
@@ -1524,7 +1524,7 @@ y_{>t}
 
 ---
 
-# 42. Encoder-Only 模型一定没有 Causal Mask 吗？
+## 42. Encoder-Only 模型一定没有 Causal Mask 吗？
 
 不一定。
 
@@ -1544,27 +1544,27 @@ y_{>t}
 
 ---
 
-# 43. GPT 为什么也需要 Causal Mask？
+## 43. GPT 为什么也需要 Causal Mask？
 
 GPT 是 Decoder-style autoregressive language model。
 
 它要建模：
 
-\[
+$$
 P(x_t\mid x_{<t})
-\]
+$$
 
 所以必须阻止：
 
-\[
+$$
 x_t
-\]
+$$
 
 读取：
 
-\[
+$$
 x_{>t}
-\]
+$$
 
 真实训练 token。
 
@@ -1572,7 +1572,7 @@ x_{>t}
 
 ---
 
-# 44. BERT 为什么不使用标准 Causal Mask？
+## 44. BERT 为什么不使用标准 Causal Mask？
 
 BERT 的 pretraining 目标不是标准 left-to-right autoregressive factorization。
 
@@ -1589,15 +1589,15 @@ BERT 的 pretraining 目标不是标准 left-to-right autoregressive factorizati
 
 ---
 
-# 45. 所以 Mask 其实定义了信息流范式
+## 45. 所以 Mask 其实定义了信息流范式
 
-### Full / Bidirectional
+#### Full / Bidirectional
 
-\[
+$$
 i
 \leftrightarrow
 j
-\]
+$$
 
 适合：
 
@@ -1605,11 +1605,11 @@ j
 
 ---
 
-### Causal
+#### Causal
 
-\[
+$$
 j\le i
-\]
+$$
 
 适合：
 
@@ -1617,7 +1617,7 @@ j\le i
 
 ---
 
-### Arbitrary Mask
+#### Arbitrary Mask
 
 也可以定义：
 
@@ -1632,9 +1632,9 @@ j\le i
 
 ---
 
-# 46. Causal Mask 和 Padding Mask 必须区分
+## 46. Causal Mask 和 Padding Mask 必须区分
 
-## Causal Mask
+### Causal Mask
 
 根据：
 
@@ -1644,7 +1644,7 @@ j\le i
 
 ---
 
-## Padding Mask
+### Padding Mask
 
 根据：
 
@@ -1668,23 +1668,23 @@ token token PAD PAD
 
 ---
 
-# 47. 两个 Mask 可以同时存在
+## 47. 两个 Mask 可以同时存在
 
 实际 attention logits 可以同时加入：
 
-\[
+$$
 M_{\text{causal}}
-\]
+$$
 
 和：
 
-\[
+$$
 M_{\text{padding}}
-\]
+$$
 
 最终：
 
-\[
+$$
 \boxed{
 softmax(
 S
@@ -1694,7 +1694,7 @@ M_{\text{causal}}
 M_{\text{padding}}
 )
 }
-\]
+$$
 
 于是某个 connection 只要：
 
@@ -1705,7 +1705,7 @@ M_{\text{padding}}
 
 ---
 
-# 48. 为什么 Padding Mask 不等于 Causal Mask？
+## 48. 为什么 Padding Mask 不等于 Causal Mask？
 
 Padding mask 的 pattern：
 
@@ -1725,11 +1725,11 @@ Causal mask：
 
 ---
 
-# 49. PyTorch 里 Mask 有时是 Bool，有时是 Float，为什么？
+## 49. PyTorch 里 Mask 有时是 Bool，有时是 Float，为什么？
 
 不同 API 支持不同 representation。
 
-### Boolean Mask
+#### Boolean Mask
 
 例如：
 
@@ -1742,7 +1742,7 @@ framework 内部转换。
 
 ---
 
-### Additive Float Mask
+#### Additive Float Mask
 
 直接：
 
@@ -1763,25 +1763,25 @@ framework 内部转换。
 
 ---
 
-# 50. 为什么实际代码有时用一个很大的负数，而不是 -∞？
+## 50. 为什么实际代码有时用一个很大的负数，而不是 -∞？
 
 某些 dtype / fused kernels 可能使用：
 
-\[
+$$
 -10^9
-\]
+$$
 
 或 dtype 最小值近似：
 
-\[
+$$
 -\infty
-\]
+$$
 
 因为：
 
-\[
+$$
 e^{-10^9}\approx0
-\]
+$$
 
 数值效果等价于：
 
@@ -1789,31 +1789,31 @@ e^{-10^9}\approx0
 
 但数学定义最清晰仍然是：
 
-\[
+$$
 -\infty
-\]
+$$
 
 ---
 
-# 51. Causal Mask 在 Multi-Head Attention 中怎样广播？
+## 51. Causal Mask 在 Multi-Head Attention 中怎样广播？
 
 如果：
 
-\[
+$$
 A
-\]
+$$
 
 shape：
 
-\[
+$$
 [B,H,T,T]
-\]
+$$
 
 标准 causal mask 可以先是：
 
-\[
+$$
 [T,T]
-\]
+$$
 
 然后对：
 
@@ -1830,59 +1830,59 @@ broadcast。
 
 ---
 
-# 52. 每个 Head 都不能偷看 Future
+## 52. 每个 Head 都不能偷看 Future
 
 即使：
 
 Head 3 的 raw score：
 
-\[
+$$
 q_i^{(3)\top}k_j^{(3)}
-\]
+$$
 
 对未来 position 极高，
 
 只要：
 
-\[
+$$
 j>i
-\]
+$$
 
 mask 都会把它变：
 
-\[
+$$
 -\infty
-\]
+$$
 
 所以所有 heads 都服从同一个 causal graph。
 
 ---
 
-# 53. 为什么 Training 一次可以预测所有 Target Positions？
+## 53. 为什么 Training 一次可以预测所有 Target Positions？
 
 假设 target 长度：
 
-\[
+$$
 T
-\]
+$$
 
 Decoder 一次输出：
 
-\[
+$$
 h_1,\ldots,h_T
-\]
+$$
 
 然后 output projection：
 
-\[
+$$
 z_t=W_oh_t+b
-\]
+$$
 
 每个 position 同时得到 next-token logits。
 
 loss：
 
-\[
+$$
 L
 =
 \sum_{t=1}^T
@@ -1892,7 +1892,7 @@ y_t
 \mid
 y_{<t}
 )
-\]
+$$
 
 所有 terms 可以并行计算。
 
@@ -1902,15 +1902,15 @@ Causal mask 保证：
 
 ---
 
-# 54. 这是一个很重要的区分
+## 54. 这是一个很重要的区分
 
-\[
+$$
 \boxed{
 \text{parallel computation}
 \neq
 \text{non-causal dependency}
 }
-\]
+$$
 
 Transformer training 做到了：
 
@@ -1924,25 +1924,25 @@ Transformer training 做到了：
 
 ---
 
-# 55. 为什么 Inference 不能也一次算完整 T？
+## 55. 为什么 Inference 不能也一次算完整 T？
 
 因为要算：
 
-\[
+$$
 P(y_3\mid y_1,y_2)
-\]
+$$
 
 你必须先知道：
 
-\[
+$$
 y_2
-\]
+$$
 
 而推理时：
 
-\[
+$$
 y_2
-\]
+$$
 
 是模型生成的未知变量。
 
@@ -1954,7 +1954,7 @@ Causal Mask 不能凭空提供尚未生成的 token。
 
 ---
 
-# 56. Training 的 Future Ground Truth 虽存在，但被隔离
+## 56. Training 的 Future Ground Truth 虽存在，但被隔离
 
 可以这样理解：
 
@@ -1978,7 +1978,7 @@ Model information graph:
 
 ---
 
-# 57. 为什么这和考试很像？
+## 57. 为什么这和考试很像？
 
 所有答案可能都已经印在同一张系统后台数据库里。
 
@@ -1996,7 +1996,7 @@ Causal Mask 就是：
 
 ---
 
-# 58. Causal Mask 会不会让训练速度变回 RNN？
+## 58. Causal Mask 会不会让训练速度变回 RNN？
 
 不会。
 
@@ -2008,15 +2008,15 @@ Causal Mask 就是：
 
 RNN 的问题是：
 
-\[
+$$
 h_t
-\]
+$$
 
 数值本身必须等：
 
-\[
+$$
 h_{t-1}
-\]
+$$
 
 算完。
 
@@ -2026,15 +2026,15 @@ Causal Attention 不存在这种计算依赖：
 
 ---
 
-# 59. Causal Mask 和 KV Cache 是什么关系？
+## 59. Causal Mask 和 KV Cache 是什么关系？
 
 推理时 autoregressive generation 每步都重复处理越来越长 prefix。
 
 KV Cache 通过缓存过去 positions 的：
 
-\[
+$$
 K,V
-\]
+$$
 
 避免反复重算。
 
@@ -2052,21 +2052,21 @@ K,V
 
 ---
 
-# 60. 为什么 ACT Decoder 不需要 Causal Mask？
+## 60. 为什么 ACT Decoder 不需要 Causal Mask？
 
 现在进入最关键的 ACT 对比。
 
 ACT 不是在建模：
 
-\[
+$$
 P(a_{t+i}\mid a_{t:t+i-1},o_t)
-\]
+$$
 
 这种逐 action autoregressive factorization。
 
 它的核心目标是：
 
-\[
+$$
 \boxed{
 \pi(
 a_{t:t+k}
@@ -2074,44 +2074,44 @@ a_{t:t+k}
 o_t
 )
 }
-\]
+$$
 
 一次输出整个 action chunk。
 
 所以：
 
-> future action slot \(i\) 没有“必须先生成 slot \(i-1\) 才能生成”的 autoregressive constraint。
+> future action slot $i$ 没有“必须先生成 slot $i-1$ 才能生成”的 autoregressive constraint。
 
 ---
 
-# 61. ACT 的 k 个 Action Slots 是并行输出结构
+## 61. ACT 的 k 个 Action Slots 是并行输出结构
 
 Decoder 一开始就存在：
 
-\[
+$$
 q_0,q_1,\ldots,q_{k-1}
-\]
+$$
 
 这些 output slots：
 
 - 同时存在；
 - 可以彼此 Self-Attend；
 - 都可以读取 Encoder Memory；
-- 最后一起投影成 \(k\) 个动作。
+- 最后一起投影成 $k$ 个动作。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{ACT Decoder}
 =
 \text{non-autoregressive structured decoder}
 }
-\]
+$$
 
 ---
 
-# 62. 为什么 ACT Action Slot 可以看“未来 Slot”？
+## 62. 为什么 ACT Action Slot 可以看“未来 Slot”？
 
 因为这里的：
 
@@ -2131,11 +2131,11 @@ Decoder slots 一开始不是 ground-truth future actions。
 
 所以 slot 2 和 slot 20 彼此 Self-Attend：
 
-> 不会直接把真实 \(a_{t+20}\) 答案泄漏给 \(a_{t+2}\)。
+> 不会直接把真实 $a_{t+20}$ 答案泄漏给 $a_{t+2}$。
 
 ---
 
-# 63. 这和语言 Decoder 本质不同
+## 63. 这和语言 Decoder 本质不同
 
 语言 training 中 Decoder 输入 sequence 包含：
 
@@ -2161,19 +2161,19 @@ ACT Policy Decoder 中：
 
 ---
 
-# 64. ACT Ground-Truth Future Actions 去哪里了？
+## 64. ACT Ground-Truth Future Actions 去哪里了？
 
 Training 时 ground-truth chunk：
 
-\[
+$$
 a_{t:t+k}
-\]
+$$
 
 当然存在。
 
 但它主要用于：
 
-1. CVAE encoder 产生 posterior \(z\)；
+1. CVAE encoder 产生 posterior $z$；
 2. 计算 policy output reconstruction loss。
 
 它不是：
@@ -2188,20 +2188,20 @@ a_{t:t+k}
 
 ---
 
-# 65. CVAE Encoder 能看完整 Future Action Chunk，不算作弊吗？
+## 65. CVAE Encoder 能看完整 Future Action Chunk，不算作弊吗？
 
 这又是另一个容易混淆的问题。
 
 Training-only CVAE encoder：
 
-\[
+$$
 q_\phi(
 z
 \mid
 a_{t:t+k},
 q_t
 )
-\]
+$$
 
 确实看完整 target action chunk。
 
@@ -2213,7 +2213,7 @@ q_t
 
 其任务是：
 
-> 在训练时根据 demonstration action chunk 推断 latent style \(z\)。
+> 在训练时根据 demonstration action chunk 推断 latent style $z$。
 
 这不是 Policy Decoder 的 autoregressive target leakage。
 
@@ -2223,7 +2223,7 @@ q_t
 
 ---
 
-# 66. ACT Policy Decoder 的 Self-Attention 在官方代码里有 Mask 参数吗？
+## 66. ACT Policy Decoder 的 Self-Attention 在官方代码里有 Mask 参数吗？
 
 有接口。
 
@@ -2249,7 +2249,7 @@ self.self_attn(
 
 ---
 
-# 67. 当前 Official ACT Forward 没有传 tgt_mask
+## 67. 当前 Official ACT Forward 没有传 tgt_mask
 
 官方 `Transformer.forward(...)` 中：
 
@@ -2273,11 +2273,11 @@ tgt_mask
 
 所以：
 
-\[
+$$
 \boxed{
 tgt\_mask=None
 }
-\]
+$$
 
 沿默认参数传入 Decoder layers。
 
@@ -2289,7 +2289,7 @@ tgt\_mask=None
 
 ---
 
-# 68. 为什么官方代码保留 tgt_mask 参数？
+## 68. 为什么官方代码保留 tgt_mask 参数？
 
 因为 ACT 的 Transformer 文件是：
 
@@ -2309,7 +2309,7 @@ ACT 当前调用没有传 causal `tgt_mask`。
 
 ---
 
-# 69. ACT Cross-Attention 也不需要 Causal Mask
+## 69. ACT Cross-Attention 也不需要 Causal Mask
 
 Action Queries 读取的是：
 
@@ -2333,7 +2333,7 @@ Action Queries 读取的是：
 
 ---
 
-# 70. 那 ACT 的 Future Action Slots 彼此互看，会不会破坏时间顺序？
+## 70. 那 ACT 的 Future Action Slots 彼此互看，会不会破坏时间顺序？
 
 不会自动破坏。
 
@@ -2364,7 +2364,7 @@ slot 99
 
 ---
 
-# 71. 一个类比：一次画完整曲线
+## 71. 一个类比：一次画完整曲线
 
 语言 autoregressive：
 
@@ -2398,7 +2398,7 @@ ACT chunk decoder：
 
 ---
 
-# 72. ACT 为什么不做 Autoregressive Action Decoder？
+## 72. ACT 为什么不做 Autoregressive Action Decoder？
 
 论文的核心就是：
 
@@ -2424,7 +2424,7 @@ ACT 选择并行 action queries，
 
 ---
 
-# 73. Non-Autoregressive 不代表 Action Positions 完全独立
+## 73. Non-Autoregressive 不代表 Action Positions 完全独立
 
 这是非常关键的。
 
@@ -2436,21 +2436,21 @@ ACT 不 autoregressive，
 
 所以：
 
-\[
+$$
 a_i
-\]
+$$
 
 和：
 
-\[
+$$
 a_j
-\]
+$$
 
 的 hidden representations 可以相互影响。
 
 区别只是：
 
-> 这种依赖不是“必须先生成 \(a_i\)，再把生成值作为输入生成 \(a_j\)”的 autoregressive chain。
+> 这种依赖不是“必须先生成 $a_i$，再把生成值作为输入生成 $a_j$”的 autoregressive chain。
 
 而是：
 
@@ -2458,13 +2458,13 @@ a_j
 
 ---
 
-# 74. Joint Prediction 和 Autoregressive Prediction 的区别
+## 74. Joint Prediction 和 Autoregressive Prediction 的区别
 
-## Autoregressive
+### Autoregressive
 
 概率结构：
 
-\[
+$$
 P(a_1,\ldots,a_k)
 =
 \prod_i
@@ -2473,7 +2473,7 @@ a_i
 \mid
 a_{<i}
 )
-\]
+$$
 
 生成：
 
@@ -2487,11 +2487,11 @@ a3
 
 ---
 
-## ACT-Style Parallel Chunk Prediction
+### ACT-Style Parallel Chunk Prediction
 
 policy 直接输出：
 
-\[
+$$
 \boxed{
 \hat A
 =
@@ -2499,7 +2499,7 @@ f(o,z)
 \in
 \mathbb R^{k\times d_a}
 }
-\]
+$$
 
 所有 action slots 在同一个 forward 中得到。
 
@@ -2509,7 +2509,7 @@ Decoder 内部可以相互 Attention，
 
 ---
 
-# 75. CVAE 又如何表示 Multimodality？
+## 75. CVAE 又如何表示 Multimodality？
 
 ACT 不通过：
 
@@ -2519,9 +2519,9 @@ ACT 不通过：
 
 它通过：
 
-\[
+$$
 z
-\]
+$$
 
 latent variable，
 
@@ -2535,41 +2535,41 @@ latent variable，
 
 它的 stochasticity / multimodality来自另一条设计：
 
-> latent variable \(z\)。
+> latent variable $z$。
 
 测试时 ACT 又固定：
 
-\[
+$$
 z=0
-\]
+$$
 
 实现 deterministic decoding。
 
 ---
 
-# 76. 为什么 ACT Training 仍然可以一次算整个 Chunk Loss？
+## 76. 为什么 ACT Training 仍然可以一次算整个 Chunk Loss？
 
 Policy 输出：
 
-\[
+$$
 \hat A
 \in
 [B,k,14]
-\]
+$$
 
 ground truth：
 
-\[
+$$
 A
 \in
 [B,k,14]
-\]
+$$
 
 直接计算：
 
-\[
+$$
 L_{L1}
-\]
+$$
 
 以及 KL。
 
@@ -2579,19 +2579,19 @@ L_{L1}
 
 所以训练与推理的 decoder structural pattern：
 
-> 都是一次并行产生 \(k\) 个 action slots。
+> 都是一次并行产生 $k$ 个 action slots。
 
 ---
 
-# 77. 语言 Transformer Training/Inference Gap 和 ACT 不一样
+## 77. 语言 Transformer Training/Inference Gap 和 ACT 不一样
 
 语言：
 
-### Training
+#### Training
 
 ground-truth prefix。
 
-### Inference
+#### Inference
 
 model-generated prefix。
 
@@ -2599,13 +2599,13 @@ model-generated prefix。
 
 ACT：
 
-### Training
+#### Training
 
-current observation + posterior-sampled \(z\) → whole chunk。
+current observation + posterior-sampled $z$ → whole chunk。
 
-### Inference
+#### Inference
 
-current observation + \(z=0\) → whole chunk。
+current observation + $z=0$ → whole chunk。
 
 主要 train/test latent difference是：
 
@@ -2617,7 +2617,7 @@ current observation + \(z=0\) → whole chunk。
 
 ---
 
-# 78. 为什么这对理解 ACT 很重要？
+## 78. 为什么这对理解 ACT 很重要？
 
 如果误以为：
 
@@ -2637,17 +2637,17 @@ current observation + \(z=0\) → whole chunk。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Transformer Decoder}
 \neq
 \text{Autoregressive Decoder by definition}
 }
-\]
+$$
 
 ---
 
-# 79. Decoder 这个名字本身不决定 Causality
+## 79. Decoder 这个名字本身不决定 Causality
 
 一个 Transformer Decoder layer 通常有：
 
@@ -2677,13 +2677,13 @@ ACT：
 
 ---
 
-# 80. 为什么 ACT Query Slots 可以 Full Self-Attend？
+## 80. 为什么 ACT Query Slots 可以 Full Self-Attend？
 
 因为它们本质上是一组：
 
 > output latent variables / slots。
 
-Full Self-Attention 让 slot \(i\) 可以利用：
+Full Self-Attention 让 slot $i$ 可以利用：
 
 > 其他 slots 当前 hidden representations。
 
@@ -2702,7 +2702,7 @@ Full Self-Attention 让 slot \(i\) 可以利用：
 
 ---
 
-# 81. Causal Mask 和 Temporal Ensemble 也完全无关
+## 81. Causal Mask 和 Temporal Ensemble 也完全无关
 
 Causal Mask：
 
@@ -2714,25 +2714,25 @@ Temporal Ensemble：
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Causal Mask}
 =
 \text{intra-network visibility}
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 \text{Temporal Ensemble}
 =
 \text{inter-query action aggregation}
 }
-\]
+$$
 
 ---
 
-# 82. Causal Mask 和 Action Chunking 也不是反义词
+## 82. Causal Mask 和 Action Chunking 也不是反义词
 
 理论上你完全可以设计：
 
@@ -2742,15 +2742,15 @@ Temporal Ensemble：
 
 所以：
 
-\[
+$$
 \text{chunking}
-\]
+$$
 
 和：
 
-\[
+$$
 \text{causal decoding}
-\]
+$$
 
 是两个不同设计轴。
 
@@ -2760,7 +2760,7 @@ ACT 具体选择的是：
 
 ---
 
-# 83. 为什么未来动作在物理上是“未来”，却不一定要 Mask？
+## 83. 为什么未来动作在物理上是“未来”，却不一定要 Mask？
 
 因为 Attention mask 的判断标准不是：
 
@@ -2782,7 +2782,7 @@ ACT future action slot：
 
 ---
 
-# 84. 一个泛化判断法
+## 84. 一个泛化判断法
 
 遇到任何模型，问：
 
@@ -2803,7 +2803,7 @@ ACT future action slot：
 
 ---
 
-# 85. Prefix-LM 为什么 Mask 又不一样？
+## 85. Prefix-LM 为什么 Mask 又不一样？
 
 有些模型允许：
 
@@ -2830,7 +2830,7 @@ Generated region:
 
 ---
 
-# 86. Vision Transformer 为什么通常不 Causal？
+## 86. Vision Transformer 为什么通常不 Causal？
 
 图像所有 patches：
 
@@ -2852,13 +2852,13 @@ Generated region:
 
 ---
 
-# 87. Robot Policy 也可能需要 Causal Attention
+## 87. Robot Policy 也可能需要 Causal Attention
 
 例如输入一段 observation history：
 
-\[
+$$
 o_{t-L:t}
-\]
+$$
 
 如果训练一个 online temporal model，
 
@@ -2876,7 +2876,7 @@ ACT 当前 policy architecture主要输入：
 
 ---
 
-# 88. Causal Mask 和 Online Control 不是同义词
+## 88. Causal Mask 和 Online Control 不是同义词
 
 机器人是 online control，
 
@@ -2884,23 +2884,23 @@ ACT 当前 policy architecture主要输入：
 
 ACT 当前 observation：
 
-\[
+$$
 o_t
-\]
+$$
 
 已经可见。
 
 它一次预测未来 action chunk：
 
-\[
+$$
 a_{t:t+k}
-\]
+$$
 
 这些 output slots 联合推理。
 
 Online causality体现在：
 
-> policy 不能使用未来真实 observation \(o_{t+1}\)。
+> policy 不能使用未来真实 observation $o_{t+1}$。
 
 而不是：
 
@@ -2908,17 +2908,17 @@ Online causality体现在：
 
 ---
 
-# 89. 这一区分非常重要
+## 89. 这一区分非常重要
 
 现实时间因果性：
 
-\[
+$$
 o_{t+1}
-\]
+$$
 
 尚未发生。
 
-所以 ACT policy 在时刻 \(t\)：
+所以 ACT policy 在时刻 $t$：
 
 > 不输入未来 observation。
 
@@ -2926,11 +2926,11 @@ o_{t+1}
 
 模型内部 output-slot interaction：
 
-\[
+$$
 slot_i
 \leftrightarrow
 slot_j
-\]
+$$
 
 只是：
 
@@ -2940,23 +2940,23 @@ slot_j
 
 所以：
 
-\[
+$$
 \boxed{
 \text{world-time causality}
 \neq
 \text{decoder-slot causal mask}
 }
-\]
+$$
 
 ---
 
-# 90. 为什么 ACT 仍然是 Closed-Loop？
+## 90. 为什么 ACT 仍然是 Closed-Loop？
 
 虽然一次预测：
 
-\[
+$$
 k
-\]
+$$
 
 个未来动作，
 
@@ -2979,15 +2979,15 @@ k
 
 ---
 
-# 91. 三种“因果”不要混淆
+## 91. 三种“因果”不要混淆
 
-## 1. Autoregressive Token Causality
+### 1. Autoregressive Token Causality
 
-\[
+$$
 y_t
 \text{ cannot see }
 y_{>t}
-\]
+$$
 
 由：
 
@@ -2997,13 +2997,13 @@ y_{>t}
 
 ---
 
-## 2. Real-World Temporal Causality
+### 2. Real-World Temporal Causality
 
-时刻 \(t\) 不能获得：
+时刻 $t$ 不能获得：
 
-\[
+$$
 o_{t+1}
-\]
+$$
 
 真实未来 observation。
 
@@ -3015,11 +3015,11 @@ o_{t+1}
 
 ---
 
-## 3. Statistical Causality
+### 3. Statistical Causality
 
 例如：
 
-> \(X\) 是否真正导致 \(Y\)。
+> $X$ 是否真正导致 $Y$。
 
 这是 causal inference 的概念。
 
@@ -3029,7 +3029,7 @@ o_{t+1}
 
 ---
 
-# 92. 常见误解一：Causal Mask 是为了告诉模型 Token 顺序
+## 92. 常见误解一：Causal Mask 是为了告诉模型 Token 顺序
 
 **错误。**
 
@@ -3039,7 +3039,7 @@ Mask 规定可见性。
 
 ---
 
-# 93. 常见误解二：有 Positional Encoding 就不需要 Causal Mask
+## 93. 常见误解二：有 Positional Encoding 就不需要 Causal Mask
 
 **错误。**
 
@@ -3049,7 +3049,7 @@ Mask 规定可见性。
 
 ---
 
-# 94. 常见误解三：有 Causal Mask 就不需要 Positional Encoding
+## 94. 常见误解三：有 Causal Mask 就不需要 Positional Encoding
 
 **错误。**
 
@@ -3059,7 +3059,7 @@ Mask 给出可见集合，
 
 ---
 
-# 95. 常见误解四：Training 时只把 Prefix 一个个送进去
+## 95. 常见误解四：Training 时只把 Prefix 一个个送进去
 
 原始 Transformer training 不需要这样。
 
@@ -3069,7 +3069,7 @@ Mask 给出可见集合，
 
 ---
 
-# 96. 常见误解五：既然整个 Target 在 GPU 里，模型一定看到了未来
+## 96. 常见误解五：既然整个 Target 在 GPU 里，模型一定看到了未来
 
 **错误。**
 
@@ -3079,7 +3079,7 @@ Mask 阻断非法 attention edges。
 
 ---
 
-# 97. 常见误解六：右移一位后就不需要 Mask
+## 97. 常见误解六：右移一位后就不需要 Mask
 
 **错误。**
 
@@ -3087,7 +3087,7 @@ Mask 阻断非法 attention edges。
 
 ---
 
-# 98. 常见误解七：只要有 Mask 就不需要右移
+## 98. 常见误解七：只要有 Mask 就不需要右移
 
 标准 Transformer 不是这样。
 
@@ -3097,27 +3097,27 @@ Mask 阻断非法 attention edges。
 
 ---
 
-# 99. 常见误解八：Mask 是在 Softmax 后简单乘 0
+## 99. 常见误解八：Mask 是在 Softmax 后简单乘 0
 
 原始 Transformer 论文明确描述：
 
-> 在 Softmax 输入处，把非法连接设为 \(-\infty\)。
+> 在 Softmax 输入处，把非法连接设为 $-\infty$。
 
 ---
 
-# 100. 常见误解九：-∞ 只是一个经验 trick
+## 100. 常见误解九：-∞ 只是一个经验 trick
 
 它有直接数学理由：
 
-\[
+$$
 e^{-\infty}=0
-\]
+$$
 
 从而 Softmax weight 精确为 0。
 
 ---
 
-# 101. 常见误解十：Causal Mask 会让 Transformer 训练也必须逐 token
+## 101. 常见误解十：Causal Mask 会让 Transformer 训练也必须逐 token
 
 **错误。**
 
@@ -3127,7 +3127,7 @@ Mask 只是限制 connection pattern。
 
 ---
 
-# 102. 常见误解十一：Autoregressive Training 和 Inference 都同样并行
+## 102. 常见误解十一：Autoregressive Training 和 Inference 都同样并行
 
 **错误。**
 
@@ -3137,7 +3137,7 @@ standard inference 的 future token 尚未生成。
 
 ---
 
-# 103. 常见误解十二：Teacher Forcing = Causal Mask
+## 103. 常见误解十二：Teacher Forcing = Causal Mask
 
 **错误。**
 
@@ -3151,7 +3151,7 @@ standard inference 的 future token 尚未生成。
 
 ---
 
-# 104. 常见误解十三：Encoder 永远不需要 Causal Mask
+## 104. 常见误解十三：Encoder 永远不需要 Causal Mask
 
 不绝对。
 
@@ -3159,7 +3159,7 @@ standard inference 的 future token 尚未生成。
 
 ---
 
-# 105. 常见误解十四：所有 Transformer Decoder 都必须 Causal
+## 105. 常见误解十四：所有 Transformer Decoder 都必须 Causal
 
 **错误。**
 
@@ -3167,7 +3167,7 @@ ACT 和 DETR 都是重要反例。
 
 ---
 
-# 106. 常见误解十五：ACT Future Action Slot 之间互看就是偷看未来答案
+## 106. 常见误解十五：ACT Future Action Slot 之间互看就是偷看未来答案
 
 **错误。**
 
@@ -3177,7 +3177,7 @@ ACT 和 DETR 都是重要反例。
 
 ---
 
-# 107. 常见误解十六：ACT Training Action Chunk 已知，所以 Decoder 一定会泄漏
+## 107. 常见误解十六：ACT Training Action Chunk 已知，所以 Decoder 一定会泄漏
 
 **错误。**
 
@@ -3190,7 +3190,7 @@ Ground-truth chunk 用于：
 
 ---
 
-# 108. 常见误解十七：CVAE Encoder 看 Future Action 就违反推理规则
+## 108. 常见误解十七：CVAE Encoder 看 Future Action 就违反推理规则
 
 **错误。**
 
@@ -3202,15 +3202,15 @@ Ground-truth chunk 用于：
 
 ---
 
-# 109. 常见误解十八：ACT 没 Causal Mask，所以不是时间序列模型
+## 109. 常见误解十八：ACT 没 Causal Mask，所以不是时间序列模型
 
 **错误。**
 
 它仍预测：
 
-\[
+$$
 k
-\]
+$$
 
 步有序动作序列。
 
@@ -3224,7 +3224,7 @@ k
 
 ---
 
-# 110. 常见误解十九：Non-Causal Decoder 意味着不知道时间顺序
+## 110. 常见误解十九：Non-Causal Decoder 意味着不知道时间顺序
 
 **错误。**
 
@@ -3234,7 +3234,7 @@ Causality 和 position 是两个概念。
 
 ---
 
-# 111. 常见误解二十：机器人系统是在线的，所以 Decoder 一定要 causal
+## 111. 常见误解二十：机器人系统是在线的，所以 Decoder 一定要 causal
 
 **错误。**
 
@@ -3242,7 +3242,7 @@ Online world causality 和 internal output-slot masking 是不同问题。
 
 ---
 
-# 112. 用一张表彻底区分
+## 112. 用一张表彻底区分
 
 | 机制 | 回答的问题 | 原始语言 Transformer Decoder | ACT Decoder |
 |---|---|---:|---:|
@@ -3256,7 +3256,7 @@ Online world causality 和 internal output-slot masking 是不同问题。
 
 ---
 
-# 113. 原始 Transformer 的核心链条
+## 113. 原始 Transformer 的核心链条
 
 可以把语言 Decoder 写成：
 
@@ -3299,7 +3299,7 @@ Inference 中：
 
 ---
 
-# 114. ACT 的对应链条
+## 114. ACT 的对应链条
 
 ```text
 Current observation
@@ -3343,7 +3343,7 @@ Linear 512 → 14
 
 ---
 
-# 115. 官方 ACT 代码证据
+## 115. 官方 ACT 代码证据
 
 当前官方 `Transformer.forward(...)`：
 
@@ -3377,11 +3377,11 @@ tgt_mask: Optional[Tensor] = None
 
 所以默认：
 
-\[
+$$
 \boxed{
 tgt\_mask=None
 }
-\]
+$$
 
 Decoder layer 再把它传：
 
@@ -3401,7 +3401,7 @@ self.self_attn(
 
 ---
 
-# 116. 为什么这个 Official-Code Fact 很有价值？
+## 116. 为什么这个 Official-Code Fact 很有价值？
 
 因为只看 class：
 
@@ -3425,25 +3425,25 @@ ACT 不传。
 
 ---
 
-# 117. 一句话理解 Causal Mask
+## 117. 一句话理解 Causal Mask
 
-> **Causal Mask 是一种硬信息流约束：在 autoregressive Self-Attention 中，它把当前 position 对所有 future keys 的 logits 设为 \(-\infty\)，使这些 connections 经 Softmax 后权重严格为 0，从而保证第 \(t\) 个预测只能依赖合法 prefix，而不能利用训练时已经存在于 tensor 中的未来 ground-truth targets。**
+> **Causal Mask 是一种硬信息流约束：在 autoregressive Self-Attention 中，它把当前 position 对所有 future keys 的 logits 设为 $-\infty$，使这些 connections 经 Softmax 后权重严格为 0，从而保证第 $t$ 个预测只能依赖合法 prefix，而不能利用训练时已经存在于 tensor 中的未来 ground-truth targets。**
 
 ---
 
-# 118. 一句话理解“为什么训练并行但推理串行”
+## 118. 一句话理解“为什么训练并行但推理串行”
 
 > **训练时完整 ground-truth target 已知，因此可以一次构造所有 shifted prefixes，并用 triangular mask 在一张 Attention Matrix 中同时隔离每个 position 的合法历史；推理时未来 token 尚不存在，只能先生成当前 token，再把它加入 prefix 后继续生成下一个，所以 autoregressive inference 仍然顺序进行。**
 
 ---
 
-# 119. 一句话理解 ACT 为什么不需要 Causal Mask
+## 119. 一句话理解 ACT 为什么不需要 Causal Mask
 
-> **ACT 的 Policy Decoder 不是把 ground-truth action sequence 右移后逐动作预测，而是使用 \(k\) 个 action-query slots 在同一次 forward 中联合预测整个 action chunk；这些 slots 本身不含未来真实动作，因此互相 Self-Attend 不构成 target leakage，官方实现也没有向 Decoder 传 `tgt_mask`。**
+> **ACT 的 Policy Decoder 不是把 ground-truth action sequence 右移后逐动作预测，而是使用 $k$ 个 action-query slots 在同一次 forward 中联合预测整个 action chunk；这些 slots 本身不含未来真实动作，因此互相 Self-Attend 不构成 target leakage，官方实现也没有向 Decoder 传 `tgt_mask`。**
 
 ---
 
-# 120. 最核心的判断标准
+## 120. 最核心的判断标准
 
 以后看到任何 Transformer，
 
@@ -3453,11 +3453,11 @@ ACT 不传。
 
 而应该问：
 
-\[
+$$
 \boxed{
 \text{当前 position 是否可能访问推理时本不该知道的真实未来信息？}
 }
-\]
+$$
 
 如果答案是：
 
@@ -3482,7 +3482,7 @@ Decoder = mask
 
 ---
 
-# 121. 下一步：Transformer Encoder
+## 121. 下一步：Transformer Encoder
 
 现在 Attention 主线的关键组件已经完整：
 
@@ -3520,7 +3520,7 @@ Causal Mask
 - FFN；
 - 第二次 Residual；
 - 原始 Transformer 为什么是 Post-LN；
-- \(d_{\text{model}}=512\rightarrow d_{ff}=2048\rightarrow512\)；
+- $d_{\text{model}}=512\rightarrow d_{ff}=2048\rightarrow512$；
 - FFN 为什么每个 token 独立但参数共享；
 - Attention 和 FFN 为什么是互补分工；
 - 多层 Encoder 怎样逐渐建立 contextualized memory；
@@ -3528,7 +3528,7 @@ Causal Mask
 
 ---
 
-## Primary Source：Transformer
+### Primary Source：Transformer
 
 Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,  
 Aidan N. Gomez, Łukasz Kaiser, Illia Polosukhin.
@@ -3539,7 +3539,7 @@ NeurIPS 2017.
 - arXiv: https://arxiv.org/abs/1706.03762
 - HTML: https://arxiv.org/html/1706.03762
 
-### Section 3.1 — Decoder
+#### Section 3.1 — Decoder
 
 原论文明确说明：
 
@@ -3547,11 +3547,11 @@ NeurIPS 2017.
 
 并指出：
 
-> masking 与 output embeddings offset by one position 配合，使 position \(i\) 的 prediction 只能依赖小于 \(i\) 的已知 outputs。
+> masking 与 output embeddings offset by one position 配合，使 position $i$ 的 prediction 只能依赖小于 $i$ 的已知 outputs。
 
 ---
 
-### Section 3.2.3 — Applications of Attention
+#### Section 3.2.3 — Applications of Attention
 
 原论文进一步明确写：
 
@@ -3559,11 +3559,11 @@ NeurIPS 2017.
 
 为了保持 autoregressive property：
 
-> 所有非法连接在 Softmax 输入处被设为 \(-\infty\)。
+> 所有非法连接在 Softmax 输入处被设为 $-\infty$。
 
 数学上即：
 
-\[
+$$
 \boxed{
 A
 =
@@ -3574,11 +3574,11 @@ softmax
 M_{\text{causal}}
 \right)
 }
-\]
+$$
 
 ---
 
-## ACT Primary Source
+### ACT Primary Source
 
 Tony Z. Zhao, Vikash Kumar, Sergey Levine, Chelsea Finn.  
 **Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware.**  
@@ -3591,22 +3591,22 @@ ACT 的 policy 不是语言式 autoregressive decoder。
 
 论文描述 Transformer Decoder：
 
-- 输入为 \(k\) 个 action-query position representations；
+- 输入为 $k$ 个 action-query position representations；
 - 通过 Cross-Attention 条件化在 Encoder Memory；
 - 输出：
-  \[
+  $$
   k\times512
-  \]
+  $$
 - 再投影为：
-  \[
+  $$
   k\times14
-  \]
+  $$
 
 整个 action chunk 在一次 policy forward 中产生。
 
 ---
 
-## Official ACT Implementation
+### Official ACT Implementation
 
 Repository:
 
@@ -3654,11 +3654,11 @@ tgt_mask
 
 因此当前 released implementation 中：
 
-\[
+$$
 \boxed{
 tgt\_mask=None
 }
-\]
+$$
 
 即：
 
@@ -3666,16 +3666,16 @@ tgt\_mask=None
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### 前置
+#### 前置
 
 - [Self-Attention](./self-attention.md)
 - [Softmax](./softmax.md)
 - [Positional Encoding](./positional-encoding.md)
 - [Transformer](./transformer.md)
 
-### Transformer
+#### Transformer
 
 - [Transformer Encoder](./transformer-encoder.md)
 - [Transformer Decoder](./transformer-decoder.md)
@@ -3686,12 +3686,12 @@ tgt\_mask=None
 - Teacher Forcing
 - KV Cache
 
-### Probability
+#### Probability
 
 - Chain Rule of Probability
 - Conditional Probability
 
-### Robot Learning
+#### Robot Learning
 
 - [ACT Architecture](../robot-learning/act/architecture.md)
 - [Action Chunking](../robot-learning/act/action-chunking.md)
@@ -3700,6 +3700,6 @@ tgt\_mask=None
 - [ACT Inference](../robot-learning/act/inference.md)
 - [Temporal Ensemble](../robot-learning/act/temporal-ensemble.md)
 
-### 下一步
+#### 下一步
 
 - [Transformer Encoder](./transformer-encoder.md)

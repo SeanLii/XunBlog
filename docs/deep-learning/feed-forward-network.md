@@ -25,29 +25,29 @@ updated: "2026-09-15"
 
 原论文公式：
 
-\[
+$$
 \boxed{
 \operatorname{FFN}(x)
 =
 \max(0,xW_1+b_1)W_2+b_2
 }
-\]
+$$
 
 在 Transformer Base 中：
 
-\[
+$$
 d_{\text{model}}=512
-\]
+$$
 
 而 FFN 中间维度：
 
-\[
+$$
 d_{\text{ff}}=2048
-\]
+$$
 
 所以每个 token 都经历：
 
-\[
+$$
 \boxed{
 512
 \rightarrow
@@ -55,11 +55,11 @@ d_{\text{ff}}=2048
 \rightarrow
 512
 }
-\]
+$$
 
 ACT 更宽：
 
-\[
+$$
 \boxed{
 512
 \rightarrow
@@ -67,7 +67,7 @@ ACT 更宽：
 \rightarrow
 512
 }
-\]
+$$
 
 这已经提示我们：
 
@@ -84,12 +84,12 @@ ACT 更宽：
 7. FFN 会不会让不同 token 互相交流？
 8. 为什么论文说它也可以看成两个 kernel size 1 的 convolution？
 9. FFN 的参数量为什么常常比 Attention 还大？
-10. ACT 的 \(512\rightarrow3200\rightarrow512\) 到底意味着什么？
+10. ACT 的 $512\rightarrow3200\rightarrow512$ 到底意味着什么？
 11. GELU、SwiGLU 又是在改 FFN 的哪一部分？
 
 ---
 
-# 1. 先回到 Transformer Layer
+## 1. 先回到 Transformer Layer
 
 一个原始 Transformer Encoder Layer：
 
@@ -125,11 +125,11 @@ Feed-Forward Network
 
 而是存在于：
 
-\[
+$$
 \boxed{
 \text{每一个 Encoder Layer 和每一个 Decoder Layer}
 }
-\]
+$$
 
 原始 Transformer Section 3.3 明确写道：
 
@@ -137,61 +137,61 @@ Feed-Forward Network
 
 ---
 
-# 2. 原论文正式定义
+## 2. 原论文正式定义
 
 对单个 position 的 hidden vector：
 
-\[
+$$
 x\in\mathbb R^{d_{\text{model}}}
-\]
+$$
 
 FFN：
 
-\[
+$$
 \boxed{
 \operatorname{FFN}(x)
 =
 \max(0,xW_1+b_1)W_2+b_2
 }
-\]
+$$
 
 拆开：
 
 ---
 
-## 第一层 Linear
+### 第一层 Linear
 
-\[
+$$
 h=xW_1+b_1
-\]
+$$
 
 ---
 
-## ReLU
+### ReLU
 
-\[
+$$
 r=\operatorname{ReLU}(h)
-\]
+$$
 
 其中：
 
-\[
+$$
 \operatorname{ReLU}(z)
 =
 \max(0,z)
-\]
+$$
 
 ---
 
-## 第二层 Linear
+### 第二层 Linear
 
-\[
+$$
 y=rW_2+b_2
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 x
 \rightarrow
@@ -203,67 +203,67 @@ Linear_2
 \rightarrow
 y
 }
-\]
+$$
 
 ---
 
-# 3. 原始 Transformer 的 Shape
+## 3. 原始 Transformer 的 Shape
 
 Base Transformer：
 
-\[
+$$
 d_{\text{model}}=512
-\]
+$$
 
-\[
+$$
 d_{\text{ff}}=2048
-\]
+$$
 
 所以：
 
-\[
+$$
 x:
 [512]
-\]
+$$
 
 第一层：
 
-\[
+$$
 W_1:
 [512,2048]
-\]
+$$
 
 得到：
 
-\[
+$$
 h:
 [2048]
-\]
+$$
 
 ReLU：
 
-\[
+$$
 r:
 [2048]
-\]
+$$
 
 第二层：
 
-\[
+$$
 W_2:
 [2048,512]
-\]
+$$
 
 得到：
 
-\[
+$$
 y:
 [512]
-\]
+$$
 
 即：
 
-\[
+$$
 \boxed{
 512
 \rightarrow
@@ -271,17 +271,17 @@ y:
 \rightarrow
 512
 }
-\]
+$$
 
 ---
 
-# 4. 为什么输入和输出都必须回到 512？
+## 4. 为什么输入和输出都必须回到 512？
 
 因为 FFN 外面还有 Residual Connection。
 
 原始 Post-LN：
 
-\[
+$$
 \boxed{
 y_{\text{block}}
 =
@@ -292,19 +292,19 @@ FFN(x)
 )
 )
 }
-\]
+$$
 
 为了做：
 
-\[
+$$
 x+FFN(x)
-\]
+$$
 
 二者 shape 必须一样。
 
 所以：
 
-\[
+$$
 \boxed{
 FFN:
 d_{\text{model}}
@@ -313,19 +313,19 @@ d_{\text{ff}}
 \rightarrow
 d_{\text{model}}
 }
-\]
+$$
 
 中间可以变宽，
 
 最终必须重新回：
 
-\[
+$$
 d_{\text{model}}
-\]
+$$
 
 ---
 
-# 5. 为什么中间要扩到 2048？
+## 5. 为什么中间要扩到 2048？
 
 一个最简单但不完整的回答是：
 
@@ -335,27 +335,27 @@ d_{\text{model}}
 
 第一层：
 
-\[
+$$
 512
 \rightarrow
 2048
-\]
+$$
 
 相当于从当前 512-D token representation 中构造：
 
-\[
+$$
 2048
-\]
+$$
 
 个 intermediate features。
 
 每一个 intermediate unit：
 
-\[
+$$
 h_j
 =
 x^\top w_j+b_j
-\]
+$$
 
 都可以学习：
 
@@ -363,9 +363,9 @@ x^\top w_j+b_j
 
 然后 ReLU 决定：
 
-\[
+$$
 h_j
-\]
+$$
 
 是否保留。
 
@@ -375,37 +375,37 @@ h_j
 
 ---
 
-# 6. 一个小例子：2 → 4 → 2
+## 6. 一个小例子：2 → 4 → 2
 
 假设：
 
-\[
+$$
 x=[x_1,x_2]
-\]
+$$
 
 FFN：
 
-\[
+$$
 2\rightarrow4\rightarrow2
-\]
+$$
 
 第一层可以生成：
 
-\[
+$$
 h_1=w_{11}x_1+w_{21}x_2+b_1
-\]
+$$
 
-\[
+$$
 h_2=w_{12}x_1+w_{22}x_2+b_2
-\]
+$$
 
-\[
+$$
 h_3=w_{13}x_1+w_{23}x_2+b_3
-\]
+$$
 
-\[
+$$
 h_4=w_{14}x_1+w_{24}x_2+b_4
-\]
+$$
 
 也就是说：
 
@@ -413,29 +413,29 @@ h_4=w_{14}x_1+w_{24}x_2+b_4
 
 然后：
 
-\[
+$$
 r_j=\max(0,h_j)
-\]
+$$
 
 再把：
 
-\[
+$$
 [r_1,r_2,r_3,r_4]
-\]
+$$
 
 重新组合成两个输出 dimensions。
 
 ---
 
-# 7. 为什么不能直接 512 → 512？
+## 7. 为什么不能直接 512 → 512？
 
 当然可以设计。
 
 但：
 
-\[
+$$
 512\rightarrow2048
-\]
+$$
 
 给中间 nonlinear stage 更多 feature channels。
 
@@ -457,53 +457,53 @@ r_j=\max(0,h_j)
 
 它只是原始 Transformer 的 architecture choice：
 
-\[
+$$
 d_{\text{ff}}=4d_{\text{model}}
-\]
+$$
 
 ACT 则选了：
 
-\[
+$$
 3200/512=6.25
-\]
+$$
 
 倍。
 
 ---
 
-# 8. 为什么“扩维”本身还不够？
+## 8. 为什么“扩维”本身还不够？
 
 这是理解 FFN 最关键的数学点之一。
 
 假设没有 ReLU：
 
-\[
+$$
 FFN(x)
 =
 (xW_1+b_1)W_2+b_2
-\]
+$$
 
 先忽略 bias：
 
-\[
+$$
 FFN(x)
 =
 xW_1W_2
-\]
+$$
 
 令：
 
-\[
+$$
 W=W_1W_2
-\]
+$$
 
 则：
 
-\[
+$$
 \boxed{
 FFN(x)=xW
 }
-\]
+$$
 
 仍然只是：
 
@@ -511,101 +511,101 @@ FFN(x)=xW
 
 所以即使：
 
-\[
+$$
 512
 \rightarrow
 100000
 \rightarrow
 512
-\]
+$$
 
 只要中间没有非线性，
 
 仍可以合并成：
 
-\[
+$$
 512\rightarrow512
-\]
+$$
 
 的一层 Linear。
 
 ---
 
-# 9. 带 Bias 也仍然可以合并
+## 9. 带 Bias 也仍然可以合并
 
 完整：
 
-\[
+$$
 (xW_1+b_1)W_2+b_2
-\]
+$$
 
 展开：
 
-\[
+$$
 xW_1W_2+b_1W_2+b_2
-\]
+$$
 
 定义：
 
-\[
+$$
 W'=W_1W_2
-\]
+$$
 
-\[
+$$
 b'=b_1W_2+b_2
-\]
+$$
 
 则：
 
-\[
+$$
 \boxed{
 FFN(x)=xW'+b'
 }
-\]
+$$
 
 仍然只是一个 affine transformation。
 
 因此：
 
-\[
+$$
 \boxed{
 \text{两层 Linear 不自动等于更深的函数}
 }
-\]
+$$
 
 真正让两层无法合并的是：
 
-\[
+$$
 \boxed{
 \text{Nonlinearity}
 }
-\]
+$$
 
 ---
 
-# 10. ReLU 打破了这种可合并性
+## 10. ReLU 打破了这种可合并性
 
 有 ReLU：
 
-\[
+$$
 FFN(x)
 =
 ReLU(xW_1+b_1)W_2+b_2
-\]
+$$
 
 无法把：
 
-\[
+$$
 ReLU(\cdot)
-\]
+$$
 
 吸收到一个固定矩阵里。
 
 因为对于不同 input：
 
-\[
+$$
 x
-\]
+$$
 
 不同 intermediate neurons 会：
 
@@ -620,25 +620,25 @@ x
 
 ---
 
-# 11. ReLU 可以看成一种 Gate
+## 11. ReLU 可以看成一种 Gate
 
 定义：
 
-\[
+$$
 h_j=x^\top w_j+b_j
-\]
+$$
 
 如果：
 
-\[
+$$
 h_j\le0
-\]
+$$
 
 则：
 
-\[
+$$
 ReLU(h_j)=0
-\]
+$$
 
 这个 intermediate feature：
 
@@ -646,15 +646,15 @@ ReLU(h_j)=0
 
 如果：
 
-\[
+$$
 h_j>0
-\]
+$$
 
 则：
 
-\[
+$$
 ReLU(h_j)=h_j
-\]
+$$
 
 这个 feature：
 
@@ -670,13 +670,13 @@ ReLU(h_j)=h_j
 
 ---
 
-# 12. 为什么这比单个 Linear 更强？
+## 12. 为什么这比单个 Linear 更强？
 
 单个 Linear：
 
-\[
+$$
 y=xW+b
-\]
+$$
 
 无论输入是什么，
 
@@ -686,9 +686,9 @@ y=xW+b
 
 FFN：
 
-\[
+$$
 y=W_2ReLU(W_1x+b_1)+b_2
-\]
+$$
 
 不同 input 会激活不同 hidden subsets。
 
@@ -700,18 +700,18 @@ y=W_2ReLU(W_1x+b_1)+b_2
 
 ---
 
-# 13. 但不能说“FFN 是 Transformer 唯一的 Nonlinearity”
+## 13. 但不能说“FFN 是 Transformer 唯一的 Nonlinearity”
 
 这是一个常见但错误的说法。
 
 Attention 中已经有：
 
-\[
+$$
 Softmax
 \left(
 \frac{QK^\top}{\sqrt{d_k}}
 \right)
-\]
+$$
 
 Softmax 本身就是非线性。
 
@@ -719,11 +719,11 @@ LayerNorm 也不是一个固定线性映射。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Transformer 没有 FFN 并不等于纯线性网络}
 }
-\]
+$$
 
 更准确是：
 
@@ -731,146 +731,146 @@ LayerNorm 也不是一个固定线性映射。
 
 ---
 
-# 14. Attention 和 FFN 到底怎样分工？
+## 14. Attention 和 FFN 到底怎样分工？
 
 一个非常实用的第一层理解：
 
-\[
+$$
 \boxed{
 \text{Attention}
 =
 \text{跨 token 取信息}
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 \text{FFN}
 =
 \text{token 内加工信息}
 }
-\]
+$$
 
 也可以说：
 
-\[
+$$
 \boxed{
 \text{Attention}
 :
 \text{communication}
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 \text{FFN}
 :
 \text{computation}
 }
-\]
+$$
 
 ---
 
-# 15. 为什么说 Attention 是 Communication？
+## 15. 为什么说 Attention 是 Communication？
 
-对 token \(i\)：
+对 token $i$：
 
-\[
+$$
 o_i
 =
 \sum_j
 \alpha_{ij}v_j
-\]
+$$
 
 它显式从：
 
-\[
+$$
 j=1,\ldots,n
-\]
+$$
 
 其他 positions 读取信息。
 
-所以 token \(i\) 的新 representation：
+所以 token $i$ 的新 representation：
 
 > 可以依赖整个 sequence。
 
 这是：
 
-\[
+$$
 \boxed{
 \text{cross-position interaction}
 }
-\]
+$$
 
 ---
 
-# 16. 为什么说 FFN 是 Per-Token Computation？
+## 16. 为什么说 FFN 是 Per-Token Computation？
 
 FFN：
 
-\[
+$$
 FFN(x_i)
-\]
+$$
 
 只读取：
 
-\[
+$$
 x_i
-\]
+$$
 
 本身。
 
 它不会直接访问：
 
-\[
+$$
 x_j,\quad j\neq i
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 FFN
 \text{ does not itself mix sequence positions}
 }
-\]
+$$
 
 ---
 
-# 17. 那 FFN 怎么可能利用“别的 Token 的信息”？
+## 17. 那 FFN 怎么可能利用“别的 Token 的信息”？
 
 因为 FFN 的输入：
 
-\[
+$$
 x_i
-\]
+$$
 
 已经经过了 Attention。
 
 例如：
 
-\[
+$$
 x_i'
 =
 LN(
 x_i+
 Attention_i(X)
 )
-\]
+$$
 
 这个：
 
-\[
+$$
 x_i'
-\]
+$$
 
 已经包含从其他 token 聚合来的 context。
 
 FFN 虽然只处理：
 
-\[
+$$
 x_i'
-\]
+$$
 
 一个 vector，
 
@@ -884,7 +884,7 @@ x_i'
 
 ---
 
-# 18. 一个更准确的信息流
+## 18. 一个更准确的信息流
 
 ```text
 原 token i
@@ -910,17 +910,17 @@ FFN
 
 而是：
 
-\[
+$$
 \boxed{
 \text{先交流，再加工}
 }
-\]
+$$
 
 ---
 
-# 19. 为什么 FFN 放在 Attention 后面很自然？
+## 19. 为什么 FFN 放在 Attention 后面很自然？
 
-假设 token \(i\) 刚刚通过 Attention 得到：
+假设 token $i$ 刚刚通过 Attention 得到：
 
 - 自己原来的信息；
 - token 3 的信息；
@@ -943,45 +943,45 @@ FFN 类似拿到数据后的本地 CPU computation。
 
 ---
 
-# 20. “Position-Wise” 到底是什么意思？
+## 20. “Position-Wise” 到底是什么意思？
 
 假设：
 
-\[
+$$
 X
 \in
 \mathbb R^{N\times D}
-\]
+$$
 
 例如：
 
-\[
+$$
 N=4
-\]
+$$
 
 有四个 tokens：
 
-\[
+$$
 x_1,x_2,x_3,x_4
-\]
+$$
 
 FFN 计算：
 
-\[
+$$
 y_1=FFN(x_1)
-\]
+$$
 
-\[
+$$
 y_2=FFN(x_2)
-\]
+$$
 
-\[
+$$
 y_3=FFN(x_3)
-\]
+$$
 
-\[
+$$
 y_4=FFN(x_4)
-\]
+$$
 
 每个 position：
 
@@ -989,43 +989,43 @@ y_4=FFN(x_4)
 
 这就是：
 
-\[
+$$
 \boxed{
 \text{Position-Wise}
 }
-\]
+$$
 
 ---
 
-# 21. 但所有 Position 使用同一个 FFN
+## 21. 但所有 Position 使用同一个 FFN
 
 非常重要。
 
 不是：
 
-\[
+$$
 FFN_1(x_1)
-\]
+$$
 
-\[
+$$
 FFN_2(x_2)
-\]
+$$
 
 而是：
 
-\[
+$$
 \boxed{
 FFN(x_i)
 \quad
 \forall i
 }
-\]
+$$
 
 同一层的：
 
-\[
+$$
 W_1,b_1,W_2,b_2
-\]
+$$
 
 对所有 sequence positions 共享。
 
@@ -1035,13 +1035,13 @@ W_1,b_1,W_2,b_2
 
 ---
 
-# 22. 为什么要共享参数？
+## 22. 为什么要共享参数？
 
 如果每一个 position 都有自己的 FFN：
 
-\[
+$$
 FFN_i
-\]
+$$
 
 那么：
 
@@ -1059,27 +1059,27 @@ FFN_i
 
 ---
 
-# 23. Position 共享不意味着输出一样
+## 23. Position 共享不意味着输出一样
 
 即使：
 
-\[
+$$
 FFN
-\]
+$$
 
 参数相同，
 
 只要：
 
-\[
+$$
 x_i\neq x_j
-\]
+$$
 
 通常：
 
-\[
+$$
 FFN(x_i)\neq FFN(x_j)
-\]
+$$
 
 所以共享函数不等于共享结果。
 
@@ -1087,7 +1087,7 @@ FFN(x_i)\neq FFN(x_j)
 
 ---
 
-# 24. 不同 Transformer Layers 的 FFN 是否共享？
+## 24. 不同 Transformer Layers 的 FFN 是否共享？
 
 原论文明确：
 
@@ -1099,11 +1099,11 @@ FFN(x_i)\neq FFN(x_j)
 
 所以：
 
-\[
+$$
 FFN^{(1)}
 \neq
 FFN^{(2)}
-\]
+$$
 
 一般成立。
 
@@ -1113,29 +1113,29 @@ FFN^{(2)}
 
 ---
 
-# 25. 为什么论文说 FFN 等价于两个 Kernel Size 1 的 Convolution？
+## 25. 为什么论文说 FFN 等价于两个 Kernel Size 1 的 Convolution？
 
 考虑 sequence：
 
-\[
+$$
 X
 \in
 \mathbb R^{N\times D}
-\]
+$$
 
 如果把：
 
-\[
+$$
 D
-\]
+$$
 
 理解成 channels，
 
 kernel size：
 
-\[
+$$
 1
-\]
+$$
 
 的 convolution：
 
@@ -1145,9 +1145,9 @@ kernel size：
 
 这恰好和：
 
-\[
+$$
 Linear(D,D_{ff})
-\]
+$$
 
 逐 position 应用一样。
 
@@ -1157,7 +1157,7 @@ Linear(D,D_{ff})
 
 ---
 
-# 26. 为什么 1×1 Conv 不做 Spatial Mixing？
+## 26. 为什么 1×1 Conv 不做 Spatial Mixing？
 
 在一维 sequence 中 kernel width 1：
 
@@ -1177,13 +1177,13 @@ Transformer FFN 也是类似：
 
 ---
 
-# 27. 一个矩阵实现为什么看起来不像“逐 Token for-loop”？
+## 27. 一个矩阵实现为什么看起来不像“逐 Token for-loop”？
 
 数学上：
 
-\[
+$$
 y_i=FFN(x_i)
-\]
+$$
 
 实现上不会真的：
 
@@ -1194,27 +1194,27 @@ for token in tokens:
 
 GPU 会一次矩阵运算：
 
-\[
+$$
 XW_1
-\]
+$$
 
 如果：
 
-\[
+$$
 X:
 [B,N,D]
-\]
+$$
 
-\[
+$$
 W_1:
 [D,D_{ff}]
-\]
+$$
 
 则直接得到：
 
-\[
+$$
 [B,N,D_{ff}]
-\]
+$$
 
 这只是：
 
@@ -1222,24 +1222,24 @@ W_1:
 
 所以：
 
-\[
+$$
 \boxed{
 \text{position-wise}
 \neq
 \text{sequential computation}
 }
-\]
+$$
 
 ---
 
-# 28. Batch 维度也不会互相混合
+## 28. Batch 维度也不会互相混合
 
 输入：
 
-\[
+$$
 X:
 [B,N,D]
-\]
+$$
 
 FFN 不会让：
 
@@ -1253,54 +1253,54 @@ FFN 不会让：
 
 它只是对所有：
 
-\[
+$$
 B\times N
-\]
+$$
 
 个 vectors 使用同一个小 MLP。
 
 ---
 
-# 29. FFN 的 Shape Flow
+## 29. FFN 的 Shape Flow
 
 一般：
 
-\[
+$$
 X:
 [B,N,D]
-\]
+$$
 
 第一层：
 
-\[
+$$
 XW_1+b_1
-\]
+$$
 
 得到：
 
-\[
+$$
 \boxed{
 [B,N,D_{ff}]
 }
-\]
+$$
 
 activation：
 
-\[
+$$
 [B,N,D_{ff}]
-\]
+$$
 
 第二层：
 
-\[
+$$
 \boxed{
 [B,N,D]
 }
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 [B,N,D]
 \rightarrow
@@ -1308,66 +1308,66 @@ activation：
 \rightarrow
 [B,N,D]
 }
-\]
+$$
 
 Batch 和 token count 都不变。
 
 ---
 
-# 30. 原始 Transformer 的完整 Shape
+## 30. 原始 Transformer 的完整 Shape
 
-\[
+$$
 X:
 [B,N,512]
-\]
+$$
 
 第一层：
 
-\[
+$$
 [B,N,512]
 \rightarrow
 [B,N,2048]
-\]
+$$
 
 ReLU：
 
-\[
+$$
 [B,N,2048]
-\]
+$$
 
 第二层：
 
-\[
+$$
 [B,N,2048]
 \rightarrow
 [B,N,512]
-\]
+$$
 
 所以最终仍：
 
-\[
+$$
 \boxed{
 [B,N,512]
 }
-\]
+$$
 
 ---
 
-# 31. ACT 的完整 Shape
+## 31. ACT 的完整 Shape
 
 ACT Table III：
 
-\[
+$$
 d_{\text{model}}=512
-\]
+$$
 
-\[
+$$
 d_{\text{ff}}=3200
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 [B,N,512]
 \rightarrow
@@ -1375,7 +1375,7 @@ d_{\text{ff}}=3200
 \rightarrow
 [B,N,512]
 }
-\]
+$$
 
 activation：
 
@@ -1389,33 +1389,33 @@ activation="relu"
 
 ---
 
-# 32. ACT Policy Encoder 中 N 是多少？
+## 32. ACT Policy Encoder 中 N 是多少？
 
-\[
+$$
 N=1202
-\]
+$$
 
 所以一层 FFN：
 
-\[
+$$
 [B,1202,512]
-\]
+$$
 
 先变成：
 
-\[
+$$
 \boxed{
 [B,1202,3200]
 }
-\]
+$$
 
 再回：
 
-\[
+$$
 \boxed{
 [B,1202,512]
 }
-\]
+$$
 
 1202 个 tokens：
 
@@ -1423,15 +1423,15 @@ N=1202
 
 ---
 
-# 33. 这意味着 1202 个 Tokens 会互相通过 FFN 通信吗？
+## 33. 这意味着 1202 个 Tokens 会互相通过 FFN 通信吗？
 
 **不会。**
 
 即使实现 tensor 是：
 
-\[
+$$
 [B,1202,3200]
-\]
+$$
 
 也不意味着 position dimension 被混合。
 
@@ -1441,45 +1441,45 @@ Linear 作用在：
 
 所以：
 
-\[
+$$
 token_i
-\]
+$$
 
 的 FFN output只由：
 
-\[
+$$
 token_i
-\]
+$$
 
 的输入 hidden vector决定。
 
 ---
 
-# 34. ACT Decoder 中也一样
+## 34. ACT Decoder 中也一样
 
 如果 chunk：
 
-\[
+$$
 k=100
-\]
+$$
 
 Decoder FFN：
 
-\[
+$$
 [B,100,512]
-\]
+$$
 
 变：
 
-\[
+$$
 [B,100,3200]
-\]
+$$
 
 再回：
 
-\[
+$$
 [B,100,512]
-\]
+$$
 
 每一个 action slot：
 
@@ -1491,37 +1491,37 @@ action-slot 之间真正交流：
 
 ---
 
-# 35. CVAE Encoder 中也一样
+## 35. CVAE Encoder 中也一样
 
 若：
 
-\[
+$$
 k=100
-\]
+$$
 
 CVAE sequence：
 
-\[
+$$
 [CLS],qpos,a_0,\ldots,a_{99}
-\]
+$$
 
 共：
 
-\[
+$$
 102
-\]
+$$
 
 tokens。
 
 FFN：
 
-\[
+$$
 [B,102,512]
 \rightarrow
 [B,102,3200]
 \rightarrow
 [B,102,512]
-\]
+$$
 
 所以：
 
@@ -1533,15 +1533,15 @@ FFN：
 
 ---
 
-# 36. 为什么 `[CLS]` 和 Action Token 可以使用同一 FFN？
+## 36. 为什么 `[CLS]` 和 Action Token 可以使用同一 FFN？
 
 因为进入 Transformer 后，
 
 它们都被表示成：
 
-\[
+$$
 512
-\]
+$$
 
 维 hidden vectors。
 
@@ -1564,7 +1564,7 @@ FFN 只看到：
 
 ---
 
-# 37. 共享 FFN 是 Transformer 的一个强假设
+## 37. 共享 FFN 是 Transformer 的一个强假设
 
 它假设：
 
@@ -1584,73 +1584,73 @@ Position / modality differences 通过 hidden state表达，
 
 ---
 
-# 38. FFN 参数量到底有多大？
+## 38. FFN 参数量到底有多大？
 
 先算原始 Transformer。
 
 ---
 
-## W₁
+### W₁
 
-\[
+$$
 512\times2048
 =
 1,048,576
-\]
+$$
 
 ---
 
-## W₂
+### W₂
 
-\[
+$$
 2048\times512
 =
 1,048,576
-\]
+$$
 
 只算 weight matrices：
 
-\[
+$$
 \boxed{
 2,097,152
 }
-\]
+$$
 
 约：
 
-\[
+$$
 2.10M
-\]
+$$
 
 ---
 
-# 39. 加上 Bias
+## 39. 加上 Bias
 
 第一层 bias：
 
-\[
+$$
 2048
-\]
+$$
 
 第二层：
 
-\[
+$$
 512
-\]
+$$
 
 总：
 
-\[
+$$
 2560
-\]
+$$
 
 所以完整：
 
-\[
+$$
 \boxed{
 2,099,712
 }
-\]
+$$
 
 个参数。
 
@@ -1660,68 +1660,68 @@ Position / modality differences 通过 hidden state表达，
 
 ---
 
-# 40. Attention Projection 有多少参数？
+## 40. Attention Projection 有多少参数？
 
 标准：
 
-\[
+$$
 d=512
-\]
+$$
 
 MHA 主要 projection weights：
 
-\[
+$$
 W_Q,W_K,W_V,W_O
-\]
+$$
 
 每个：
 
-\[
+$$
 512\times512
-\]
+$$
 
 所以 weight-only：
 
-\[
+$$
 4\times512^2
 =
 1,048,576
-\]
+$$
 
 约：
 
-\[
+$$
 1.05M
-\]
+$$
 
 ---
 
-# 41. 一个很重要的结论
+## 41. 一个很重要的结论
 
 原始 Transformer 中，
 
 一个 FFN 的 Linear weight 参数量：
 
-\[
+$$
 \approx2.10M
-\]
+$$
 
 而一个 MHA 的 Q/K/V/O projection weights：
 
-\[
+$$
 \approx1.05M
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \text{FFN weight parameters}
 \approx
 2\times
 \text{MHA projection weights}
 }
-\]
+$$
 
 忽略 bias 等小项。
 
@@ -1733,71 +1733,71 @@ W_Q,W_K,W_V,W_O
 
 ---
 
-# 42. ACT FFN 参数更多
+## 42. ACT FFN 参数更多
 
 ACT：
 
-\[
+$$
 512\rightarrow3200\rightarrow512
-\]
+$$
 
 ---
 
 第一层：
 
-\[
+$$
 512\times3200
 =
 1,638,400
-\]
+$$
 
 第二层：
 
-\[
+$$
 3200\times512
 =
 1,638,400
-\]
+$$
 
 weight-only：
 
-\[
+$$
 \boxed{
 3,276,800
 }
-\]
+$$
 
 约：
 
-\[
+$$
 3.28M
-\]
+$$
 
 ---
 
-# 43. 加 ACT FFN Bias
+## 43. 加 ACT FFN Bias
 
 bias：
 
-\[
+$$
 3200+512=3712
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 3,280,512
 }
-\]
+$$
 
 parameters。
 
 而 MHA projection weight仍大约：
 
-\[
+$$
 1.05M
-\]
+$$
 
 所以在 ACT 的这一配置里：
 
@@ -1805,13 +1805,13 @@ parameters。
 
 ---
 
-# 44. 这不意味着 FFN 一定比 Attention “更重要”
+## 44. 这不意味着 FFN 一定比 Attention “更重要”
 
 参数多：
 
-\[
+$$
 \neq
-\]
+$$
 
 功能更重要。
 
@@ -1831,37 +1831,37 @@ FFN 的独特能力是：
 
 正确理解是：
 
-\[
+$$
 \boxed{
 \text{它们承担互补角色}
 }
-\]
+$$
 
 ---
 
-# 45. FFN 的计算复杂度
+## 45. FFN 的计算复杂度
 
 对：
 
-\[
+$$
 N
-\]
+$$
 
 个 tokens，
 
 第一层矩阵乘：
 
-\[
+$$
 [N,D]
 \times
 [D,D_{ff}]
-\]
+$$
 
 主要成本与：
 
-\[
+$$
 NDD_{ff}
-\]
+$$
 
 成正比。
 
@@ -1869,7 +1869,7 @@ NDD_{ff}
 
 所以：
 
-\[
+$$
 \boxed{
 FFN\ complexity
 =
@@ -1877,84 +1877,84 @@ O(
 NDD_{ff}
 )
 }
-\]
+$$
 
 省略常数。
 
 ---
 
-# 46. Self-Attention 核心复杂度
+## 46. Self-Attention 核心复杂度
 
 Attention token-token interaction：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 以及：
 
-\[
+$$
 AV
-\]
+$$
 
 主要约：
 
-\[
+$$
 O(N^2D)
-\]
+$$
 
 外加：
 
-\[
+$$
 Q/K/V/O
-\]
+$$
 
 projections：
 
-\[
+$$
 O(ND^2)
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 Attention
 \text{ 和 FFN 的主导成本取决于 }N,D,D_{ff}
 }
-\]
+$$
 
 ---
 
-# 47. 为什么短 Sequence 时 FFN 可能很重？
+## 47. 为什么短 Sequence 时 FFN 可能很重？
 
 Attention 的 quadratic 项：
 
-\[
+$$
 N^2D
-\]
+$$
 
 随着：
 
-\[
+$$
 N
-\]
+$$
 
 快速增长。
 
 FFN：
 
-\[
+$$
 NDD_{ff}
-\]
+$$
 
 对 N 线性。
 
 如果 sequence 不太长、但：
 
-\[
+$$
 D_{ff}\gg D
-\]
+$$
 
 FFN 的矩阵乘同样非常可观。
 
@@ -1964,19 +1964,19 @@ FFN 的矩阵乘同样非常可观。
 
 ---
 
-# 48. 为什么长 Context 时 Attention 更容易成为瓶颈？
+## 48. 为什么长 Context 时 Attention 更容易成为瓶颈？
 
 因为：
 
-\[
+$$
 N^2
-\]
+$$
 
 最终增长比：
 
-\[
+$$
 N
-\]
+$$
 
 快。
 
@@ -1996,25 +1996,25 @@ attention score matrix 和相关计算/显存会越来越显著。
 
 ---
 
-# 49. 为什么 FFN 参数不随 Sequence Length 变化？
+## 49. 为什么 FFN 参数不随 Sequence Length 变化？
 
 FFN 参数：
 
-\[
+$$
 W_1,W_2
-\]
+$$
 
 只依赖：
 
-\[
+$$
 D,D_{ff}
-\]
+$$
 
 和：
 
-\[
+$$
 N
-\]
+$$
 
 无关。
 
@@ -2028,21 +2028,21 @@ sequence 变长：
 
 ---
 
-# 50. Attention 的参数量也不直接随 N 增长
+## 50. Attention 的参数量也不直接随 N 增长
 
 MHA projections：
 
-\[
+$$
 W_Q,W_K,W_V,W_O
-\]
+$$
 
 也和 sequence length无关。
 
 但 attention intermediate matrix：
 
-\[
+$$
 [N,N]
-\]
+$$
 
 随 N quadratic 增大。
 
@@ -2052,13 +2052,13 @@ W_Q,W_K,W_V,W_O
 
 ---
 
-# 51. 为什么 FFN 可以看成“对 Context 做重新解释”？
+## 51. 为什么 FFN 可以看成“对 Context 做重新解释”？
 
 假设 Attention 后 token representation：
 
-\[
+$$
 h_i
-\]
+$$
 
 已经包含：
 
@@ -2089,16 +2089,16 @@ FFN 可以学习：
 
 ---
 
-# 52. 为什么“Attention 是检索，FFN 是计算”很有用？
+## 52. 为什么“Attention 是检索，FFN 是计算”很有用？
 
 因为 Attention output：
 
-\[
+$$
 o_i
 =
 \sum_j
 \alpha_{ij}v_j
-\]
+$$
 
 很像：
 
@@ -2106,9 +2106,9 @@ o_i
 
 FFN：
 
-\[
+$$
 FFN(o_i)
-\]
+$$
 
 则像：
 
@@ -2130,7 +2130,7 @@ Compute again
 
 ---
 
-# 53. 但这个类比的边界是什么？
+## 53. 但这个类比的边界是什么？
 
 Attention 自己也有：
 
@@ -2150,7 +2150,7 @@ FFN 也不是 CPU 指令集。
 
 ---
 
-# 54. FFN 会不会创建“新信息”？
+## 54. FFN 会不会创建“新信息”？
 
 从信息论上说，网络不会凭空获得外部新观测。
 
@@ -2162,17 +2162,17 @@ FFN 也不是 CPU 指令集。
 
 例如原来：
 
-\[
+$$
 x=[a,b]
-\]
+$$
 
 FFN 可以形成某种：
 
-\[
+$$
 ReLU(
 w_1a+w_2b+c
 )
-\]
+$$
 
 再和其他 hidden features组合。
 
@@ -2184,13 +2184,13 @@ w_1a+w_2b+c
 
 ---
 
-# 55. 为什么 Attention 的 Weighted Sum 之后需要这种 New Feature Construction？
+## 55. 为什么 Attention 的 Weighted Sum 之后需要这种 New Feature Construction？
 
 Attention 的核心输出是：
 
-\[
+$$
 \sum_j\alpha_jv_j
-\]
+$$
 
 它把多个 Value features混合。
 
@@ -2206,19 +2206,19 @@ FFN提供这一步。
 
 ---
 
-# 56. 一个极简逻辑例子
+## 56. 一个极简逻辑例子
 
 假设 token representation中有两个 dimensions：
 
-\[
+$$
 x_1=
 \text{“看到红色物体” feature}
-\]
+$$
 
-\[
+$$
 x_2=
 \text{“gripper 已接近” feature}
-\]
+$$
 
 一个 task可能关心：
 
@@ -2226,9 +2226,9 @@ x_2=
 
 单个 Linear 只能做：
 
-\[
+$$
 w_1x_1+w_2x_2
-\]
+$$
 
 而多 hidden units + nonlinear activation可以构造更复杂的分段条件关系。
 
@@ -2240,13 +2240,13 @@ w_1x_1+w_2x_2
 
 ---
 
-# 57. ReLU 为什么是原始 Transformer 的选择？
+## 57. ReLU 为什么是原始 Transformer 的选择？
 
 2017 Transformer 使用：
 
-\[
+$$
 ReLU
-\]
+$$
 
 它：
 
@@ -2257,43 +2257,43 @@ ReLU
 
 但：
 
-\[
+$$
 \boxed{
 \text{Transformer}
 \neq
 \text{必须 ReLU}
 }
-\]
+$$
 
 后来的模型广泛替换 activation。
 
 ---
 
-# 58. GELU 是什么？
+## 58. GELU 是什么？
 
 GELU：
 
-\[
+$$
 \boxed{
 GELU(x)
 =
 x\Phi(x)
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 \Phi(x)
-\]
+$$
 
 是标准正态分布 CDF。
 
 和 ReLU 的硬：
 
-\[
+$$
 x\le0\rightarrow0
-\]
+$$
 
 相比，
 
@@ -2307,21 +2307,21 @@ BERT 等后续 Transformer 架构广泛使用 GELU。
 
 ---
 
-# 59. ReLU 和 GELU 的直觉差异
+## 59. ReLU 和 GELU 的直觉差异
 
 ReLU：
 
-\[
+$$
 x=
 -0.01
 \rightarrow0
-\]
+$$
 
-\[
+$$
 x=
 0.01
 \rightarrow0.01
-\]
+$$
 
 在 0 处硬切。
 
@@ -2337,19 +2337,19 @@ GELU：
 
 FFN 的基本结构：
 
-\[
+$$
 D
 \rightarrow
 D_{ff}
 \rightarrow
 D
-\]
+$$
 
 没有因此消失。
 
 ---
 
-# 60. ACT Official Code 支持哪些 Activation？
+## 60. ACT Official Code 支持哪些 Activation？
 
 当前 `transformer.py`：
 
@@ -2382,13 +2382,13 @@ ACT canonical 配置应理解为：
 
 ---
 
-# 61. GLU 又是什么思路？
+## 61. GLU 又是什么思路？
 
 Gated Linear Unit 类方法不只是：
 
-\[
+$$
 activation(Wx)
-\]
+$$
 
 而是让一条 feature branch：
 
@@ -2396,19 +2396,19 @@ activation(Wx)
 
 典型高层形式：
 
-\[
+$$
 \boxed{
 \phi(xW_g)
 \odot
 (xW_v)
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 \odot
-\]
+$$
 
 是 element-wise multiplication。
 
@@ -2418,11 +2418,11 @@ activation(Wx)
 
 ---
 
-# 62. SwiGLU 是现代 Transformer 中常见的 FFN 变体
+## 62. SwiGLU 是现代 Transformer 中常见的 FFN 变体
 
 一种常见抽象形式：
 
-\[
+$$
 \boxed{
 SwiGLU(x)
 =
@@ -2430,19 +2430,19 @@ Swish(xW_g)
 \odot
 (xW_v)
 }
-\]
+$$
 
 然后再通过 output projection：
 
-\[
+$$
 W_o
-\]
+$$
 
 回到：
 
-\[
+$$
 d_{\text{model}}
-\]
+$$
 
 它属于：
 
@@ -2452,15 +2452,15 @@ d_{\text{model}}
 
 不要把：
 
-\[
+$$
 SwiGLU
-\]
+$$
 
 写成原始 Transformer FFN。
 
 ---
 
-# 63. 为什么现代模型愿意修改 FFN？
+## 63. 为什么现代模型愿意修改 FFN？
 
 因为 FFN：
 
@@ -2482,19 +2482,19 @@ SwiGLU
 
 ---
 
-# 64. FFN Hidden Width 是 Architecture Hyperparameter
+## 64. FFN Hidden Width 是 Architecture Hyperparameter
 
 原始：
 
-\[
+$$
 d_{ff}=2048
-\]
+$$
 
 ACT：
 
-\[
+$$
 d_{ff}=3200
-\]
+$$
 
 其他模型可能：
 
@@ -2504,9 +2504,9 @@ d_{ff}=3200
 
 所以不能把：
 
-\[
+$$
 4d_{\text{model}}
-\]
+$$
 
 当成 Transformer 数学定义。
 
@@ -2514,19 +2514,19 @@ d_{ff}=3200
 
 ---
 
-# 65. 为什么 ACT 用 3200，不是 2048？
+## 65. 为什么 ACT 用 3200，不是 2048？
 
 ACT Table III 给出的实验配置就是：
 
-\[
+$$
 3200
-\]
+$$
 
 但论文没有提供一个理论推导说：
 
-\[
+$$
 3200
-\]
+$$
 
 是机器人动作预测的数学最优值。
 
@@ -2540,7 +2540,7 @@ ACT Table III 给出的实验配置就是：
 
 ---
 
-# 66. Code Default 和实验配置为什么又不同？
+## 66. Code Default 和实验配置为什么又不同？
 
 ACT `Transformer` class：
 
@@ -2564,11 +2564,11 @@ dim_feedforward=args.dim_feedforward
 
 因此真正 canonical ACT 配置：
 
-\[
+$$
 \boxed{
 3200
 }
-\]
+$$
 
 这再次提醒：
 
@@ -2580,13 +2580,13 @@ dim_feedforward=args.dim_feedforward
 
 ---
 
-# 67. ACT Encoder FFN 和 Decoder FFN 用相同维度吗？
+## 67. ACT Encoder FFN 和 Decoder FFN 用相同维度吗？
 
 当前 `build_transformer(args)` 把同一个：
 
-\[
+$$
 args.dim\_feedforward
-\]
+$$
 
 传给：
 
@@ -2599,17 +2599,17 @@ args.dim\_feedforward
 
 ---
 
-# 68. CVAE Encoder 呢？
+## 68. CVAE Encoder 呢？
 
 官方 `build_encoder(args)` 同样会基于 Transformer Encoder Layer构造 CVAE encoder。
 
 在 ACT configuration下也使用对应：
 
-\[
+$$
 d_{\text{model}},
 d_{\text{ff}},
 nheads
-\]
+$$
 
 配置。
 
@@ -2617,67 +2617,67 @@ nheads
 
 ---
 
-# 69. 一个 ACT Policy Encoder Token 的完整局部路径
+## 69. 一个 ACT Policy Encoder Token 的完整局部路径
 
 假设某个 visual token：
 
-\[
+$$
 x_i
-\]
+$$
 
 先经过 Self-Attention：
 
-\[
+$$
 a_i
 =
 \sum_j
 \alpha_{ij}v_j
-\]
+$$
 
 Residual + Norm：
 
-\[
+$$
 h_i
 =
 LN(x_i+a_i)
-\]
+$$
 
 然后 FFN：
 
-\[
+$$
 u_i
 =
 ReLU(
 h_iW_1+b_1
 )
-\]
+$$
 
 其中：
 
-\[
+$$
 u_i\in\mathbb R^{3200}
-\]
+$$
 
 再：
 
-\[
+$$
 f_i=u_iW_2+b_2
-\]
+$$
 
 回：
 
-\[
+$$
 512
-\]
+$$
 
 最终：
 
-\[
+$$
 y_i=
 LN(
 h_i+f_i
 )
-\]
+$$
 
 这就是一个 token 在一层中的：
 
@@ -2685,7 +2685,7 @@ h_i+f_i
 
 ---
 
-# 70. 一个 ACT Action Slot 的路径也一样
+## 70. 一个 ACT Action Slot 的路径也一样
 
 Decoder 某个 future slot：
 
@@ -2699,19 +2699,19 @@ Decoder 某个 future slot：
 
 此时得到：
 
-\[
+$$
 h_i
-\]
+$$
 
 随后：
 
-\[
+$$
 512
 \rightarrow
 3200
 \rightarrow
 512
-\]
+$$
 
 FFN。
 
@@ -2721,7 +2721,7 @@ FFN。
 
 ---
 
-# 71. 为什么 Encoder 和 Decoder 可以使用同一个 FFN 形式？
+## 71. 为什么 Encoder 和 Decoder 可以使用同一个 FFN 形式？
 
 因为 FFN 并不关心：
 
@@ -2729,17 +2729,17 @@ FFN。
 
 它只操作：
 
-\[
+$$
 d_{\text{model}}
-\]
+$$
 
 维 representation。
 
 所以同样：
 
-\[
+$$
 D\rightarrow D_{ff}\rightarrow D
-\]
+$$
 
 的抽象可以用在：
 
@@ -2751,7 +2751,7 @@ D\rightarrow D_{ff}\rightarrow D
 
 ---
 
-# 72. FFN 能不能跨 Camera 融合信息？
+## 72. FFN 能不能跨 Camera 融合信息？
 
 直接：
 
@@ -2779,15 +2779,15 @@ D\rightarrow D_{ff}\rightarrow D
 
 ---
 
-# 73. FFN 会不会看到 Position Encoding？
+## 73. FFN 会不会看到 Position Encoding？
 
 取决于 position information 怎样进入 hidden representation。
 
 原始 Transformer：
 
-\[
+$$
 x=e+p
-\]
+$$
 
 position已经进入 residual representation，
 
@@ -2805,7 +2805,7 @@ ACT/DETR-style 显式 `pos` 主要加在 Q/K，
 
 ---
 
-# 74. 为什么 FFN 不需要 Q/K/V？
+## 74. 为什么 FFN 不需要 Q/K/V？
 
 因为它没有 memory retrieval问题。
 
@@ -2815,9 +2815,9 @@ Q/K/V 是为了：
 
 FFN只处理一个当前 vector：
 
-\[
+$$
 x_i
-\]
+$$
 
 不需要：
 
@@ -2827,29 +2827,29 @@ x_i
 
 ---
 
-# 75. FFN 和 Attention 的权重是否 Input-Dependent？
+## 75. FFN 和 Attention 的权重是否 Input-Dependent？
 
 Attention aggregation weights：
 
-\[
+$$
 \alpha_{ij}(X)
-\]
+$$
 
 会随 input动态变化。
 
 FFN参数：
 
-\[
+$$
 W_1,W_2
-\]
+$$
 
 是固定 learned parameters。
 
 但 ReLU activation pattern：
 
-\[
+$$
 1[h_j>0]
-\]
+$$
 
 会随 input改变。
 
@@ -2861,49 +2861,49 @@ W_1,W_2
 
 ---
 
-# 76. Attention 是动态 Routing，FFN 是固定参数 + 动态 Activation
+## 76. Attention 是动态 Routing，FFN 是固定参数 + 动态 Activation
 
 可以粗略写：
 
-### Attention
+#### Attention
 
-\[
+$$
 \text{input}
 \rightarrow
 \text{动态生成 token-token weights}
-\]
+$$
 
-### FFN
+#### FFN
 
-\[
+$$
 \text{input}
 \rightarrow
 \text{固定 learned matrices}
 +
 \text{input-dependent nonlinear gates}
-\]
+$$
 
 这说明二者都不是简单 static linear layer。
 
 ---
 
-# 77. FFN 可以理解成“特征词典”吗？
+## 77. FFN 可以理解成“特征词典”吗？
 
 作为直觉，可以有限度这样理解：
 
 第一层：
 
-\[
+$$
 W_1
-\]
+$$
 
 的 columns 定义很多 learned directions / detectors。
 
 输入：
 
-\[
+$$
 x
-\]
+$$
 
 与这些方向组合得到 hidden activations。
 
@@ -2911,9 +2911,9 @@ ReLU 决定哪些 features被激活。
 
 第二层：
 
-\[
+$$
 W_2
-\]
+$$
 
 再把 activated features写回 residual representation。
 
@@ -2927,7 +2927,7 @@ W_2
 
 ---
 
-# 78. 后续研究为什么会把 FFN 联系到 Key-Value Memory？
+## 78. 后续研究为什么会把 FFN 联系到 Key-Value Memory？
 
 后来的研究提出一种解释：
 
@@ -2943,31 +2943,31 @@ W_2
 
 所以 canonical 理论必须先建立在：
 
-\[
+$$
 Linear
 \rightarrow
 Activation
 \rightarrow
 Linear
-\]
+$$
 
 上。
 
 ---
 
-# 79. 为什么不能把 FFN 当成另一个 Attention？
+## 79. 为什么不能把 FFN 当成另一个 Attention？
 
 因为它没有：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 没有：
 
-\[
+$$
 softmax
-\]
+$$
 
 也没有：
 
@@ -2975,9 +2975,9 @@ softmax
 
 FFN的 hidden units来自：
 
-\[
+$$
 xW_1+b_1
-\]
+$$
 
 它是 feature-space transformation，
 
@@ -2985,7 +2985,7 @@ xW_1+b_1
 
 ---
 
-# 80. 为什么不能用一个更大的 Attention 替代 FFN？
+## 80. 为什么不能用一个更大的 Attention 替代 FFN？
 
 这是一种 architecture research问题，
 
@@ -3011,13 +3011,13 @@ FFN
 
 ---
 
-# 81. 为什么不能只堆 FFN、不用 Attention？
+## 81. 为什么不能只堆 FFN、不用 Attention？
 
 如果只有 Position-wise FFN：
 
-\[
+$$
 y_i=FFN(x_i)
-\]
+$$
 
 不同 token 永远不会直接交流。
 
@@ -3025,11 +3025,11 @@ y_i=FFN(x_i)
 
 如果没有其他 token-mixing机制，
 
-position \(i\) 仍然只依赖：
+position $i$ 仍然只依赖：
 
-\[
+$$
 x_i
-\]
+$$
 
 自己。
 
@@ -3039,7 +3039,7 @@ x_i
 
 ---
 
-# 82. 为什么不能只堆 Attention、不用 FFN？
+## 82. 为什么不能只堆 Attention、不用 FFN？
 
 从数学上当然可以构造纯 Attention 网络。
 
@@ -3053,27 +3053,27 @@ x_i
 
 ---
 
-# 83. 一个极简对照
+## 83. 一个极简对照
 
 假设两个 tokens：
 
-\[
+$$
 x_1,x_2
-\]
+$$
 
 只有 FFN：
 
-\[
+$$
 x_1'
 =
 FFN(x_1)
-\]
+$$
 
-\[
+$$
 x_2'
 =
 FFN(x_2)
-\]
+$$
 
 它们永远不交流。
 
@@ -3081,11 +3081,11 @@ FFN(x_2)
 
 只有 Attention：
 
-\[
+$$
 x_i'
 =
 \sum_j\alpha_{ij}Vx_j
-\]
+$$
 
 可以交流，
 
@@ -3107,7 +3107,7 @@ FFN
 
 ---
 
-# 84. 为什么 FFN 的宽度通常比 d_model 大？
+## 84. 为什么 FFN 的宽度通常比 d_model 大？
 
 这是一个很常见的 neural-network design：
 
@@ -3127,7 +3127,7 @@ FFN
 
 ---
 
-# 85. 为什么不让整个 Residual Stream 都保持 2048？
+## 85. 为什么不让整个 Residual Stream 都保持 2048？
 
 那会让：
 
@@ -3146,15 +3146,15 @@ FFN expansion让模型：
 
 再压回：
 
-\[
+$$
 d_{\text{model}}
-\]
+$$
 
 这是更经济的结构折中。
 
 ---
 
-# 86. 为什么 ACT 可以把 FFN 扩到 3200，但 Residual Stream 仍 512？
+## 86. 为什么 ACT 可以把 FFN 扩到 3200，但 Residual Stream 仍 512？
 
 因为中间 3200 只存在于：
 
@@ -3162,9 +3162,9 @@ d_{\text{model}}
 
 Attention、Cross-Attention、Residual Memory等主要 representation仍：
 
-\[
+$$
 512
-\]
+$$
 
 维。
 
@@ -3176,39 +3176,39 @@ Attention、Cross-Attention、Residual Memory等主要 representation仍：
 
 ---
 
-# 87. FFN 输出会不会改变 Token 的“位置身份”？
+## 87. FFN 输出会不会改变 Token 的“位置身份”？
 
 不会改变 token count或索引。
 
-position \(i\) 的 FFN output：
+position $i$ 的 FFN output：
 
-> 仍属于 position \(i\)。
+> 仍属于 position $i$。
 
 它只是修改：
 
-\[
+$$
 x_i
-\]
+$$
 
 的 feature vector。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{FFN changes representation, not sequence topology}
 }
-\]
+$$
 
 ---
 
-# 88. FFN 会不会改变 Action Slot 对应哪个未来时间？
+## 88. FFN 会不会改变 Action Slot 对应哪个未来时间？
 
 不会。
 
-ACT slot \(i\) 经 FFN后仍是：
+ACT slot $i$ 经 FFN后仍是：
 
-> slot \(i\)。
+> slot $i$。
 
 它的 temporal identity主要来自 query positional structure。
 
@@ -3216,7 +3216,7 @@ FFN只加工当前 slot hidden features。
 
 ---
 
-# 89. Dropout 在 FFN 哪里？
+## 89. Dropout 在 FFN 哪里？
 
 原始 Transformer和 ACT-style code会在 FFN内部以及 residual branch使用 dropout。
 
@@ -3235,7 +3235,7 @@ src2 =
 
 所以概念上：
 
-\[
+$$
 Linear_1
 \rightarrow
 Activation
@@ -3243,19 +3243,19 @@ Activation
 Dropout
 \rightarrow
 Linear_2
-\]
+$$
 
 然后外面：
 
-\[
+$$
 Dropout
-\]
+$$
 
 再进入 residual。
 
 ---
 
-# 90. 为什么训练时有 Dropout，推理没有？
+## 90. 为什么训练时有 Dropout，推理没有？
 
 Dropout是 regularization。
 
@@ -3275,7 +3275,7 @@ model.eval()
 
 ---
 
-# 91. FFN 有 BatchNorm 吗？
+## 91. FFN 有 BatchNorm 吗？
 
 标准 Transformer FFN：
 
@@ -3298,7 +3298,7 @@ Linear
 
 ---
 
-# 92. FFN 自己有 Residual 吗？
+## 92. FFN 自己有 Residual 吗？
 
 如果严格区分模块：
 
@@ -3306,28 +3306,28 @@ Linear
 
 Transformer Layer在 FFN 外面做：
 
-\[
+$$
 x+
 Dropout(
 FFN(x)
 )
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 FFN module
 \neq
 FFN sublayer with residual wrapper
 }
-\]
+$$
 
 读代码时要看层级。
 
 ---
 
-# 93. FFN 和 MLP 是不是同一个东西？
+## 93. FFN 和 MLP 是不是同一个东西？
 
 FFN在这里本质上就是：
 
@@ -3341,17 +3341,17 @@ FFN在这里本质上就是：
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Transformer FFN}
 \approx
 \text{per-token MLP}
 }
-\]
+$$
 
 ---
 
-# 94. 为什么叫 Feed-Forward？
+## 94. 为什么叫 Feed-Forward？
 
 因为内部没有：
 
@@ -3360,13 +3360,13 @@ FFN在这里本质上就是：
 
 信息：
 
-\[
+$$
 x
 \rightarrow
 hidden
 \rightarrow
 output
-\]
+$$
 
 单向前传。
 
@@ -3378,15 +3378,15 @@ output
 
 ---
 
-# 95. FFN 是不是每次 Forward 都学习新参数？
+## 95. FFN 是不是每次 Forward 都学习新参数？
 
 不是。
 
 参数：
 
-\[
+$$
 W_1,W_2,b_1,b_2
-\]
+$$
 
 训练过程中通过 gradient descent更新。
 
@@ -3402,48 +3402,48 @@ W_1,W_2,b_1,b_2
 
 ---
 
-# 96. Gradient 怎样训练 FFN？
+## 96. Gradient 怎样训练 FFN？
 
 Loss：
 
-\[
+$$
 L
-\]
+$$
 
 通过后续网络回传到 FFN output：
 
-\[
+$$
 \frac{\partial L}{\partial y}
-\]
+$$
 
 再通过：
 
-\[
+$$
 W_2
-\]
+$$
 
 回到 activated hidden：
 
-\[
+$$
 r
-\]
+$$
 
 通过 ReLU derivative：
 
-\[
+$$
 \frac{dReLU(z)}{dz}
 =
 \begin{cases}
 1,&z>0\\
 0,&z<0
 \end{cases}
-\]
+$$
 
 再回到：
 
-\[
+$$
 W_1
-\]
+$$
 
 和 input。
 
@@ -3453,25 +3453,25 @@ W_1
 
 ---
 
-# 97. ReLU 的“Dead Unit”问题
+## 97. ReLU 的“Dead Unit”问题
 
 如果某个 unit长期：
 
-\[
+$$
 h_j<0
-\]
+$$
 
 那么 ReLU输出：
 
-\[
+$$
 0
-\]
+$$
 
 并且局部 gradient：
 
-\[
+$$
 0
-\]
+$$
 
 它可能变得难以重新激活。
 
@@ -3487,7 +3487,7 @@ GELU等平滑 activation在某些现代架构中有不同 gradient behavior。
 
 ---
 
-# 98. 为什么 ACT 仍使用 ReLU？
+## 98. 为什么 ACT 仍使用 ReLU？
 
 ACT继承 DETR-style Transformer architecture，
 
@@ -3505,11 +3505,11 @@ ACT继承 DETR-style Transformer architecture，
 
 ---
 
-# 99. 如果想改 ACT FFN，可以改哪些东西？
+## 99. 如果想改 ACT FFN，可以改哪些东西？
 
 研究/工程上可以改变：
 
-- \(d_{ff}\)；
+- $d_{ff}$；
 - ReLU → GELU；
 - gated FFN；
 - dropout；
@@ -3527,35 +3527,35 @@ ACT继承 DETR-style Transformer architecture，
 
 ---
 
-# 100. 为什么 3200 会直接影响模型大小？
+## 100. 为什么 3200 会直接影响模型大小？
 
 每层 FFN weight约：
 
-\[
+$$
 2\times512\times3200
-\]
+$$
 
 如果 Encoder 4 层 + Decoder 7 层，
 
 Policy Transformer中有：
 
-\[
+$$
 11
-\]
+$$
 
 个 FFN blocks。
 
 仅这些 FFN的大 weight matrices总量粗略：
 
-\[
+$$
 11\times3,276,800
-\]
+$$
 
 约：
 
-\[
+$$
 36.0M
-\]
+$$
 
 weights。
 
@@ -3571,7 +3571,7 @@ weights。
 
 ---
 
-# 101. 这个 36M 是精确 ACT 总参数吗？
+## 101. 这个 36M 是精确 ACT 总参数吗？
 
 **不是。**
 
@@ -3597,13 +3597,13 @@ weights。
 
 ---
 
-# 102. 为什么 Canonical Article 要讲参数量？
+## 102. 为什么 Canonical Article 要讲参数量？
 
 因为只有看到：
 
-\[
+$$
 FFN\approx3.28M
-\]
+$$
 
 per ACT block，
 
@@ -3615,7 +3615,7 @@ per ACT block，
 
 ---
 
-# 103. FFN 会不会“存知识”？
+## 103. FFN 会不会“存知识”？
 
 现代 LLM interpretability研究中有很多工作研究：
 
@@ -3635,15 +3635,15 @@ per ACT block，
 
 ---
 
-# 104. 对 ACT 也不能说“FFN 存机器人动作知识”
+## 104. 对 ACT 也不能说“FFN 存机器人动作知识”
 
 ACT FFN训练后当然会编码对任务有用的 parameters。
 
 但不能把某个：
 
-\[
+$$
 W_1
-\]
+$$
 
 neuron直接因果解释成：
 
@@ -3665,7 +3665,7 @@ neuron直接因果解释成：
 
 ---
 
-# 105. 为什么 Layer 1 FFN 和 Layer 4 FFN 可以不同？
+## 105. 为什么 Layer 1 FFN 和 Layer 4 FFN 可以不同？
 
 因为它们处理的 representations处于不同深度。
 
@@ -3679,32 +3679,32 @@ Layer 4：
 
 所以每层拥有独立：
 
-\[
+$$
 W_1^{(l)},W_2^{(l)}
-\]
+$$
 
 允许不同深度学习不同 feature-processing rules。
 
 ---
 
-# 106. 为什么所有 Layers 不共享同一个 FFN 能增加 Capacity？
+## 106. 为什么所有 Layers 不共享同一个 FFN 能增加 Capacity？
 
 如果共享：
 
-\[
+$$
 FFN^{(1)}
 =
 FFN^{(2)}
 =\cdots
-\]
+$$
 
 每层都使用同一个 local transformation。
 
 独立参数则允许：
 
-\[
+$$
 f_1,f_2,\ldots,f_L
-\]
+$$
 
 逐层形成不同 computation stages。
 
@@ -3714,19 +3714,19 @@ f_1,f_2,\ldots,f_L
 
 ---
 
-# 107. FFN 的 Hidden Units 有位置编码吗？
+## 107. FFN 的 Hidden Units 有位置编码吗？
 
 FFN hidden units：
 
-\[
+$$
 2048
-\]
+$$
 
 或：
 
-\[
+$$
 3200
-\]
+$$
 
 不是 sequence positions。
 
@@ -3748,21 +3748,21 @@ FFN hidden units：
 
 ---
 
-# 108. Token Axis 和 Feature Axis 再区分一次
+## 108. Token Axis 和 Feature Axis 再区分一次
 
 ACT Policy Encoder：
 
-\[
+$$
 [B,1202,512]
-\]
+$$
 
-### 1202
+#### 1202
 
 是：
 
 > token / sequence positions。
 
-### 512
+#### 512
 
 是：
 
@@ -3770,37 +3770,37 @@ ACT Policy Encoder：
 
 FFN：
 
-\[
+$$
 [B,1202,512]
 \rightarrow
 [B,1202,3200]
-\]
+$$
 
 变化的是：
 
-\[
+$$
 \boxed{
 \text{feature axis}
 }
-\]
+$$
 
 不是：
 
-\[
+$$
 \boxed{
 \text{token axis}
 }
-\]
+$$
 
 ---
 
-# 109. Attention 恰好相反吗？
+## 109. Attention 恰好相反吗？
 
 Attention 的 unique operation主要建立：
 
-\[
+$$
 1202\times1202
-\]
+$$
 
 token-token relation。
 
@@ -3818,7 +3818,7 @@ token-token relation。
 
 ---
 
-# 110. 这也是为什么 MLP-Mixer 叫 Mixer
+## 110. 这也是为什么 MLP-Mixer 叫 Mixer
 
 后来一些 architecture显式把：
 
@@ -3838,29 +3838,29 @@ Transformer则使用：
 
 ---
 
-# 111. 为什么 FFN 可以高度并行？
+## 111. 为什么 FFN 可以高度并行？
 
 每个 token独立使用同一 MLP。
 
 所以所有：
 
-\[
+$$
 B\times N
-\]
+$$
 
 vectors可以打包成大矩阵乘法。
 
 没有：
 
-\[
+$$
 token_i
-\]
+$$
 
 等待：
 
-\[
+$$
 token_{i-1}
-\]
+$$
 
 的 sequential dependency。
 
@@ -3868,19 +3868,19 @@ token_{i-1}
 
 ---
 
-# 112. 为什么 FFN 常是硬件友好的？
+## 112. 为什么 FFN 常是硬件友好的？
 
 核心运算：
 
-\[
+$$
 XW_1
-\]
+$$
 
 和：
 
-\[
+$$
 HW_2
-\]
+$$
 
 都是 dense GEMM。
 
@@ -3892,7 +3892,7 @@ HW_2
 
 ---
 
-# 113. Attention 和 FFN 哪个更难优化硬件？
+## 113. Attention 和 FFN 哪个更难优化硬件？
 
 这取决于：
 
@@ -3918,7 +3918,7 @@ FFN主要是：
 
 ---
 
-# 114. ACT 里的 FFN 对 1202 Visual/State Tokens 是不是同一个 Matrix Multiplication？
+## 114. ACT 里的 FFN 对 1202 Visual/State Tokens 是不是同一个 Matrix Multiplication？
 
 实现上：
 
@@ -3932,7 +3932,7 @@ FFN主要是：
 
 ---
 
-# 115. 为什么这和卷积权重共享思想很像？
+## 115. 为什么这和卷积权重共享思想很像？
 
 CNN：
 
@@ -3944,11 +3944,11 @@ Transformer FFN：
 
 共同思想：
 
-\[
+$$
 \boxed{
 \text{shared local computation across positions}
 }
-\]
+$$
 
 区别是：
 
@@ -3957,7 +3957,7 @@ Transformer FFN：
 
 ---
 
-# 116. 原论文为什么专门强调“same across positions, different across layers”？
+## 116. 原论文为什么专门强调“same across positions, different across layers”？
 
 因为它准确界定了参数共享边界：
 
@@ -3976,7 +3976,7 @@ layer 2 FFN
 
 ---
 
-# 117. PyTorch 代码怎样体现 Position-Wise？
+## 117. PyTorch 代码怎样体现 Position-Wise？
 
 ACT Encoder：
 
@@ -3996,9 +3996,9 @@ self.linear2 =
 
 输入可能是：
 
-\[
+$$
 [N,B,D]
-\]
+$$
 
 `nn.Linear` 默认作用于：
 
@@ -4006,17 +4006,17 @@ self.linear2 =
 
 所以：
 
-\[
+$$
 D
 \rightarrow
 D_{ff}
-\]
+$$
 
 自动对前面的：
 
-\[
+$$
 N,B
-\]
+$$
 
 所有位置广播/批处理。
 
@@ -4024,7 +4024,7 @@ N,B
 
 ---
 
-# 118. ACT Encoder Post-LN FFN 代码
+## 118. ACT Encoder Post-LN FFN 代码
 
 当前官方：
 
@@ -4048,32 +4048,32 @@ src =
 
 翻成数学：
 
-\[
+$$
 u=W_1x+b_1
-\]
+$$
 
-\[
+$$
 r=ReLU(u)
-\]
+$$
 
-\[
+$$
 r'=Dropout(r)
-\]
+$$
 
-\[
+$$
 f=W_2r'+b_2
-\]
+$$
 
-\[
+$$
 y=
 LN(
 x+Dropout(f)
 )
-\]
+$$
 
 ---
 
-# 119. ACT Decoder FFN 完全同类
+## 119. ACT Decoder FFN 完全同类
 
 当前代码：
 
@@ -4103,29 +4103,29 @@ tgt =
 
 ---
 
-# 120. Pre-LN 时 FFN 公式怎样变化？
+## 120. Pre-LN 时 FFN 公式怎样变化？
 
 Pre-LN：
 
 先：
 
-\[
+$$
 \tilde x=LN(x)
-\]
+$$
 
 再：
 
-\[
+$$
 f=FFN(\tilde x)
-\]
+$$
 
 最后：
 
-\[
+$$
 \boxed{
 y=x+Dropout(f)
 }
-\]
+$$
 
 所以 FFN本身公式没变。
 
@@ -4135,7 +4135,7 @@ y=x+Dropout(f)
 
 ---
 
-# 121. Post-LN ACT 默认
+## 121. Post-LN ACT 默认
 
 ACT current default：
 
@@ -4145,7 +4145,7 @@ normalize_before=False
 
 所以 FFN处于：
 
-\[
+$$
 \boxed{
 x
 \rightarrow
@@ -4155,13 +4155,13 @@ Residual Add
 \rightarrow
 LayerNorm
 }
-\]
+$$
 
 与 2017 Transformer Post-LN结构一致。
 
 ---
 
-# 122. FFN 为什么不负责 Normalization？
+## 122. FFN 为什么不负责 Normalization？
 
 因为 FFN 和 LayerNorm是不同模块。
 
@@ -4177,13 +4177,13 @@ LayerNorm：
 
 ---
 
-# 123. FFN 为什么不改变 Batch/Sequence Length？
+## 123. FFN 为什么不改变 Batch/Sequence Length？
 
 因为：
 
-\[
+$$
 Linear
-\]
+$$
 
 只变最后 feature dimension。
 
@@ -4197,9 +4197,9 @@ ReLU：
 
 所以：
 
-\[
+$$
 B,N
-\]
+$$
 
 全程保留。
 
@@ -4207,7 +4207,7 @@ B,N
 
 ---
 
-# 124. 一个 Token 的 FFN 可以怎样逐行理解？
+## 124. 一个 Token 的 FFN 可以怎样逐行理解？
 
 ACT：
 
@@ -4217,15 +4217,15 @@ u = linear1(x)
 
 把：
 
-\[
+$$
 512
-\]
+$$
 
 个当前 features重新组合成：
 
-\[
+$$
 3200
-\]
+$$
 
 个 candidate features。
 
@@ -4255,9 +4255,9 @@ f = linear2(u)
 
 把 activated 3200-D hidden pattern重新写回：
 
-\[
+$$
 512
-\]
+$$
 
 维 residual space。
 
@@ -4275,21 +4275,21 @@ x = norm(x + dropout(f))
 
 ---
 
-# 125. 为什么第二层 Linear 很重要？
+## 125. 为什么第二层 Linear 很重要？
 
 如果只：
 
-\[
+$$
 512\rightarrow3200
-\]
+$$
 
 那 Transformer hidden width就永久改变。
 
 第二层：
 
-\[
+$$
 3200\rightarrow512
-\]
+$$
 
 不仅恢复 shape，
 
@@ -4299,27 +4299,27 @@ x = norm(x + dropout(f))
 
 所以：
 
-\[
+$$
 W_1
-\]
+$$
 
 和：
 
-\[
+$$
 W_2
-\]
+$$
 
 扮演不同角色。
 
 ---
 
-# 126. W₁ 可以怎样直觉理解？
+## 126. W₁ 可以怎样直觉理解？
 
 有限度地说：
 
-\[
+$$
 W_1
-\]
+$$
 
 把 residual representation投影到一个更宽：
 
@@ -4327,31 +4327,31 @@ W_1
 
 每一列：
 
-\[
+$$
 w_j
-\]
+$$
 
 定义某种 linear direction。
 
 ---
 
-# 127. W₂ 可以怎样直觉理解？
+## 127. W₂ 可以怎样直觉理解？
 
-\[
+$$
 W_2
-\]
+$$
 
 把 activation pattern：
 
-\[
+$$
 r
-\]
+$$
 
 重新投影到：
 
-\[
+$$
 d_{\text{model}}
-\]
+$$
 
 residual space。
 
@@ -4363,13 +4363,13 @@ residual space。
 
 ---
 
-# 128. 为什么 Bias 也重要？
+## 128. 为什么 Bias 也重要？
 
 第一层：
 
-\[
+$$
 xW_1+b_1
-\]
+$$
 
 bias会改变：
 
@@ -4377,59 +4377,59 @@ bias会改变：
 
 例如没有 bias：
 
-\[
+$$
 w^\top x>0
-\]
+$$
 
 才激活。
 
 有 bias：
 
-\[
+$$
 w^\top x+b>0
-\]
+$$
 
 decision boundary可以平移。
 
 第二层 bias：
 
-\[
+$$
 b_2
-\]
+$$
 
 也允许输出有 learned offset。
 
 ---
 
-# 129. ReLU Decision Boundary 是什么？
+## 129. ReLU Decision Boundary 是什么？
 
 某个 hidden neuron：
 
-\[
+$$
 h_j=w_j^\top x+b_j
-\]
+$$
 
 其开关边界：
 
-\[
+$$
 w_j^\top x+b_j=0
-\]
+$$
 
 这是 hidden space 中一个 hyperplane。
 
 一侧：
 
-\[
+$$
 h_j>0
-\]
+$$
 
 unit active。
 
 另一侧：
 
-\[
+$$
 h_j<0
-\]
+$$
 
 unit output 0。
 
@@ -4439,13 +4439,13 @@ unit output 0。
 
 ---
 
-# 130. 为什么 Width 增加会增加 Piecewise Capacity？
+## 130. 为什么 Width 增加会增加 Piecewise Capacity？
 
 更多 hidden units意味着更多：
 
-\[
+$$
 w_j^\top x+b_j
-\]
+$$
 
 gating boundaries。
 
@@ -4467,7 +4467,7 @@ gating boundaries。
 
 ---
 
-# 131. 为什么 ACT 只有 10 分钟 Demonstrations还敢用 3200-D FFN？
+## 131. 为什么 ACT 只有 10 分钟 Demonstrations还敢用 3200-D FFN？
 
 ACT的成功来自整个系统：
 
@@ -4480,9 +4480,9 @@ ACT的成功来自整个系统：
 
 不能从：
 
-\[
+$$
 d_{ff}=3200
-\]
+$$
 
 单独推断：
 
@@ -4492,13 +4492,13 @@ d_{ff}=3200
 
 ---
 
-# 132. FFN Width 和 Chunk Size 是不同 Axis
+## 132. FFN Width 和 Chunk Size 是不同 Axis
 
 ACT：
 
-\[
+$$
 d_{ff}=3200
-\]
+$$
 
 是：
 
@@ -4506,9 +4506,9 @@ d_{ff}=3200
 
 chunk：
 
-\[
+$$
 k=100
-\]
+$$
 
 是：
 
@@ -4524,53 +4524,53 @@ k=100
 
 FFN不会把：
 
-\[
+$$
 100
-\]
+$$
 
 个 action positions扩成：
 
-\[
+$$
 3200
-\]
+$$
 
 个 positions。
 
 ---
 
-# 133. 一个完整的 ACT Decoder FFN Shape
+## 133. 一个完整的 ACT Decoder FFN Shape
 
 输入：
 
-\[
+$$
 [B,100,512]
-\]
+$$
 
 flatten概念上可以看成：
 
-\[
+$$
 (B\times100)
-\]
+$$
 
 个 512-D vectors。
 
 第一 Linear：
 
-\[
+$$
 [B,100,3200]
-\]
+$$
 
 activation：
 
-\[
+$$
 [B,100,3200]
-\]
+$$
 
 第二 Linear：
 
-\[
+$$
 [B,100,512]
-\]
+$$
 
 所以：
 
@@ -4578,25 +4578,25 @@ activation：
 
 ---
 
-# 134. 一个完整的 ACT Policy Encoder FFN Shape
+## 134. 一个完整的 ACT Policy Encoder FFN Shape
 
 输入：
 
-\[
+$$
 [B,1202,512]
-\]
+$$
 
 第一 Linear：
 
-\[
+$$
 [B,1202,3200]
-\]
+$$
 
 第二 Linear：
 
-\[
+$$
 [B,1202,512]
-\]
+$$
 
 所以：
 
@@ -4604,7 +4604,7 @@ activation：
 
 ---
 
-# 135. 为什么 FFN 不需要 Padding Mask？
+## 135. 为什么 FFN 不需要 Padding Mask？
 
 FFN逐 token处理。
 
@@ -4629,7 +4629,7 @@ FFN逐 token处理。
 
 ---
 
-# 136. Causal Mask 也和 FFN 无关
+## 136. Causal Mask 也和 FFN 无关
 
 Causal Mask限制：
 
@@ -4639,9 +4639,9 @@ FFN不看其他 positions。
 
 所以 FFN没有：
 
-\[
+$$
 T\times T
-\]
+$$
 
 causal mask。
 
@@ -4651,53 +4651,53 @@ position-wise FFN不会创建 future leakage。
 
 ---
 
-# 137. 为什么 FFN 不会破坏 Causality？
+## 137. 为什么 FFN 不会破坏 Causality？
 
 假设：
 
-\[
+$$
 h_t
-\]
+$$
 
 只依赖：
 
-\[
+$$
 x_{\le t}
-\]
+$$
 
 那么：
 
-\[
+$$
 FFN(h_t)
-\]
+$$
 
 只是：
 
-> \(h_t\) 的函数。
+> $h_t$ 的函数。
 
 它不会凭空访问：
 
-\[
+$$
 x_{>t}
-\]
+$$
 
 所以：
 
-\[
+$$
 FFN(h_t)
-\]
+$$
 
 仍只依赖：
 
-\[
+$$
 x_{\le t}
-\]
+$$
 
 因此 causal property保留。
 
 ---
 
-# 138. 为什么 FFN 不会破坏 Permutation Equivariance？
+## 138. 为什么 FFN 不会破坏 Permutation Equivariance？
 
 如果没有 positional information，
 
@@ -4705,17 +4705,17 @@ x_{\le t}
 
 输入 permutation：
 
-\[
+$$
 PX
-\]
+$$
 
 得到：
 
-\[
+$$
 FFN(PX)
 =
 PFFN(X)
-\]
+$$
 
 因为只是重新排列相同函数的输入 rows。
 
@@ -4727,7 +4727,7 @@ PFFN(X)
 
 ---
 
-# 139. 这个性质为什么重要？
+## 139. 这个性质为什么重要？
 
 它进一步说明：
 
@@ -4746,23 +4746,23 @@ PFFN(X)
 
 ---
 
-# 140. FFN 能不能处理不同长度 Sequence？
+## 140. FFN 能不能处理不同长度 Sequence？
 
 可以。
 
 因为它根本不依赖：
 
-\[
+$$
 N
-\]
+$$
 
 固定值。
 
 同一个：
 
-\[
+$$
 Linear(512,3200)
-\]
+$$
 
 可以应用到：
 
@@ -4772,9 +4772,9 @@ Linear(512,3200)
 
 只要最后 feature dimension：
 
-\[
+$$
 512
-\]
+$$
 
 一致。
 
@@ -4782,7 +4782,7 @@ Linear(512,3200)
 
 ---
 
-# 141. 为什么 Transformer 的 FFN 对文本和图像都能复用？
+## 141. 为什么 Transformer 的 FFN 对文本和图像都能复用？
 
 因为它只关心：
 
@@ -4797,9 +4797,9 @@ Linear(512,3200)
 
 都表示成：
 
-\[
+$$
 D
-\]
+$$
 
 维，
 
@@ -4809,7 +4809,7 @@ D
 
 ---
 
-# 142. 但文本模型和 ACT 的 FFN 参数会共享吗？
+## 142. 但文本模型和 ACT 的 FFN 参数会共享吗？
 
 当然不会。
 
@@ -4827,7 +4827,7 @@ D
 
 ---
 
-# 143. 为什么 FFN 是每层不同参数，而不是全模型一个共享 MLP？
+## 143. 为什么 FFN 是每层不同参数，而不是全模型一个共享 MLP？
 
 这样每一层都能形成：
 
@@ -4835,15 +4835,15 @@ D
 
 例如：
 
-\[
+$$
 x^{(1)}
-\]
+$$
 
 和：
 
-\[
+$$
 x^{(10)}
-\]
+$$
 
 representations分布和语义可能完全不同。
 
@@ -4851,49 +4851,49 @@ representations分布和语义可能完全不同。
 
 ---
 
-# 144. FFN 和 Output Head 不是一回事
+## 144. FFN 和 Output Head 不是一回事
 
 ACT FFN：
 
-\[
+$$
 512\rightarrow3200\rightarrow512
-\]
+$$
 
 是 Transformer内部 computation。
 
 Action Head：
 
-\[
+$$
 512\rightarrow14
-\]
+$$
 
 是最终 task output projection。
 
 所以：
 
-\[
+$$
 \boxed{
 FFN
 \neq
 Action\ Head
 }
-\]
+$$
 
 ---
 
-# 145. Language Transformer 也一样
+## 145. Language Transformer 也一样
 
 Transformer FFN：
 
-\[
+$$
 512\rightarrow2048\rightarrow512
-\]
+$$
 
 最后 vocabulary head：
 
-\[
+$$
 512\rightarrow|Vocab|
-\]
+$$
 
 是不同模块。
 
@@ -4907,7 +4907,7 @@ Transformer FFN：
 
 ---
 
-# 146. 为什么 FFN 最终不直接输出动作/词？
+## 146. 为什么 FFN 最终不直接输出动作/词？
 
 因为每一层 FFN只是：
 
@@ -4920,15 +4920,15 @@ Transformer FFN：
 
 让中间 block保持：
 
-\[
+$$
 d_{\text{model}}
-\]
+$$
 
 统一，有利于深层堆叠和 residual。
 
 ---
 
-# 147. 为什么“MLP”这个词有时让人低估它？
+## 147. 为什么“MLP”这个词有时让人低估它？
 
 因为我们常把 MLP理解成：
 
@@ -4936,9 +4936,9 @@ d_{\text{model}}
 
 但一个：
 
-\[
+$$
 512\rightarrow3200\rightarrow512
-\]
+$$
 
 的 MLP拥有数百万参数，
 
@@ -4954,7 +4954,7 @@ FFN往往是极重要的 compute / parameter component。
 
 ---
 
-# 148. 为什么 Dense FFN 容易扩展成 Mixture-of-Experts？
+## 148. 为什么 Dense FFN 容易扩展成 Mixture-of-Experts？
 
 Dense FFN对每个 token：
 
@@ -4976,7 +4976,7 @@ MoE Transformer则尝试：
 
 ---
 
-# 149. MoE 和 Multi-Head Attention 不一样
+## 149. MoE 和 Multi-Head Attention 不一样
 
 Multi-Head：
 
@@ -4988,19 +4988,19 @@ MoE：
 
 所以：
 
-\[
+$$
 \boxed{
 \text{attention head}
 \neq
 \text{FFN expert}
 }
-\]
+$$
 
 以后可以单独学习 MoE。
 
 ---
 
-# 150. 现代 LLM 为什么常把 FFN 叫 MLP Block？
+## 150. 现代 LLM 为什么常把 FFN 叫 MLP Block？
 
 因为本质就是：
 
@@ -5022,7 +5022,7 @@ MoE：
 
 ---
 
-# 151. 一个最小 PyTorch FFN
+## 151. 一个最小 PyTorch FFN
 
 原始 Transformer风格：
 
@@ -5050,19 +5050,19 @@ class FFN(nn.Module):
 
 输入：
 
-\[
+$$
 [B,N,512]
-\]
+$$
 
 输出：
 
-\[
+$$
 [B,N,512]
-\]
+$$
 
 ---
 
-# 152. 为什么这段代码自动逐 Position 运行？
+## 152. 为什么这段代码自动逐 Position 运行？
 
 PyTorch：
 
@@ -5078,9 +5078,9 @@ nn.Linear(in_features, out_features)
 
 所以：
 
-\[
+$$
 [B,N,512]
-\]
+$$
 
 进入：
 
@@ -5090,15 +5090,15 @@ Linear(512,2048)
 
 自动输出：
 
-\[
+$$
 [B,N,2048]
-\]
+$$
 
 前面：
 
-\[
+$$
 B,N
-\]
+$$
 
 只是 batch-like dimensions。
 
@@ -5106,7 +5106,7 @@ B,N
 
 ---
 
-# 153. 一个 ACT 风格最小 FFN
+## 153. 一个 ACT 风格最小 FFN
 
 ```python
 class ACTFFN(nn.Module):
@@ -5146,7 +5146,7 @@ Residual / Norm在外层处理。
 
 ---
 
-# 154. 常见误解一：FFN 是为了让 Token 互相交流
+## 154. 常见误解一：FFN 是为了让 Token 互相交流
 
 **错误。**
 
@@ -5154,23 +5154,23 @@ Residual / Norm在外层处理。
 
 ---
 
-# 155. 常见误解二：FFN 只是一个 Linear Layer
+## 155. 常见误解二：FFN 只是一个 Linear Layer
 
 **错误。**
 
 原始：
 
-\[
+$$
 Linear
 \rightarrow
 ReLU
 \rightarrow
 Linear
-\]
+$$
 
 ---
 
-# 156. 常见误解三：两层 Linear 天然比一层强
+## 156. 常见误解三：两层 Linear 天然比一层强
 
 **错误。**
 
@@ -5180,7 +5180,7 @@ Linear
 
 ---
 
-# 157. 常见误解四：FFN 的唯一作用是“加非线性”
+## 157. 常见误解四：FFN 的唯一作用是“加非线性”
 
 **不完整。**
 
@@ -5192,49 +5192,49 @@ FFN更完整的作用是：
 
 ---
 
-# 158. 常见误解五：2048 是 Token 数量
+## 158. 常见误解五：2048 是 Token 数量
 
 **错误。**
 
 它是：
 
-\[
+$$
 d_{ff}
-\]
+$$
 
 feature width。
 
 token count：
 
-\[
+$$
 N
-\]
+$$
 
 不变。
 
 ---
 
-# 159. 常见误解六：3200 是 ACT Action Chunk 长度
+## 159. 常见误解六：3200 是 ACT Action Chunk 长度
 
 **错误。**
 
 ACT：
 
-\[
+$$
 d_{ff}=3200
-\]
+$$
 
 chunk：
 
-\[
+$$
 k=100
-\]
+$$
 
 是两个完全不同 axis。
 
 ---
 
-# 160. 常见误解七：每个 Token 有自己独立的 FFN 参数
+## 160. 常见误解七：每个 Token 有自己独立的 FFN 参数
 
 **错误。**
 
@@ -5242,7 +5242,7 @@ k=100
 
 ---
 
-# 161. 常见误解八：所有 Transformer Layers 又共享同一个 FFN
+## 161. 常见误解八：所有 Transformer Layers 又共享同一个 FFN
 
 **错误。**
 
@@ -5250,65 +5250,65 @@ k=100
 
 ---
 
-# 162. 常见误解九：FFN 参数很少，所以可以忽略
+## 162. 常见误解九：FFN 参数很少，所以可以忽略
 
 **错误。**
 
 原始 FFN约：
 
-\[
+$$
 2.10M
-\]
+$$
 
 参数 per block。
 
 ACT FFN约：
 
-\[
+$$
 3.28M
-\]
+$$
 
 参数 per block。
 
 ---
 
-# 163. 常见误解十：Attention 的参数一定比 FFN 多
+## 163. 常见误解十：Attention 的参数一定比 FFN 多
 
 **不一定，而且经典配置恰恰相反。**
 
-在 \(d=512\) 下，
+在 $d=512$ 下，
 
 MHA Q/K/V/O weight约：
 
-\[
+$$
 1.05M
-\]
+$$
 
 ACT FFN weights约：
 
-\[
+$$
 3.28M
-\]
+$$
 
 ---
 
-# 164. 常见误解十一：FFN 会把 1202 Tokens 压成一个 Vector
+## 164. 常见误解十一：FFN 会把 1202 Tokens 压成一个 Vector
 
 **错误。**
 
-\[
+$$
 [B,1202,512]
 \rightarrow
 [B,1202,3200]
 \rightarrow
 [B,1202,512]
-\]
+$$
 
 token count始终 1202。
 
 ---
 
-# 165. 常见误解十二：FFN 会破坏 Causal Mask
+## 165. 常见误解十二：FFN 会破坏 Causal Mask
 
 **不会。**
 
@@ -5316,7 +5316,7 @@ token count始终 1202。
 
 ---
 
-# 166. 常见误解十三：FFN 自己需要 Causal Mask
+## 166. 常见误解十三：FFN 自己需要 Causal Mask
 
 **不需要。**
 
@@ -5324,7 +5324,7 @@ Mask是 token-to-token connectivity问题。
 
 ---
 
-# 167. 常见误解十四：FFN 自己决定 Position
+## 167. 常见误解十四：FFN 自己决定 Position
 
 **错误。**
 
@@ -5334,7 +5334,7 @@ Position information来自其他 mechanism。
 
 ---
 
-# 168. 常见误解十五：Transformer 必须使用 ReLU FFN
+## 168. 常见误解十五：Transformer 必须使用 ReLU FFN
 
 **错误。**
 
@@ -5344,21 +5344,21 @@ ReLU是原始 Transformer选择。
 
 ---
 
-# 169. 常见误解十六：ACT 使用 GELU，因为现代 Transformer 都用 GELU
+## 169. 常见误解十六：ACT 使用 GELU，因为现代 Transformer 都用 GELU
 
 **错误。**
 
 ACT official architecture默认 activation：
 
-\[
+$$
 \boxed{
 ReLU
 }
-\]
+$$
 
 ---
 
-# 170. 常见误解十七：ACT 的 dim_feedforward 默认 2048，所以论文也是 2048
+## 170. 常见误解十七：ACT 的 dim_feedforward 默认 2048，所以论文也是 2048
 
 **错误。**
 
@@ -5366,53 +5366,53 @@ ReLU
 
 ACT官方训练命令和论文 Table III：
 
-\[
+$$
 \boxed{
 3200
 }
-\]
+$$
 
 ---
 
-# 171. 常见误解十八：FFN 输出就是最终机器人动作
+## 171. 常见误解十八：FFN 输出就是最终机器人动作
 
 **错误。**
 
 FFN仍输出：
 
-\[
+$$
 512
-\]
+$$
 
 维 hidden representation。
 
 最终 action head才：
 
-\[
+$$
 512\rightarrow14
-\]
+$$
 
 ---
 
-# 172. 常见误解十九：FFN 扩维后 Residual 直接把 3200-D 加回 512-D
+## 172. 常见误解十九：FFN 扩维后 Residual 直接把 3200-D 加回 512-D
 
 **错误。**
 
 第二 Linear先：
 
-\[
+$$
 3200\rightarrow512
-\]
+$$
 
 然后才能 residual：
 
-\[
+$$
 512+512
-\]
+$$
 
 ---
 
-# 173. 常见误解二十：Attention 已经能看全局，所以 FFN 没意义
+## 173. 常见误解二十：Attention 已经能看全局，所以 FFN 没意义
 
 **错误。**
 
@@ -5420,75 +5420,75 @@ FFN仍输出：
 
 ---
 
-# 174. 用两个轴记住整个 Transformer
+## 174. 用两个轴记住整个 Transformer
 
 输入：
 
-\[
+$$
 X\in\mathbb R^{N\times D}
-\]
+$$
 
 ---
 
-## Attention
+### Attention
 
 重点处理：
 
-\[
+$$
 \boxed{
 N\text{ 这个 token axis}
 }
-\]
+$$
 
 建立：
 
-\[
+$$
 N\times N
-\]
+$$
 
 dynamic relations。
 
 ---
 
-## FFN
+### FFN
 
 保持：
 
-\[
+$$
 N
-\]
+$$
 
 不变，
 
 暂时把：
 
-\[
+$$
 D
-\]
+$$
 
 扩成：
 
-\[
+$$
 D_{ff}
-\]
+$$
 
 再压回：
 
-\[
+$$
 D
-\]
+$$
 
 重点处理：
 
-\[
+$$
 \boxed{
 \text{feature axis}
 }
-\]
+$$
 
 ---
 
-# 175. 一张最有用的图
+## 175. 一张最有用的图
 
 ```text
 Token 1 ─┐
@@ -5516,25 +5516,25 @@ Token 4' ─→ 512 → 2048/3200 → 512
 
 ---
 
-# 176. 一句话真正理解 FFN
+## 176. 一句话真正理解 FFN
 
-> **Transformer 的 Position-wise Feed-Forward Network 是一个对每个 token 独立、但在同一 layer 的所有 positions 共享参数的两层 MLP：它先把 \(d_{\text{model}}\) 维 contextual representation投影到更宽的 \(d_{\text{ff}}\) feature space，通过非线性激活形成 input-dependent intermediate feature pattern，再投影回 \(d_{\text{model}}\) residual space，从而在 Attention完成跨 token 信息交换之后，为每个 token提供强大的局部 nonlinear computation。**
+> **Transformer 的 Position-wise Feed-Forward Network 是一个对每个 token 独立、但在同一 layer 的所有 positions 共享参数的两层 MLP：它先把 $d_{\text{model}}$ 维 contextual representation投影到更宽的 $d_{\text{ff}}$ feature space，通过非线性激活形成 input-dependent intermediate feature pattern，再投影回 $d_{\text{model}}$ residual space，从而在 Attention完成跨 token 信息交换之后，为每个 token提供强大的局部 nonlinear computation。**
 
 ---
 
-# 177. 一句话理解 Attention + FFN
+## 177. 一句话理解 Attention + FFN
 
 > **Attention 决定当前 token 应该从其他 positions 读取哪些信息，而 FFN 决定这个已经获得 context 的 token 接下来怎样在自己的 feature space 中重新组合、门控和加工这些信息；前者提供动态通信，后者提供宽维的 per-token computation。**
 
 ---
 
-# 178. 一句话连接 ACT
+## 178. 一句话连接 ACT
 
-> **ACT 的 Transformer 将每个 512-D visual/joint/latent/action representation在 Attention后送入 \(512\rightarrow3200\rightarrow512\) 的 ReLU FFN；这不会改变 1202 个 observation-memory tokens 或 \(k\) 个 action slots 的数量，而是在每一个 contextualized token内部提供约 3.28M 参数规模的 nonlinear feature transformation，使 observation encoding和action decoding不仅能够“互相读信息”，还能够对读到的信息进行丰富的局部计算。**
+> **ACT 的 Transformer 将每个 512-D visual/joint/latent/action representation在 Attention后送入 $512\rightarrow3200\rightarrow512$ 的 ReLU FFN；这不会改变 1202 个 observation-memory tokens 或 $k$ 个 action slots 的数量，而是在每一个 contextualized token内部提供约 3.28M 参数规模的 nonlinear feature transformation，使 observation encoding和action decoding不仅能够“互相读信息”，还能够对读到的信息进行丰富的局部计算。**
 
 ---
 
-# 179. 下一篇：Residual Connection
+## 179. 下一篇：Residual Connection
 
 现在我们已经知道：
 
@@ -5548,17 +5548,17 @@ FFN
 
 但 Transformer 并不是直接：
 
-\[
+$$
 x\rightarrow Attention(x)\rightarrow FFN(\cdot)
-\]
+$$
 
 每个 sub-layer 都有一条非常关键的：
 
-\[
+$$
 \boxed{
 x+F(x)
 }
-\]
+$$
 
 这就是：
 
@@ -5573,20 +5573,20 @@ x+F(x)
 - 为什么深层网络不是“层越多训练误差一定越低”；
 - degradation problem是什么；
 - 为什么让网络学：
-  \[
+  $$
   F(x)=H(x)-x
-  \]
-  可能比直接学 \(H(x)\) 更容易；
+  $$
+  可能比直接学 $H(x)$ 更容易；
 - identity path怎样帮助 gradient传播；
 - 为什么 residual不是“防止信息丢失”这么简单；
-- \(x+F(x)\) 为什么要求 shape一致；
+- $x+F(x)$ 为什么要求 shape一致；
 - Transformer中的 Attention residual / FFN residual分别在做什么；
 - Pre-LN为什么会让 residual stream更加直接；
 - ACT 的 Encoder/Decoder每一层里 residual具体加在哪里。
 
 ---
 
-## Primary Source：Transformer FFN
+### Primary Source：Transformer FFN
 
 Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,  
 Aidan N. Gomez, Łukasz Kaiser, Illia Polosukhin.
@@ -5599,7 +5599,7 @@ NeurIPS 2017.
 
 Section 3.3 明确定义：
 
-\[
+$$
 \boxed{
 FFN(x)
 =
@@ -5609,7 +5609,7 @@ xW_1+b_1
 )
 W_2+b_2
 }
-\]
+$$
 
 并说明：
 
@@ -5619,17 +5619,17 @@ W_2+b_2
 - 不同 layers参数不同；
 - 也可以描述成两个 kernel size 1 convolutions；
 - input/output：
-  \[
+  $$
   d_{\text{model}}=512
-  \]
+  $$
 - hidden：
-  \[
+  $$
   d_{\text{ff}}=2048
-  \]
+  $$
 
 ---
 
-## ACT Primary Source
+### ACT Primary Source
 
 Tony Z. Zhao, Vikash Kumar, Sergey Levine, Chelsea Finn.
 
@@ -5641,45 +5641,45 @@ RSS 2023.
 
 ACT Table III：
 
-\[
+$$
 \boxed{
 \#encoder\ layers=4
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 \#decoder\ layers=7
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 feedforward\ dimension=3200
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 hidden\ dimension=512
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 \#heads=8
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 dropout=0.1
 }
-\]
+$$
 
 因此 ACT Transformer FFN 典型 shape：
 
-\[
+$$
 \boxed{
 512
 \rightarrow
@@ -5687,11 +5687,11 @@ dropout=0.1
 \rightarrow
 512
 }
-\]
+$$
 
 ---
 
-## Official ACT Implementation
+### Official ACT Implementation
 
 Repository:
 
@@ -5749,7 +5749,7 @@ FFN。
 
 ---
 
-### Activation
+#### Activation
 
 当前 `_get_activation_fn` 支持：
 
@@ -5767,15 +5767,15 @@ activation="relu"
 
 所以 canonical ACT configuration使用：
 
-\[
+$$
 \boxed{
 ReLU
 }
-\]
+$$
 
 ---
 
-### Config vs Class Default
+#### Config vs Class Default
 
 通用 Transformer class 的：
 
@@ -5802,17 +5802,17 @@ dim_feedforward=args.dim_feedforward
 
 因此：
 
-\[
+$$
 \boxed{
 \text{ACT canonical }d_{ff}=3200
 }
-\]
+$$
 
 ---
 
-## Modern Activation Background
+### Modern Activation Background
 
-### GELU
+#### GELU
 
 Dan Hendrycks, Kevin Gimpel.
 
@@ -5822,11 +5822,11 @@ Dan Hendrycks, Kevin Gimpel.
 
 常见定义：
 
-\[
+$$
 \boxed{
 GELU(x)=x\Phi(x)
 }
-\]
+$$
 
 GELU 是后续 Transformer模型中常见的平滑 activation。
 
@@ -5834,7 +5834,7 @@ GELU 是后续 Transformer模型中常见的平滑 activation。
 
 ---
 
-### Gated FFN / SwiGLU
+#### Gated FFN / SwiGLU
 
 Noam Shazeer.
 
@@ -5844,13 +5844,13 @@ Noam Shazeer.
 
 现代 Transformer常使用 gated FFN variants，例如：
 
-\[
+$$
 \boxed{
 Swish(xW_g)
 \odot
 (xW_v)
 }
-\]
+$$
 
 再通过 output projection回到 model dimension。
 
@@ -5858,24 +5858,24 @@ Swish(xW_g)
 
 不应和原始：
 
-\[
+$$
 Linear\rightarrow ReLU\rightarrow Linear
-\]
+$$
 
 混为一谈。
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### 前置
+#### 前置
 
 - [Transformer](./transformer.md)
 - [Transformer Encoder](./transformer-encoder.md)
 - [Transformer Decoder](./transformer-decoder.md)
 - [Self-Attention](./self-attention.md)
 
-### 神经网络基础
+#### 神经网络基础
 
 - [Linear Layer](./linear-layer.md)
 - [MLP](./mlp.md)
@@ -5884,29 +5884,29 @@ Linear\rightarrow ReLU\rightarrow Linear
 - GLU
 - SwiGLU
 
-### Transformer Components
+#### Transformer Components
 
 - [Residual Connection](./residual-connection.md)
 - [Layer Normalization](./layer-normalization.md)
 - [Dropout](./dropout.md)
 - [Multi-Head Attention](./multi-head-attention.md)
 
-### 数学
+#### 数学
 
 - Affine Transformation
 - Piecewise Linear Function
 - Hyperplane
 
-### 后续扩展
+#### 后续扩展
 
 - Mixture of Experts
 
-### Robot Learning
+#### Robot Learning
 
 - [ACT Architecture](../robot-learning/act/architecture.md)
 - [ACT Training](../robot-learning/act/training.md)
 - [ACT Complete Data Flow](../robot-learning/act/complete-data-flow.md)
 
-### 下一步
+#### 下一步
 
 - [Residual Connection](./residual-connection.md)

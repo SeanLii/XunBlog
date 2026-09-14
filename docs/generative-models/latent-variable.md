@@ -11,13 +11,13 @@ updated: "2026-09-15"
 
 如果你正在学习 VAE、CVAE 或 ACT，很快就会遇到一个字母：
 
-\[
+$$
 z
-\]
+$$
 
 然后文章往往会告诉你：
 
-> \(z\) 是 latent variable。
+> $z$ 是 latent variable。
 
 再往后：
 
@@ -33,7 +33,7 @@ decoder
 
 很多人第一次看到这里，会自然产生一个问题：
 
-> **这个 \(z\) 到底是什么？**
+> **这个 $z$ 到底是什么？**
 
 常见解释包括：
 
@@ -55,17 +55,17 @@ decoder
 
 ---
 
-# 1. 先从“我们能看到什么”开始
+## 1. 先从“我们能看到什么”开始
 
 假设我们有一个数据集：
 
-\[
+$$
 \mathcal D
 =
 \{x^{(1)},x^{(2)},\ldots,x^{(N)}\}
-\]
+$$
 
-这些 \(x\) 是我们真正能够观察到的数据。
+这些 $x$ 是我们真正能够观察到的数据。
 
 例如：
 
@@ -83,23 +83,23 @@ decoder
 
 例如一张 MNIST 图片：
 
-\[
+$$
 x\in\mathbb R^{28\times28}
-\]
+$$
 
 每一个像素值我们都能直接读取。
 
 所以：
 
-\[
+$$
 x
-\]
+$$
 
 是 observed。
 
 ---
 
-# 2. 但“观测到数据”不等于“知道数据为什么长这样”
+## 2. 但“观测到数据”不等于“知道数据为什么长这样”
 
 假设我们看到两张手写数字 7。
 
@@ -116,9 +116,9 @@ x
 
 我们看到的是最终像素：
 
-\[
+$$
 x
-\]
+$$
 
 但是：
 
@@ -138,13 +138,13 @@ writer_style = ...
 
 于是可以提出一种建模思想：
 
-> 假设观测数据 \(x\) 背后还存在某个没有直接观测到的变量 \(z\)。
+> 假设观测数据 $x$ 背后还存在某个没有直接观测到的变量 $z$。
 
 这个：
 
-\[
+$$
 z
-\]
+$$
 
 就是：
 
@@ -152,7 +152,7 @@ z
 
 ---
 
-# 3. Latent 的意思到底是什么？
+## 3. Latent 的意思到底是什么？
 
 `latent` 的意思接近：
 
@@ -177,31 +177,31 @@ z
 
 注意：
 
-> “没有观测到”不等于“现实世界里一定真的存在一个叫 \(z\) 的物理量”。
+> “没有观测到”不等于“现实世界里一定真的存在一个叫 $z$ 的物理量”。
 
-\(z\) 是：
+$z$ 是：
 
 > **模型内部用于描述数据生成过程的随机变量。**
 
 ---
 
-# 4. Kingma & Welling 的 VAE 从这里开始
+## 4. Kingma & Welling 的 VAE 从这里开始
 
-VAE 原论文《Auto-Encoding Variational Bayes》在定义问题时，直接假设数据由一个包含未观测连续随机变量 \(z\) 的随机过程产生。
+VAE 原论文《Auto-Encoding Variational Bayes》在定义问题时，直接假设数据由一个包含未观测连续随机变量 $z$ 的随机过程产生。
 
 生成过程分成两步：
 
 首先：
 
-\[
+$$
 z\sim p_\theta(z)
-\]
+$$
 
 然后：
 
-\[
+$$
 x\sim p_\theta(x\mid z)
-\]
+$$
 
 也就是：
 
@@ -223,10 +223,10 @@ x
 
 其中：
 
-- \(z\)：latent variable；
-- \(x\)：observed variable；
-- \(p_\theta(z)\)：latent variable 的 prior；
-- \(p_\theta(x\mid z)\)：给定 \(z\) 后生成 \(x\) 的条件分布。
+- $z$：latent variable；
+- $x$：observed variable；
+- $p_\theta(z)$：latent variable 的 prior；
+- $p_\theta(x\mid z)$：给定 $z$ 后生成 $x$ 的条件分布。
 
 这就是一个最基本的：
 
@@ -234,7 +234,7 @@ x
 
 ---
 
-# 5. 什么叫“生成模型”？
+## 5. 什么叫“生成模型”？
 
 这里的“生成”不要理解成：
 
@@ -256,27 +256,27 @@ z 决定一些隐藏因素
 
 数学上：
 
-\[
+$$
 z\sim p(z)
-\]
+$$
 
-\[
+$$
 x\sim p(x\mid z)
-\]
+$$
 
 于是联合分布可以写成：
 
-\[
+$$
 \boxed{
 p(x,z)=p(z)p(x\mid z)
 }
-\]
+$$
 
 这来自概率的乘法规则：
 
-\[
+$$
 p(x,z)=p(x\mid z)p(z)
-\]
+$$
 
 如果还不熟悉条件概率，可以阅读：
 
@@ -284,15 +284,15 @@ p(x,z)=p(x\mid z)p(z)
 
 ---
 
-# 6. 一个简单但重要的例子：高斯混合模型
+## 6. 一个简单但重要的例子：高斯混合模型
 
 为了真正理解 latent variable，我们先看一个完全不需要神经网络的例子。
 
 假设我们观察到一维数据：
 
-\[
+$$
 x
-\]
+$$
 
 它大概长这样：
 
@@ -313,40 +313,40 @@ x
 
 于是定义：
 
-\[
+$$
 z\in\{1,2\}
-\]
+$$
 
 其中：
 
-- \(z=1\)：来自左边 cluster；
-- \(z=2\)：来自右边 cluster。
+- $z=1$：来自左边 cluster；
+- $z=2$：来自右边 cluster。
 
 生成过程：
 
-\[
+$$
 z\sim \text{Categorical}(\pi)
-\]
+$$
 
 然后：
 
-\[
+$$
 x\mid z=1
 \sim
 \mathcal N(\mu_1,\sigma_1^2)
-\]
+$$
 
-\[
+$$
 x\mid z=2
 \sim
 \mathcal N(\mu_2,\sigma_2^2)
-\]
+$$
 
 这里：
 
-\[
+$$
 x
-\]
+$$
 
 是我们观察到的数据。
 
@@ -368,15 +368,15 @@ x
 
 那么：
 
-\[
+$$
 z
-\]
+$$
 
 就是 latent variable。
 
 ---
 
-# 7. 这个例子告诉我们一个关键点
+## 7. 这个例子告诉我们一个关键点
 
 Latent variable 并不是 VAE 发明的。
 
@@ -403,7 +403,7 @@ VAE 只是：
 
 ---
 
-# 8. 为什么我们需要 latent variable？
+## 8. 为什么我们需要 latent variable？
 
 最根本的原因是：
 
@@ -411,25 +411,25 @@ VAE 只是：
 
 假设我们直接建模：
 
-\[
+$$
 p(x)
-\]
+$$
 
 这意味着模型需要一次性描述：
 
-> \(x\) 本身所有复杂变化。
+> $x$ 本身所有复杂变化。
 
 但如果引入：
 
-\[
+$$
 z
-\]
+$$
 
 我们可以改成：
 
-\[
+$$
 p(x,z)=p(z)p(x\mid z)
-\]
+$$
 
 直觉上：
 
@@ -451,25 +451,25 @@ p(x | z)
 
 ---
 
-# 9. Latent Variable 最重要的作用不是“压缩”
+## 9. Latent Variable 最重要的作用不是“压缩”
 
 很多 VAE 教程会说：
 
-> \(z\) 是压缩表示。
+> $z$ 是压缩表示。
 
 在某些 VAE 架构里，这个说法确实有一定直觉价值。
 
 例如：
 
-\[
+$$
 x\in\mathbb R^{784}
-\]
+$$
 
 而：
 
-\[
+$$
 z\in\mathbb R^{20}
-\]
+$$
 
 确实从高维像素进入了较低维 latent space。
 
@@ -493,29 +493,29 @@ z\in\mathbb R^{20}
 
 ---
 
-# 10. Latent Variable 也不等于神经网络 Hidden Layer
+## 10. Latent Variable 也不等于神经网络 Hidden Layer
 
 这是另一个极常见误解。
 
 假设普通神经网络：
 
-\[
+$$
 h=f_\theta(x)
-\]
+$$
 
 这里：
 
-\[
+$$
 h
-\]
+$$
 
 是 hidden representation。
 
 因为：
 
-\[
+$$
 h
-\]
+$$
 
 位于网络中间层。
 
@@ -523,11 +523,11 @@ h
 
 如果：
 
-\[
+$$
 h=f_\theta(x)
-\]
+$$
 
-完全由 \(x\) 确定，
+完全由 $x$ 确定，
 
 那么它只是：
 
@@ -537,15 +537,15 @@ h=f_\theta(x)
 
 而 VAE 中：
 
-\[
+$$
 z\sim q_\phi(z\mid x)
-\]
+$$
 
-\(z\) 是：
+$z$ 是：
 
 > **random variable**
 
-给定同一个 \(x\)，我们描述的是一个关于 \(z\) 的概率分布。
+给定同一个 $x$，我们描述的是一个关于 $z$ 的概率分布。
 
 因此：
 
@@ -559,25 +559,25 @@ latent variable
 
 ---
 
-# 11. 为什么 latent variable 要是“随机变量”？
+## 11. 为什么 latent variable 要是“随机变量”？
 
 在概率 latent-variable model 中：
 
-\[
+$$
 z
-\]
+$$
 
 不是一个固定常数。
 
 它服从某个分布：
 
-\[
+$$
 z\sim p(z)
-\]
+$$
 
 这意味着：
 
-> 模型允许不同的 \(z\) 取值对应不同的潜在生成情况。
+> 模型允许不同的 $z$ 取值对应不同的潜在生成情况。
 
 例如：
 
@@ -597,11 +597,11 @@ z₃
 
 因此：
 
-\[
+$$
 p(x)
-\]
+$$
 
-实际上是把所有可能的 \(z\) 情况都考虑进去以后得到的结果。
+实际上是把所有可能的 $z$ 情况都考虑进去以后得到的结果。
 
 这就引出 latent-variable model 最关键的数学操作之一：
 
@@ -609,103 +609,103 @@ p(x)
 
 ---
 
-# 12. 我们看不到 z，那怎么得到 p(x)？
+## 12. 我们看不到 z，那怎么得到 p(x)？
 
 我们真正观察的是：
 
-\[
+$$
 x
-\]
+$$
 
 而不是：
 
-\[
+$$
 (x,z)
-\]
+$$
 
 所以如果模型定义了联合分布：
 
-\[
+$$
 p(x,z)
-\]
+$$
 
 我们最终还是需要得到：
 
-\[
+$$
 p(x)
-\]
+$$
 
-怎么把 \(z\) 消掉？
+怎么把 $z$ 消掉？
 
 答案是：
 
-> 对所有可能的 \(z\) 求和或积分。
+> 对所有可能的 $z$ 求和或积分。
 
 ---
 
-# 13. 如果 z 是离散的：求和
+## 13. 如果 z 是离散的：求和
 
 例如：
 
-\[
+$$
 z\in\{1,2,3\}
-\]
+$$
 
 那么：
 
-\[
+$$
 \boxed{
 p(x)
 =
 \sum_zp(x,z)
 }
-\]
+$$
 
 利用：
 
-\[
+$$
 p(x,z)=p(x\mid z)p(z)
-\]
+$$
 
 得到：
 
-\[
+$$
 \boxed{
 p(x)
 =
 \sum_z
 p(x\mid z)p(z)
 }
-\]
+$$
 
 意思是：
 
-> \(x\) 出现的总概率 = 把所有可能隐藏情况 \(z\) 对 \(x\) 的贡献加起来。
+> $x$ 出现的总概率 = 把所有可能隐藏情况 $z$ 对 $x$ 的贡献加起来。
 
 ---
 
-# 14. 如果 z 是连续的：积分
+## 14. 如果 z 是连续的：积分
 
 如果：
 
-\[
+$$
 z\in\mathbb R^d
-\]
+$$
 
 那么求和变成积分：
 
-\[
+$$
 \boxed{
 p_\theta(x)
 =
 \int
 p_\theta(x,z)\,dz
 }
-\]
+$$
 
 进一步：
 
-\[
+$$
 \boxed{
 p_\theta(x)
 =
@@ -714,7 +714,7 @@ p_\theta(x\mid z)
 p_\theta(z)
 \,dz
 }
-\]
+$$
 
 这就是 latent-variable model 中非常核心的：
 
@@ -722,51 +722,51 @@ p_\theta(z)
 
 我们把看不见的：
 
-\[
+$$
 z
-\]
+$$
 
 积分掉以后，
 
 只留下真正观测到的：
 
-\[
+$$
 x
-\]
+$$
 
 ---
 
-# 15. 为什么叫 Marginalization？
+## 15. 为什么叫 Marginalization？
 
 因为联合分布本来描述：
 
-\[
+$$
 (x,z)
-\]
+$$
 
 而我们把：
 
-\[
+$$
 z
-\]
+$$
 
 消掉：
 
-\[
+$$
 p(x,z)
 \longrightarrow
 p(x)
-\]
+$$
 
 得到某个变量自己的 marginal distribution。
 
 因此：
 
-\[
+$$
 \int p(x,z)\,dz
 =
 p(x)
-\]
+$$
 
 如果不熟悉这个操作，可以单独阅读：
 
@@ -782,19 +782,19 @@ p(x)
 
 ---
 
-# 16. 一个非常重要的直觉：我们不知道 z，但不能假装它不存在
+## 16. 一个非常重要的直觉：我们不知道 z，但不能假装它不存在
 
 想象：
 
-> 一张图片 \(x\) 是由许多隐藏因素共同产生的。
+> 一张图片 $x$ 是由许多隐藏因素共同产生的。
 
 我们虽然没有直接观察这些因素，
 
-但如果模型认为这些因素对 \(x\) 的生成很重要，那么在计算：
+但如果模型认为这些因素对 $x$ 的生成很重要，那么在计算：
 
-\[
+$$
 p(x)
-\]
+$$
 
 时就不能简单忽略它们。
 
@@ -804,26 +804,26 @@ p(x)
 
 所以：
 
-\[
+$$
 p(x)
 =
 \int
 p(x\mid z)p(z)dz
-\]
+$$
 
 可以直觉理解为：
 
-> “遍历所有可能的隐藏情况，看每种情况产生 \(x\) 的可能性有多大，再按照该隐藏情况本身出现的概率加权。”
+> “遍历所有可能的隐藏情况，看每种情况产生 $x$ 的可能性有多大，再按照该隐藏情况本身出现的概率加权。”
 
 ---
 
-# 17. Prior：还没有看到 x 时，我们怎么描述 z？
+## 17. Prior：还没有看到 x 时，我们怎么描述 z？
 
 模型首先定义：
 
-\[
+$$
 p(z)
-\]
+$$
 
 它叫：
 
@@ -831,15 +831,15 @@ p(z)
 
 意思是：
 
-> 在还没有观察某一个具体 \(x\) 之前，模型对 \(z\) 可能取值的总体假设。
+> 在还没有观察某一个具体 $x$ 之前，模型对 $z$ 可能取值的总体假设。
 
 例如 VAE 中非常常见：
 
-\[
+$$
 \boxed{
 p(z)=\mathcal N(0,I)
 }
-\]
+$$
 
 也就是标准多元高斯。
 
@@ -852,9 +852,9 @@ p(z)=\mathcal N(0,I)
 
 这里暂时只需要知道：
 
-\[
+$$
 p(z)
-\]
+$$
 
 描述：
 
@@ -862,17 +862,17 @@ p(z)
 
 ---
 
-# 18. Likelihood：如果 z 已经知道，x 会怎么产生？
+## 18. Likelihood：如果 z 已经知道，x 会怎么产生？
 
 接下来模型定义：
 
-\[
+$$
 p_\theta(x\mid z)
-\]
+$$
 
 这表示：
 
-> 如果 latent variable 是 \(z\)，那么观测 \(x\) 应该服从什么分布？
+> 如果 latent variable 是 $z$，那么观测 $x$ 应该服从什么分布？
 
 这就是：
 
@@ -892,9 +892,9 @@ neural network
 
 在 VAE 中，decoder 通常就是负责参数化：
 
-\[
+$$
 p_\theta(x\mid z)
-\]
+$$
 
 所以严格来说：
 
@@ -902,25 +902,25 @@ p_\theta(x\mid z)
 
 它更准确地是在定义：
 
-\[
+$$
 \boxed{
 p_\theta(x\mid z)
 }
-\]
+$$
 
 这个条件分布。
 
 ---
 
-# 19. Generative Direction：z → x
+## 19. Generative Direction：z → x
 
 到这里，生成模型的方向是：
 
-\[
+$$
 \boxed{
 z\rightarrow x
 }
-\]
+$$
 
 流程：
 
@@ -942,37 +942,37 @@ VAE 原论文就是用这个方向定义 latent-variable model。
 
 ---
 
-# 20. 真正拿到一张 x 后，我们最想问什么？
+## 20. 真正拿到一张 x 后，我们最想问什么？
 
 现实中我们通常不是先看到：
 
-\[
+$$
 z
-\]
+$$
 
 然后看到：
 
-\[
+$$
 x
-\]
+$$
 
 而是：
 
-> 数据 \(x\) 已经摆在我们面前。
+> 数据 $x$ 已经摆在我们面前。
 
 例如已经有一张图片。
 
 于是自然想问：
 
-> **什么样的 latent variable \(z\) 可能生成了这张 \(x\)？**
+> **什么样的 latent variable $z$ 可能生成了这张 $x$？**
 
 数学上：
 
-\[
+$$
 \boxed{
 p_\theta(z\mid x)
 }
-\]
+$$
 
 这叫：
 
@@ -980,31 +980,31 @@ p_\theta(z\mid x)
 
 ---
 
-# 21. Prior 和 Posterior 千万不要混
+## 21. Prior 和 Posterior 千万不要混
 
 这是后面 VAE 最重要的区别之一。
 
-### Prior
+#### Prior
 
-\[
+$$
 p(z)
-\]
+$$
 
 含义：
 
-> 还没有看到当前数据 \(x\) 时，对 \(z\) 的总体假设。
+> 还没有看到当前数据 $x$ 时，对 $z$ 的总体假设。
 
 ---
 
-### Posterior
+#### Posterior
 
-\[
+$$
 p(z\mid x)
-\]
+$$
 
 含义：
 
-> 已经看到了具体 \(x\) 以后，哪些 \(z\) 更可能解释它？
+> 已经看到了具体 $x$ 以后，哪些 $z$ 更可能解释它？
 
 可以画成：
 
@@ -1027,11 +1027,11 @@ p(z\mid x)
 
 ---
 
-# 22. Posterior 从哪里来？
+## 22. Posterior 从哪里来？
 
 根据 Bayes' Rule：
 
-\[
+$$
 \boxed{
 p_\theta(z\mid x)
 =
@@ -1041,36 +1041,36 @@ p_\theta(x\mid z)p(z)
 p_\theta(x)
 }
 }
-\]
+$$
 
 分子很好理解：
 
-\[
+$$
 p_\theta(x\mid z)p(z)
-\]
+$$
 
 表示：
 
-> \(z\) 本身有多合理，以及这个 \(z\) 产生 \(x\) 的可能性有多大。
+> $z$ 本身有多合理，以及这个 $z$ 产生 $x$ 的可能性有多大。
 
 困难在分母：
 
-\[
+$$
 p_\theta(x)
-\]
+$$
 
 而我们刚刚知道：
 
-\[
+$$
 p_\theta(x)
 =
 \int
 p_\theta(x\mid z)p(z)dz
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 p_\theta(z\mid x)
 =
@@ -1080,35 +1080,35 @@ p_\theta(x\mid z)p(z)
 \int p_\theta(x\mid z)p(z)dz
 }
 }
-\]
+$$
 
 现在你应该已经能看到 VAE 的问题为什么会出现了。
 
 ---
 
-# 23. 真正困难的地方：这个积分可能算不出来
+## 23. 真正困难的地方：这个积分可能算不出来
 
 如果：
 
-\[
+$$
 p_\theta(x\mid z)
-\]
+$$
 
 非常简单，
 
 有时：
 
-\[
+$$
 \int p_\theta(x\mid z)p(z)dz
-\]
+$$
 
 可以解析计算。
 
 但如果：
 
-\[
+$$
 p_\theta(x\mid z)
-\]
+$$
 
 由复杂神经网络参数化，
 
@@ -1120,9 +1120,9 @@ p_\theta(x\mid z)
 
 于是：
 
-\[
+$$
 p_\theta(z\mid x)
-\]
+$$
 
 也很难直接得到。
 
@@ -1142,45 +1142,45 @@ Kingma & Welling 的 VAE 原论文正是从这个问题出发：
 
 ---
 
-# 24. VAE 为什么需要 Encoder？
+## 24. VAE 为什么需要 Encoder？
 
 现在我们终于可以用严格方式理解 VAE encoder。
 
 真实 posterior：
 
-\[
+$$
 p_\theta(z\mid x)
-\]
+$$
 
 很难算。
 
 所以 VAE 引入另一个分布：
 
-\[
+$$
 \boxed{
 q_\phi(z\mid x)
 }
-\]
+$$
 
 去近似：
 
-\[
+$$
 p_\theta(z\mid x)
-\]
+$$
 
 即：
 
-\[
+$$
 q_\phi(z\mid x)
 \approx
 p_\theta(z\mid x)
-\]
+$$
 
 这个：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 通常由神经网络参数化。
 
@@ -1194,48 +1194,48 @@ q_\phi(z\mid x)
 
 更准确地说：
 
-> **给定 \(x\)，它输出一个关于可能 latent variable \(z\) 的近似 posterior distribution。**
+> **给定 $x$，它输出一个关于可能 latent variable $z$ 的近似 posterior distribution。**
 
 例如：
 
-\[
+$$
 q_\phi(z\mid x)
 =
 \mathcal N(
 \mu_\phi(x),
 \operatorname{diag}(\sigma_\phi^2(x))
 )
-\]
+$$
 
 encoder 的直接输出实际上通常是：
 
-\[
+$$
 \mu
-\]
+$$
 
 和：
 
-\[
+$$
 \sigma^2
-\]
+$$
 
 或者：
 
-\[
+$$
 \log\sigma^2
-\]
+$$
 
-而不是直接输出一个固定 \(z\)。
+而不是直接输出一个固定 $z$。
 
 然后才从这个 distribution 中采样：
 
-\[
+$$
 z
-\]
+$$
 
 ---
 
-# 25. 所以同一个 x 可以对应多个 z 吗？
+## 25. 所以同一个 x 可以对应多个 z 吗？
 
 在概率模型中：
 
@@ -1243,106 +1243,106 @@ z
 
 因为 encoder 定义的是：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 一个 distribution。
 
 不是：
 
-\[
+$$
 z=f(x)
-\]
+$$
 
 一个固定点。
 
 例如：
 
-\[
+$$
 q_\phi(z\mid x)
 =
 \mathcal N(\mu,\sigma^2)
-\]
+$$
 
-同一个 \(x\) 下，
+同一个 $x$ 下，
 
 可以采样：
 
-\[
+$$
 z_1
-\]
+$$
 
 也可以采样：
 
-\[
+$$
 z_2
-\]
+$$
 
 也可以采样：
 
-\[
+$$
 z_3
-\]
+$$
 
 它们都来自：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 这就是 VAE 和普通 deterministic autoencoder 的一个根本区别。
 
 ---
 
-# 26. Latent Variable 不等于“随机噪声”
+## 26. Latent Variable 不等于“随机噪声”
 
 这里也容易误解。
 
 VAE 训练时会使用随机采样：
 
-\[
+$$
 z\sim q_\phi(z\mid x)
-\]
+$$
 
 于是有人会说：
 
-> \(z\) 就是随机噪声。
+> $z$ 就是随机噪声。
 
 不准确。
 
 真正的随机噪声通常是后面 [Reparameterization Trick](./reparameterization-trick.md) 中引入的：
 
-\[
+$$
 \epsilon\sim\mathcal N(0,I)
-\]
+$$
 
 然后：
 
-\[
+$$
 z
 =
 \mu+\sigma\odot\epsilon
-\]
+$$
 
 其中：
 
-- \(\epsilon\)：辅助随机噪声；
-- \(z\)：latent variable sample。
+- $\epsilon$：辅助随机噪声；
+- $z$：latent variable sample。
 
 所以：
 
-\[
+$$
 \boxed{
 z\neq\epsilon
 }
-\]
+$$
 
 虽然二者都涉及随机性。
 
 ---
 
-# 27. Latent Variable 一定代表人类能理解的语义吗？
+## 27. Latent Variable 一定代表人类能理解的语义吗？
 
 **不一定。**
 
@@ -1376,7 +1376,7 @@ z₄ = 速度
 
 因此最安全的说法是：
 
-> **\(z\) 表示模型用于解释数据变化的 latent representation。**
+> **$z$ 表示模型用于解释数据变化的 latent representation。**
 
 不要无依据地说：
 
@@ -1386,33 +1386,33 @@ z₄ = 速度
 
 ---
 
-# 28. Latent Variable 一定是真实世界中的“原因”吗？
+## 28. Latent Variable 一定是真实世界中的“原因”吗？
 
 也不一定。
 
 如果我们写：
 
-\[
+$$
 z\rightarrow x
-\]
+$$
 
 这表示：
 
-> 在当前概率生成模型的生成方向里，先有 \(z\)，再生成 \(x\)。
+> 在当前概率生成模型的生成方向里，先有 $z$，再生成 $x$。
 
 但这并不自动证明：
 
-> \(z\) 就是真实世界中的 causal variable。
+> $z$ 就是真实世界中的 causal variable。
 
 概率生成关系：
 
-\[
+$$
 p(x\mid z)
-\]
+$$
 
 和严格的 causal claim：
 
-> \(z\) 在现实中导致 \(x\)
+> $z$ 在现实中导致 $x$
 
 不是同一件事。
 
@@ -1424,7 +1424,7 @@ p(x\mid z)
 
 ---
 
-# 29. 一个更准确的 mental model
+## 29. 一个更准确的 mental model
 
 可以把 latent variable 想成：
 
@@ -1432,28 +1432,28 @@ p(x\mid z)
 
 模型说：
 
-> “虽然数据只给了我 \(x\)，但如果我假设还有一个看不见的 \(z\)，那么 \(x\) 的复杂分布可能更容易被描述。”
+> “虽然数据只给了我 $x$，但如果我假设还有一个看不见的 $z$，那么 $x$ 的复杂分布可能更容易被描述。”
 
 于是：
 
-\[
+$$
 p(x)
-\]
+$$
 
 被改写成：
 
-\[
+$$
 p(x)
 =
 \int
 p(x\mid z)p(z)dz
-\]
+$$
 
 这是 latent-variable modeling 的核心。
 
 ---
 
-# 30. 为什么 Latent Variable 特别适合多模态数据？
+## 30. 为什么 Latent Variable 特别适合多模态数据？
 
 假设在同一个大致条件下，可能出现两种完全不同的结果：
 
@@ -1469,27 +1469,27 @@ p(x\mid z)p(z)dz
 
 模型可能需要直接用一个复杂的：
 
-\[
+$$
 p(x)
-\]
+$$
 
 同时表示两个 mode。
 
 而引入离散 latent variable：
 
-\[
+$$
 z\in\{A,B\}
-\]
+$$
 
 以后：
 
-\[
+$$
 p(x)
 =
 p(x\mid z=A)p(z=A)
 +
 p(x\mid z=B)p(z=B)
-\]
+$$
 
 于是：
 
@@ -1507,7 +1507,7 @@ z=B
 
 ---
 
-# 31. 但“latent variable = multimodality”也不能说得太绝对
+## 31. 但“latent variable = multimodality”也不能说得太绝对
 
 引入 latent variables 可以帮助模型表达多种潜在生成情况。
 
@@ -1533,39 +1533,39 @@ z=B
 
 ---
 
-# 32. 一个最简单的 latent generative model
+## 32. 一个最简单的 latent generative model
 
 假设：
 
-\[
+$$
 z\sim\mathcal N(0,1)
-\]
+$$
 
 并定义：
 
-\[
+$$
 x=2z+\epsilon
-\]
+$$
 
 其中：
 
-\[
+$$
 \epsilon\sim\mathcal N(0,0.1^2)
-\]
+$$
 
 这里：
 
-\[
+$$
 z
-\]
+$$
 
 没有被我们直接观测。
 
 我们只看到：
 
-\[
+$$
 x
-\]
+$$
 
 生成过程：
 
@@ -1581,19 +1581,19 @@ sample z
 
 如果某次我们看到：
 
-\[
+$$
 x=4.1
-\]
+$$
 
 自然会反推：
 
-> 哪些 \(z\) 比较可能产生 4.1？
+> 哪些 $z$ 比较可能产生 4.1？
 
 这正是在计算：
 
-\[
+$$
 p(z\mid x=4.1)
-\]
+$$
 
 也就是 posterior inference。
 
@@ -1614,45 +1614,45 @@ VAE 正是在处理这两个方向。
 
 ---
 
-# 33. Generative Model 和 Inference Model 不要混
+## 33. Generative Model 和 Inference Model 不要混
 
 VAE 中存在两套 distribution：
 
-### Generative Model
+#### Generative Model
 
-\[
+$$
 p_\theta(z)
-\]
+$$
 
-\[
+$$
 p_\theta(x\mid z)
-\]
+$$
 
 方向：
 
-\[
+$$
 z\rightarrow x
-\]
+$$
 
 ---
 
-### Inference Model
+#### Inference Model
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 方向：
 
-\[
+$$
 x\rightarrow z
-\]
+$$
 
 它的目标是近似：
 
-\[
+$$
 p_\theta(z\mid x)
-\]
+$$
 
 因此可以画成：
 
@@ -1675,13 +1675,13 @@ x ─────────→ z
 
 生成模型的定义仍然是：
 
-\[
+$$
 z\rightarrow x
-\]
+$$
 
 ---
 
-# 34. 为什么 VAE 叫 Autoencoder，容易误导初学者？
+## 34. 为什么 VAE 叫 Autoencoder，容易误导初学者？
 
 普通 Autoencoder 的故事通常是：
 
@@ -1738,9 +1738,9 @@ model x
 
 其中：
 
-\[
+$$
 z
-\]
+$$
 
 是随机变量。
 
@@ -1748,13 +1748,13 @@ z
 
 ---
 
-# 35. 现在终于可以回到 ACT
+## 35. 现在终于可以回到 ACT
 
 ACT 为什么也有：
 
-\[
+$$
 z
-\]
+$$
 
 ？
 
@@ -1771,34 +1771,34 @@ z
 
 然后构造一个关于：
 
-\[
+$$
 z
-\]
+$$
 
 的 distribution。
 
-ACT 论文把 \(z\) 称为：
+ACT 论文把 $z$ 称为：
 
 > **style variable**
 
 decoder / policy 再根据：
 
 - 当前 observation；
-- \(z\)；
+- $z$；
 
 预测未来 action chunk。
 
 从 latent-variable model 的角度：
 
-> \(z\) 给模型提供了一个没有直接出现在 observation 中的 latent degree of freedom，用于描述 demonstration action sequence 中的变化。
+> $z$ 给模型提供了一个没有直接出现在 observation 中的 latent degree of freedom，用于描述 demonstration action sequence 中的变化。
 
 ---
 
-# 36. 但 ACT 的 z 不能被随意解释成某个具体因素
+## 36. 但 ACT 的 z 不能被随意解释成某个具体因素
 
 例如我们可以用直觉说：
 
-> 不同 \(z\) 可能对应不同的动作风格或轨迹变化。
+> 不同 $z$ 可能对应不同的动作风格或轨迹变化。
 
 这是合理的教学直觉。
 
@@ -1817,39 +1817,39 @@ ACT 训练目标并没有显式监督这些语义。
 
 > **style variable 是模型里的 latent representation，不是一组预先定义好的人类语义标签。**
 
-这是后面理解 ACT 的 \(z\) 时非常重要的边界。
+这是后面理解 ACT 的 $z$ 时非常重要的边界。
 
 ---
 
-# 37. 为什么 ACT 训练时需要看 action sequence 才推断 z？
+## 37. 为什么 ACT 训练时需要看 action sequence 才推断 z？
 
 思考一个问题。
 
 如果当前 observation 是：
 
-\[
+$$
 o_t
-\]
+$$
 
 但同一个 observation 附近可能存在多个不同的合理 action chunks：
 
-\[
+$$
 A_t^{(1)}
-\]
+$$
 
-\[
+$$
 A_t^{(2)}
-\]
+$$
 
-\[
+$$
 A_t^{(3)}
-\]
+$$
 
 仅仅看：
 
-\[
+$$
 o_t
-\]
+$$
 
 可能无法知道：
 
@@ -1857,19 +1857,19 @@ o_t
 
 所以训练阶段 CVAE encoder 还会看到：
 
-\[
+$$
 A_t
-\]
+$$
 
 然后推断：
 
-\[
+$$
 q_\phi(z\mid A_t,\bar o_t)
-\]
+$$
 
 直觉上相当于问：
 
-> “看到这次 demonstration 实际是这么做的，那么什么样的 latent \(z\) 可以帮助 decoder 重现这一条 action chunk？”
+> “看到这次 demonstration 实际是这么做的，那么什么样的 latent $z$ 可以帮助 decoder 重现这一条 action chunk？”
 
 于是：
 
@@ -1894,13 +1894,13 @@ decoder reconstructs that chunk
 
 ---
 
-# 38. 一个与你后面理解 ACT 非常相关的问题
+## 38. 一个与你后面理解 ACT 非常相关的问题
 
 你可能会马上问：
 
-> 如果训练时 \(z\) 是从 demonstration action sequence 推断出来的，
+> 如果训练时 $z$ 是从 demonstration action sequence 推断出来的，
 > 那推理时根本没有 ground-truth future actions，
-> \(z\) 从哪里来？
+> $z$ 从哪里来？
 
 这是非常关键的问题。
 
@@ -1908,23 +1908,23 @@ ACT 的答案是：
 
 > 推理阶段丢弃 CVAE encoder，并设置：
 
-\[
+$$
 z=0
-\]
+$$
 
 也就是 prior：
 
-\[
+$$
 \mathcal N(0,I)
-\]
+$$
 
 的均值。
 
 但现在还不要急着把：
 
-\[
+$$
 z=0
-\]
+$$
 
 理解成：
 
@@ -1942,15 +1942,15 @@ z=0
 
 ACT 推理时：
 
-\[
+$$
 z=0
-\]
+$$
 
 才会真正变得清楚。
 
 ---
 
-# 39. 常见误解一：latent variable 就是模型不知道的任何东西
+## 39. 常见误解一：latent variable 就是模型不知道的任何东西
 
 **太宽泛。**
 
@@ -1962,53 +1962,53 @@ z=0
 
 也就是说它参与：
 
-\[
+$$
 p(x,z)
-\]
+$$
 
 或者：
 
-\[
+$$
 p(x\mid z)
-\]
+$$
 
 等概率关系。
 
-不是随便一个“我们不知道的现实因素”都自动成为模型的 \(z\)。
+不是随便一个“我们不知道的现实因素”都自动成为模型的 $z$。
 
 ---
 
-# 40. 常见误解二：latent variable = hidden layer
+## 40. 常见误解二：latent variable = hidden layer
 
 **错误。**
 
 普通 hidden activation：
 
-\[
+$$
 h=f(x)
-\]
+$$
 
 可能只是确定性中间计算。
 
 概率 latent variable：
 
-\[
+$$
 z
-\]
+$$
 
 是模型中的随机变量。
 
 VAE 中：
 
-\[
+$$
 z\sim q_\phi(z\mid x)
-\]
+$$
 
 两者不能只因为都“看不见”就混为一谈。
 
 ---
 
-# 41. 常见误解三：latent space 每一维都有明确含义
+## 41. 常见误解三：latent space 每一维都有明确含义
 
 **没有保证。**
 
@@ -2027,79 +2027,79 @@ style
 
 ---
 
-# 42. 常见误解四：z 就是压缩后的 x
+## 42. 常见误解四：z 就是压缩后的 x
 
 **不够准确。**
 
 对于 VAE：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 描述的是：
 
-> 给定 \(x\) 后 latent variable 的 approximate posterior。
+> 给定 $x$ 后 latent variable 的 approximate posterior。
 
 encoder 通常输出 distribution parameters：
 
-\[
+$$
 \mu(x),\sigma^2(x)
-\]
+$$
 
 再从中 sample：
 
-\[
+$$
 z
-\]
+$$
 
 所以它不是简单的 deterministic compression。
 
 ---
 
-# 43. 常见误解五：z 就是随机噪声
+## 43. 常见误解五：z 就是随机噪声
 
 **错误。**
 
 在 Gaussian VAE 的 reparameterization 中：
 
-\[
+$$
 \epsilon\sim\mathcal N(0,I)
-\]
+$$
 
 才是辅助 noise。
 
 然后：
 
-\[
+$$
 z=\mu+\sigma\odot\epsilon
-\]
+$$
 
 所以：
 
-\[
+$$
 z
-\]
+$$
 
 和：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 不是同一个变量。
 
 ---
 
-# 44. 常见误解六：latent variable 一定是真实 causal factor
+## 44. 常见误解六：latent variable 一定是真实 causal factor
 
 **没有这种保证。**
 
 生成模型使用：
 
-\[
+$$
 z\rightarrow x
-\]
+$$
 
 作为建模方向，
 
@@ -2107,14 +2107,14 @@ z\rightarrow x
 
 ---
 
-# 45. 常见误解七：有 z 就一定能产生多样结果
+## 45. 常见误解七：有 z 就一定能产生多样结果
 
 也不保证。
 
 如果训练中出现：
 
 - posterior collapse；
-- decoder 忽略 \(z\)；
+- decoder 忽略 $z$；
 - latent capacity 不合适；
 - objective 权衡不好；
 
@@ -2122,7 +2122,7 @@ z\rightarrow x
 
 所以真正的问题不是：
 
-> “模型有没有一个变量叫 \(z\)？”
+> “模型有没有一个变量叫 $z$？”
 
 而是：
 
@@ -2132,48 +2132,48 @@ z\rightarrow x
 
 ---
 
-# 46. 用三条公式记住 Latent Variable Model
+## 46. 用三条公式记住 Latent Variable Model
 
 如果这一篇所有东西最后只留下三条公式，应该是：
 
 ---
 
-## 生成模型
+### 生成模型
 
-\[
+$$
 \boxed{
 p_\theta(x,z)
 =
 p(z)p_\theta(x\mid z)
 }
-\]
+$$
 
 意思：
 
-> 先有 latent \(z\)，再生成 observed \(x\)。
+> 先有 latent $z$，再生成 observed $x$。
 
 ---
 
-## Marginal Likelihood
+### Marginal Likelihood
 
-\[
+$$
 \boxed{
 p_\theta(x)
 =
 \int
 p_\theta(x\mid z)p(z)dz
 }
-\]
+$$
 
 意思：
 
-> 因为 \(z\) 没有被观察，所以计算 \(x\) 的概率时，要把所有可能的 \(z\) 都考虑进去。
+> 因为 $z$ 没有被观察，所以计算 $x$ 的概率时，要把所有可能的 $z$ 都考虑进去。
 
 ---
 
-## Posterior
+### Posterior
 
-\[
+$$
 \boxed{
 p_\theta(z\mid x)
 =
@@ -2183,11 +2183,11 @@ p_\theta(x\mid z)p(z)
 p_\theta(x)
 }
 }
-\]
+$$
 
 意思：
 
-> 已经看见 \(x\) 后，反推哪些 latent \(z\) 更可能解释它。
+> 已经看见 $x$ 后，反推哪些 latent $z$ 更可能解释它。
 
 VAE 的故事几乎就是从：
 
@@ -2197,35 +2197,35 @@ VAE 的故事几乎就是从：
 
 ---
 
-# 47. 一句话重新理解
+## 47. 一句话重新理解
 
 > **Latent variable 不是“神秘特征向量”，而是概率模型中没有被直接观测到、却被模型用来描述数据生成过程的随机变量。**
 
 我们只观察：
 
-\[
+$$
 x
-\]
+$$
 
 模型却假设：
 
-\[
+$$
 z\rightarrow x
-\]
+$$
 
 于是：
 
-\[
+$$
 p(x)
 =
 \int p(x\mid z)p(z)dz
-\]
+$$
 
-而看到某个具体 \(x\) 后，我们又希望反推：
+而看到某个具体 $x$ 后，我们又希望反推：
 
-\[
+$$
 p(z\mid x)
-\]
+$$
 
 这就是为什么 latent variable 一出现，
 
@@ -2241,28 +2241,28 @@ p(z\mid x)
 
 ---
 
-# 48. 下一步：为什么需要 VAE？
+## 48. 下一步：为什么需要 VAE？
 
 现在我们已经有 latent-variable model：
 
-\[
+$$
 p(z)p_\theta(x\mid z)
-\]
+$$
 
 下一步最大的困难是：
 
-\[
+$$
 p_\theta(z\mid x)
-\]
+$$
 
 需要：
 
-\[
+$$
 p_\theta(x)
 =
 \int
 p_\theta(x\mid z)p(z)dz
-\]
+$$
 
 而这个积分在复杂神经生成模型中往往无法直接计算。
 
@@ -2270,15 +2270,15 @@ p_\theta(x\mid z)p(z)dz
 
 > 能不能训练另一个网络：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 去近似真正的：
 
-\[
+$$
 p_\theta(z\mid x)
-\]
+$$
 
 ？
 
@@ -2286,33 +2286,33 @@ p_\theta(z\mid x)
 
 我们又如何训练：
 
-\[
+$$
 q_\phi
-\]
+$$
 
 和：
 
-\[
+$$
 p_\theta
-\]
+$$
 
 ？
 
 为什么目标函数最终会出现：
 
-\[
+$$
 D_{KL}
-\]
+$$
 
 和 reconstruction term？
 
 为什么 encoder 输出的是：
 
-\[
+$$
 \mu,\sigma^2
-\]
+$$
 
-而不是直接输出 \(z\)？
+而不是直接输出 $z$？
 
 以及：
 
@@ -2326,7 +2326,7 @@ D_{KL}
 
 ---
 
-## Primary Source
+### Primary Source
 
 Diederik P. Kingma, Max Welling.  
 **Auto-Encoding Variational Bayes.**  
@@ -2343,25 +2343,25 @@ arXiv:1312.6114, first submitted 2013.
 
 尤其是原论文定义的生成过程：
 
-\[
+$$
 z\sim p_\theta(z)
-\]
+$$
 
-\[
+$$
 x\sim p_\theta(x\mid z)
-\]
+$$
 
 以及：
 
-\[
+$$
 p_\theta(x)
 =
 \int p_\theta(z)p_\theta(x\mid z)dz
-\]
+$$
 
 ---
 
-## 与 ACT 的关系
+### 与 ACT 的关系
 
 Tony Z. Zhao, Vikash Kumar, Sergey Levine, Chelsea Finn.  
 **Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware.**  
@@ -2369,13 +2369,13 @@ Robotics: Science and Systems (RSS), 2023.
 
 - Paper: https://arxiv.org/abs/2304.13705
 
-ACT 将 policy 训练为 CVAE，并使用 latent style variable \(z\) 描述 demonstration action sequence 中的潜在变化。
+ACT 将 policy 训练为 CVAE，并使用 latent style variable $z$ 描述 demonstration action sequence 中的潜在变化。
 
 本文只负责建立：
 
 > **latent variable 本身的概率学意义。**
 
-ACT 中 \(z\) 的具体构造将在：
+ACT 中 $z$ 的具体构造将在：
 
 - [CVAE in ACT](../robot-learning/act/cvae-in-act.md)
 
@@ -2383,22 +2383,22 @@ ACT 中 \(z\) 的具体构造将在：
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### 数学前置知识
+#### 数学前置知识
 
 - Probability Distribution
 - Conditional Probability
 - Bayes' Rule
 - Marginalization
 
-### 下一步
+#### 下一步
 
 - [VAE](./vae.md)
 - [Reparameterization Trick](./reparameterization-trick.md)
 - [CVAE](./cvae.md)
 
-### VAE 中会用到
+#### VAE 中会用到
 
 - [Normal Distribution](../mathematics/normal-distribution.md)
 - Standard Normal Distribution
@@ -2406,7 +2406,7 @@ ACT 中 \(z\) 的具体构造将在：
 - Variance
 - [KL Divergence](../mathematics/kl-divergence.md)
 
-### Robot Learning
+#### Robot Learning
 
 - [ACT](../robot-learning/act/act-what-problem-does-it-solve.md)
 - [CVAE in ACT](../robot-learning/act/cvae-in-act.md)

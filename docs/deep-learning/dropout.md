@@ -28,13 +28,13 @@ nn.Dropout(0.1)
 3. 为什么训练时随机删，推理时反而一个都不删？
 4. 如果训练时只剩 90% activation，推理时突然全部恢复，不会让数值整体变大吗？
 5. 为什么 PyTorch 训练时还要把剩下的值乘：
-   \[
+   $$
    \frac{1}{1-p}
-   \]
+   $$
    ？
 6. 这个缩放为什么能让 train / eval 对齐？
 7. Dropout 到底是在模拟 ensemble，还是只是在“制造噪声”？
-8. 原始 Dropout 论文中的 \(p\) 和 PyTorch `Dropout(p)` 为什么含义居然相反？
+8. 原始 Dropout 论文中的 $p$ 和 PyTorch `Dropout(p)` 为什么含义居然相反？
 9. Transformer 的 dropout 到底加在哪里？
 10. Attention dropout 是删掉 neuron，还是删掉 Attention Weight？
 11. ACT 论文写 dropout=0.1，那么代码里究竟有哪些地方真的使用了 0.1？
@@ -45,7 +45,7 @@ nn.Dropout(0.1)
 
 ---
 
-# 1. Dropout 最早想解决什么问题？
+## 1. Dropout 最早想解决什么问题？
 
 深度神经网络参数很多。
 
@@ -71,7 +71,7 @@ Dropout 论文把其中一种现象描述为：
 
 ---
 
-# 2. “Dropout”这个名字是什么意思？
+## 2. “Dropout”这个名字是什么意思？
 
 原始论文的定义非常字面：
 
@@ -79,11 +79,11 @@ Dropout 论文把其中一种现象描述为：
 
 关键字是：
 
-\[
+$$
 \boxed{
 \text{temporarily}
 }
-\]
+$$
 
 不是：
 
@@ -95,7 +95,7 @@ Dropout 论文把其中一种现象描述为：
 
 ---
 
-# 3. PyTorch 里更准确的说法是“随机把 Activation 元素置零”
+## 3. PyTorch 里更准确的说法是“随机把 Activation 元素置零”
 
 例如：
 
@@ -105,10 +105,10 @@ dropout = nn.Dropout(p=0.1)
 
 输入：
 
-\[
+$$
 x=
 [x_1,x_2,x_3,x_4]
-\]
+$$
 
 某一次 training forward 可能随机得到：
 
@@ -121,15 +121,15 @@ keep
 
 于是某些 activation：
 
-\[
+$$
 x_i
-\]
+$$
 
 被设成：
 
-\[
+$$
 0
-\]
+$$
 
 但：
 
@@ -139,17 +139,17 @@ x_i
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Dropout does not prune the network permanently}
 }
-\]
+$$
 
 ---
 
-# 4. Dropout 和 Pruning 不是一回事
+## 4. Dropout 和 Pruning 不是一回事
 
-### Dropout
+#### Dropout
 
 训练时：
 
@@ -159,7 +159,7 @@ x_i
 
 > 全部恢复。
 
-### Pruning
+#### Pruning
 
 通常：
 
@@ -173,137 +173,137 @@ x_i
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Dropout}
 \neq
 \text{Pruning}
 }
-\]
+$$
 
 ---
 
-# 5. 用随机变量正式表示 Dropout
+## 5. 用随机变量正式表示 Dropout
 
 先定义：
 
-\[
+$$
 q
 =
 \text{keep probability}
-\]
+$$
 
 也就是保留概率。
 
 对每个 activation：
 
-\[
+$$
 x_i
-\]
+$$
 
 采样：
 
-\[
+$$
 m_i
 \sim
 \operatorname{Bernoulli}(q)
-\]
+$$
 
 其中：
 
-\[
+$$
 m_i=
 \begin{cases}
 1,&\text{以概率 }q\\
 0,&\text{以概率 }1-q
 \end{cases}
-\]
+$$
 
 ---
 
-# 6. 最朴素的 Dropout
+## 6. 最朴素的 Dropout
 
 最简单：
 
-\[
+$$
 \tilde x_i
 =
 m_i x_i
-\]
+$$
 
 如果：
 
-\[
+$$
 m_i=0
-\]
+$$
 
 则：
 
-\[
+$$
 \tilde x_i=0
-\]
+$$
 
 如果：
 
-\[
+$$
 m_i=1
-\]
+$$
 
 则：
 
-\[
+$$
 \tilde x_i=x_i
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \tilde x
 =
 m\odot x
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 \odot
-\]
+$$
 
 表示 element-wise multiplication。
 
 ---
 
-# 7. 一个具体例子
+## 7. 一个具体例子
 
 假设：
 
-\[
+$$
 x=
 [2,-4,6,8]
-\]
+$$
 
 keep probability：
 
-\[
+$$
 q=0.75
-\]
+$$
 
 某次采样：
 
-\[
+$$
 m=
 [1,0,1,1]
-\]
+$$
 
 朴素 Dropout：
 
-\[
+$$
 \tilde x
 =
 [2,0,6,8]
-\]
+$$
 
 看起来很简单。
 
@@ -311,64 +311,64 @@ m=
 
 ---
 
-# 8. 训练时 Expected Activation 变小了
+## 8. 训练时 Expected Activation 变小了
 
 因为：
 
-\[
+$$
 E[m_i]=q
-\]
+$$
 
 所以：
 
-\[
+$$
 E[\tilde x_i]
 =
 E[m_i x_i]
-\]
+$$
 
 把：
 
-\[
+$$
 x_i
-\]
+$$
 
 看作当前 forward 中固定值：
 
-\[
+$$
 =
 x_iE[m_i]
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 E[\tilde x_i]
 =
 qx_i
 }
-\]
+$$
 
 如果：
 
-\[
+$$
 q=0.5
-\]
+$$
 
 平均 activation只有原来一半。
 
 ---
 
-# 9. 这会造成 Train / Test Scale Mismatch
+## 9. 这会造成 Train / Test Scale Mismatch
 
 训练时：
 
-\[
+$$
 E[\tilde x]
 =
 qx
-\]
+$$
 
 但如果测试时突然：
 
@@ -376,21 +376,21 @@ qx
 
 那么 test activation：
 
-\[
+$$
 x
-\]
+$$
 
 会比 training average：
 
-\[
+$$
 qx
-\]
+$$
 
 大：
 
-\[
+$$
 1/q
-\]
+$$
 
 倍。
 
@@ -400,105 +400,105 @@ qx
 
 ---
 
-# 10. 原始 Dropout 论文的解决方式
+## 10. 原始 Dropout 论文的解决方式
 
 原始 2014 JMLR 论文主要采用：
 
-### Training
+#### Training
 
 保留 unit：
 
-\[
+$$
 m_i\sim Bernoulli(q)
-\]
+$$
 
 直接：
 
-\[
+$$
 \tilde x_i=m_ix_i
-\]
+$$
 
 ---
 
-### Test
+#### Test
 
 不再随机 drop，
 
 但把 outgoing weights乘：
 
-\[
+$$
 q
-\]
+$$
 
 这样 test contribution就与 training expected contribution对齐。
 
 论文写的是：
 
-\[
+$$
 \boxed{
 W_{\text{test}}
 =
 qW
 }
-\]
+$$
 
 ---
 
-# 11. 为什么 Test Weight × q 有效？
+## 11. 为什么 Test Weight × q 有效？
 
 假设某个 unit activation：
 
-\[
+$$
 h
-\]
+$$
 
 连到下一层权重：
 
-\[
+$$
 w
-\]
+$$
 
 训练：
 
 该 unit以概率：
 
-\[
+$$
 q
-\]
+$$
 
 存在。
 
 所以 expected contribution：
 
-\[
+$$
 E[mhw]
 =
 qhw
-\]
+$$
 
 测试时 unit总存在，
 
 但用：
 
-\[
+$$
 qw
-\]
+$$
 
 于是：
 
-\[
+$$
 h(qw)=qhw
-\]
+$$
 
 和训练期 expectation一致。
 
 ---
 
-# 12. 但现代框架通常反过来做
+## 12. 但现代框架通常反过来做
 
 PyTorch不采用：
 
-> train原值，test乘 \(q\)
+> train原值，test乘 $q$
 
 这个实现方式。
 
@@ -510,31 +510,31 @@ PyTorch不采用：
 
 ---
 
-# 13. PyTorch 中 p 表示 Drop Probability
+## 13. PyTorch 中 p 表示 Drop Probability
 
 这是一个必须牢记的记号冲突。
 
-## 原始 Dropout 论文
+### 原始 Dropout 论文
 
 论文中的：
 
-\[
+$$
 p
-\]
+$$
 
 通常表示：
 
-\[
+$$
 \boxed{
 \text{retention probability}
 }
-\]
+$$
 
 也就是 keep probability。
 
 ---
 
-## PyTorch
+### PyTorch
 
 ```python
 nn.Dropout(p=0.1)
@@ -542,17 +542,17 @@ nn.Dropout(p=0.1)
 
 这里：
 
-\[
+$$
 p
-\]
+$$
 
 表示：
 
-\[
+$$
 \boxed{
 \text{drop probability}
 }
-\]
+$$
 
 即被置零的概率。
 
@@ -560,33 +560,33 @@ p
 
 本文统一定义：
 
-\[
+$$
 d
 =
 \text{drop probability}
-\]
+$$
 
-\[
+$$
 q
 =
 1-d
 =
 \text{keep probability}
-\]
+$$
 
 ---
 
-# 14. PyTorch 的 Inverted Dropout 公式
+## 14. PyTorch 的 Inverted Dropout 公式
 
 训练时：
 
-\[
+$$
 m_i\sim Bernoulli(q)
-\]
+$$
 
 输出：
 
-\[
+$$
 \boxed{
 y_i
 =
@@ -596,17 +596,17 @@ m_i x_i
 q
 }
 }
-\]
+$$
 
 因为：
 
-\[
+$$
 q=1-d
-\]
+$$
 
 也可以写：
 
-\[
+$$
 \boxed{
 y_i
 =
@@ -616,27 +616,27 @@ m_i x_i
 1-d
 }
 }
-\]
+$$
 
 这就是为什么 PyTorch文档说：
 
-> training时 output会乘 \(1/(1-p)\)。
+> training时 output会乘 $1/(1-p)$。
 
 这里 PyTorch 的：
 
-\[
+$$
 p=d
-\]
+$$
 
 是 drop probability。
 
 ---
 
-# 15. 为什么要除 q？
+## 15. 为什么要除 q？
 
 直接算 expectation：
 
-\[
+$$
 E[y_i]
 =
 E
@@ -647,55 +647,55 @@ m_ix_i
 q
 }
 \right]
-\]
+$$
 
-\[
+$$
 =
 \frac{x_i}{q}
 E[m_i]
-\]
+$$
 
 而：
 
-\[
+$$
 E[m_i]=q
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 E[y_i]=x_i
 }
-\]
+$$
 
 这就是 inverted dropout 的核心。
 
 ---
 
-# 16. 于是 Evaluation 什么都不用做
+## 16. 于是 Evaluation 什么都不用做
 
 training：
 
-\[
+$$
 y_i
 =
 \frac{m_ix_i}{q}
-\]
+$$
 
 已经保证：
 
-\[
+$$
 E[y_i]=x_i
-\]
+$$
 
 所以 evaluation只需：
 
-\[
+$$
 \boxed{
 y_i=x_i
 }
-\]
+$$
 
 即：
 
@@ -703,11 +703,11 @@ y_i=x_i
 
 PyTorch文档明确说明：
 
-> training时保留的输出按 \(1/(1-p)\) 缩放，因此 evaluation时模块直接计算 identity。
+> training时保留的输出按 $1/(1-p)$ 缩放，因此 evaluation时模块直接计算 identity。
 
 ---
 
-# 17. 这就是为什么叫 Inverted Dropout
+## 17. 这就是为什么叫 Inverted Dropout
 
 原始方式：
 
@@ -735,99 +735,99 @@ Test:
 
 ---
 
-# 18. 一个 p_drop = 0.1 的例子
+## 18. 一个 p_drop = 0.1 的例子
 
 ACT：
 
-\[
+$$
 d=0.1
-\]
+$$
 
 所以：
 
-\[
+$$
 q=0.9
-\]
+$$
 
 保留下来的 activation会乘：
 
-\[
+$$
 \frac1{0.9}
 =
 1.111\ldots
-\]
+$$
 
 例如：
 
-\[
+$$
 x=9
-\]
+$$
 
 training时：
 
-### 90%概率保留
+#### 90%概率保留
 
 输出：
 
-\[
+$$
 9/0.9=10
-\]
+$$
 
-### 10%概率 drop
+#### 10%概率 drop
 
 输出：
 
-\[
+$$
 0
-\]
+$$
 
 Expectation：
 
-\[
+$$
 0.9(10)+0.1(0)=9
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 E[y]=x
 }
-\]
+$$
 
 ---
 
-# 19. 一个向量例子
+## 19. 一个向量例子
 
 输入：
 
-\[
+$$
 x=
 [2,-4,6]
-\]
+$$
 
 drop probability：
 
-\[
+$$
 d=0.25
-\]
+$$
 
 所以：
 
-\[
+$$
 q=0.75
-\]
+$$
 
 某次 mask：
 
-\[
+$$
 m=
 [1,0,1]
-\]
+$$
 
 training output：
 
-\[
+$$
 y
 =
 \frac{
@@ -835,18 +835,18 @@ m\odot x
 }{
 0.75
 }
-\]
+$$
 
 所以：
 
-\[
+$$
 y=
 [
 2.667,
 0,
 8
 ]
-\]
+$$
 
 注意：
 
@@ -858,15 +858,15 @@ y=
 
 ---
 
-# 20. 为什么“删一些再放大剩下的”不会互相抵消？
+## 20. 为什么“删一些再放大剩下的”不会互相抵消？
 
 它只在：
 
-\[
+$$
 \boxed{
 \text{expectation}
 }
-\]
+$$
 
 上保持平均尺度。
 
@@ -874,27 +874,27 @@ y=
 
 例如：
 
-\[
+$$
 x=[2,-4,6]
-\]
+$$
 
 可能得到：
 
-\[
+$$
 [2.667,0,8]
-\]
+$$
 
 下一次可能：
 
-\[
+$$
 [0,-5.333,8]
-\]
+$$
 
 再下一次：
 
-\[
+$$
 [2.667,-5.333,0]
-\]
+$$
 
 所以：
 
@@ -902,45 +902,45 @@ x=[2,-4,6]
 
 只是这些扰动的平均值：
 
-\[
+$$
 E[y]=x
-\]
+$$
 
 ---
 
-# 21. Dropout 增加的是随机方差
+## 21. Dropout 增加的是随机方差
 
 对固定：
 
-\[
+$$
 x_i
-\]
+$$
 
 inverted dropout：
 
-\[
+$$
 y_i=
 \frac{m_ix_i}{q}
-\]
+$$
 
 因为：
 
-\[
+$$
 Var(m_i)=q(1-q)
-\]
+$$
 
 所以：
 
-\[
+$$
 Var(y_i)
 =
 \frac{x_i^2}{q^2}
 q(1-q)
-\]
+$$
 
 得到：
 
-\[
+$$
 \boxed{
 Var(y_i)
 =
@@ -951,17 +951,17 @@ x_i^2
 q
 }
 }
-\]
+$$
 
 因为：
 
-\[
+$$
 1-q=d
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 Var(y_i)
 =
@@ -972,49 +972,49 @@ d
 1-d
 }
 }
-\]
+$$
 
 ---
 
-# 22. p_drop 越大，Training Noise 越强
+## 22. p_drop 越大，Training Noise 越强
 
 如果：
 
-\[
+$$
 d=0.1
-\]
+$$
 
 variance multiplier：
 
-\[
+$$
 \frac{0.1}{0.9}
 \approx
 0.111
-\]
+$$
 
 如果：
 
-\[
+$$
 d=0.5
-\]
+$$
 
 则：
 
-\[
+$$
 \frac{0.5}{0.5}=1
-\]
+$$
 
 如果：
 
-\[
+$$
 d=0.9
-\]
+$$
 
 则：
 
-\[
+$$
 \frac{0.9}{0.1}=9
-\]
+$$
 
 所以越大的 dropout：
 
@@ -1026,7 +1026,7 @@ d=0.9
 
 ---
 
-# 23. 因此 Dropout Rate 不是越大越好
+## 23. 因此 Dropout Rate 不是越大越好
 
 过小：
 
@@ -1041,45 +1041,45 @@ d=0.9
 
 所以：
 
-\[
+$$
 \boxed{
 p_{\text{drop}}
 }
-\]
+$$
 
 是需要调节的 hyperparameter。
 
 ---
 
-# 24. p_drop = 0 会怎样？
+## 24. p_drop = 0 会怎样？
 
-\[
+$$
 d=0
-\]
+$$
 
-\[
+$$
 q=1
-\]
+$$
 
 mask永远：
 
-\[
+$$
 m_i=1
-\]
+$$
 
 scale：
 
-\[
+$$
 1/q=1
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 Dropout(x)=x
 }
-\]
+$$
 
 训练和推理都一样。
 
@@ -1089,25 +1089,25 @@ Dropout(x)=x
 
 ---
 
-# 25. p_drop → 1 会怎样？
+## 25. p_drop → 1 会怎样？
 
 当：
 
-\[
+$$
 d\rightarrow1
-\]
+$$
 
 keep probability：
 
-\[
+$$
 q\rightarrow0
-\]
+$$
 
 scale：
 
-\[
+$$
 1/q
-\]
+$$
 
 趋于非常大。
 
@@ -1117,21 +1117,21 @@ scale：
 
 所以合法实现通常要求：
 
-\[
+$$
 0\le d<1
-\]
+$$
 
 而不会用：
 
-\[
+$$
 d=1
-\]
+$$
 
 作为普通 Dropout。
 
 ---
 
-# 26. Dropout Mask 每次都一样吗？
+## 26. Dropout Mask 每次都一样吗？
 
 不是。
 
@@ -1149,7 +1149,7 @@ PyTorch明确：
 
 ---
 
-# 27. 同一个 Batch 中所有样本共享 Mask 吗？
+## 27. 同一个 Batch 中所有样本共享 Mask 吗？
 
 标准 `nn.Dropout` 的概念是：
 
@@ -1169,7 +1169,7 @@ PyTorch明确：
 
 ---
 
-# 28. “Dropout 随机删神经元”只是历史直觉
+## 28. “Dropout 随机删神经元”只是历史直觉
 
 现代 tensor实现更准确是：
 
@@ -1195,7 +1195,7 @@ PyTorch明确：
 
 ---
 
-# 29. Dropout 为什么是 Regularization？
+## 29. Dropout 为什么是 Regularization？
 
 核心效果是：
 
@@ -1217,7 +1217,7 @@ PyTorch明确：
 
 ---
 
-# 30. 什么叫 Co-Adaptation？
+## 30. 什么叫 Co-Adaptation？
 
 假设 neuron A 的工作方式是：
 
@@ -1245,7 +1245,7 @@ A 被迫：
 
 ---
 
-# 31. 但不能说 Co-Adaptation 是 Dropout 唯一被证明的机制
+## 31. 但不能说 Co-Adaptation 是 Dropout 唯一被证明的机制
 
 这是需要严谨处理的一点。
 
@@ -1270,13 +1270,13 @@ A 被迫：
 
 所以 canonical page最安全的写法是：
 
-\[
+$$
 \boxed{
 \text{co-adaptation reduction}
 =
 \text{original motivation / interpretation}
 }
-\]
+$$
 
 而不是：
 
@@ -1284,13 +1284,13 @@ A 被迫：
 
 ---
 
-# 32. 为什么 Dropout 可以看成很多 Thinned Networks？
+## 32. 为什么 Dropout 可以看成很多 Thinned Networks？
 
 假设一层有：
 
-\[
+$$
 n
-\]
+$$
 
 个 units。
 
@@ -1300,9 +1300,9 @@ n
 
 理论上有：
 
-\[
+$$
 2^n
-\]
+$$
 
 种 possible masks。
 
@@ -1318,23 +1318,23 @@ n
 
 ---
 
-# 33. 这些 Subnetworks 是完全独立模型吗？
+## 33. 这些 Subnetworks 是完全独立模型吗？
 
 不是。
 
 它们：
 
-\[
+$$
 \boxed{
 \text{share weights}
 }
-\]
+$$
 
 所以不是训练：
 
-\[
+$$
 2^n
-\]
+$$
 
 套独立参数。
 
@@ -1344,7 +1344,7 @@ n
 
 ---
 
-# 34. Test Time 为什么不开 Dropout？
+## 34. Test Time 为什么不开 Dropout？
 
 原始 Dropout想达到：
 
@@ -1364,7 +1364,7 @@ n
 
 ---
 
-# 35. 原始论文的 Model Averaging 是“精确”等价吗？
+## 35. 原始论文的 Model Averaging 是“精确”等价吗？
 
 一般深网络：
 
@@ -1378,45 +1378,45 @@ n
 
 但经过 nonlinearities和多层组合后：
 
-\[
+$$
 E[f_{\text{dropout}}(x)]
 \neq
 f(E[\text{dropout input}])
-\]
+$$
 
 一般成立。
 
 所以不能说：
 
-\[
+$$
 \boxed{
 \text{full network prediction}
 =
 \text{exact average of all dropout subnetworks}
 }
-\]
+$$
 
 ---
 
-# 36. 这和 Jensen / Nonlinearity 有关
+## 36. 这和 Jensen / Nonlinearity 有关
 
 例如：
 
-\[
+$$
 f
-\]
+$$
 
 非线性时，
 
 通常：
 
-\[
+$$
 \boxed{
 f(E[X])
 \neq
 E[f(X)]
 }
-\]
+$$
 
 所以即使每层局部 activation expectation被对齐，
 
@@ -1426,7 +1426,7 @@ E[f(X)]
 
 ---
 
-# 37. 那为什么 Inverted Dropout 还要保持局部 Expectation？
+## 37. 那为什么 Inverted Dropout 还要保持局部 Expectation？
 
 因为这样至少能避免：
 
@@ -1436,36 +1436,36 @@ E[f(X)]
 
 但：
 
-\[
+$$
 E[\text{每层输入}]
-\]
+$$
 
 对齐，
 
 不代表：
 
-\[
+$$
 E[\text{最终 network output}]
-\]
+$$
 
 严格完全一致。
 
 ---
 
-# 38. Inverted Dropout 的一个最重要性质
+## 38. Inverted Dropout 的一个最重要性质
 
 训练：
 
-\[
+$$
 y=
 \frac{m\odot x}{q}
-\]
+$$
 
 eval：
 
-\[
+$$
 y=x
-\]
+$$
 
 因此模型代码不需要在 evaluation时：
 
@@ -1475,7 +1475,7 @@ y=x
 
 ---
 
-# 39. `model.train()` 与 `model.eval()` 为什么重要？
+## 39. `model.train()` 与 `model.eval()` 为什么重要？
 
 PyTorch Module有：
 
@@ -1495,7 +1495,7 @@ Dropout就是最典型之一。
 
 ---
 
-# 40. Train Mode
+## 40. Train Mode
 
 调用：
 
@@ -1511,7 +1511,7 @@ nn.Dropout(p=d)
 
 执行：
 
-\[
+$$
 \boxed{
 y=
 \frac{
@@ -1520,20 +1520,20 @@ m\odot x
 1-d
 }
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 m_i
 \sim Bernoulli(1-d)
-\]
+$$
 
 所以每次 forward随机。
 
 ---
 
-# 41. Eval Mode
+## 41. Eval Mode
 
 调用：
 
@@ -1543,11 +1543,11 @@ model.eval()
 
 后：
 
-\[
+$$
 \boxed{
 Dropout(x)=x
 }
-\]
+$$
 
 不再随机 mask，
 
@@ -1559,7 +1559,7 @@ PyTorch官方文档明确称：
 
 ---
 
-# 42. `torch.no_grad()` 会自动关闭 Dropout 吗？
+## 42. `torch.no_grad()` 会自动关闭 Dropout 吗？
 
 **不会。**
 
@@ -1594,7 +1594,7 @@ with torch.no_grad():
 
 ---
 
-# 43. `model.eval()` 会自动关闭 Gradient 吗？
+## 43. `model.eval()` 会自动关闭 Gradient 吗？
 
 也不会。
 
@@ -1615,7 +1615,7 @@ torch.no_grad()
 
 ---
 
-# 44. LayerNorm 会被 eval() 关闭吗？
+## 44. LayerNorm 会被 eval() 关闭吗？
 
 不会。
 
@@ -1639,7 +1639,7 @@ model.eval()
 
 ---
 
-# 45. BatchNorm 则不同
+## 45. BatchNorm 则不同
 
 BatchNorm在：
 
@@ -1666,7 +1666,7 @@ ACT Transformer内部主要使用：
 
 ---
 
-# 46. Dropout 训练时会修改 Parameters 吗？
+## 46. Dropout 训练时会修改 Parameters 吗？
 
 Dropout本身：
 
@@ -1676,15 +1676,15 @@ Dropout本身：
 
 真正的：
 
-\[
+$$
 W
-\]
+$$
 
 仍通过 optimizer根据 loss gradient更新。
 
 ---
 
-# 47. Dropout 自己有 Trainable Parameters 吗？
+## 47. Dropout 自己有 Trainable Parameters 吗？
 
 标准：
 
@@ -1696,15 +1696,15 @@ nn.Dropout(p=0.1)
 
 它只有 hyperparameter：
 
-\[
+$$
 p
-\]
+$$
 
 不是 optimizer学习的 parameter。
 
 ---
 
-# 48. Dropout Rate 会被 Gradient 更新吗？
+## 48. Dropout Rate 会被 Gradient 更新吗？
 
 不会。
 
@@ -1714,31 +1714,31 @@ p
 
 标准 Dropout：
 
-\[
+$$
 p
-\]
+$$
 
 由人设定。
 
 ---
 
-# 49. Dropout 会把 Gradient 一起 Mask 吗？
+## 49. Dropout 会把 Gradient 一起 Mask 吗？
 
 如果 forward中：
 
-\[
+$$
 y_i=0
-\]
+$$
 
 因为：
 
-\[
+$$
 m_i=0
-\]
+$$
 
 那么在这一条局部路径上：
 
-\[
+$$
 \frac{
 \partial y_i
 }{
@@ -1746,19 +1746,19 @@ m_i=0
 }
 =
 0
-\]
+$$
 
 所以这个 activation对应的 gradient不会通过该路径回传。
 
 如果：
 
-\[
+$$
 m_i=1
-\]
+$$
 
 则：
 
-\[
+$$
 \frac{
 \partial y_i
 }{
@@ -1766,13 +1766,13 @@ m_i=1
 }
 =
 \frac1q
-\]
+$$
 
 因此训练时 backward同样受到 mask影响。
 
 ---
 
-# 50. Dropout 不只是 Forward Noise
+## 50. Dropout 不只是 Forward Noise
 
 因为每次随机 mask也会改变：
 
@@ -1788,7 +1788,7 @@ m_i=1
 
 ---
 
-# 51. 为什么训练可能更慢？
+## 51. 为什么训练可能更慢？
 
 Dropout提高了 gradient noise。
 
@@ -1808,7 +1808,7 @@ Dropout提高了 gradient noise。
 
 ---
 
-# 52. 为什么不在 Test 也随机 Dropout 然后平均很多次？
+## 52. 为什么不在 Test 也随机 Dropout 然后平均很多次？
 
 可以。
 
@@ -1816,9 +1816,9 @@ Dropout提高了 gradient noise。
 
 多次 stochastic forward：
 
-\[
+$$
 f_1(x),f_2(x),\ldots,f_M(x)
-\]
+$$
 
 再平均，
 
@@ -1834,7 +1834,7 @@ f_1(x),f_2(x),\ldots,f_M(x)
 
 ---
 
-# 53. Monte Carlo Dropout 是另一种用法
+## 53. Monte Carlo Dropout 是另一种用法
 
 MC Dropout后来常用于：
 
@@ -1843,13 +1843,13 @@ MC Dropout后来常用于：
 
 但 canonical Dropout page应先明确：
 
-\[
+$$
 \boxed{
 \text{standard inference}
 =
 \text{dropout off}
 }
-\]
+$$
 
 MC Dropout属于：
 
@@ -1857,7 +1857,7 @@ MC Dropout属于：
 
 ---
 
-# 54. Transformer 为什么特别需要 Regularization？
+## 54. Transformer 为什么特别需要 Regularization？
 
 Transformer有很多参数和强大的：
 
@@ -1872,7 +1872,7 @@ Transformer有很多参数和强大的：
 
 ---
 
-# 55. 原始 Transformer 的 Residual Dropout
+## 55. 原始 Transformer 的 Residual Dropout
 
 《Attention Is All You Need》Section 5.4明确：
 
@@ -1880,7 +1880,7 @@ Transformer有很多参数和强大的：
 
 所以原始 Post-LN：
 
-\[
+$$
 \boxed{
 LN(
 x+
@@ -1889,19 +1889,19 @@ Sublayer(x)
 )
 )
 }
-\]
+$$
 
 不是：
 
-\[
+$$
 Dropout(
 LN(x+Sublayer(x))
 )
-\]
+$$
 
 ---
 
-# 56. 这意味着 Identity Shortcut 不经过这次 Dropout
+## 56. 这意味着 Identity Shortcut 不经过这次 Dropout
 
 结构：
 
@@ -1921,15 +1921,15 @@ Dropout作用：
 
 shortcut：
 
-\[
+$$
 x
-\]
+$$
 
 保持直接。
 
 ---
 
-# 57. 为什么这个 Placement 很自然？
+## 57. 为什么这个 Placement 很自然？
 
 因为 Dropout随机扰动：
 
@@ -1941,15 +1941,15 @@ identity path仍在。
 
 所以 block局部更接近：
 
-\[
+$$
 y\approx x
-\]
+$$
 
 这与 residual architecture很契合。
 
 ---
 
-# 58. 原始 Transformer 还在哪里 Dropout？
+## 58. 原始 Transformer 还在哪里 Dropout？
 
 论文还明确说：
 
@@ -1957,26 +1957,26 @@ y\approx x
 
 即概念上：
 
-\[
+$$
 \boxed{
 Dropout(
 Embedding+
 PositionalEncoding
 )
 }
-\]
+$$
 
 原始 Base Transformer：
 
-\[
+$$
 \boxed{
 P_{drop}=0.1
 }
-\]
+$$
 
 ---
 
-# 59. 原始论文明确写 Attention-Weight Dropout 吗？
+## 59. 原始论文明确写 Attention-Weight Dropout 吗？
 
 在 Section 5.4 的明确文字中，
 
@@ -1993,23 +1993,23 @@ P_{drop}=0.1
 
 所以应该区分：
 
-\[
+$$
 \boxed{
 \text{Original-paper documented dropout placements}
 }
-\]
+$$
 
 和：
 
-\[
+$$
 \boxed{
 \text{current library / implementation dropout placements}
 }
-\]
+$$
 
 ---
 
-# 60. PyTorch MultiheadAttention 的 dropout 参数是什么？
+## 60. PyTorch MultiheadAttention 的 dropout 参数是什么？
 
 PyTorch当前文档对：
 
@@ -2026,11 +2026,11 @@ nn.MultiheadAttention(
 
 也就是说：
 
-\[
+$$
 \boxed{
 \text{它作用于 Attention Weights}
 }
-\]
+$$
 
 不是普通：
 
@@ -2038,39 +2038,39 @@ nn.MultiheadAttention(
 
 ---
 
-# 61. Attention Weight Dropout 在哪里？
+## 61. Attention Weight Dropout 在哪里？
 
 标准 Attention：
 
-\[
+$$
 A=
 softmax(S)
-\]
+$$
 
 然后：
 
-\[
+$$
 O=AV
-\]
+$$
 
 Attention dropout概念上对：
 
-\[
+$$
 A
-\]
+$$
 
 施加 Dropout：
 
-\[
+$$
 \tilde A=
 Dropout(A)
-\]
+$$
 
 再：
 
-\[
+$$
 O=\tilde AV
-\]
+$$
 
 所以随机削弱的是：
 
@@ -2078,9 +2078,9 @@ O=\tilde AV
 
 ---
 
-# 62. 这和 Causal Mask 完全不同
+## 62. 这和 Causal Mask 完全不同
 
-### Causal Mask
+#### Causal Mask
 
 某些 connections：
 
@@ -2088,19 +2088,19 @@ O=\tilde AV
 
 例如：
 
-\[
+$$
 j>i
-\]
+$$
 
 weight必须：
 
-\[
+$$
 0
-\]
+$$
 
 ---
 
-### Attention Dropout
+#### Attention Dropout
 
 合法 connection中：
 
@@ -2110,35 +2110,35 @@ weight必须：
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Mask}
 \neq
 \text{Dropout}
 }
-\]
+$$
 
 ---
 
-# 63. Attention Dropout 后 Weight 还会 Sum to 1 吗？
+## 63. Attention Dropout 后 Weight 还会 Sum to 1 吗？
 
 这是一个非常好的细节。
 
 Softmax前：
 
-\[
+$$
 \sum_jA_{ij}=1
-\]
+$$
 
 但如果对：
 
-\[
+$$
 A
-\]
+$$
 
 使用 inverted dropout：
 
-\[
+$$
 \tilde A_{ij}
 =
 \frac{
@@ -2146,13 +2146,13 @@ m_{ij}A_{ij}
 }{
 q
 }
-\]
+$$
 
 那么某一次 forward：
 
-\[
+$$
 \sum_j\tilde A_{ij}
-\]
+$$
 
 一般：
 
@@ -2160,30 +2160,30 @@ q
 
 它只在 expectation上：
 
-\[
+$$
 E[\tilde A_{ij}]=A_{ij}
-\]
+$$
 
 所以：
 
-\[
+$$
 E
 \left[
 \sum_j\tilde A_{ij}
 \right]
 =
 1
-\]
+$$
 
 ---
 
-# 64. 因此 Attention Dropout 后不能再叫 Probability Distribution 吗？
+## 64. 因此 Attention Dropout 后不能再叫 Probability Distribution 吗？
 
 Softmax产生的：
 
-\[
+$$
 A
-\]
+$$
 
 可以解释成：
 
@@ -2191,9 +2191,9 @@ A
 
 Dropout后的：
 
-\[
+$$
 \tilde A
-\]
+$$
 
 单次 training forward不再严格是：
 
@@ -2207,19 +2207,19 @@ Dropout后的：
 
 ---
 
-# 65. 那为什么仍然能乘 V？
+## 65. 那为什么仍然能乘 V？
 
 矩阵乘法只要求：
 
-\[
+$$
 \tilde A
-\]
+$$
 
 和：
 
-\[
+$$
 V
-\]
+$$
 
 shape匹配。
 
@@ -2227,9 +2227,9 @@ shape匹配。
 
 所以：
 
-\[
+$$
 \tilde AV
-\]
+$$
 
 仍然是合法 weighted combination。
 
@@ -2237,36 +2237,36 @@ shape匹配。
 
 ---
 
-# 66. Dropout 会破坏 Attention 的 Convex Combination 性质
+## 66. Dropout 会破坏 Attention 的 Convex Combination 性质
 
 没有 Dropout时：
 
-\[
+$$
 A_{ij}\ge0
-\]
+$$
 
 且：
 
-\[
+$$
 \sum_jA_{ij}=1
-\]
+$$
 
 于是：
 
-\[
+$$
 o_i
 =
 \sum_jA_{ij}v_j
-\]
+$$
 
 位于 Values的 convex hull。
 
 Training attention dropout后：
 
-\[
+$$
 \sum_j\tilde A_{ij}
 \neq1
-\]
+$$
 
 一般成立。
 
@@ -2280,39 +2280,39 @@ Eval时 Dropout关闭，
 
 ---
 
-# 67. ACT 的 Transformer Dropout 具体有几类？
+## 67. ACT 的 Transformer Dropout 具体有几类？
 
 当前官方 ACT `transformer.py` 中至少可以清楚区分：
 
-\[
+$$
 \boxed{
 1.\ Attention\ weight\ dropout
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 2.\ FFN\ hidden\ dropout
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 3.\ Residual\ branch\ output\ dropout
 }
-\]
+$$
 
 这三者用的是同一个 config：
 
-\[
+$$
 dropout
-\]
+$$
 
 但位置不同、作用对象不同。
 
 ---
 
-# 68. ACT 第一类：Attention Weight Dropout
+## 68. ACT 第一类：Attention Weight Dropout
 
 Encoder：
 
@@ -2351,7 +2351,7 @@ PyTorch定义：
 
 ---
 
-# 69. ACT 第二类：FFN Hidden Dropout
+## 69. ACT 第二类：FFN Hidden Dropout
 
 官方：
 
@@ -2374,11 +2374,11 @@ linear2(
 
 所以：
 
-\[
+$$
 512
 \rightarrow
 3200
-\]
+$$
 
 后，
 
@@ -2388,19 +2388,19 @@ linear2(
 
 再：
 
-\[
+$$
 3200\rightarrow512
-\]
+$$
 
 ---
 
-# 70. FFN Dropout 的 Shape
+## 70. FFN Dropout 的 Shape
 
 ACT Encoder某个 layer：
 
-\[
+$$
 [B,1202,3200]
-\]
+$$
 
 的 ReLU hidden activations。
 
@@ -2410,25 +2410,25 @@ ACT Encoder某个 layer：
 
 shape仍：
 
-\[
+$$
 [B,1202,3200]
-\]
+$$
 
 不会删除 token或改变 tensor shape。
 
 ---
 
-# 71. ACT Decoder FFN 同理
+## 71. ACT Decoder FFN 同理
 
-\[
+$$
 [B,k,3200]
-\]
+$$
 
 例如：
 
-\[
+$$
 [B,100,3200]
-\]
+$$
 
 training时随机 element-wise dropout。
 
@@ -2442,7 +2442,7 @@ training时随机 element-wise dropout。
 
 ---
 
-# 72. ACT 第三类：Residual Branch Output Dropout
+## 72. ACT 第三类：Residual Branch Output Dropout
 
 Encoder：
 
@@ -2469,7 +2469,7 @@ src =
 
 ---
 
-# 73. Decoder 有三个 Residual Dropout
+## 73. Decoder 有三个 Residual Dropout
 
 ```python
 tgt =
@@ -2497,15 +2497,15 @@ tgt =
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Decoder每个 sub-layer的 update branch都有 dropout}
 }
-\]
+$$
 
 ---
 
-# 74. 一个 ACT Encoder Layer 的 Dropout Map
+## 74. 一个 ACT Encoder Layer 的 Dropout Map
 
 可以画成：
 
@@ -2550,7 +2550,7 @@ dropout1 on attn output         │
 
 ---
 
-# 75. 一个 ACT Decoder Layer 的 Dropout Map
+## 75. 一个 ACT Decoder Layer 的 Dropout Map
 
 ```text
 tgt
@@ -2590,7 +2590,7 @@ Residual Add + Norm
 
 ---
 
-# 76. 一个 Dropout Rate 同时用于这么多位置，会不会“总共只 Drop 10%”？
+## 76. 一个 Dropout Rate 同时用于这么多位置，会不会“总共只 Drop 10%”？
 
 不是。
 
@@ -2600,9 +2600,9 @@ Residual Add + Norm
 
 所以：
 
-\[
+$$
 0.1
-\]
+$$
 
 不是说：
 
@@ -2610,20 +2610,20 @@ Residual Add + Norm
 
 而是：
 
-> 每个配置为 \(p=0.1\) 的 dropout operation，都以自己的方式对它的输入施加 10% drop probability。
+> 每个配置为 $p=0.1$ 的 dropout operation，都以自己的方式对它的输入施加 10% drop probability。
 
 ---
 
-# 77. Attention Weight Dropout 和 Residual Dropout 会重复发生
+## 77. Attention Weight Dropout 和 Residual Dropout 会重复发生
 
 例如 Encoder Self-Attention：
 
 1. 内部 attention weights可能被 dropout；
 2. 得到 MHA output；
 3. 整个 MHA output又经过：
-   \[
+   $$
    dropout1
-   \]
+   $$
 4. 再加 residual。
 
 所以随机 regularization：
@@ -2632,17 +2632,17 @@ Residual Add + Norm
 
 ---
 
-# 78. 为什么需要两个不同 Dropout？
+## 78. 为什么需要两个不同 Dropout？
 
 它们扰动不同计算对象。
 
-### Attention Weight Dropout
+#### Attention Weight Dropout
 
 扰动：
 
 > “我从哪些 key/value位置读取信息？”
 
-### Residual Output Dropout
+#### Residual Output Dropout
 
 扰动：
 
@@ -2652,33 +2652,33 @@ Residual Add + Norm
 
 ---
 
-# 79. FFN Internal Dropout vs FFN Residual Dropout
+## 79. FFN Internal Dropout vs FFN Residual Dropout
 
 也有两层：
 
-### Internal FFN Dropout
+#### Internal FFN Dropout
 
-\[
+$$
 ReLU(W_1x)
 \rightarrow
 Dropout
 \rightarrow
 W_2
-\]
+$$
 
 扰动：
 
 > 3200-D intermediate hidden features。
 
-### Residual Output Dropout
+#### Residual Output Dropout
 
-\[
+$$
 FFN(x)
 \rightarrow
 Dropout
 \rightarrow
 +x
-\]
+$$
 
 扰动：
 
@@ -2686,7 +2686,7 @@ Dropout
 
 ---
 
-# 80. 所以一个 FFN Branch里有两次 Dropout
+## 80. 所以一个 FFN Branch里有两次 Dropout
 
 ACT代码确实：
 
@@ -2707,27 +2707,27 @@ src =
 
 因此：
 
-\[
+$$
 \boxed{
 \text{hidden dropout}
 +
 \text{residual-output dropout}
 }
-\]
+$$
 
 两次随机操作。
 
 ---
 
-# 81. ACT 论文的 Dropout Rate 是多少？
+## 81. ACT 论文的 Dropout Rate 是多少？
 
 ACT Table III：
 
-\[
+$$
 \boxed{
 dropout=0.1
 }
-\]
+$$
 
 也就是：
 
@@ -2737,7 +2737,7 @@ dropout=0.1
 
 ---
 
-# 82. ACT Code 如何把这个 0.1 传进去？
+## 82. ACT Code 如何把这个 0.1 传进去？
 
 `build_transformer(args)`：
 
@@ -2773,7 +2773,7 @@ TransformerEncoderLayer(...)
 
 ---
 
-# 83. 因此 ACT 的三个 Transformer 都有 Dropout
+## 83. 因此 ACT 的三个 Transformer 都有 Dropout
 
 我们之前已经区分 ACT 中三个 Transformer-related stacks：
 
@@ -2783,15 +2783,15 @@ TransformerEncoderLayer(...)
 
 这些 layer构造都接收：
 
-\[
+$$
 args.dropout
-\]
+$$
 
 所以训练时都存在 dropout regularization。
 
 ---
 
-# 84. ResNet18 Backbone 的 Dropout 也是同一个吗？
+## 84. ResNet18 Backbone 的 Dropout 也是同一个吗？
 
 不能自动这么说。
 
@@ -2807,9 +2807,9 @@ ResNet18 backbone是否有 Dropout：
 
 所以不要把 ACT Table III 的：
 
-\[
+$$
 dropout=0.1
-\]
+$$
 
 理解成：
 
@@ -2817,7 +2817,7 @@ dropout=0.1
 
 ---
 
-# 85. ACT 当前 Transformer 有没有原始论文那种 “Embedding + Positional Encoding Sum Dropout”？
+## 85. ACT 当前 Transformer 有没有原始论文那种 “Embedding + Positional Encoding Sum Dropout”？
 
 当前 DETR-derived `transformer.py` 主要通过：
 
@@ -2839,13 +2839,13 @@ dropout(
 
 所以需要区分：
 
-### Original Transformer paper
+#### Original Transformer paper
 
 明确有：
 
 > embeddings + positional encodings sum dropout。
 
-### Current ACT/DETR-derived implementation
+#### Current ACT/DETR-derived implementation
 
 显式可见的是：
 
@@ -2857,7 +2857,7 @@ dropout(
 
 ---
 
-# 86. Dropout 和 Position Encoding 没有直接数学关系
+## 86. Dropout 和 Position Encoding 没有直接数学关系
 
 Position Encoding：
 
@@ -2879,32 +2879,32 @@ Dropout：
 
 ---
 
-# 87. Dropout 和 LayerNorm 的顺序很重要
+## 87. Dropout 和 LayerNorm 的顺序很重要
 
 原始 Post-LN：
 
-\[
+$$
 \boxed{
 LN(
 x+
 Dropout(F(x))
 )
 }
-\]
+$$
 
 不是：
 
-\[
+$$
 Dropout(
 LN(x+F(x))
 )
-\]
+$$
 
 顺序不同会产生不同 network function。
 
 ---
 
-# 88. 为什么 Residual Dropout 在 Add 前？
+## 88. 为什么 Residual Dropout 在 Add 前？
 
 因为想随机扰动：
 
@@ -2912,17 +2912,17 @@ LN(x+F(x))
 
 而保留：
 
-\[
+$$
 x
-\]
+$$
 
 identity path。
 
 如果 Dropout放到：
 
-\[
+$$
 x+F(x)
-\]
+$$
 
 之后，
 
@@ -2932,25 +2932,25 @@ x+F(x)
 
 ---
 
-# 89. Pre-LN 中 Dropout 又在哪里？
+## 89. Pre-LN 中 Dropout 又在哪里？
 
 ACT Pre-LN：
 
-\[
+$$
 \tilde x=LN(x)
-\]
+$$
 
-\[
+$$
 u=F(\tilde x)
-\]
+$$
 
 然后：
 
-\[
+$$
 \boxed{
 y=x+Dropout(u)
 }
-\]
+$$
 
 所以虽然 Norm位置改变，
 
@@ -2960,7 +2960,7 @@ Dropout仍然主要位于：
 
 ---
 
-# 90. Dropout 会不会改变 Tensor Shape？
+## 90. Dropout 会不会改变 Tensor Shape？
 
 不会。
 
@@ -2968,29 +2968,29 @@ Dropout仍然主要位于：
 
 输入：
 
-\[
+$$
 (*)
-\]
+$$
 
 输出：
 
-\[
+$$
 (*)
-\]
+$$
 
 shape完全一致。
 
 它只是把一些元素变：
 
-\[
+$$
 0
-\]
+$$
 
 并缩放剩余元素。
 
 ---
 
-# 91. 为什么叫 “Drop Units” 但 Shape 不变？
+## 91. 为什么叫 “Drop Units” 但 Shape 不变？
 
 逻辑上：
 
@@ -3010,7 +3010,7 @@ shape完全一致。
 
 ---
 
-# 92. Dropout 会减少实际 FLOPs 吗？
+## 92. Dropout 会减少实际 FLOPs 吗？
 
 标准 dense Dropout通常：
 
@@ -3022,17 +3022,17 @@ GPU通常仍做 dense compute。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Dropout is not primarily an inference/computation-saving technique}
 }
-\]
+$$
 
 它是 regularization。
 
 ---
 
-# 93. 为什么训练还可能更慢？
+## 93. 为什么训练还可能更慢？
 
 除了随机和更长收敛，
 
@@ -3045,7 +3045,7 @@ Dropout本身还增加：
 
 ---
 
-# 94. Dropout 会让模型参数变少吗？
+## 94. Dropout 会让模型参数变少吗？
 
 不会。
 
@@ -3057,7 +3057,7 @@ Dropout本身还增加：
 
 ---
 
-# 95. Dropout 会减小 Effective Capacity 吗？
+## 95. Dropout 会减小 Effective Capacity 吗？
 
 某一次 training forward：
 
@@ -3073,73 +3073,73 @@ Dropout本身还增加：
 
 ---
 
-# 96. Expected Number of Surviving Units
+## 96. Expected Number of Surviving Units
 
 假设：
 
-\[
+$$
 n
-\]
+$$
 
 个 independent elements，
 
 keep probability：
 
-\[
+$$
 q
-\]
+$$
 
 则存活数：
 
-\[
+$$
 K
 \sim
 Binomial(n,q)
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 E[K]=nq
 }
-\]
+$$
 
 例如：
 
-\[
+$$
 n=3200
-\]
+$$
 
-\[
+$$
 q=0.9
-\]
+$$
 
 期望保留：
 
-\[
+$$
 2880
-\]
+$$
 
 个 FFN hidden activation elements。
 
 ---
 
-# 97. 但实际每次不一定恰好保留 2880
+## 97. 但实际每次不一定恰好保留 2880
 
 因为：
 
-\[
+$$
 K
-\]
+$$
 
 是随机变量。
 
 variance：
 
-\[
+$$
 Var(K)=nq(1-q)
-\]
+$$
 
 所以每次 forward survivors会波动。
 
@@ -3153,13 +3153,13 @@ Dropout不是：
 
 ---
 
-# 98. 大 Tensor 时比例会接近 p
+## 98. 大 Tensor 时比例会接近 p
 
 当：
 
-\[
+$$
 n
-\]
+$$
 
 很大，
 
@@ -3167,9 +3167,9 @@ n
 
 实际 dropped fraction通常接近：
 
-\[
+$$
 d
-\]
+$$
 
 例如 3200-D hidden：
 
@@ -3179,38 +3179,38 @@ d
 
 ---
 
-# 99. Dropout Mask 是不是可微？
+## 99. Dropout Mask 是不是可微？
 
 Bernoulli采样本身：
 
-> 不是对概率参数 \(p\) 做普通 pathwise differentiable training。
+> 不是对概率参数 $p$ 做普通 pathwise differentiable training。
 
 但标准 Dropout中：
 
-\[
+$$
 p
-\]
+$$
 
 不是需要训练的 parameter。
 
 对于已采样 mask：
 
-\[
+$$
 m
-\]
+$$
 
 forward：
 
-\[
+$$
 y=
 m\odot x/q
-\]
+$$
 
 对：
 
-\[
+$$
 x
-\]
+$$
 
 是简单线性函数，
 
@@ -3218,27 +3218,27 @@ x
 
 ---
 
-# 100. 为什么这不像 VAE Reparameterization Problem？
+## 100. 为什么这不像 VAE Reparameterization Problem？
 
 VAE中我们想训练：
 
-\[
+$$
 \mu,\sigma
-\]
+$$
 
 它们控制 sampling distribution。
 
 因此采样路径必须让 gradient回到：
 
-\[
+$$
 \mu,\sigma
-\]
+$$
 
 Dropout中：
 
-\[
+$$
 p
-\]
+$$
 
 通常固定，
 
@@ -3252,7 +3252,7 @@ p
 
 ---
 
-# 101. 如果想学习 Dropout Probability 呢？
+## 101. 如果想学习 Dropout Probability 呢？
 
 那就进入：
 
@@ -3270,17 +3270,17 @@ p
 
 ---
 
-# 102. Dropout 和 Data Augmentation 有什么共同点？
+## 102. Dropout 和 Data Augmentation 有什么共同点？
 
 两者都在 training时引入随机变化。
 
-### Data Augmentation
+#### Data Augmentation
 
 扰动：
 
 > input data。
 
-### Dropout
+#### Dropout
 
 扰动：
 
@@ -3294,13 +3294,13 @@ p
 
 ---
 
-# 103. Dropout 和 Weight Decay 有什么区别？
+## 103. Dropout 和 Weight Decay 有什么区别？
 
-### Dropout
+#### Dropout
 
 training-time stochastic activation masking。
 
-### Weight Decay
+#### Weight Decay
 
 直接对参数大小施加优化偏好 / decay。
 
@@ -3317,35 +3317,35 @@ ACT训练也可能同时使用：
 
 ---
 
-# 104. Dropout 和 Noise Injection 有关系吗？
+## 104. Dropout 和 Noise Injection 有关系吗？
 
 有。
 
 Inverted Dropout可写成：
 
-\[
+$$
 y_i=r_ix_i
-\]
+$$
 
 其中随机 multiplier：
 
-\[
+$$
 r_i=
 \begin{cases}
 1/q,&\text{概率 }q\\
 0,&\text{概率 }1-q
 \end{cases}
-\]
+$$
 
 并且：
 
-\[
+$$
 E[r_i]=1
-\]
+$$
 
-\[
+$$
 Var(r_i)=\frac{1-q}{q}
-\]
+$$
 
 所以 Dropout就是一种：
 
@@ -3355,7 +3355,7 @@ Var(r_i)=\frac{1-q}{q}
 
 ---
 
-# 105. 这和 Gaussian Noise 有什么联系？
+## 105. 这和 Gaussian Noise 有什么联系？
 
 原始 Dropout论文还讨论：
 
@@ -3363,7 +3363,7 @@ Var(r_i)=\frac{1-q}{q}
 
 如果：
 
-\[
+$$
 r_g
 \sim
 \mathcal N
@@ -3371,7 +3371,7 @@ r_g
 1,
 \frac{1-q}{q}
 \right)
-\]
+$$
 
 它可以和 inverted Bernoulli noise具有相同：
 
@@ -3386,13 +3386,13 @@ r_g
 
 ---
 
-# 106. 但 Bernoulli Dropout 最特殊的地方是什么？
+## 106. 但 Bernoulli Dropout 最特殊的地方是什么？
 
 它真的会产生：
 
-\[
+$$
 0
-\]
+$$
 
 也就是某些 activation在该 forward：
 
@@ -3404,7 +3404,7 @@ r_g
 
 ---
 
-# 107. 为什么 Dropout 对小数据集可能特别有帮助？
+## 107. 为什么 Dropout 对小数据集可能特别有帮助？
 
 当数据少，
 
@@ -3422,9 +3422,9 @@ ACT每个 task训练 demonstration数量并不巨大，
 
 使用：
 
-\[
+$$
 dropout=0.1
-\]
+$$
 
 也是其 regularization recipe的一部分。
 
@@ -3442,57 +3442,57 @@ dropout=0.1
 
 ---
 
-# 108. 为什么 ACT Dropout 只有 0.1，而经典 MLP 常听到 0.5？
+## 108. 为什么 ACT Dropout 只有 0.1，而经典 MLP 常听到 0.5？
 
 Dropout最早很多 fully-connected network experiments常使用较大 dropout。
 
 Transformer领域常见更小：
 
-\[
+$$
 0.1
-\]
+$$
 
 因为 architecture、data、normalization和optimization不同。
 
 没有普遍规则：
 
-\[
+$$
 \boxed{
 p=0.5\text{ 才叫标准 Dropout}
 }
-\]
+$$
 
 rate是 architecture-specific hyperparameter。
 
 ---
 
-# 109. ACT 0.1 意味着 Keep Probability 是多少？
+## 109. ACT 0.1 意味着 Keep Probability 是多少？
 
 PyTorch：
 
-\[
+$$
 d=0.1
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 q=0.9
 }
-\]
+$$
 
 训练时保留下来的 element：
 
-\[
+$$
 \times
 \frac1{0.9}
 \approx1.1111
-\]
+$$
 
 ---
 
-# 110. 不要把 ACT 论文的 dropout=0.1 当成“Retention Probability 0.1”
+## 110. 不要把 ACT 论文的 dropout=0.1 当成“Retention Probability 0.1”
 
 这是记号最危险的地方。
 
@@ -3504,9 +3504,9 @@ nn.Dropout(dropout)
 
 所以：
 
-\[
+$$
 0.1
-\]
+$$
 
 是：
 
@@ -3520,49 +3520,49 @@ nn.Dropout(dropout)
 
 而是平均保留：
 
-\[
+$$
 90\%
-\]
+$$
 
 ---
 
-# 111. 为什么原始 Dropout 论文 p 和 PyTorch p 相反？
+## 111. 为什么原始 Dropout 论文 p 和 PyTorch p 相反？
 
 这是历史 API notation差异。
 
 原论文常定义：
 
-\[
+$$
 p=\text{probability of retaining a unit}
-\]
+$$
 
 PyTorch API定义：
 
-\[
+$$
 p=\text{probability of zeroing an element}
-\]
+$$
 
 所以读公式必须先问：
 
-> 这里的 \(p\) 到底是 keep 还是 drop？
+> 这里的 $p$ 到底是 keep 还是 drop？
 
 ---
 
-# 112. 最安全的写法
+## 112. 最安全的写法
 
 本文建议：
 
-\[
+$$
 d=p_{\text{drop}}
-\]
+$$
 
-\[
+$$
 q=p_{\text{keep}}=1-d
-\]
+$$
 
 于是永远写：
 
-\[
+$$
 \boxed{
 y=
 \frac{
@@ -3573,37 +3573,37 @@ q
 \qquad
 m_i\sim Bernoulli(q)
 }
-\]
+$$
 
 这样不容易混。
 
 ---
 
-# 113. Dropout 和 Softmax Probability 的 p 完全无关
+## 113. Dropout 和 Softmax Probability 的 p 完全无关
 
 注意：
 
 Dropout的：
 
-\[
+$$
 p
-\]
+$$
 
 只是一个超参数 probability。
 
 Attention Softmax输出：
 
-\[
+$$
 \alpha_{ij}
-\]
+$$
 
 也是 weights/probabilities-like values。
 
 二者不是同一个：
 
-\[
+$$
 p
-\]
+$$
 
 概念。
 
@@ -3613,37 +3613,37 @@ p
 
 ---
 
-# 114. 一个 Attention Dropout 数值例子
+## 114. 一个 Attention Dropout 数值例子
 
 Softmax后：
 
-\[
+$$
 A=
 [0.2,0.3,0.5]
-\]
+$$
 
 drop probability：
 
-\[
+$$
 d=0.1
-\]
+$$
 
 keep：
 
-\[
+$$
 q=0.9
-\]
+$$
 
 假设 mask：
 
-\[
+$$
 m=
 [1,0,1]
-\]
+$$
 
 则：
 
-\[
+$$
 \tilde A
 =
 \frac{
@@ -3651,55 +3651,55 @@ m=
 }{
 0.9
 }
-\]
+$$
 
-\[
+$$
 \approx
 [
 0.222,
 0,
 0.556
 ]
-\]
+$$
 
 sum：
 
-\[
+$$
 0.778
-\]
+$$
 
 不是：
 
-\[
+$$
 1
-\]
+$$
 
 ---
 
-# 115. 另一种 Mask
+## 115. 另一种 Mask
 
 如果：
 
-\[
+$$
 m=[1,1,1]
-\]
+$$
 
 则：
 
-\[
+$$
 \tilde A=
 [
 0.222,
 0.333,
 0.556
 ]
-\]
+$$
 
 sum：
 
-\[
+$$
 1.111
-\]
+$$
 
 所以单次：
 
@@ -3707,13 +3707,13 @@ sum：
 
 但 expectation：
 
-\[
+$$
 E[\tilde A]=A
-\]
+$$
 
 ---
 
-# 116. 为什么 Attention Dropout 不重新 Softmax？
+## 116. 为什么 Attention Dropout 不重新 Softmax？
 
 标准 implementation一般就是：
 
@@ -3729,7 +3729,7 @@ E[\tilde A]=A
 
 ---
 
-# 117. Dropout 是否一定独立 Element-Wise？
+## 117. Dropout 是否一定独立 Element-Wise？
 
 标准 `nn.Dropout`：
 
@@ -3753,7 +3753,7 @@ E[\tilde A]=A
 
 ---
 
-# 118. Transformer 中常说 Stochastic Depth 又是什么？
+## 118. Transformer 中常说 Stochastic Depth 又是什么？
 
 它不是标准 element-wise Dropout。
 
@@ -3763,9 +3763,9 @@ Stochastic Depth / DropPath：
 
 和：
 
-\[
+$$
 nn.Dropout
-\]
+$$
 
 逐 element zeroing不同。
 
@@ -3779,7 +3779,7 @@ ACT canonical Transformer代码这里用的是：
 
 ---
 
-# 119. 为什么这个区分重要？
+## 119. 为什么这个区分重要？
 
 如果看到：
 
@@ -3799,7 +3799,7 @@ DropPath(0.1)
 
 ---
 
-# 120. Dropout 和 Attention Mask 是否可以同时存在？
+## 120. Dropout 和 Attention Mask 是否可以同时存在？
 
 当然可以。
 
@@ -3826,13 +3826,13 @@ training时仍可能被 attention dropout随机抑制
 
 ---
 
-# 121. Mask 的 0 和 Dropout 的 0 含义不同
+## 121. Mask 的 0 和 Dropout 的 0 含义不同
 
-### Causal/Padding Mask产生的 0
+#### Causal/Padding Mask产生的 0
 
 > 结构上非法。
 
-### Dropout产生的 0
+#### Dropout产生的 0
 
 > 本来合法，但这次 training随机屏蔽。
 
@@ -3842,7 +3842,7 @@ training时仍可能被 attention dropout随机抑制
 
 ---
 
-# 122. ACT Decoder 没有 Causal Mask，但仍有 Attention Dropout
+## 122. ACT Decoder 没有 Causal Mask，但仍有 Attention Dropout
 
 这是一个很好例子。
 
@@ -3856,17 +3856,17 @@ ACT action-slot Self-Attention：
 
 所以：
 
-\[
+$$
 \boxed{
 \text{non-causal}
 \neq
 \text{no dropout}
 }
-\]
+$$
 
 ---
 
-# 123. ACT Inference 时 Attention Dropout 会怎样？
+## 123. ACT Inference 时 Attention Dropout 会怎样？
 
 调用：
 
@@ -3880,10 +3880,10 @@ MultiheadAttention内部 dropout关闭。
 
 所以：
 
-\[
+$$
 A=
 softmax(S)
-\]
+$$
 
 正常完整使用所有合法 routing weights。
 
@@ -3893,12 +3893,12 @@ softmax(S)
 
 ---
 
-# 124. ACT Inference 是不是因此完全 Deterministic？
+## 124. ACT Inference 是不是因此完全 Deterministic？
 
 在 canonical ACT inference中：
 
 - Dropout关闭；
-- \(z=0\)；
+- $z=0$；
 - model.eval()；
 - 没有随机 action sampling。
 
@@ -3914,7 +3914,7 @@ softmax(S)
 
 ---
 
-# 125. 训练时同一个 Sample为什么 Loss会略有不同？
+## 125. 训练时同一个 Sample为什么 Loss会略有不同？
 
 即使：
 
@@ -3924,25 +3924,25 @@ softmax(S)
 
 不同 Dropout masks也可能使：
 
-\[
+$$
 \hat A
-\]
+$$
 
 不同，
 
 从而：
 
-\[
+$$
 L
-\]
+$$
 
 不同。
 
 ACT训练还有 CVAE：
 
-\[
+$$
 z=\mu+\sigma\epsilon
-\]
+$$
 
 本身也有 sampling随机性。
 
@@ -3954,15 +3954,15 @@ z=\mu+\sigma\epsilon
 
 ---
 
-# 126. Dropout 和 CVAE Latent Noise作用完全不同
+## 126. Dropout 和 CVAE Latent Noise作用完全不同
 
-### CVAE \(z\)
+#### CVAE $z$
 
 承担：
 
 > latent variation / conditional generative modeling。
 
-### Dropout
+#### Dropout
 
 承担：
 
@@ -3970,7 +3970,7 @@ z=\mu+\sigma\epsilon
 
 推理时：
 
-- ACT \(z\rightarrow0\) 是模型设计；
+- ACT $z\rightarrow0$ 是模型设计；
 - Dropout关闭是标准 evaluation behavior。
 
 不要把二者都叫：
@@ -3979,13 +3979,13 @@ z=\mu+\sigma\epsilon
 
 ---
 
-# 127. 为什么 Dropout 不是 Latent Variable Model？
+## 127. 为什么 Dropout 不是 Latent Variable Model？
 
 Dropout mask：
 
-\[
+$$
 m
-\]
+$$
 
 当然数学上也是随机变量。
 
@@ -3999,21 +3999,21 @@ m
 
 CVAE的：
 
-\[
+$$
 z
-\]
+$$
 
 则是 probabilistic model中明确的 latent variable。
 
 ---
 
-# 128. Dropout Mask 会进入 Loss 吗？
+## 128. Dropout Mask 会进入 Loss 吗？
 
 通常没有显式：
 
-\[
+$$
 L_{\text{dropout}}
-\]
+$$
 
 loss项。
 
@@ -4025,43 +4025,43 @@ Dropout通过：
 
 所以它是一种：
 
-\[
+$$
 \boxed{
 \text{implicit stochastic regularization mechanism}
 }
-\]
+$$
 
 而不是像：
 
-\[
+$$
 L_2
-\]
+$$
 
 那样额外加一个显式 penalty term。
 
 ---
 
-# 129. Weight Decay 才更像显式/优化级参数约束
+## 129. Weight Decay 才更像显式/优化级参数约束
 
 例如：
 
-\[
+$$
 L+\lambda\|W\|^2
-\]
+$$
 
 经典 L2 regularization具有显式 penalty形式。
 
 Dropout没有简单：
 
-\[
+$$
 +\lambda L_{\text{drop}}
-\]
+$$
 
 这样的通用训练目标。
 
 ---
 
-# 130. 为什么 Dropout 有时会降低 Training Performance？
+## 130. 为什么 Dropout 有时会降低 Training Performance？
 
 因为训练任务被人为变难：
 
@@ -4078,7 +4078,7 @@ Dropout没有简单：
 
 ---
 
-# 131. Dropout 会不会总是提升 Test Performance？
+## 131. Dropout 会不会总是提升 Test Performance？
 
 不会。
 
@@ -4097,7 +4097,7 @@ Dropout可能：
 
 ---
 
-# 132. 为什么现代某些大模型 Dropout 很低甚至 0？
+## 132. 为什么现代某些大模型 Dropout 很低甚至 0？
 
 大数据、大规模训练和其他 regularization条件下，
 
@@ -4117,17 +4117,17 @@ classic dropout不一定必要。
 
 ---
 
-# 133. ACT 为什么仍然使用 0.1？
+## 133. ACT 为什么仍然使用 0.1？
 
 ACT论文的任务级数据规模远小于大型语言模型。
 
 作者在 Table III明确采用：
 
-\[
+$$
 \boxed{
 dropout=0.1
 }
-\]
+$$
 
 作为 architecture/training hyperparameter。
 
@@ -4141,7 +4141,7 @@ dropout=0.1
 
 ---
 
-# 134. Dropout 在 Validation 时应该开还是关？
+## 134. Dropout 在 Validation 时应该开还是关？
 
 标准 validation / evaluation：
 
@@ -4161,7 +4161,7 @@ model.eval()
 
 ---
 
-# 135. ACT Training Code 中的 `actions is not None` 和 Dropout Mode不是一回事
+## 135. ACT Training Code 中的 `actions is not None` 和 Dropout Mode不是一回事
 
 在 `detr_vae.py`：
 
@@ -4196,7 +4196,7 @@ model.eval()
 
 ---
 
-# 136. 为什么这个区别很重要？
+## 136. 为什么这个区别很重要？
 
 你可以理论上：
 
@@ -4217,17 +4217,17 @@ Dropout可能仍打开。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{algorithmic branch flag}
 \neq
 \text{PyTorch module training mode}
 }
-\]
+$$
 
 ---
 
-# 137. 一个最小 PyTorch Dropout 实验
+## 137. 一个最小 PyTorch Dropout 实验
 
 ```python
 import torch
@@ -4256,15 +4256,15 @@ print(drop(x))
 
 因为：
 
-\[
+$$
 1/(1-0.5)=2
-\]
+$$
 
 所以 retained elements乘 2。
 
 ---
 
-# 138. 然后 Eval
+## 138. 然后 Eval
 
 ```python
 drop.eval()
@@ -4280,15 +4280,15 @@ print(drop(x))
 
 Dropout变：
 
-\[
+$$
 \boxed{
 Identity
 }
-\]
+$$
 
 ---
 
-# 139. 一个从零实现 Inverted Dropout
+## 139. 一个从零实现 Inverted Dropout
 
 ```python
 def dropout(x, p_drop, training):
@@ -4313,36 +4313,36 @@ def dropout(x, p_drop, training):
 
 ---
 
-# 140. 为什么这个实现与 PyTorch思想一致？
+## 140. 为什么这个实现与 PyTorch思想一致？
 
 因为：
 
-\[
+$$
 mask_i
 \sim Bernoulli(q)
-\]
+$$
 
 输出：
 
-\[
+$$
 \frac{
 mask_i x_i
 }{
 q
 }
-\]
+$$
 
 training expectation：
 
-\[
+$$
 x_i
-\]
+$$
 
 evaluation：
 
-\[
+$$
 x_i
-\]
+$$
 
 所以 scale对齐。
 
@@ -4352,19 +4352,19 @@ x_i
 
 ---
 
-# 141. 为什么不能写成 mask*x 然后 eval 原样 x？
+## 141. 为什么不能写成 mask*x 然后 eval 原样 x？
 
 因为训练 expectation：
 
-\[
+$$
 qx
-\]
+$$
 
 测试：
 
-\[
+$$
 x
-\]
+$$
 
 发生 scale mismatch。
 
@@ -4374,7 +4374,7 @@ x
 
 ---
 
-# 142. 为什么不能训练和测试都 Dropout？
+## 142. 为什么不能训练和测试都 Dropout？
 
 可以作为特殊方法，
 
@@ -4390,19 +4390,19 @@ MC Dropout是有意这样做的扩展。
 
 ---
 
-# 143. 为什么不能训练和测试都不 Scale？
+## 143. 为什么不能训练和测试都不 Scale？
 
 那会造成：
 
-\[
+$$
 E[y_{\text{train}}]=qx
-\]
+$$
 
 但：
 
-\[
+$$
 y_{\text{test}}=x
-\]
+$$
 
 后续 layers在测试突然接收更大 activations。
 
@@ -4410,22 +4410,22 @@ y_{\text{test}}=x
 
 ---
 
-# 144. Expectation 对齐后 Variance 还不同
+## 144. Expectation 对齐后 Variance 还不同
 
 训练：
 
-\[
+$$
 Var(y_i)
 =
 x_i^2
 \frac{d}{1-d}
-\]
+$$
 
 evaluation：
 
-\[
+$$
 Var_{\text{dropout}}=0
-\]
+$$
 
 因为不再采样 mask。
 
@@ -4435,17 +4435,17 @@ Var_{\text{dropout}}=0
 
 只是：
 
-\[
+$$
 \boxed{
 \text{mean scale aligned}
 }
-\]
+$$
 
 training仍有额外 stochastic variance。
 
 ---
 
-# 145. 这正是 Regularization Noise 的来源
+## 145. 这正是 Regularization Noise 的来源
 
 如果 train/eval完全一样，
 
@@ -4461,36 +4461,36 @@ Expectation scaling只是避免：
 
 ---
 
-# 146. Dropout 和 Noise 的一个非常精确表述
+## 146. Dropout 和 Noise 的一个非常精确表述
 
 训练时：
 
-\[
+$$
 y_i=r_ix_i
-\]
+$$
 
 其中：
 
-\[
+$$
 r_i
 =
 \begin{cases}
 0,&\text{概率 }d\\
 1/(1-d),&\text{概率 }1-d
 \end{cases}
-\]
+$$
 
 满足：
 
-\[
+$$
 \boxed{
 E[r_i]=1
 }
-\]
+$$
 
 以及：
 
-\[
+$$
 \boxed{
 Var(r_i)
 =
@@ -4500,7 +4500,7 @@ d
 1-d
 }
 }
-\]
+$$
 
 所以它是：
 
@@ -4508,19 +4508,19 @@ d
 
 ---
 
-# 147. 为什么这个表达非常有用？
+## 147. 为什么这个表达非常有用？
 
 它把 Dropout从“删神经元”的故事，
 
 提升成严格数学：
 
-\[
+$$
 \boxed{
 \text{activation}
 \times
 \text{random multiplicative variable}
 }
-\]
+$$
 
 这样很容易分析：
 
@@ -4531,19 +4531,19 @@ d
 
 ---
 
-# 148. Dropout 对 Negative Activation 一样适用
+## 148. Dropout 对 Negative Activation 一样适用
 
 例如：
 
-\[
+$$
 x=-4
-\]
+$$
 
 保留后：
 
-\[
+$$
 -4/q
-\]
+$$
 
 仍为负。
 
@@ -4555,19 +4555,19 @@ Dropout没有：
 
 ---
 
-# 149. Dropout 和 ReLU 的 0 完全不同
+## 149. Dropout 和 ReLU 的 0 完全不同
 
-### ReLU 输出 0
+#### ReLU 输出 0
 
 因为：
 
-\[
+$$
 x\le0
-\]
+$$
 
 deterministically。
 
-### Dropout 输出 0
+#### Dropout 输出 0
 
 因为：
 
@@ -4575,15 +4575,15 @@ deterministically。
 
 即使 activation：
 
-\[
+$$
 100
-\]
+$$
 
 也可能随机变 0。
 
 ---
 
-# 150. Dropout 后为 0，不代表这个 Feature“不重要”
+## 150. Dropout 后为 0，不代表这个 Feature“不重要”
 
 可能只是：
 
@@ -4595,7 +4595,7 @@ deterministically。
 
 ---
 
-# 151. 为什么 Dropout 不是 Feature Selection？
+## 151. 为什么 Dropout 不是 Feature Selection？
 
 Feature selection通常想识别：
 
@@ -4611,7 +4611,7 @@ Dropout则：
 
 ---
 
-# 152. 为什么 Dropout 可能减少依赖单一 Camera Feature？
+## 152. 为什么 Dropout 可能减少依赖单一 Camera Feature？
 
 在 ACT里，
 
@@ -4633,7 +4633,7 @@ attention和FFN内部有 dropout。
 
 ---
 
-# 153. 如果想 Randomly Drop Whole Camera 呢？
+## 153. 如果想 Randomly Drop Whole Camera 呢？
 
 那应该设计：
 
@@ -4651,19 +4651,19 @@ attention和FFN内部有 dropout。
 
 ---
 
-# 154. 为什么 Attention Dropout 也不是 Randomly Delete Entire Token？
+## 154. 为什么 Attention Dropout 也不是 Randomly Delete Entire Token？
 
 对 attention matrix：
 
-\[
+$$
 A_{ij}
-\]
+$$
 
 随机drop的是：
 
 > 某些 query-key routing weight entries。
 
-一个 memory token \(j\)：
+一个 memory token $j$：
 
 > 可能对 query 1被drop，
 
@@ -4675,7 +4675,7 @@ A_{ij}
 
 ---
 
-# 155. Standard Dropout 和 Token Dropout 不同
+## 155. Standard Dropout 和 Token Dropout 不同
 
 Token Dropout：
 
@@ -4693,27 +4693,27 @@ Standard Transformer Dropout：
 
 ---
 
-# 156. 为什么 Dropout 可以和 Residual 很好地组合？
+## 156. 为什么 Dropout 可以和 Residual 很好地组合？
 
 因为：
 
-\[
+$$
 y=x+Dropout(F(x))
-\]
+$$
 
 即使这次：
 
-\[
+$$
 F(x)
-\]
+$$
 
 有部分 update被随机屏蔽，
 
 input：
 
-\[
+$$
 x
-\]
+$$
 
 仍直接存在。
 
@@ -4721,7 +4721,7 @@ x
 
 ---
 
-# 157. 这是不是等于 Stochastic Depth？
+## 157. 这是不是等于 Stochastic Depth？
 
 不是。
 
@@ -4737,45 +4737,45 @@ Stochastic Depth：
 
 ---
 
-# 158. 为什么 Residual Dropout 不会永久改变 Residual Stream Dimension？
+## 158. 为什么 Residual Dropout 不会永久改变 Residual Stream Dimension？
 
 因为：
 
-\[
+$$
 Dropout(F(x))
-\]
+$$
 
 shape仍和：
 
-\[
+$$
 F(x)
-\]
+$$
 
 相同。
 
 所以仍可：
 
-\[
+$$
 x+
 Dropout(F(x))
-\]
+$$
 
 element-wise add。
 
 ---
 
-# 159. ACT 的 Dropout 会不会影响 z=0 的含义？
+## 159. ACT 的 Dropout 会不会影响 z=0 的含义？
 
 训练时 policy memory受：
 
-- latent \(z\)；
+- latent $z$；
 - dropout；
 
 共同影响。
 
 推理：
 
-- \(z=0\)；
+- $z=0$；
 - dropout off。
 
 所以：
@@ -4788,20 +4788,20 @@ Dropout只是另一条 training regularization机制。
 
 ---
 
-# 160. Dropout 是否进入 KL Loss？
+## 160. Dropout 是否进入 KL Loss？
 
 不直接。
 
 KL：
 
-\[
+$$
 D_{KL}
 (
 q_\phi(z|x)
 \|
 p(z)
 )
-\]
+$$
 
 来自 CVAE latent distributions。
 
@@ -4809,9 +4809,9 @@ Dropout会改变 network hidden activations，
 
 因此间接可能影响：
 
-\[
+$$
 \mu,\log\sigma^2
-\]
+$$
 
 和最终 loss。
 
@@ -4819,7 +4819,7 @@ Dropout会改变 network hidden activations，
 
 ---
 
-# 161. Dropout 会影响 CVAE Encoder 的 μ 和 logvar 吗？
+## 161. Dropout 会影响 CVAE Encoder 的 μ 和 logvar 吗？
 
 训练时：
 
@@ -4829,13 +4829,13 @@ Dropout会改变 network hidden activations，
 
 同一 `[CLS]+qpos+actions` 输入：
 
-> 不同 dropout masks可能产生略不同 \(h_{CLS}\)。
+> 不同 dropout masks可能产生略不同 $h_{CLS}$。
 
 于是：
 
-\[
+$$
 \mu,\log\sigma^2
-\]
+$$
 
 也可能略变。
 
@@ -4843,7 +4843,7 @@ Dropout会改变 network hidden activations，
 
 ---
 
-# 162. Inference 时 CVAE Encoder 本来就不用
+## 162. Inference 时 CVAE Encoder 本来就不用
 
 ACT inference：
 
@@ -4859,7 +4859,7 @@ Policy Encoder / Decoder则仍存在，
 
 ---
 
-# 163. 为什么机器人推理通常不希望 Dropout随机开着？
+## 163. 为什么机器人推理通常不希望 Dropout随机开着？
 
 实际控制需要：
 
@@ -4873,7 +4873,7 @@ action可能产生不必要 stochastic jitter。
 
 ---
 
-# 164. 当然机器人策略也可以有 Intentional Stochasticity
+## 164. 当然机器人策略也可以有 Intentional Stochasticity
 
 例如：
 
@@ -4893,7 +4893,7 @@ action可能产生不必要 stochastic jitter。
 
 ---
 
-# 165. Dropout 是否会让 Policy 更鲁棒？
+## 165. Dropout 是否会让 Policy 更鲁棒？
 
 作为 regularization目标：
 
@@ -4911,7 +4911,7 @@ action可能产生不必要 stochastic jitter。
 
 ---
 
-# 166. 常见误解一：Dropout 永久删除神经元
+## 166. 常见误解一：Dropout 永久删除神经元
 
 **错误。**
 
@@ -4919,7 +4919,7 @@ action可能产生不必要 stochastic jitter。
 
 ---
 
-# 167. 常见误解二：Dropout 会减少模型参数量
+## 167. 常见误解二：Dropout 会减少模型参数量
 
 **错误。**
 
@@ -4927,7 +4927,7 @@ action可能产生不必要 stochastic jitter。
 
 ---
 
-# 168. 常见误解三：Dropout 会让推理更快
+## 168. 常见误解三：Dropout 会让推理更快
 
 标准 Dropout推理时直接关闭，
 
@@ -4935,37 +4935,37 @@ action可能产生不必要 stochastic jitter。
 
 ---
 
-# 169. 常见误解四：PyTorch p=0.1 表示保留 10%
+## 169. 常见误解四：PyTorch p=0.1 表示保留 10%
 
 **错误。**
 
 PyTorch：
 
-\[
+$$
 p=\text{drop probability}
-\]
+$$
 
 所以保留：
 
-\[
+$$
 90\%
-\]
+$$
 
 ---
 
-# 170. 常见误解五：原始 Dropout 论文的 p 和 PyTorch p 一样
+## 170. 常见误解五：原始 Dropout 论文的 p 和 PyTorch p 一样
 
 **不一定。**
 
 经典论文常用：
 
-\[
+$$
 p=\text{retention probability}
-\]
+$$
 
 ---
 
-# 171. 常见误解六：训练时 Drop 10%，剩下值保持原大小
+## 171. 常见误解六：训练时 Drop 10%，剩下值保持原大小
 
 PyTorch inverted dropout：
 
@@ -4973,29 +4973,29 @@ PyTorch inverted dropout：
 
 保留下来的值乘：
 
-\[
+$$
 1/0.9
-\]
+$$
 
 ---
 
-# 172. 常见误解七：乘 1/(1-p) 是为了让每次输出完全等于原输出
+## 172. 常见误解七：乘 1/(1-p) 是为了让每次输出完全等于原输出
 
 **错误。**
 
 只保证：
 
-\[
+$$
 \boxed{
 E[y]=x
 }
-\]
+$$
 
 单次 forward仍随机不同。
 
 ---
 
-# 173. 常见误解八：Expectation 一样说明 Train/Test Network完全一样
+## 173. 常见误解八：Expectation 一样说明 Train/Test Network完全一样
 
 **错误。**
 
@@ -5003,21 +5003,21 @@ training还有非零 dropout variance。
 
 ---
 
-# 174. 常见误解九：局部 expectation 对齐，所以整个 nonlinear network预测 expectation严格对齐
+## 174. 常见误解九：局部 expectation 对齐，所以整个 nonlinear network预测 expectation严格对齐
 
 **错误。**
 
 一般：
 
-\[
+$$
 f(E[X])
 \neq
 E[f(X)]
-\]
+$$
 
 ---
 
-# 175. 常见误解十：Dropout Test-Time Model是所有子网络预测的精确平均
+## 175. 常见误解十：Dropout Test-Time Model是所有子网络预测的精确平均
 
 深 nonlinear network中：
 
@@ -5029,7 +5029,7 @@ E[f(X)]
 
 ---
 
-# 176. 常见误解十一：Dropout 只有“防 co-adaptation”一个解释
+## 176. 常见误解十一：Dropout 只有“防 co-adaptation”一个解释
 
 **不完整。**
 
@@ -5043,7 +5043,7 @@ E[f(X)]
 
 ---
 
-# 177. 常见误解十二：Dropout Mask 是模型学出来的
+## 177. 常见误解十二：Dropout Mask 是模型学出来的
 
 **错误。**
 
@@ -5051,21 +5051,21 @@ E[f(X)]
 
 ---
 
-# 178. 常见误解十三：Dropout Probability 会被 Adam 优化
+## 178. 常见误解十三：Dropout Probability 会被 Adam 优化
 
 **错误。**
 
 标准：
 
-\[
+$$
 p
-\]
+$$
 
 是 hyperparameter。
 
 ---
 
-# 179. 常见误解十四：`torch.no_grad()` 会关闭 Dropout
+## 179. 常见误解十四：`torch.no_grad()` 会关闭 Dropout
 
 **错误。**
 
@@ -5077,7 +5077,7 @@ model.eval()
 
 ---
 
-# 180. 常见误解十五：`model.eval()` 会关闭 Autograd
+## 180. 常见误解十五：`model.eval()` 会关闭 Autograd
 
 **错误。**
 
@@ -5091,7 +5091,7 @@ torch.no_grad()
 
 ---
 
-# 181. 常见误解十六：`model.eval()` 会关闭 LayerNorm
+## 181. 常见误解十六：`model.eval()` 会关闭 LayerNorm
 
 **错误。**
 
@@ -5099,7 +5099,7 @@ LayerNorm继续正常计算当前输入 statistics。
 
 ---
 
-# 182. 常见误解十七：Attention Dropout 就是 Causal Mask
+## 182. 常见误解十七：Attention Dropout 就是 Causal Mask
 
 **错误。**
 
@@ -5109,7 +5109,7 @@ LayerNorm继续正常计算当前输入 statistics。
 
 ---
 
-# 183. 常见误解十八：Attention Dropout 后权重仍严格 Sum=1
+## 183. 常见误解十八：Attention Dropout 后权重仍严格 Sum=1
 
 **错误。**
 
@@ -5117,7 +5117,7 @@ inverted dropout后单次 row sum一般不等于1。
 
 ---
 
-# 184. 常见误解十九：Attention Dropout 会删除完整 Token
+## 184. 常见误解十九：Attention Dropout 会删除完整 Token
 
 **不一定。**
 
@@ -5127,7 +5127,7 @@ PyTorch MHA的 dropout作用于：
 
 ---
 
-# 185. 常见误解二十：ACT dropout=0.1只在 FFN里使用一次
+## 185. 常见误解二十：ACT dropout=0.1只在 FFN里使用一次
 
 **错误。**
 
@@ -5139,7 +5139,7 @@ PyTorch MHA的 dropout作用于：
 
 ---
 
-# 186. 常见误解二十一：ACT Transformer所有 Dropout共享同一 Random Mask
+## 186. 常见误解二十一：ACT Transformer所有 Dropout共享同一 Random Mask
 
 **错误。**
 
@@ -5147,7 +5147,7 @@ PyTorch MHA的 dropout作用于：
 
 ---
 
-# 187. 常见误解二十二：ACT dropout=0.1就是每次精确删除10%元素
+## 187. 常见误解二十二：ACT dropout=0.1就是每次精确删除10%元素
 
 **错误。**
 
@@ -5157,7 +5157,7 @@ PyTorch MHA的 dropout作用于：
 
 ---
 
-# 188. 常见误解二十三：Dropout 会改变 Tensor Shape
+## 188. 常见误解二十三：Dropout 会改变 Tensor Shape
 
 **错误。**
 
@@ -5167,7 +5167,7 @@ shape不变。
 
 ---
 
-# 189. 常见误解二十四：Dropout 是一种 Attention Mechanism
+## 189. 常见误解二十四：Dropout 是一种 Attention Mechanism
 
 **错误。**
 
@@ -5179,37 +5179,37 @@ Dropout是通用 regularization method。
 
 ---
 
-# 190. 常见误解二十五：Dropout 和 CVAE z 都是随机，所以本质一样
+## 190. 常见误解二十五：Dropout 和 CVAE z 都是随机，所以本质一样
 
 **错误。**
 
-\(z\)属于 generative latent modeling。
+$z$属于 generative latent modeling。
 
 Dropout mask属于 regularization noise。
 
 ---
 
-# 191. 用一个公式记住 PyTorch Dropout
+## 191. 用一个公式记住 PyTorch Dropout
 
 设：
 
-\[
+$$
 d
 =
 p_{\text{drop}}
-\]
+$$
 
-\[
+$$
 q=1-d
-\]
+$$
 
 training：
 
-\[
+$$
 m_i\sim Bernoulli(q)
-\]
+$$
 
-\[
+$$
 \boxed{
 y_i
 =
@@ -5219,31 +5219,31 @@ m_ix_i
 q
 }
 }
-\]
+$$
 
 evaluation：
 
-\[
+$$
 \boxed{
 y_i=x_i
 }
-\]
+$$
 
 ---
 
-# 192. 用两个公式理解它为什么这样 Scale
+## 192. 用两个公式理解它为什么这样 Scale
 
 Expectation：
 
-\[
+$$
 \boxed{
 E[y_i]=x_i
 }
-\]
+$$
 
 Variance：
 
-\[
+$$
 \boxed{
 Var(y_i)
 =
@@ -5254,7 +5254,7 @@ d
 1-d
 }
 }
-\]
+$$
 
 所以：
 
@@ -5266,31 +5266,31 @@ d
 
 ---
 
-# 193. 用一句话理解 Dropout
+## 193. 用一句话理解 Dropout
 
 > **Dropout 是一种 training-time stochastic regularization：它用 Bernoulli mask随机屏蔽 activation 或某些内部连接贡献，并把保留下来的 activation按 keep probability 的倒数进行缩放，使训练期随机输出在局部 expectation 上与完整网络保持同一尺度；模型因此必须在许多随机扰动的 computation paths 下都完成任务，而标准 inference 时关闭 Dropout，直接使用完整 deterministic network。**
 
 ---
 
-# 194. 用一句话理解为什么训练随机、推理不随机
+## 194. 用一句话理解为什么训练随机、推理不随机
 
 > **训练时随机性本身就是 regularization：它故意让模型不能过度依赖某条固定内部路径；而推理阶段我们的目标已经不是继续 regularize，而是使用训练出的全部能力进行稳定预测，所以 inverted dropout把 scale compensation提前放在 training，从而让 evaluation 可以直接使用 identity mapping。**
 
 ---
 
-# 195. 一句话连接 Transformer
+## 195. 一句话连接 Transformer
 
 > **Transformer 不只在一个地方使用 Dropout：原始论文明确在每个 sub-layer output写回 residual之前以及 embedding+position sum上使用 dropout；现代 `MultiheadAttention`实现还可以对 attention weights做 dropout，因此必须区分“Attention routing dropout”“FFN hidden dropout”和“Residual update dropout”，而不能把所有 `dropout=0.1` 想成同一个随机操作。**
 
 ---
 
-# 196. 一句话连接 ACT
+## 196. 一句话连接 ACT
 
-> **ACT Table III 的 `dropout=0.1` 在当前官方 DETR-style Transformer代码中会进入 Encoder/Decoder `nn.MultiheadAttention` 的 attention-weight dropout、FFN中间 activation dropout，以及每个 Attention/FFN sub-layer输出写入 residual stream前的 dropout；因此训练时 ACT 的 observation memory和action-slot computation都带有随机 regularization，而 `model.eval()` 后这些 Dropout关闭，和固定 \(z=0\) 一起形成稳定的 deterministic policy inference。**
+> **ACT Table III 的 `dropout=0.1` 在当前官方 DETR-style Transformer代码中会进入 Encoder/Decoder `nn.MultiheadAttention` 的 attention-weight dropout、FFN中间 activation dropout，以及每个 Attention/FFN sub-layer输出写入 residual stream前的 dropout；因此训练时 ACT 的 observation memory和action-slot computation都带有随机 regularization，而 `model.eval()` 后这些 Dropout关闭，和固定 $z=0$ 一起形成稳定的 deterministic policy inference。**
 
 ---
 
-# 197. 到这里，一个 Transformer Layer 的主要组件已经全部拆完
+## 197. 到这里，一个 Transformer Layer 的主要组件已经全部拆完
 
 现在我们已经单独理解：
 
@@ -5311,7 +5311,7 @@ d
 
 接下来最自然的是：
 
-> 把这些零件重新放到一个真正的 **Multi-Head Attention** 内部，从单头完整推到多头 concat + \(W_O\)。
+> 把这些零件重新放到一个真正的 **Multi-Head Attention** 内部，从单头完整推到多头 concat + $W_O$。
 
 虽然前面的文章已经引用过 Multi-Head Attention，
 
@@ -5324,16 +5324,16 @@ d
 会严格讲：
 
 - 为什么：
-  \[
+  $$
   d_{\text{model}}=512,\ h=8
-  \]
+  $$
   时每头是 64-D；
-- \(W_Q^h,W_K^h,W_V^h\) 是怎样分别投影的；
+- $W_Q^h,W_K^h,W_V^h$ 是怎样分别投影的；
 - 为什么多个 heads并不是“同一个 Attention复制8遍”；
 - Concatenate后为什么还需要：
-  \[
+  $$
   W_O
-  \]
+  $$
 - 为什么原论文让总计算量接近单个 full-dimensional head；
 - 每个 head是否一定对应可解释的语义；
 - head redundancy和head pruning应该怎样谨慎理解；
@@ -5342,7 +5342,7 @@ d
 
 ---
 
-## Primary Source：Dropout
+### Primary Source：Dropout
 
 Nitish Srivastava, Geoffrey Hinton, Alex Krizhevsky, Ilya Sutskever, Ruslan Salakhutdinov.
 
@@ -5363,53 +5363,53 @@ Journal of Machine Learning Research, 2014.
 
 原论文主要 notation中：
 
-\[
+$$
 p
 =
 \text{retention probability}
-\]
+$$
 
 因此要特别区别现代 PyTorch：
 
-\[
+$$
 p
 =
 \text{drop probability}
-\]
+$$
 
 ---
 
-## Original vs Inverted Dropout
+### Original vs Inverted Dropout
 
 原论文主要叙述：
 
-### Train
+#### Train
 
-\[
+$$
 m_i\sim Bernoulli(q)
-\]
+$$
 
-\[
+$$
 y_i=m_ix_i
-\]
+$$
 
-### Test
+#### Test
 
 outgoing weights：
 
-\[
+$$
 W_{\text{test}}=qW
-\]
+$$
 
 ---
 
 论文 Section 10 同时明确指出一种等价 scaling convention：
 
-> training时把 retained activations乘 \(1/q\)，test时不修改 weights。
+> training时把 retained activations乘 $1/q$，test时不修改 weights。
 
 这正是现代常用 inverted dropout：
 
-\[
+$$
 \boxed{
 y_i=
 \frac{
@@ -5418,21 +5418,21 @@ m_ix_i
 q
 }
 }
-\]
+$$
 
 training，
 
 而 evaluation：
 
-\[
+$$
 \boxed{
 y_i=x_i
 }
-\]
+$$
 
 ---
 
-## Transformer Primary Source
+### Transformer Primary Source
 
 Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,  
 Aidan N. Gomez, Łukasz Kaiser, Illia Polosukhin.
@@ -5445,7 +5445,7 @@ NeurIPS 2017.
 
 Section 5.4 — Regularization：
 
-### Residual Dropout
+#### Residual Dropout
 
 原论文明确：
 
@@ -5453,7 +5453,7 @@ Section 5.4 — Regularization：
 
 即：
 
-\[
+$$
 \boxed{
 LayerNorm(
 x+
@@ -5462,9 +5462,9 @@ Sublayer(x)
 )
 )
 }
-\]
+$$
 
-### Input Dropout
+#### Input Dropout
 
 原论文还对：
 
@@ -5474,15 +5474,15 @@ Sublayer(x)
 
 Base model：
 
-\[
+$$
 \boxed{
 P_{drop}=0.1
 }
-\]
+$$
 
 ---
 
-## PyTorch Dropout Reference
+### PyTorch Dropout Reference
 
 PyTorch `nn.Dropout`:
 
@@ -5493,23 +5493,23 @@ https://docs.pytorch.org/docs/stable/generated/torch.nn.Dropout.html
 - training时以 probability `p` 随机把 input elements置零；
 - 每次 forward独立采样 Bernoulli mask；
 - retained outputs在 training时乘：
-  \[
+  $$
   \boxed{
   \frac1{1-p}
   }
-  \]
+  $$
 - evaluation时 Dropout module为：
-  \[
+  $$
   \boxed{
   \text{identity function}
   }
-  \]
+  $$
 
 因此 PyTorch中的：
 
-\[
+$$
 p
-\]
+$$
 
 是：
 
@@ -5517,7 +5517,7 @@ p
 
 ---
 
-## PyTorch Multi-Head Attention Reference
+### PyTorch Multi-Head Attention Reference
 
 PyTorch `nn.MultiheadAttention`:
 
@@ -5553,7 +5553,7 @@ nn.MultiheadAttention(
 
 ---
 
-## ACT Primary Source
+### ACT Primary Source
 
 Tony Z. Zhao, Vikash Kumar, Sergey Levine, Chelsea Finn.
 
@@ -5565,37 +5565,37 @@ RSS 2023.
 
 ACT Table III：
 
-\[
+$$
 \boxed{
 dropout=0.1
 }
-\]
+$$
 
 同时：
 
-\[
+$$
 \#encoder\ layers=4
-\]
+$$
 
-\[
+$$
 \#decoder\ layers=7
-\]
+$$
 
-\[
+$$
 d_{\text{model}}=512
-\]
+$$
 
-\[
+$$
 d_{\text{ff}}=3200
-\]
+$$
 
-\[
+$$
 heads=8
-\]
+$$
 
 ---
 
-## ACT Official Implementation
+### ACT Official Implementation
 
 Official repository:
 
@@ -5605,7 +5605,7 @@ Transformer source:
 
 https://github.com/tonyzhaozh/act/blob/main/detr/models/transformer.py
 
-### Attention-Weight Dropout
+#### Attention-Weight Dropout
 
 Encoder：
 
@@ -5640,15 +5640,15 @@ self.multihead_attn =
 
 这里的 `dropout`作用于：
 
-\[
+$$
 \boxed{
 attention\ output\ weights
 }
-\]
+$$
 
 ---
 
-### FFN Hidden Dropout
+#### FFN Hidden Dropout
 
 ```python
 self.dropout =
@@ -5669,7 +5669,7 @@ linear2(
 
 即：
 
-\[
+$$
 \boxed{
 D
 \rightarrow
@@ -5679,11 +5679,11 @@ Dropout
 \rightarrow
 D
 }
-\]
+$$
 
 更准确地：
 
-\[
+$$
 Linear_1
 \rightarrow
 Activation
@@ -5691,11 +5691,11 @@ Activation
 Dropout
 \rightarrow
 Linear_2
-\]
+$$
 
 ---
 
-### Residual Branch Dropout
+#### Residual Branch Dropout
 
 Encoder：
 
@@ -5749,7 +5749,7 @@ tgt =
 
 ---
 
-## ACT CVAE Encoder
+### ACT CVAE Encoder
 
 Official:
 
@@ -5780,9 +5780,9 @@ TransformerEncoderLayer(
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### 数学
+#### 数学
 
 - Bernoulli Distribution
 - Binomial Distribution
@@ -5790,7 +5790,7 @@ TransformerEncoderLayer(
 - Variance
 - Random Variable
 
-### Deep Learning
+#### Deep Learning
 
 - Overfitting
 - Regularization
@@ -5798,7 +5798,7 @@ TransformerEncoderLayer(
 - Data Augmentation
 - Stochastic Depth
 
-### Transformer
+#### Transformer
 
 - [Transformer Encoder](./transformer-encoder.md)
 - [Transformer Decoder](./transformer-decoder.md)
@@ -5809,19 +5809,19 @@ TransformerEncoderLayer(
 - [Multi-Head Attention](./multi-head-attention.md)
 - [Causal Mask](./causal-mask.md)
 
-### Generative Modeling
+#### Generative Modeling
 
 - [Latent Variable](../generative-models/latent-variable.md)
 - [Reparameterization Trick](../generative-models/reparameterization-trick.md)
 - [CVAE](../generative-models/cvae.md)
 
-### Robot Learning
+#### Robot Learning
 
 - [ACT Architecture](../robot-learning/act/architecture.md)
 - [CVAE in ACT](../robot-learning/act/cvae-in-act.md)
 - [ACT Training](../robot-learning/act/training.md)
 - [ACT Inference](../robot-learning/act/inference.md)
 
-### 下一步
+#### 下一步
 
 - [Multi-Head Attention](./multi-head-attention.md)

@@ -11,7 +11,7 @@ updated: "2026-09-15"
 
 在前面的 [Attention](./attention.md) 中，我们把 Attention 压缩成了三步：
 
-\[
+$$
 \boxed{
 \text{Match}
 \rightarrow
@@ -19,11 +19,11 @@ updated: "2026-09-15"
 \rightarrow
 \text{Retrieve}
 }
-\]
+$$
 
 在 Transformer 中，这三步写成：
 
-\[
+$$
 \boxed{
 \operatorname{Attention}(Q,K,V)
 =
@@ -32,7 +32,7 @@ updated: "2026-09-15"
 \frac{QK^\top}{\sqrt{d_k}}
 \right)V
 }
-\]
+$$
 
 最常见的解释是：
 
@@ -53,47 +53,47 @@ Value:
 
 > **Q、K、V 本质上不就是几个普通向量吗？**
 
-Transformer 并没有给 \(Q\) 一个真的“问题字符串”，也没有给 \(K\) 一个数据库索引，更没有人为规定 \(V\) 里面哪几维是“答案”。
+Transformer 并没有给 $Q$ 一个真的“问题字符串”，也没有给 $K$ 一个数据库索引，更没有人为规定 $V$ 里面哪几维是“答案”。
 
 在 Self-Attention 中，它们甚至都来自同一个输入：
 
-\[
+$$
 X
-\]
+$$
 
 只是经过三个 Linear：
 
-\[
+$$
 Q=XW_Q
-\]
+$$
 
-\[
+$$
 K=XW_K
-\]
+$$
 
-\[
+$$
 V=XW_V
-\]
+$$
 
 那为什么训练之后：
 
-\[
+$$
 Q
-\]
+$$
 
 真的能承担“查询”的作用，
 
-\[
+$$
 K
-\]
+$$
 
 真的能承担“匹配”的作用，
 
 而：
 
-\[
+$$
 V
-\]
+$$
 
 真的能承担“传递内容”的作用？
 
@@ -105,15 +105,15 @@ V
 
 > **它们在计算图中的位置不同。**
 
-\[
+$$
 W_Q
-\]
+$$
 
 和：
 
-\[
+$$
 W_K
-\]
+$$
 
 影响的是：
 
@@ -121,9 +121,9 @@ W_K
 
 而：
 
-\[
+$$
 W_V
-\]
+$$
 
 影响的是：
 
@@ -135,49 +135,49 @@ W_V
 
 ---
 
-# 1. 先忘记 Query、Key、Value 这三个名字
+## 1. 先忘记 Query、Key、Value 这三个名字
 
 假设我们只有三个 Linear layers：
 
-\[
+$$
 A=XW_A
-\]
+$$
 
-\[
+$$
 B=XW_B
-\]
+$$
 
-\[
+$$
 C=XW_C
-\]
+$$
 
 然后网络规定：
 
-\[
+$$
 S=AB^\top
-\]
+$$
 
-\[
+$$
 P=\operatorname{softmax}(S)
-\]
+$$
 
-\[
+$$
 O=PC
-\]
+$$
 
 如果训练目标要求：
 
-\[
+$$
 O
-\]
+$$
 
 最终对任务有用，
 
 那么随着训练进行：
 
-- \(W_A\) 会学成适合产生“查询侧匹配表示”的 projection；
-- \(W_B\) 会学成适合产生“被查询侧匹配表示”的 projection；
-- \(W_C\) 会学成适合产生“真正被聚合的信息”的 projection。
+- $W_A$ 会学成适合产生“查询侧匹配表示”的 projection；
+- $W_B$ 会学成适合产生“被查询侧匹配表示”的 projection；
+- $W_C$ 会学成适合产生“真正被聚合的信息”的 projection。
 
 所以即使我们从来不叫它们 Q、K、V，
 
@@ -189,45 +189,45 @@ O
 
 后来我们只是把：
 
-\[
+$$
 A
-\]
+$$
 
 命名为：
 
-\[
+$$
 Q
-\]
+$$
 
 把：
 
-\[
+$$
 B
-\]
+$$
 
 命名为：
 
-\[
+$$
 K
-\]
+$$
 
 把：
 
-\[
+$$
 C
-\]
+$$
 
 命名为：
 
-\[
+$$
 V
-\]
+$$
 
 因为这种命名非常符合它们的计算角色。
 
 ---
 
-# 2. Transformer 原论文到底怎么定义 Q、K、V？
+## 2. Transformer 原论文到底怎么定义 Q、K、V？
 
 《Attention Is All You Need》把 Attention 描述为：
 
@@ -235,12 +235,12 @@ V
 
 其中：
 
-- query 和 keys 维度是 \(d_k\)；
-- values 维度是 \(d_v\)。
+- query 和 keys 维度是 $d_k$；
+- values 维度是 $d_v$。
 
 Transformer 的 Scaled Dot-Product Attention：
 
-\[
+$$
 \boxed{
 \operatorname{Attention}(Q,K,V)
 =
@@ -249,7 +249,7 @@ Transformer 的 Scaled Dot-Product Attention：
 \frac{QK^\top}{\sqrt{d_k}}
 \right)V
 }
-\]
+$$
 
 原论文进一步说明 Multi-Head Attention 会：
 
@@ -257,9 +257,9 @@ Transformer 的 Scaled Dot-Product Attention：
 
 所以：
 
-\[
+$$
 W_Q,W_K,W_V
-\]
+$$
 
 不是事后解释出来的方便符号。
 
@@ -269,13 +269,13 @@ W_Q,W_K,W_V
 
 ---
 
-# 3. 一个 Token 为什么需要三种 Representation？
+## 3. 一个 Token 为什么需要三种 Representation？
 
 假设某个 token 当前 representation 是：
 
-\[
+$$
 x_i\in\mathbb R^{d_{\text{model}}}
-\]
+$$
 
 这个 representation 里可能混合了很多信息：
 
@@ -290,7 +290,7 @@ x_i\in\mathbb R^{d_{\text{model}}}
 
 ---
 
-## 当它作为 Query
+### 当它作为 Query
 
 它需要表达：
 
@@ -298,7 +298,7 @@ x_i\in\mathbb R^{d_{\text{model}}}
 
 ---
 
-## 当它作为 Key
+### 当它作为 Key
 
 它需要表达：
 
@@ -306,7 +306,7 @@ x_i\in\mathbb R^{d_{\text{model}}}
 
 ---
 
-## 当它作为 Value
+### 当它作为 Value
 
 它需要表达：
 
@@ -318,17 +318,17 @@ x_i\in\mathbb R^{d_{\text{model}}}
 
 所以 Transformer 给它三个 projection：
 
-\[
+$$
 q_i=x_iW_Q
-\]
+$$
 
-\[
+$$
 k_i=x_iW_K
-\]
+$$
 
-\[
+$$
 v_i=x_iW_V
-\]
+$$
 
 让模型自己学：
 
@@ -336,7 +336,7 @@ v_i=x_iW_V
 
 ---
 
-# 4. 一个现实类比：论文数据库
+## 4. 一个现实类比：论文数据库
 
 假设数据库里有一篇论文。
 
@@ -364,9 +364,9 @@ abstract embedding
 
 这更像：
 
-\[
+$$
 Key
-\]
+$$
 
 真正返回给用户的可能是：
 
@@ -376,9 +376,9 @@ Key
 
 这更像：
 
-\[
+$$
 Value
-\]
+$$
 
 而用户搜索框：
 
@@ -388,9 +388,9 @@ robot imitation learning
 
 更像：
 
-\[
+$$
 Query
-\]
+$$
 
 所以：
 
@@ -400,15 +400,15 @@ Q/K/V 的分离，本质上就是这种自由度。
 
 ---
 
-# 5. 但 Transformer 里的 Query 不是自然语言问题
+## 5. 但 Transformer 里的 Query 不是自然语言问题
 
 这一点必须严格区分。
 
 Attention 中的：
 
-\[
+$$
 q_i
-\]
+$$
 
 通常只是：
 
@@ -426,29 +426,29 @@ q_i
 
 真正数学上：
 
-\[
+$$
 q_i=x_iW_Q
-\]
+$$
 
 然后它参与：
 
-\[
+$$
 q_i^\top k_j
-\]
+$$
 
 只要这种计算最终帮助降低 loss，
 
 训练就会把：
 
-\[
+$$
 q_i
-\]
+$$
 
 塑造成适合匹配的 representation。
 
 ---
 
-# 6. 为什么 Linear Projection 就足够？
+## 6. 为什么 Linear Projection 就足够？
 
 你可能会觉得：
 
@@ -456,29 +456,29 @@ q_i
 
 例如：
 
-\[
+$$
 q=xW_Q
-\]
+$$
 
 只是：
 
-\[
+$$
 q_r
 =
 \sum_s x_sW_{Q,sr}
-\]
+$$
 
 怎么可能产生复杂“查询语义”？
 
 关键在于：
 
-> \(x\) 本身往往已经是前面网络层产生的复杂 contextual representation。
+> $x$ 本身往往已经是前面网络层产生的复杂 contextual representation。
 
-尤其在深层 Transformer 中，第 \(l\) 层输入：
+尤其在深层 Transformer 中，第 $l$ 层输入：
 
-\[
+$$
 x_i^{(l)}
-\]
+$$
 
 已经经历了前面多层：
 
@@ -487,7 +487,7 @@ x_i^{(l)}
 - Residual；
 - nonlinear transformation。
 
-所以 \(W_Q\) 并不是从 raw word ID 直接创造所有语义。
+所以 $W_Q$ 并不是从 raw word ID 直接创造所有语义。
 
 它更像：
 
@@ -495,24 +495,24 @@ x_i^{(l)}
 
 ---
 
-# 7. Linear Layer 到底做了什么？
+## 7. Linear Layer 到底做了什么？
 
 假设：
 
-\[
+$$
 x=
 [x_1,x_2,x_3,x_4]
-\]
+$$
 
 一个 projection：
 
-\[
+$$
 W_Q
-\]
+$$
 
 可以产生：
 
-\[
+$$
 q_1
 =
 0.7x_1
@@ -520,11 +520,11 @@ q_1
 0.2x_2
 +
 1.1x_4
-\]
+$$
 
 另一维：
 
-\[
+$$
 q_2
 =
 -0.3x_1
@@ -532,19 +532,19 @@ q_2
 0.9x_3
 +
 0.4x_4
-\]
+$$
 
 也就是说：
 
 > 每个 query dimension 都是原 representation features 的 learned linear combination。
 
-\(W_K\) 会学另一套组合。
+$W_K$ 会学另一套组合。
 
 所以同一个输入：
 
-\[
+$$
 x
-\]
+$$
 
 可以被重新组织成：
 
@@ -556,27 +556,27 @@ x
 
 ---
 
-# 8. 为什么 Q 和 K 要进入同一个 Dot-Product Space？
+## 8. 为什么 Q 和 K 要进入同一个 Dot-Product Space？
 
 Attention score：
 
-\[
+$$
 q_i^\top k_j
-\]
+$$
 
 要求：
 
-\[
+$$
 q_i,k_j\in\mathbb R^{d_k}
-\]
+$$
 
 因为只有维度一致，
 
 才能做：
 
-\[
+$$
 \sum_{r=1}^{d_k}q_{ir}k_{jr}
-\]
+$$
 
 所以 Q/K projection 的一个基本要求是：
 
@@ -584,45 +584,45 @@ q_i,k_j\in\mathbb R^{d_k}
 
 它们不需要：
 
-\[
+$$
 W_Q=W_K
-\]
+$$
 
 也不需要：
 
-\[
+$$
 q=k
-\]
+$$
 
 但 dimension 要允许 compatibility operation。
 
 ---
 
-# 9. 为什么 Q 和 K 不直接用同一个 Projection？
+## 9. 为什么 Q 和 K 不直接用同一个 Projection？
 
 理论上完全可以设计：
 
-\[
+$$
 W_Q=W_K
-\]
+$$
 
 那么：
 
-\[
+$$
 q_i=x_iW
-\]
+$$
 
-\[
+$$
 k_i=x_iW
-\]
+$$
 
 这会让 score 更像标准 embedding similarity。
 
 但 Transformer 使用不同：
 
-\[
+$$
 W_Q,W_K
-\]
+$$
 
 提供更高自由度。
 
@@ -642,32 +642,32 @@ W_Q,W_K
 
 ---
 
-# 10. Dot Product 到底在计算什么？
+## 10. Dot Product 到底在计算什么？
 
 对于：
 
-\[
+$$
 q_i=
 [q_{i1},\ldots,q_{id_k}]
-\]
+$$
 
 和：
 
-\[
+$$
 k_j=
 [k_{j1},\ldots,k_{jd_k}]
-\]
+$$
 
 dot product：
 
-\[
+$$
 \boxed{
 q_i^\top k_j
 =
 \sum_{r=1}^{d_k}
 q_{ir}k_{jr}
 }
-\]
+$$
 
 如果很多 dimension：
 
@@ -688,7 +688,7 @@ q_{ir}k_{jr}
 
 ---
 
-# 11. Dot Product 不等于“语义相似度”本身
+## 11. Dot Product 不等于“语义相似度”本身
 
 必须注意。
 
@@ -698,9 +698,9 @@ dot product 可能经常被解释成 semantic similarity。
 
 但 Attention 里的：
 
-\[
+$$
 q_i^\top k_j
-\]
+$$
 
 更准确是：
 
@@ -726,17 +726,17 @@ q_i^\top k_j
 
 所以：
 
-\[
+$$
 \boxed{
 \text{compatibility}
 \neq
 \text{semantic identity}
 }
-\]
+$$
 
 ---
 
-# 12. 一个非常重要的例子
+## 12. 一个非常重要的例子
 
 句子：
 
@@ -760,10 +760,10 @@ dog
 
 那么训练可以让：
 
-\[
+$$
 q_{\text{chases}}^\top
 k_{\text{dog}}
-\]
+$$
 
 比较大。
 
@@ -777,115 +777,115 @@ k_{\text{dog}}
 
 ---
 
-# 13. \(QK^\top\) 矩阵到底是什么？
+## 13. $QK^\top$ 矩阵到底是什么？
 
 假设 sequence 有：
 
-\[
+$$
 n
-\]
+$$
 
 个 tokens。
 
-\[
+$$
 Q\in\mathbb R^{n\times d_k}
-\]
+$$
 
-\[
+$$
 K\in\mathbb R^{n\times d_k}
-\]
+$$
 
 则：
 
-\[
+$$
 K^\top
 \in
 \mathbb R^{d_k\times n}
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 S=QK^\top
 \in
 \mathbb R^{n\times n}
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 \boxed{
 S_{ij}
 =
 q_i^\top k_j
 }
-\]
+$$
 
 这一个元素就表示：
 
-> query position \(i\) 对 key position \(j\) 的未归一化 compatibility。
+> query position $i$ 对 key position $j$ 的未归一化 compatibility。
 
 ---
 
-# 14. 每一行是什么？
+## 14. 每一行是什么？
 
 第：
 
-\[
+$$
 i
-\]
+$$
 
 行：
 
-\[
+$$
 S_{i,:}
-\]
+$$
 
 是：
 
-> query \(i\) 对 sequence 中所有 keys 的 scores。
+> query $i$ 对 sequence 中所有 keys 的 scores。
 
 例如：
 
-\[
+$$
 S_{i,:}
 =
 [1.2,-0.4,3.1,0.8]
-\]
+$$
 
 说明当前 query 对第三个 key 的 compatibility 最大。
 
 之后沿这一行 Softmax：
 
-\[
+$$
 A_{i,:}
 =
 \operatorname{softmax}(S_{i,:})
-\]
+$$
 
 得到当前 query 的 attention distribution。
 
 ---
 
-# 15. 每一列是什么？
+## 15. 每一列是什么？
 
 第：
 
-\[
+$$
 j
-\]
+$$
 
 列：
 
-\[
+$$
 S_{:,j}
-\]
+$$
 
 表示：
 
-> 所有不同 queries 对 key \(j\) 的 compatibility。
+> 所有不同 queries 对 key $j$ 的 compatibility。
 
 但是 attention normalization 通常按：
 
@@ -893,39 +893,39 @@ S_{:,j}
 
 所以：
 
-\[
+$$
 \sum_jA_{ij}=1
-\]
+$$
 
 而不是要求：
 
-\[
+$$
 \sum_iA_{ij}=1
-\]
+$$
 
 ---
 
-# 16. 为什么要 Softmax？
+## 16. 为什么要 Softmax？
 
 Raw score：
 
-\[
+$$
 q_i^\top k_j
-\]
+$$
 
 可以是任意实数。
 
 例如：
 
-\[
+$$
 [3.0,-1.0,0.4]
-\]
+$$
 
 不能直接当作稳定的 mixture weights。
 
 Softmax：
 
-\[
+$$
 \alpha_{ij}
 =
 \frac{
@@ -933,19 +933,19 @@ e^{s_{ij}}
 }{
 \sum_r e^{s_{ir}}
 }
-\]
+$$
 
 得到：
 
-\[
+$$
 \alpha_{ij}>0
-\]
+$$
 
 以及：
 
-\[
+$$
 \sum_j\alpha_{ij}=1
-\]
+$$
 
 所以：
 
@@ -953,69 +953,69 @@ e^{s_{ij}}
 
 ---
 
-# 17. 然后为什么乘 V？
+## 17. 然后为什么乘 V？
 
 得到：
 
-\[
+$$
 A
 =
 \operatorname{softmax}
 \left(
 \frac{QK^\top}{\sqrt{d_k}}
 \right)
-\]
+$$
 
 之后：
 
-\[
+$$
 O=AV
-\]
+$$
 
-对于单个 query \(i\)：
+对于单个 query $i$：
 
-\[
+$$
 \boxed{
 o_i
 =
 \sum_j
 A_{ij}v_j
 }
-\]
+$$
 
 所以：
 
-> \(Q\) 和 \(K\) 决定“谁贡献多少”。
+> $Q$ 和 $K$ 决定“谁贡献多少”。
 
 而：
 
-> \(V\) 决定“贡献的内容是什么”。
+> $V$ 决定“贡献的内容是什么”。
 
 这就是三者功能分离最准确的数学描述。
 
 ---
 
-# 18. 如果没有 V Projection 会怎样？
+## 18. 如果没有 V Projection 会怎样？
 
 可以直接：
 
-\[
+$$
 V=X
-\]
+$$
 
 那么输出：
 
-\[
+$$
 O=AX
-\]
+$$
 
 仍然是一种完全合法的 attention。
 
 但加入：
 
-\[
+$$
 V=XW_V
-\]
+$$
 
 让模型能够学习：
 
@@ -1023,9 +1023,9 @@ V=XW_V
 
 也就是说：
 
-\[
+$$
 W_V
-\]
+$$
 
 不参与：
 
@@ -1039,13 +1039,13 @@ W_V
 
 ---
 
-# 19. 为什么不能用 K 同时当 V？
+## 19. 为什么不能用 K 同时当 V？
 
 也可以设计：
 
-\[
+$$
 V=K
-\]
+$$
 
 但这会强迫：
 
@@ -1061,9 +1061,9 @@ Transformer 不施加这种约束。
 
 独立：
 
-\[
+$$
 W_K,W_V
-\]
+$$
 
 使模型能够：
 
@@ -1073,35 +1073,35 @@ W_K,W_V
 
 ---
 
-# 20. 现在进入最关键的问题：为什么这些角色真的能被学出来？
+## 20. 现在进入最关键的问题：为什么这些角色真的能被学出来？
 
 我们假设最终 loss：
 
-\[
+$$
 L
-\]
+$$
 
 依赖 Attention output：
 
-\[
+$$
 O
-\]
+$$
 
 而：
 
-\[
+$$
 O=AV
-\]
+$$
 
 其中：
 
-\[
+$$
 A=
 \operatorname{softmax}
 \left(
 \frac{QK^\top}{\sqrt{d_k}}
 \right)
-\]
+$$
 
 所以整个 computation graph：
 
@@ -1125,29 +1125,29 @@ loss gradient 会沿不同路径回传。
 
 ---
 
-# 21. W_V 收到什么样的训练压力？
+## 21. W_V 收到什么样的训练压力？
 
 先暂时把 attention weights：
 
-\[
+$$
 A
-\]
+$$
 
 当作固定。
 
 那么：
 
-\[
+$$
 O=AV
-\]
+$$
 
 如果最终 output 不好，
 
 gradient 会告诉：
 
-\[
+$$
 V
-\]
+$$
 
 应该如何改变，
 
@@ -1155,21 +1155,21 @@ V
 
 而：
 
-\[
+$$
 V=XW_V
-\]
+$$
 
 所以 gradient 继续更新：
 
-\[
+$$
 W_V
-\]
+$$
 
 因此长期训练后：
 
-\[
+$$
 W_V
-\]
+$$
 
 会倾向学出：
 
@@ -1181,31 +1181,31 @@ W_V
 
 ---
 
-# 22. W_Q 收到什么样的训练压力？
+## 22. W_Q 收到什么样的训练压力？
 
-\[
+$$
 W_Q
-\]
+$$
 
 不会只影响被传递的内容。
 
 它首先改变：
 
-\[
+$$
 Q
-\]
+$$
 
 然后改变：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 再改变：
 
-\[
+$$
 A
-\]
+$$
 
 最终决定：
 
@@ -1217,7 +1217,7 @@ A
 
 loss gradient 可以通过：
 
-\[
+$$
 L
 \rightarrow
 A
@@ -1225,15 +1225,15 @@ A
 Q
 \rightarrow
 W_Q
-\]
+$$
 
 修改 query projection。
 
 长期来看：
 
-\[
+$$
 W_Q
-\]
+$$
 
 会学出：
 
@@ -1241,25 +1241,25 @@ W_Q
 
 ---
 
-# 23. W_K 收到什么样的训练压力？
+## 23. W_K 收到什么样的训练压力？
 
 类似地：
 
-\[
+$$
 W_K
-\]
+$$
 
 改变：
 
-\[
+$$
 K
-\]
+$$
 
 再改变：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 因此它影响：
 
@@ -1269,17 +1269,17 @@ QK^\top
 
 gradient 可以推动：
 
-\[
+$$
 k_j
-\]
+$$
 
 在 matching space 中移动到更合适的位置。
 
 长期训练后：
 
-\[
+$$
 W_K
-\]
+$$
 
 会学出：
 
@@ -1287,13 +1287,13 @@ W_K
 
 ---
 
-# 24. 所以角色不是“名字教会”的，而是“梯度路径塑造”的
+## 24. 所以角色不是“名字教会”的，而是“梯度路径塑造”的
 
 这句话非常重要。
 
-\[
+$$
 W_Q
-\]
+$$
 
 之所以成为 Query projection，
 
@@ -1307,9 +1307,9 @@ query
 
 > 位于 attention score 的查询侧。
 
-\[
+$$
 W_K
-\]
+$$
 
 之所以成为 Key projection，
 
@@ -1317,9 +1317,9 @@ W_K
 
 > 位于 attention score 的候选侧。
 
-\[
+$$
 W_V
-\]
+$$
 
 之所以成为 Value projection，
 
@@ -1329,7 +1329,7 @@ W_V
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Role}
 \leftarrow
@@ -1337,11 +1337,11 @@ W_V
 +
 \text{task gradient}
 }
-\]
+$$
 
 ---
 
-# 25. 一个很小的训练直觉例子
+## 25. 一个很小的训练直觉例子
 
 假设 query token：
 
@@ -1363,13 +1363,13 @@ street
 
 但模型当前 scores：
 
-\[
+$$
 s_{\text{it,animal}}=0.4
-\]
+$$
 
-\[
+$$
 s_{\text{it,street}}=2.1
-\]
+$$
 
 于是 attention 错误地更多读取：
 
@@ -1381,30 +1381,30 @@ street
 
 反向传播会尝试调整：
 
-\[
+$$
 q_{\text{it}}
-\]
+$$
 
 和：
 
-\[
+$$
 k_{\text{animal}},
 k_{\text{street}}
-\]
+$$
 
 使未来：
 
-\[
+$$
 q_{\text{it}}^\top k_{\text{animal}}
-\]
+$$
 
 提高，
 
 而：
 
-\[
+$$
 q_{\text{it}}^\top k_{\text{street}}
-\]
+$$
 
 相对降低。
 
@@ -1414,7 +1414,7 @@ q_{\text{it}}^\top k_{\text{street}}
 
 ---
 
-# 26. Value 在同一个例子里怎样学？
+## 26. Value 在同一个例子里怎样学？
 
 即使模型已经正确关注：
 
@@ -1424,9 +1424,9 @@ animal
 
 如果：
 
-\[
+$$
 v_{\text{animal}}
-\]
+$$
 
 传出去的信息对后续预测没有帮助，
 
@@ -1434,9 +1434,9 @@ v_{\text{animal}}
 
 这时 gradient 会调整：
 
-\[
+$$
 W_V
-\]
+$$
 
 让 `animal` 的 value representation 更适合向当前 query 传递有用信息。
 
@@ -1456,7 +1456,7 @@ V 主要负责后者。
 
 ---
 
-# 27. 为什么 Q 和 K 都需要训练，不能只训练 Query？
+## 27. 为什么 Q 和 K 都需要训练，不能只训练 Query？
 
 假设 keys 固定。
 
@@ -1483,13 +1483,13 @@ Key 侧也学会怎样贴标签
 
 ---
 
-# 28. Q/K Space 可以怎样理解？
+## 28. Q/K Space 可以怎样理解？
 
 可以把：
 
-\[
+$$
 \mathbb R^{d_k}
-\]
+$$
 
 想象成一个模型自己学习出来的：
 
@@ -1509,11 +1509,11 @@ Key 侧也学会怎样贴标签
 
 ---
 
-# 29. V Space 又是什么？
+## 29. V Space 又是什么？
 
-\[
+$$
 \mathbb R^{d_v}
-\]
+$$
 
 可以看成：
 
@@ -1523,25 +1523,25 @@ Key 侧也学会怎样贴标签
 
 它通过：
 
-\[
+$$
 v_j
-\]
+$$
 
 向其他位置传递信息。
 
 所以从 message-passing 视角：
 
-\[
+$$
 K
-\]
+$$
 
 更像：
 
 > route / address representation。
 
-\[
+$$
 V
-\]
+$$
 
 更像：
 
@@ -1549,7 +1549,7 @@ V
 
 ---
 
-# 30. 一个非常好用的类比：网络请求
+## 30. 一个非常好用的类比：网络请求
 
 可以类比：
 
@@ -1566,15 +1566,15 @@ Value:
 
 请求：
 
-\[
+$$
 q
-\]
+$$
 
 与不同 route keys：
 
-\[
+$$
 k_j
-\]
+$$
 
 比较。
 
@@ -1582,9 +1582,9 @@ k_j
 
 对应 payload：
 
-\[
+$$
 v_j
-\]
+$$
 
 贡献越大。
 
@@ -1596,7 +1596,7 @@ v_j
 
 ---
 
-# 31. 一个 Token 同时有 Q、K、V，会不会矛盾？
+## 31. 一个 Token 同时有 Q、K、V，会不会矛盾？
 
 不会。
 
@@ -1610,15 +1610,15 @@ v_j
 
 所以它自然同时拥有：
 
-### Query role
+#### Query role
 
 “我现在想从别人那里得到什么？”
 
-### Key role
+#### Key role
 
 “别人根据什么判断是否应该读我？”
 
-### Value role
+#### Value role
 
 “别人如果读我，我真正提供什么？”
 
@@ -1626,55 +1626,55 @@ v_j
 
 ---
 
-# 32. Self-Attention 中的一次完整交互
+## 32. Self-Attention 中的一次完整交互
 
 假设 sequence：
 
-\[
+$$
 x_1,x_2,x_3
-\]
+$$
 
 每个产生：
 
-\[
+$$
 q_i,k_i,v_i
-\]
+$$
 
 对于 token 2：
 
-\[
+$$
 q_2
-\]
+$$
 
 与：
 
-\[
+$$
 k_1,k_2,k_3
-\]
+$$
 
 比较：
 
-\[
+$$
 s_{21}=q_2^\top k_1
-\]
+$$
 
-\[
+$$
 s_{22}=q_2^\top k_2
-\]
+$$
 
-\[
+$$
 s_{23}=q_2^\top k_3
-\]
+$$
 
 Softmax 得：
 
-\[
+$$
 [\alpha_{21},\alpha_{22},\alpha_{23}]
-\]
+$$
 
 然后：
 
-\[
+$$
 o_2
 =
 \alpha_{21}v_1
@@ -1682,25 +1682,25 @@ o_2
 \alpha_{22}v_2
 +
 \alpha_{23}v_3
-\]
+$$
 
 这就是 token 2 的一次 context update。
 
 ---
 
-# 33. 为什么 Value 不参与 Attention Score？
+## 33. 为什么 Value 不参与 Attention Score？
 
 标准 Transformer 中：
 
-\[
+$$
 score_{ij}
-\]
+$$
 
 只由：
 
-\[
+$$
 q_i,k_j
-\]
+$$
 
 决定。
 
@@ -1722,13 +1722,13 @@ q_i,k_j
 
 ---
 
-# 34. 为什么 Query 不参与最终 Weighted Sum？
+## 34. 为什么 Query 不参与最终 Weighted Sum？
 
 最终：
 
-\[
+$$
 o_i=\sum_j\alpha_{ij}v_j
-\]
+$$
 
 query 自己没有直接被加进去。
 
@@ -1738,9 +1738,9 @@ query 自己没有直接被加进去。
 
 也就是说通常：
 
-\[
+$$
 x_i
-\]
+$$
 
 会通过 residual 保留下来。
 
@@ -1750,9 +1750,9 @@ x_i
 
 然后：
 
-\[
+$$
 x_i+\text{AttentionOutput}_i
-\]
+$$
 
 形成更新 representation。
 
@@ -1760,15 +1760,15 @@ x_i+\text{AttentionOutput}_i
 
 ---
 
-# 35. 为什么 Transformer 要用 Residual？
+## 35. 为什么 Transformer 要用 Residual？
 
 这与 QKV 关系很密切。
 
 Attention output：
 
-\[
+$$
 o_i
-\]
+$$
 
 更像：
 
@@ -1776,9 +1776,9 @@ o_i
 
 原 representation：
 
-\[
+$$
 x_i
-\]
+$$
 
 则保留：
 
@@ -1786,9 +1786,9 @@ x_i
 
 Residual：
 
-\[
+$$
 x_i+o_i
-\]
+$$
 
 让模型同时保留：
 
@@ -1799,13 +1799,13 @@ x_i+o_i
 
 ---
 
-# 36. Q/K 的 Dot Product 为什么不使用 Euclidean Distance？
+## 36. Q/K 的 Dot Product 为什么不使用 Euclidean Distance？
 
 可以设计：
 
-\[
+$$
 -\|q-k\|^2
-\]
+$$
 
 作为 compatibility。
 
@@ -1820,9 +1820,9 @@ Attention 并不理论上要求必须 dot product。
 
 所以 Scaled Dot-Product Attention 采用：
 
-\[
+$$
 q^\top k
-\]
+$$
 
 主要是一个：
 
@@ -1832,17 +1832,17 @@ q^\top k
 
 ---
 
-# 37. Dot Product 为什么和向量方向有关？
+## 37. Dot Product 为什么和向量方向有关？
 
 回忆：
 
-\[
+$$
 q^\top k
 =
 \|q\|
 \|k\|
 \cos\theta
-\]
+$$
 
 所以 score 同时受：
 
@@ -1853,17 +1853,17 @@ q^\top k
 
 如果方向接近：
 
-\[
+$$
 \cos\theta
-\]
+$$
 
 较大。
 
 如果相反：
 
-\[
+$$
 \cos\theta<0
-\]
+$$
 
 score 可以为负。
 
@@ -1876,13 +1876,13 @@ score 可以为负。
 
 ---
 
-# 38. Attention 为什么不用 Cosine Similarity？
+## 38. Attention 为什么不用 Cosine Similarity？
 
 Cosine similarity 会归一化：
 
-\[
+$$
 \frac{q^\top k}{\|q\|\|k\|}
-\]
+$$
 
 从而移除 magnitude 信息。
 
@@ -1892,9 +1892,9 @@ Transformer 保留 dot-product magnitude，
 
 然后用：
 
-\[
+$$
 1/\sqrt{d_k}
-\]
+$$
 
 控制 dimension 导致的整体尺度。
 
@@ -1902,35 +1902,35 @@ Transformer 保留 dot-product magnitude，
 
 ---
 
-# 39. 为什么除以 \(\sqrt{d_k}\)？
+## 39. 为什么除以 $\sqrt{d_k}$？
 
 如果：
 
-\[
+$$
 q_r,k_r
-\]
+$$
 
 独立，均值 0，方差 1，
 
 则：
 
-\[
+$$
 q^\top k
 =
 \sum_{r=1}^{d_k}q_rk_r
-\]
+$$
 
 有：
 
-\[
+$$
 \operatorname{Var}(q^\top k)=d_k
-\]
+$$
 
 所以：
 
-\[
+$$
 d_k
-\]
+$$
 
 越大，
 
@@ -1940,67 +1940,67 @@ Softmax 会更容易饱和。
 
 因此：
 
-\[
+$$
 \boxed{
 \frac{q^\top k}{\sqrt{d_k}}
 }
-\]
+$$
 
 把标准差大致从：
 
-\[
+$$
 \sqrt{d_k}
-\]
+$$
 
 重新压到：
 
-\[
+$$
 O(1)
-\]
+$$
 
 尺度。
 
 ---
 
-# 40. 一个数字例子
+## 40. 一个数字例子
 
 假设：
 
-\[
+$$
 d_k=64
-\]
+$$
 
 那么：
 
-\[
+$$
 \sqrt{d_k}=8
-\]
+$$
 
 raw dot products：
 
-\[
+$$
 [16,8,0]
-\]
+$$
 
 不 scale：
 
-\[
+$$
 \operatorname{softmax}([16,8,0])
-\]
+$$
 
 会非常尖锐。
 
 scale 后：
 
-\[
+$$
 [2,1,0]
-\]
+$$
 
 Softmax 大约：
 
-\[
+$$
 [0.665,0.245,0.090]
-\]
+$$
 
 仍然偏向第一个，
 
@@ -2010,13 +2010,13 @@ Softmax 大约：
 
 ---
 
-# 41. Q/K/V Projection 有没有 Bias？
+## 41. Q/K/V Projection 有没有 Bias？
 
 从抽象公式上常写：
 
-\[
+$$
 Q=XW_Q
-\]
+$$
 
 省略 bias。
 
@@ -2026,9 +2026,9 @@ Q=XW_Q
 
 Transformer 的理论核心不依赖：
 
-\[
+$$
 b_Q,b_K,b_V
-\]
+$$
 
 是否存在。
 
@@ -2040,27 +2040,27 @@ b_Q,b_K,b_V
 
 ---
 
-# 42. Multi-Head 为什么要有不同的 W_Q/W_K/W_V？
+## 42. Multi-Head 为什么要有不同的 W_Q/W_K/W_V？
 
 单头只有一个 matching space：
 
-\[
+$$
 \mathbb R^{d_k}
-\]
+$$
 
-Multi-Head 给第 \(h\) 个 head 自己的：
+Multi-Head 给第 $h$ 个 head 自己的：
 
-\[
+$$
 W_Q^{(h)}
-\]
+$$
 
-\[
+$$
 W_K^{(h)}
-\]
+$$
 
-\[
+$$
 W_V^{(h)}
-\]
+$$
 
 于是：
 
@@ -2082,29 +2082,29 @@ W_V^{(h)}
 
 ---
 
-# 43. 为什么每个 Head 维度通常更小？
+## 43. 为什么每个 Head 维度通常更小？
 
 原始 Transformer：
 
-\[
+$$
 d_{\text{model}}=512
-\]
+$$
 
-\[
+$$
 h=8
-\]
+$$
 
 每个 head：
 
-\[
+$$
 d_k=d_v=64
-\]
+$$
 
 所以 8 个 head concat：
 
-\[
+$$
 8\times64=512
-\]
+$$
 
 这样总 representation width 不膨胀。
 
@@ -2112,37 +2112,37 @@ d_k=d_v=64
 
 ---
 
-# 44. QKV 的参数量大概是多少？
+## 44. QKV 的参数量大概是多少？
 
 单个 attention layer，如果：
 
-\[
+$$
 d_{\text{model}}=512
-\]
+$$
 
 且 Q/K/V 输出也总宽度 512，
 
 那么三组 projection 大致各有：
 
-\[
+$$
 512\times512
-\]
+$$
 
 参数。
 
 总计：
 
-\[
+$$
 3\times512^2
 =
 786432
-\]
+$$
 
 还没算：
 
-\[
+$$
 W_O
-\]
+$$
 
 这说明：
 
@@ -2154,15 +2154,15 @@ W_O
 
 ---
 
-# 45. 为什么 Attention Weights 不是直接训练参数？
+## 45. 为什么 Attention Weights 不是直接训练参数？
 
 你可能想：
 
-> 为什么不直接存一个 \(n\times n\) 的 matrix：
+> 为什么不直接存一个 $n\times n$ 的 matrix：
 
-\[
+$$
 A
-\]
+$$
 
 然后训练它？
 
@@ -2170,9 +2170,9 @@ A
 
 如果：
 
-\[
+$$
 A
-\]
+$$
 
 固定，
 
@@ -2182,9 +2182,9 @@ A
 
 而 Q/K 机制学的是：
 
-\[
+$$
 A(X)
-\]
+$$
 
 即：
 
@@ -2196,11 +2196,11 @@ A(X)
 
 ---
 
-# 46. 可以把 Q/K 看成一个动态邻接矩阵生成器
+## 46. 可以把 Q/K 看成一个动态邻接矩阵生成器
 
 Self-Attention：
 
-\[
+$$
 A(X)
 =
 \operatorname{softmax}
@@ -2211,13 +2211,13 @@ XW_QW_K^\top X^\top
 \sqrt{d_k}
 }
 \right)
-\]
+$$
 
 虽然通常不会这样合并写，
 
 但它揭示：
 
-> 输入 \(X\) 一变，attention connectivity 就会变。
+> 输入 $X$ 一变，attention connectivity 就会变。
 
 所以 Q/K projections 让网络每个 sample 都动态构造：
 
@@ -2225,32 +2225,32 @@ XW_QW_K^\top X^\top
 
 ---
 
-# 47. Value 则像 Message Function
+## 47. Value 则像 Message Function
 
 动态连接确定后：
 
-\[
+$$
 A_{ij}
-\]
+$$
 
 表示：
 
-> 从 node/token \(j\) 向 query \(i\) 传多少信息。
+> 从 node/token $j$ 向 query $i$ 传多少信息。
 
 真正 message：
 
-\[
+$$
 v_j=x_jW_V
-\]
+$$
 
 于是：
 
-\[
+$$
 o_i
 =
 \sum_j
 A_{ij}v_j
-\]
+$$
 
 这和 message passing 的结构非常相似：
 
@@ -2264,37 +2264,37 @@ aggregate
 
 所以：
 
-\[
+$$
 Q/K
-\]
+$$
 
 更像学习 routing，
 
-\[
+$$
 V
-\]
+$$
 
 更像学习 message content。
 
 ---
 
-# 48. 为什么一个 Token 的 Key 对所有 Query 都一样？
+## 48. 为什么一个 Token 的 Key 对所有 Query 都一样？
 
 在一次单头 attention forward 中，
 
-token \(j\) 的：
+token $j$ 的：
 
-\[
+$$
 k_j
-\]
+$$
 
 固定。
 
 不同 queries：
 
-\[
+$$
 q_1,q_2,\ldots
-\]
+$$
 
 分别和它匹配。
 
@@ -2312,23 +2312,23 @@ q_1,q_2,\ldots
 
 ---
 
-# 49. 为什么一个 Token 的 Value 对不同 Query 也一样？
+## 49. 为什么一个 Token 的 Value 对不同 Query 也一样？
 
 在标准 attention 中，
 
 对于同一个 head 和同一次 forward：
 
-\[
+$$
 v_j
-\]
+$$
 
 不会针对每个 query 改变。
 
 不同 query 主要通过：
 
-\[
+$$
 \alpha_{ij}
-\]
+$$
 
 决定读取多少。
 
@@ -2342,40 +2342,40 @@ v_j
 
 ---
 
-# 50. Attention Output 为什么是 Contextual Representation？
+## 50. Attention Output 为什么是 Contextual Representation？
 
 假设：
 
-\[
+$$
 x_i
-\]
+$$
 
-本来主要描述 token \(i\)。
+本来主要描述 token $i$。
 
 经过：
 
-\[
+$$
 o_i
 =
 \sum_j
 \alpha_{ij}v_j
-\]
+$$
 
 它包含了来自其他 positions 的信息。
 
 所以新的 representation 不再只由：
 
-\[
+$$
 x_i
-\]
+$$
 
 决定，
 
 还依赖整个 context：
 
-\[
+$$
 X
-\]
+$$
 
 因此叫：
 
@@ -2385,33 +2385,33 @@ X
 
 ---
 
-# 51. Self-Attention 和 Cross-Attention 的 QKV 来源
+## 51. Self-Attention 和 Cross-Attention 的 QKV 来源
 
 这是必须牢牢记住的。
 
 ---
 
-## Self-Attention
+### Self-Attention
 
 同一个 source：
 
-\[
+$$
 X
-\]
+$$
 
 产生：
 
-\[
+$$
 Q=XW_Q
-\]
+$$
 
-\[
+$$
 K=XW_K
-\]
+$$
 
-\[
+$$
 V=XW_V
-\]
+$$
 
 所以：
 
@@ -2419,33 +2419,33 @@ V=XW_V
 
 ---
 
-## Cross-Attention
+### Cross-Attention
 
 假设 decoder states：
 
-\[
+$$
 H
-\]
+$$
 
 encoder memory：
 
-\[
+$$
 M
-\]
+$$
 
 那么：
 
-\[
+$$
 Q=HW_Q
-\]
+$$
 
-\[
+$$
 K=MW_K
-\]
+$$
 
-\[
+$$
 V=MW_V
-\]
+$$
 
 所以：
 
@@ -2453,7 +2453,7 @@ V=MW_V
 
 ---
 
-# 52. 为什么 Cross-Attention 里 K 和 V 通常来自同一个 Memory？
+## 52. 为什么 Cross-Attention 里 K 和 V 通常来自同一个 Memory？
 
 因为 encoder memory 中的每个 position 是一个 candidate information source。
 
@@ -2464,15 +2464,15 @@ V=MW_V
 
 所以自然成对：
 
-\[
+$$
 (k_j,v_j)
-\]
+$$
 
 来自同一个 memory position 的不同 projections。
 
 ---
 
-# 53. ACT 中 Policy Decoder 的 QKV 到底是什么？
+## 53. ACT 中 Policy Decoder 的 QKV 到底是什么？
 
 回到 ACT。
 
@@ -2486,45 +2486,45 @@ z token
 
 融合成 memory：
 
-\[
+$$
 M
-\]
+$$
 
 Transformer decoder 有：
 
-\[
+$$
 k
-\]
+$$
 
 个 action-query positions。
 
 Cross-attention 时：
 
-\[
+$$
 \boxed{
 Q
 =
 \text{decoder action representations}
 }
-\]
+$$
 
 而：
 
-\[
+$$
 \boxed{
 K,V
 =
 \text{observation encoder memory}
 }
-\]
+$$
 
-所以第 \(i\) 个 future action slot 在问：
+所以第 $i$ 个 future action slot 在问：
 
-> **为了预测 action chunk 中第 \(i\) 个动作，我应该从当前 observation memory 的哪些位置读取信息？**
+> **为了预测 action chunk 中第 $i$ 个动作，我应该从当前 observation memory 的哪些位置读取信息？**
 
 ---
 
-# 54. ACT 中一个 Action Query 可能关注什么？
+## 54. ACT 中一个 Action Query 可能关注什么？
 
 假设未来第 10 个 action 对应：
 
@@ -2546,7 +2546,7 @@ K,V
 
 ---
 
-# 55. ACT 的 Action Query Embedding 本身就是 Attention Q 吗？
+## 55. ACT 的 Action Query Embedding 本身就是 Attention Q 吗？
 
 不完全是。
 
@@ -2558,17 +2558,17 @@ ACT decoder 有：
 
 还会经过：
 
-\[
+$$
 W_Q
-\]
+$$
 
 projection，
 
 才得到真正 attention 公式里的：
 
-\[
+$$
 Q
-\]
+$$
 
 所以：
 
@@ -2594,33 +2594,33 @@ attention Q matrix
 
 ---
 
-# 56. 同理，Encoder Memory 本身也不是 K/V
+## 56. 同理，Encoder Memory 本身也不是 K/V
 
 Memory：
 
-\[
+$$
 M
-\]
+$$
 
 进入 cross-attention 后，
 
 会分别经过：
 
-\[
+$$
 W_K
-\]
+$$
 
 和：
 
-\[
+$$
 W_V
-\]
+$$
 
 形成：
 
-\[
+$$
 K,V
-\]
+$$
 
 所以：
 
@@ -2644,13 +2644,13 @@ value
 
 ---
 
-# 57. 为什么这个区别很重要？
+## 57. 为什么这个区别很重要？
 
 如果你把：
 
-\[
+$$
 memory=key=value
-\]
+$$
 
 直接当成严格事实，
 
@@ -2660,15 +2660,15 @@ memory=key=value
 
 正是：
 
-\[
+$$
 W_K,W_V
-\]
+$$
 
 让这种角色分离发生。
 
 ---
 
-# 58. QKV 是不是一定要由 Linear Layer 产生？
+## 58. QKV 是不是一定要由 Linear Layer 产生？
 
 在标准 Transformer：
 
@@ -2693,84 +2693,84 @@ W_K,W_V
 
 ---
 
-# 59. 一个非常小的数值例子
+## 59. 一个非常小的数值例子
 
 假设有两个 candidate tokens。
 
 Query：
 
-\[
+$$
 q=
 [1,0]
-\]
+$$
 
 Keys：
 
-\[
+$$
 k_1=
 [1,0]
-\]
+$$
 
-\[
+$$
 k_2=
 [0,1]
-\]
+$$
 
 则：
 
-\[
+$$
 q^\top k_1=1
-\]
+$$
 
-\[
+$$
 q^\top k_2=0
-\]
+$$
 
 Softmax：
 
-\[
+$$
 \alpha
 =
 \operatorname{softmax}([1,0])
-\]
+$$
 
 大约：
 
-\[
+$$
 [0.731,0.269]
-\]
+$$
 
 如果 Values：
 
-\[
+$$
 v_1=
 [10,0]
-\]
+$$
 
-\[
+$$
 v_2=
 [0,20]
-\]
+$$
 
 则：
 
-\[
+$$
 o
 =
 0.731[10,0]
 +
 0.269[0,20]
-\]
+$$
 
 得到：
 
-\[
+$$
 \boxed{
 o
 \approx
 [7.31,5.38]
 }
-\]
+$$
 
 你可以清楚看到：
 
@@ -2780,35 +2780,35 @@ o
 
 ---
 
-# 60. 如果只改变 Value，会发生什么？
+## 60. 如果只改变 Value，会发生什么？
 
 保持：
 
-\[
+$$
 q,k_1,k_2
-\]
+$$
 
 不变，
 
 所以：
 
-\[
+$$
 \alpha=[0.731,0.269]
-\]
+$$
 
 也不变。
 
 但把：
 
-\[
+$$
 v_1
-\]
+$$
 
 改成：
 
-\[
+$$
 [100,100]
-\]
+$$
 
 那么输出会完全改变。
 
@@ -2818,27 +2818,27 @@ v_1
 
 ---
 
-# 61. 如果只改变 Key，会发生什么？
+## 61. 如果只改变 Key，会发生什么？
 
 保持 Values 不变。
 
 把：
 
-\[
+$$
 k_2
-\]
+$$
 
 改成：
 
-\[
+$$
 [2,0]
-\]
+$$
 
 那么：
 
-\[
+$$
 q^\top k_2=2
-\]
+$$
 
 现在第二个 candidate 反而匹配更高。
 
@@ -2846,9 +2846,9 @@ attention weights 改变，
 
 即使：
 
-\[
+$$
 v_1,v_2
-\]
+$$
 
 完全没变。
 
@@ -2858,35 +2858,35 @@ v_1,v_2
 
 ---
 
-# 62. 如果只改变 Query，会发生什么？
+## 62. 如果只改变 Query，会发生什么？
 
 Query 从：
 
-\[
+$$
 [1,0]
-\]
+$$
 
 改成：
 
-\[
+$$
 [0,1]
-\]
+$$
 
 原来：
 
-\[
+$$
 k_1=[1,0]
-\]
+$$
 
-\[
+$$
 k_2=[0,1]
-\]
+$$
 
 于是注意力会更偏：
 
-\[
+$$
 k_2
-\]
+$$
 
 同一组 memory：
 
@@ -2896,31 +2896,31 @@ k_2
 
 ---
 
-# 63. 为什么同一个 Token 可以对不同 Head 产生不同 Q/K/V？
+## 63. 为什么同一个 Token 可以对不同 Head 产生不同 Q/K/V？
 
 因为每个 head 都有自己的：
 
-\[
+$$
 W_Q^{(h)},W_K^{(h)},W_V^{(h)}
-\]
+$$
 
 所以同一个：
 
-\[
+$$
 x_i
-\]
+$$
 
 在 head 1：
 
-\[
+$$
 q_i^{(1)},k_i^{(1)},v_i^{(1)}
-\]
+$$
 
 和 head 2：
 
-\[
+$$
 q_i^{(2)},k_i^{(2)},v_i^{(2)}
-\]
+$$
 
 完全可以不同。
 
@@ -2934,29 +2934,29 @@ q_i^{(2)},k_i^{(2)},v_i^{(2)}
 
 ---
 
-# 64. Gradient 怎么穿过 Softmax？
+## 64. Gradient 怎么穿过 Softmax？
 
 如果某个 attention weight：
 
-\[
+$$
 \alpha_j
-\]
+$$
 
 对 loss 的影响不好，
 
 gradient 会穿过 Softmax 回到 score：
 
-\[
+$$
 s_j
-\]
+$$
 
 Softmax 的 Jacobian 具有：
 
-\[
+$$
 \frac{\partial \alpha_i}{\partial s_j}
 =
 \alpha_i(\delta_{ij}-\alpha_j)
-\]
+$$
 
 所以一个 score 改变时：
 
@@ -2964,9 +2964,9 @@ Softmax 的 Jacobian 具有：
 
 因为这些 weights 必须共同归一化到：
 
-\[
+$$
 1
-\]
+$$
 
 这意味着 Q/K 学到的是：
 
@@ -2974,33 +2974,33 @@ Softmax 的 Jacobian 具有：
 
 ---
 
-# 65. Attention Weight 是相对的，不是绝对的
+## 65. Attention Weight 是相对的，不是绝对的
 
 假设当前 scores：
 
-\[
+$$
 [3,2,1]
-\]
+$$
 
 如果全部加：
 
-\[
+$$
 100
-\]
+$$
 
 变成：
 
-\[
+$$
 [103,102,101]
-\]
+$$
 
 Softmax 完全相同。
 
 所以：
 
-\[
+$$
 \alpha
-\]
+$$
 
 主要由：
 
@@ -3018,13 +3018,13 @@ Softmax 完全相同。
 
 ---
 
-# 66. 为什么 Attention 是竞争式读取？
+## 66. 为什么 Attention 是竞争式读取？
 
 因为 Softmax normalization：
 
-\[
+$$
 \sum_j\alpha_j=1
-\]
+$$
 
 当某个 key 权重增加，
 
@@ -3040,29 +3040,29 @@ Softmax 完全相同。
 
 ---
 
-# 67. Q/K 的 Scale 为什么会影响 Gradient？
+## 67. Q/K 的 Scale 为什么会影响 Gradient？
 
 如果：
 
-\[
+$$
 q^\top k
-\]
+$$
 
 magnitude 太大，
 
 Softmax 很容易：
 
-\[
+$$
 [0.99999,0.00001,\ldots]
-\]
+$$
 
 进入非常饱和状态。
 
 这时：
 
-\[
+$$
 \alpha(1-\alpha)
-\]
+$$
 
 会很小，
 
@@ -3070,9 +3070,9 @@ score gradient 也会很弱。
 
 所以：
 
-\[
+$$
 1/\sqrt{d_k}
-\]
+$$
 
 并不只是为了“数字好看”。
 
@@ -3082,15 +3082,15 @@ score gradient 也会很弱。
 
 ---
 
-# 68. Q/K/V 有“标准答案”吗？
+## 68. Q/K/V 有“标准答案”吗？
 
 没有。
 
 神经网络可能存在很多不同参数组合：
 
-\[
+$$
 W_Q,W_K,W_V
-\]
+$$
 
 都能产生相似最终行为。
 
@@ -3110,7 +3110,7 @@ Q/K/V 是：
 
 ---
 
-# 69. 可以手动查看 Q、K、V 吗？
+## 69. 可以手动查看 Q、K、V 吗？
 
 当然可以。
 
@@ -3144,13 +3144,13 @@ Q/K/V 是：
 
 ---
 
-# 70. Q/K/V 和 Embedding 有什么区别？
+## 70. Q/K/V 和 Embedding 有什么区别？
 
 Embedding / hidden representation：
 
-\[
+$$
 x_i
-\]
+$$
 
 是：
 
@@ -3158,9 +3158,9 @@ x_i
 
 Q/K/V：
 
-\[
+$$
 q_i,k_i,v_i
-\]
+$$
 
 是：
 
@@ -3178,31 +3178,31 @@ attention 完成后，
 
 ---
 
-# 71. 所以每一层的 QKV 都不同
+## 71. 所以每一层的 QKV 都不同
 
 第 1 层：
 
-\[
+$$
 Q^{(1)},K^{(1)},V^{(1)}
-\]
+$$
 
 来自：
 
-\[
+$$
 X^{(1)}
-\]
+$$
 
 第 2 层输入已经变成：
 
-\[
+$$
 X^{(2)}
-\]
+$$
 
 所以又计算：
 
-\[
+$$
 Q^{(2)},K^{(2)},V^{(2)}
-\]
+$$
 
 即使参数结构相似，
 
@@ -3212,7 +3212,7 @@ Q^{(2)},K^{(2)},V^{(2)}
 
 ---
 
-# 72. 为什么越深层可能学不同关系？
+## 72. 为什么越深层可能学不同关系？
 
 早期 layer representation 可能更接近：
 
@@ -3233,29 +3233,29 @@ Q^{(2)},K^{(2)},V^{(2)}
 
 ---
 
-# 73. QKV 和 Position 信息是什么关系？
+## 73. QKV 和 Position 信息是什么关系？
 
 如果 input representation：
 
-\[
+$$
 x_i
-\]
+$$
 
 已经加了：
 
-\[
+$$
 PE_i
-\]
+$$
 
 那么：
 
-\[
+$$
 q_i=(e_i+PE_i)W_Q
-\]
+$$
 
-\[
+$$
 k_i=(e_i+PE_i)W_K
-\]
+$$
 
 所以 Q/K 可以利用：
 
@@ -3267,7 +3267,7 @@ k_i=(e_i+PE_i)W_K
 
 ---
 
-# 74. 没有 Position 时 Q/K 会怎样？
+## 74. 没有 Position 时 Q/K 会怎样？
 
 如果两个 token 内容完全相同，
 
@@ -3275,9 +3275,9 @@ k_i=(e_i+PE_i)W_K
 
 则它们产生：
 
-\[
+$$
 q,k,v
-\]
+$$
 
 也相同。
 
@@ -3295,60 +3295,60 @@ QKV 负责 matching，
 
 ---
 
-# 75. Mask 会怎样影响 QK？
+## 75. Mask 会怎样影响 QK？
 
 Causal mask 并不会改变：
 
-\[
+$$
 Q,K
-\]
+$$
 
 本身。
 
 它通常作用在 score matrix：
 
-\[
+$$
 S=
 \frac{QK^\top}{\sqrt{d_k}}
-\]
+$$
 
 上。
 
 禁止位置加入：
 
-\[
+$$
 -\infty
-\]
+$$
 
 然后 Softmax：
 
-\[
+$$
 A=\operatorname{softmax}(S+M)
-\]
+$$
 
 所以被 mask 的 key：
 
-\[
+$$
 A_{ij}=0
-\]
+$$
 
 即使：
 
-\[
+$$
 q_i^\top k_j
-\]
+$$
 
 本来很高。
 
 ---
 
-# 76. Padding Mask 同理
+## 76. Padding Mask 同理
 
 PAD token 也许仍然经过网络得到某个：
 
-\[
+$$
 k_j,v_j
-\]
+$$
 
 但在 attention score 阶段被 mask，
 
@@ -3360,7 +3360,7 @@ k_j,v_j
 
 ---
 
-# 77. Q/K/V 为什么不能简单说成“问题、关键词、答案”？
+## 77. Q/K/V 为什么不能简单说成“问题、关键词、答案”？
 
 这个类比容易让人误解：
 
@@ -3368,9 +3368,9 @@ k_j,v_j
 
 其实：
 
-\[
+$$
 v_j
-\]
+$$
 
 只是：
 
@@ -3405,15 +3405,15 @@ message / content representation
 
 ---
 
-# 78. 一个关键问题：Q 和 K 为什么不需要人类标注？
+## 78. 一个关键问题：Q 和 K 为什么不需要人类标注？
 
 因为最终任务本身提供 supervision。
 
 例如翻译：
 
-\[
+$$
 L=-\log p(y_{\text{correct}})
-\]
+$$
 
 如果某次 attention routing 导致翻译更好，
 
@@ -3429,7 +3429,7 @@ gradient 会强化产生该 routing 的 Q/K projections。
 
 ---
 
-# 79. 但 Attention 并不保证学出“人类觉得合理”的对应关系
+## 79. 但 Attention 并不保证学出“人类觉得合理”的对应关系
 
 模型只需要：
 
@@ -3450,7 +3450,7 @@ gradient 会强化产生该 routing 的 Q/K projections。
 
 ---
 
-# 80. QKV 和数据库检索最大的不同
+## 80. QKV 和数据库检索最大的不同
 
 数据库检索常常：
 
@@ -3458,25 +3458,25 @@ gradient 会强化产生该 routing 的 Q/K projections。
 
 Attention 中：
 
-\[
+$$
 K=XW_K
-\]
+$$
 
 Key 本身是学习出来的。
 
 而 Query：
 
-\[
+$$
 Q=XW_Q
-\]
+$$
 
 也学习。
 
 甚至 Value：
 
-\[
+$$
 V=XW_V
-\]
+$$
 
 也学习。
 
@@ -3486,7 +3486,7 @@ V=XW_V
 
 ---
 
-# 81. 为什么 QKV 特别适合机器人多模态输入？
+## 81. 为什么 QKV 特别适合机器人多模态输入？
 
 假设 ACT memory 同时有：
 
@@ -3496,23 +3496,23 @@ V=XW_V
 
 它们都被映射到：
 
-\[
+$$
 512
-\]
+$$
 
 维 hidden space。
 
 Cross-attention 可以进一步把这些 memory representations 投影成：
 
-\[
+$$
 K,V
-\]
+$$
 
 Action query projection 成：
 
-\[
+$$
 Q
-\]
+$$
 
 于是一个未来 action slot 可以根据当前需求动态判断：
 
@@ -3522,13 +3522,13 @@ Q
 
 ---
 
-# 82. 一个 ACT 小例子
+## 82. 一个 ACT 小例子
 
 假设：
 
-\[
+$$
 q_{action}^{(20)}
-\]
+$$
 
 表示 chunk 第 20 个 future action slot。
 
@@ -3544,76 +3544,76 @@ m₄ = latent token
 
 Cross-attention：
 
-\[
+$$
 Q=q_{action}^{(20)}W_Q
-\]
+$$
 
 每个 memory：
 
-\[
+$$
 k_j=m_jW_K
-\]
+$$
 
-\[
+$$
 v_j=m_jW_V
-\]
+$$
 
 然后：
 
-\[
+$$
 \alpha_j
 =
 \operatorname{softmax}
 \left(
 \frac{Qk_j}{\sqrt{d_k}}
 \right)
-\]
+$$
 
 最后：
 
-\[
+$$
 o_{20}
 =
 \sum_j\alpha_jv_j
-\]
+$$
 
 这个：
 
-\[
+$$
 o_{20}
-\]
+$$
 
 再经过 decoder 后续网络，
 
 最终投影成：
 
-\[
+$$
 14
-\]
+$$
 
 维 target joint position。
 
 ---
 
-# 83. 为什么未来不同 Action Slot 会有不同 Attention？
+## 83. 为什么未来不同 Action Slot 会有不同 Attention？
 
 因为它们的 decoder representations / query positions 不同。
 
 所以：
 
-\[
+$$
 q_{action}^{(0)}
 \neq
 q_{action}^{(20)}
-\]
+$$
 
 一般情况下，
 
 它们经过：
 
-\[
+$$
 W_Q
-\]
+$$
 
 产生不同 Q。
 
@@ -3627,41 +3627,41 @@ attention distribution 也可以不同。
 
 ---
 
-# 84. Self-Attention 中为什么 Token 会“互相影响”？
+## 84. Self-Attention 中为什么 Token 会“互相影响”？
 
 因为：
 
-\[
+$$
 o_i
 =
 \sum_j\alpha_{ij}v_j
-\]
+$$
 
 所以：
 
-\[
+$$
 x_j
-\]
+$$
 
 不仅决定自己的：
 
-\[
+$$
 v_j
-\]
+$$
 
 还可能通过被：
 
-\[
+$$
 i
-\]
+$$
 
 attention 到，
 
 影响：
 
-\[
+$$
 o_i
-\]
+$$
 
 因此一层 self-attention 就建立了：
 
@@ -3669,23 +3669,23 @@ o_i
 
 ---
 
-# 85. 一个 Token 会不会影响自己？
+## 85. 一个 Token 会不会影响自己？
 
 会。
 
 在没有 mask self-position 的普通 self-attention 中：
 
-\[
+$$
 j=i
-\]
+$$
 
 也是合法 key/value。
 
 所以：
 
-\[
+$$
 \alpha_{ii}
-\]
+$$
 
 可能非零。
 
@@ -3699,29 +3699,29 @@ j=i
 
 ---
 
-# 86. 为什么 Attention 不是简单“复制最相关 Token”？
+## 86. 为什么 Attention 不是简单“复制最相关 Token”？
 
 因为即使：
 
-\[
+$$
 \alpha_{ij}
-\]
+$$
 
 最大，
 
 其他：
 
-\[
+$$
 \alpha
-\]
+$$
 
 仍可非零。
 
 而且：
 
-\[
+$$
 v_j
-\]
+$$
 
 是 learned projection，
 
@@ -3729,9 +3729,9 @@ v_j
 
 最后还有：
 
-\[
+$$
 W_O
-\]
+$$
 
 等 transformation。
 
@@ -3741,77 +3741,77 @@ W_O
 
 ---
 
-# 87. Q/K/V 和 Temporal Ensemble 再区分一次
+## 87. Q/K/V 和 Temporal Ensemble 再区分一次
 
 ACT Temporal Ensemble：
 
-\[
+$$
 a_t
 =
 \sum_i
 \alpha_i
 \hat a_t^{(i)}
-\]
+$$
 
 也有 weights。
 
 但：
 
-\[
+$$
 \alpha_i
-\]
+$$
 
 来自：
 
-\[
+$$
 e^{-mi}
-\]
+$$
 
 只由 prediction age 决定。
 
 Attention：
 
-\[
+$$
 \alpha_{ij}
-\]
+$$
 
 来自：
 
-\[
+$$
 q_i^\top k_j
-\]
+$$
 
 由 learned representation content 决定。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Attention}
 =
 \text{learned content-dependent routing}
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 \text{Temporal Ensemble}
 =
 \text{hand-designed time-dependent averaging}
 }
-\]
+$$
 
 ---
 
-# 88. 常见误解一：Q 就是输入 Token 本身
+## 88. 常见误解一：Q 就是输入 Token 本身
 
 **不准确。**
 
 标准 Transformer：
 
-\[
+$$
 Q=XW_Q
-\]
+$$
 
 Q 是：
 
@@ -3819,15 +3819,15 @@ Q 是：
 
 ---
 
-# 89. 常见误解二：K 是关键词
+## 89. 常见误解二：K 是关键词
 
 只是类比。
 
 严格来说：
 
-\[
+$$
 K=XW_K
-\]
+$$
 
 是：
 
@@ -3837,7 +3837,7 @@ K=XW_K
 
 ---
 
-# 90. 常见误解三：V 是最终答案
+## 90. 常见误解三：V 是最终答案
 
 **错误。**
 
@@ -3849,7 +3849,7 @@ Value 是：
 
 ---
 
-# 91. 常见误解四：Q、K、V 三个 Linear Layer 各自有专门标签监督
+## 91. 常见误解四：Q、K、V 三个 Linear Layer 各自有专门标签监督
 
 **没有。**
 
@@ -3857,7 +3857,7 @@ Value 是：
 
 ---
 
-# 92. 常见误解五：Q/K 只是在学语义相似度
+## 92. 常见误解五：Q/K 只是在学语义相似度
 
 **错误。**
 
@@ -3869,7 +3869,7 @@ Value 是：
 
 ---
 
-# 93. 常见误解六：Q 和 K 必须相同
+## 93. 常见误解六：Q 和 K 必须相同
 
 **错误。**
 
@@ -3879,7 +3879,7 @@ Value 是：
 
 ---
 
-# 94. 常见误解七：Key 决定传递什么内容
+## 94. 常见误解七：Key 决定传递什么内容
 
 主要不是。
 
@@ -3889,13 +3889,13 @@ Key 主要影响：
 
 真正被 weighted sum 的是：
 
-\[
+$$
 Value
-\]
+$$
 
 ---
 
-# 95. 常见误解八：Value 影响 Attention Weight
+## 95. 常见误解八：Value 影响 Attention Weight
 
 在标准 scaled dot-product attention 中：
 
@@ -3903,29 +3903,29 @@ Value
 
 权重由：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 决定。
 
 ---
 
-# 96. 常见误解九：Attention Matrix 是固定 Parameter
+## 96. 常见误解九：Attention Matrix 是固定 Parameter
 
 **错误。**
 
 它根据当前：
 
-\[
+$$
 Q,K
-\]
+$$
 
 每次 forward 动态生成。
 
 ---
 
-# 97. 常见误解十：一个 Token 在所有层里 QKV 一样
+## 97. 常见误解十：一个 Token 在所有层里 QKV 一样
 
 **错误。**
 
@@ -3933,21 +3933,21 @@ Q,K
 
 ---
 
-# 98. 常见误解十一：Action Query Embedding 就等于最终 Q
+## 98. 常见误解十一：Action Query Embedding 就等于最终 Q
 
 **不完全是。**
 
 它还会经过 attention module 的：
 
-\[
+$$
 W_Q
-\]
+$$
 
 projection。
 
 ---
 
-# 99. 常见误解十二：Encoder Memory 就等于 Key / Value
+## 99. 常见误解十二：Encoder Memory 就等于 Key / Value
 
 **不完全是。**
 
@@ -3955,15 +3955,15 @@ memory 是 source representation。
 
 它会分别经过：
 
-\[
+$$
 W_K,W_V
-\]
+$$
 
 形成 K 和 V。
 
 ---
 
-# 100. 常见误解十三：W_Q、W_K、W_V 的名字决定了它们功能
+## 100. 常见误解十三：W_Q、W_K、W_V 的名字决定了它们功能
 
 **错误。**
 
@@ -3973,7 +3973,7 @@ W_K,W_V
 
 ---
 
-# 101. 用一个统一计算图记住 QKV
+## 101. 用一个统一计算图记住 QKV
 
 ```text
                   INPUT REPRESENTATIONS X
@@ -4026,31 +4026,31 @@ W_K,W_V
 
 ---
 
-# 102. 用一句话解释 Q
+## 102. 用一句话解释 Q
 
 > **Query 是当前 token / decoder state 为了决定“我应该从候选信息中读取什么”而学习出来的匹配侧 representation；它本身没有人类写好的问题语义，而是因为它位于 attention score 的查询侧，被任务 gradient 训练成能够提出有用检索条件的向量。**
 
 ---
 
-# 103. 用一句话解释 K
+## 103. 用一句话解释 K
 
 > **Key 是每个候选信息源为了参与匹配而学习出来的 addressing representation；它决定某个候选面对不同 Query 时会获得怎样的 compatibility score。**
 
 ---
 
-# 104. 用一句话解释 V
+## 104. 用一句话解释 V
 
-> **Value 是候选信息源真正用于传递内容的 message representation；Attention 权重决定它被读取多少，而 \(W_V\) 被训练成让被读取的信息对最终任务有用。**
+> **Value 是候选信息源真正用于传递内容的 message representation；Attention 权重决定它被读取多少，而 $W_V$ 被训练成让被读取的信息对最终任务有用。**
 
 ---
 
-# 105. 最核心的一句话
+## 105. 最核心的一句话
 
-> **Q、K、V 之所以能够分别承担“查询、匹配、传递内容”的角色，不是因为向量本身天然具有这些语义，而是因为三个 learned projections 被放在了 Attention 计算图中的不同位置：Q/K 决定 attention weights，V 决定被这些 weights 聚合的内容；最终任务 loss 通过不同梯度路径长期塑造 \(W_Q,W_K,W_V\)，于是这些 representation roles 在训练中形成。**
+> **Q、K、V 之所以能够分别承担“查询、匹配、传递内容”的角色，不是因为向量本身天然具有这些语义，而是因为三个 learned projections 被放在了 Attention 计算图中的不同位置：Q/K 决定 attention weights，V 决定被这些 weights 聚合的内容；最终任务 loss 通过不同梯度路径长期塑造 $W_Q,W_K,W_V$，于是这些 representation roles 在训练中形成。**
 
 如果只记一个公式和一个解释：
 
-\[
+$$
 \boxed{
 \operatorname{softmax}
 \left(
@@ -4058,7 +4058,7 @@ W_K,W_V
 \right)
 V
 }
-\]
+$$
 
 可以读成：
 
@@ -4072,7 +4072,7 @@ V：
 
 ---
 
-# 106. 下一步
+## 106. 下一步
 
 现在 QKV 最容易卡住的核心问题已经解决。
 
@@ -4082,14 +4082,14 @@ V：
 
 这篇会从：
 
-\[
+$$
 a^\top b
-\]
+$$
 
 最基础的几何意义开始，严格解释：
 
 - 点积为什么和夹角有关；
-- \(\cos\theta\) 从哪里来；
+- $\cos\theta$ 从哪里来；
 - 为什么同方向给大正值；
 - 为什么正交是 0；
 - 为什么反方向是负数；
@@ -4103,15 +4103,15 @@ a^\top b
 
 把：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 如何变成真正 attention weights 彻底讲透。
 
 ---
 
-## Primary Source
+### Primary Source
 
 Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,  
 Aidan N. Gomez, Łukasz Kaiser, Illia Polosukhin.
@@ -4136,7 +4136,7 @@ Advances in Neural Information Processing Systems 30, 2017.
 
 Scaled Dot-Product Attention：
 
-\[
+$$
 \boxed{
 \operatorname{Attention}(Q,K,V)
 =
@@ -4145,7 +4145,7 @@ Scaled Dot-Product Attention：
 \frac{QK^\top}{\sqrt{d_k}}
 \right)V
 }
-\]
+$$
 
 原论文还明确说明 Multi-Head Attention 中：
 
@@ -4153,15 +4153,15 @@ Scaled Dot-Product Attention：
 
 因此本文关于：
 
-\[
+$$
 W_Q,W_K,W_V
-\]
+$$
 
 的功能解释建立在原始计算图之上。
 
 ---
 
-## Historical Background
+### Historical Background
 
 Dzmitry Bahdanau, Kyunghyun Cho, Yoshua Bengio.  
 **Neural Machine Translation by Jointly Learning to Align and Translate.**  
@@ -4172,21 +4172,21 @@ arXiv:1409.0473.
 
 Bahdanau Attention 使用 decoder state 与 encoder annotations 之间的 learned alignment model：
 
-\[
+$$
 e_{ij}=a(s_{i-1},h_j)
-\]
+$$
 
 再经 Softmax 得到：
 
-\[
+$$
 \alpha_{ij}
-\]
+$$
 
 最后：
 
-\[
+$$
 c_i=\sum_j\alpha_{ij}h_j
-\]
+$$
 
 它说明了 QKV 形式背后更一般的 Attention 原理：
 
@@ -4194,7 +4194,7 @@ c_i=\sum_j\alpha_{ij}h_j
 
 ---
 
-## 与 ACT 的关系
+### 与 ACT 的关系
 
 Tony Z. Zhao, Vikash Kumar, Sergey Levine, Chelsea Finn.  
 **Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware.**  
@@ -4204,17 +4204,17 @@ RSS 2023.
 
 在 ACT Policy Transformer Decoder 的 cross-attention 中，可以概念化为：
 
-\[
+$$
 Q
 \leftarrow
 \text{action decoder representations}
-\]
+$$
 
-\[
+$$
 K,V
 \leftarrow
 \text{observation encoder memory}
-\]
+$$
 
 所以每一个 future action slot 可以根据自己的 Query：
 
@@ -4222,9 +4222,9 @@ K,V
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### 前置知识
+#### 前置知识
 
 - [Attention](./attention.md)
 - [Transformer](./transformer.md)
@@ -4232,7 +4232,7 @@ K,V
 - Matrix
 - Linear Transformation
 
-### 数学核心
+#### 数学核心
 
 - [Dot Product](./dot-product.md)
 - Cosine Similarity
@@ -4240,7 +4240,7 @@ K,V
 - [Softmax](./softmax.md)
 - Gradient & Chain Rule
 
-### Attention 主线
+#### Attention 主线
 
 - [Self-Attention](./self-attention.md)
 - [Cross-Attention](./cross-attention.md)
@@ -4248,12 +4248,12 @@ K,V
 - [Scaled Dot-Product Attention](./attention.md)
 - [Causal Mask](./causal-mask.md)
 
-### ACT
+#### ACT
 
 - [ACT Architecture](../robot-learning/act/architecture.md)
 - [ACT Complete Data Flow](../robot-learning/act/complete-data-flow.md)
 
-### 下一步
+#### 下一步
 
 - [Dot Product](./dot-product.md)
 - [Softmax](./softmax.md)

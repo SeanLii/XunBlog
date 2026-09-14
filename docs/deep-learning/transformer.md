@@ -11,22 +11,22 @@ updated: "2026-09-15"
 
 今天再看 Transformer，我们很容易把它理解成一套已经理所当然的公式：
 
-\[
+$$
 Q=XW_Q,\qquad
 K=XW_K,\qquad
 V=XW_V
-\]
+$$
 
 然后：
 
-\[
+$$
 \operatorname{Attention}(Q,K,V)
 =
 \operatorname{softmax}
 \left(
 \frac{QK^\top}{\sqrt{d_k}}
 \right)V
-\]
+$$
 
 接着 Multi-Head Attention、Feed-Forward Network、Residual、LayerNorm……
 
@@ -84,7 +84,7 @@ Transformer 的核心思想可以先压缩成一句话：
 
 ---
 
-# 1. Transformer 最初解决的是 Sequence Transduction
+## 1. Transformer 最初解决的是 Sequence Transduction
 
 原论文研究的主要任务是机器翻译。
 
@@ -106,11 +106,11 @@ I love learning AI
 
 即：
 
-\[
+$$
 (x_1,\ldots,x_n)
 \longrightarrow
 (y_1,\ldots,y_m)
-\]
+$$
 
 输入是一个 sequence，
 
@@ -152,35 +152,35 @@ Output Sequence
 
 ---
 
-# 2. 为什么 RNN 看起来这么自然？
+## 2. 为什么 RNN 看起来这么自然？
 
 假设输入：
 
-\[
+$$
 x_1,x_2,x_3,\ldots,x_n
-\]
+$$
 
 RNN 计算：
 
-\[
+$$
 h_t
 =
 f(h_{t-1},x_t)
-\]
+$$
 
 因此：
 
-\[
+$$
 h_1=f(h_0,x_1)
-\]
+$$
 
-\[
+$$
 h_2=f(h_1,x_2)
-\]
+$$
 
-\[
+$$
 h_3=f(h_2,x_3)
-\]
+$$
 
 依次继续。
 
@@ -190,9 +190,9 @@ h_3=f(h_2,x_3)
 
 而且：
 
-\[
+$$
 h_t
-\]
+$$
 
 理论上可以携带之前 sequence 的信息。
 
@@ -220,39 +220,39 @@ Transformer 要解决的是：
 
 ---
 
-# 3. RNN 的第一个问题：训练中的顺序依赖
+## 3. RNN 的第一个问题：训练中的顺序依赖
 
 考虑：
 
-\[
+$$
 h_3
 =
 f(h_2,x_3)
-\]
+$$
 
 要算：
 
-\[
+$$
 h_3
-\]
+$$
 
 必须先有：
 
-\[
+$$
 h_2
-\]
+$$
 
 而：
 
-\[
+$$
 h_2
-\]
+$$
 
 又必须等：
 
-\[
+$$
 h_1
-\]
+$$
 
 所以在单个 sequence 内：
 
@@ -277,21 +277,21 @@ h₄
 
 即使你已经知道整个训练句子：
 
-\[
+$$
 x_1,\ldots,x_n
-\]
+$$
 
 仍不能同时计算全部：
 
-\[
+$$
 h_1,\ldots,h_n
-\]
+$$
 
 因为后面的 hidden state 依赖前面的结果。
 
 ---
 
-# 4. 为什么这个问题在 GPU 上尤其重要？
+## 4. 为什么这个问题在 GPU 上尤其重要？
 
 GPU 擅长：
 
@@ -299,17 +299,17 @@ GPU 擅长：
 
 例如如果我们可以把所有 token representation 堆成矩阵：
 
-\[
+$$
 X
 \in
 \mathbb R^{n\times d}
-\]
+$$
 
 然后一次计算：
 
-\[
+$$
 XW
-\]
+$$
 
 GPU 可以很好地并行处理所有位置。
 
@@ -332,49 +332,49 @@ position 3
 
 原论文把 recurrent layer 的最少 sequential operations 写成：
 
-\[
+$$
 \boxed{O(n)}
-\]
+$$
 
 而 self-attention：
 
-\[
+$$
 \boxed{O(1)}
-\]
+$$
 
 这里的：
 
-\[
+$$
 O(1)
-\]
+$$
 
 不是说 attention 计算量和 sequence length 无关。
 
 而是说：
 
-> **在一层 self-attention 内，所有 sequence positions 可以并行计算，不需要按照 \(1\rightarrow2\rightarrow3\) 的顺序逐步执行。**
+> **在一层 self-attention 内，所有 sequence positions 可以并行计算，不需要按照 $1\rightarrow2\rightarrow3$ 的顺序逐步执行。**
 
 这个区别非常重要。
 
 ---
 
-# 5. RNN 的第二个问题：远距离信息需要走很长的路径
+## 5. RNN 的第二个问题：远距离信息需要走很长的路径
 
 假设：
 
-\[
+$$
 x_1
-\]
+$$
 
 的信息要影响：
 
-\[
+$$
 x_{100}
-\]
+$$
 
 在 recurrent chain 中，信息大致要经过：
 
-\[
+$$
 h_1
 \rightarrow
 h_2
@@ -382,13 +382,13 @@ h_2
 \cdots
 \rightarrow
 h_{100}
-\]
+$$
 
 也就是：
 
-\[
+$$
 O(n)
-\]
+$$
 
 长度的路径。
 
@@ -409,17 +409,17 @@ position 100
 
 于是任意两个位置在一层 full self-attention 中：
 
-\[
+$$
 \boxed{
 \text{maximum path length}=O(1)
 }
-\]
+$$
 
 这就是 Self-Attention 对 long-range dependency 的一个核心结构优势。
 
 ---
 
-# 6. 如果所有位置都能直接“看”所有位置，会发生什么？
+## 6. 如果所有位置都能直接“看”所有位置，会发生什么？
 
 假设句子：
 
@@ -471,7 +471,7 @@ because  和我相关吗？
 
 ---
 
-# 7. Attention 不是“选一个 Token”
+## 7. Attention 不是“选一个 Token”
 
 这是一个容易形成的误解。
 
@@ -493,22 +493,22 @@ Attention 通常不是：
 
 因此：
 
-\[
+$$
 \boxed{
 \text{Output}
 =
 \sum_j
 \alpha_jv_j
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 \alpha_j
-\]
+$$
 
-表示第 \(j\) 个位置应该贡献多少。
+表示第 $j$ 个位置应该贡献多少。
 
 所以 attention 更像：
 
@@ -516,7 +516,7 @@ Attention 通常不是：
 
 ---
 
-# 8. 为什么需要 Query、Key、Value 三种东西？
+## 8. 为什么需要 Query、Key、Value 三种东西？
 
 假设你进入图书馆。
 
@@ -526,9 +526,9 @@ Attention 通常不是：
 
 这个需求可以类比：
 
-\[
+$$
 \boxed{Query}
-\]
+$$
 
 每本书有一个用于检索的描述：
 
@@ -541,9 +541,9 @@ Attention 通常不是：
 
 可以类比：
 
-\[
+$$
 \boxed{Key}
-\]
+$$
 
 当你判断某本书和需求匹配后，
 
@@ -551,9 +551,9 @@ Attention 通常不是：
 
 可以类比：
 
-\[
+$$
 \boxed{Value}
-\]
+$$
 
 所以：
 
@@ -578,35 +578,35 @@ Value
 
 ---
 
-# 9. Q、K、V 不是天然存在的语义变量
+## 9. Q、K、V 不是天然存在的语义变量
 
 这一点非常重要。
 
 模型输入一个 token representation：
 
-\[
+$$
 x_i\in\mathbb R^{d_{\text{model}}}
-\]
+$$
 
 然后通过三个 learned linear projections：
 
-\[
+$$
 \boxed{
 q_i=x_iW_Q
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 k_i=x_iW_K
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 v_i=x_iW_V
 }
-\]
+$$
 
 也就是说：
 
@@ -626,21 +626,21 @@ v_i=x_iW_V
 
 ---
 
-# 10. 为什么 Query 要和 Key 做 Dot Product？
+## 10. 为什么 Query 要和 Key 做 Dot Product？
 
 假设：
 
-\[
+$$
 q_i,k_j
 \in
 \mathbb R^{d_k}
-\]
+$$
 
 Transformer 使用：
 
-\[
+$$
 q_i\cdot k_j
-\]
+$$
 
 作为 compatibility score 的基础。
 
@@ -650,49 +650,49 @@ dot product 往往较大。
 
 所以可以直觉理解成：
 
-> 当前 query \(i\) 与 position \(j\) 的 key 有多匹配？
+> 当前 query $i$ 与 position $j$ 的 key 有多匹配？
 
 对所有位置：
 
-\[
+$$
 j=1,\ldots,n
-\]
+$$
 
 计算：
 
-\[
+$$
 s_{ij}
 =
 q_i^\top k_j
-\]
+$$
 
 得到一整排 scores。
 
 ---
 
-# 11. 单个 Token 的 Attention 先写出来
+## 11. 单个 Token 的 Attention 先写出来
 
 假设当前 token：
 
-\[
+$$
 i
-\]
+$$
 
 有 query：
 
-\[
+$$
 q_i
-\]
+$$
 
 整个 sequence 有 keys：
 
-\[
+$$
 k_1,\ldots,k_n
-\]
+$$
 
 先计算：
 
-\[
+$$
 s_{ij}
 =
 \frac{
@@ -700,11 +700,11 @@ q_i^\top k_j
 }{
 \sqrt{d_k}
 }
-\]
+$$
 
 然后 Softmax：
 
-\[
+$$
 \alpha_{ij}
 =
 \frac{
@@ -712,36 +712,36 @@ e^{s_{ij}}
 }{
 \sum_{r=1}^{n}e^{s_{ir}}
 }
-\]
+$$
 
 因此：
 
-\[
+$$
 \sum_j\alpha_{ij}=1
-\]
+$$
 
 最后：
 
-\[
+$$
 \boxed{
 o_i
 =
 \sum_{j=1}^{n}
 \alpha_{ij}v_j
 }
-\]
+$$
 
 这个：
 
-\[
+$$
 o_i
-\]
+$$
 
-就是 token \(i\) 从整个 sequence 读取后的新 representation。
+就是 token $i$ 从整个 sequence 读取后的新 representation。
 
 ---
 
-# 12. 为什么乘的是 Value，而不是 Key？
+## 12. 为什么乘的是 Value，而不是 Key？
 
 Key 的工作是：
 
@@ -749,15 +749,15 @@ Key 的工作是：
 
 真正被聚合的信息来自：
 
-\[
+$$
 V
-\]
+$$
 
 所以：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 负责：
 
@@ -765,9 +765,9 @@ QK^\top
 
 而：
 
-\[
+$$
 \operatorname{softmax}(\cdot)V
-\]
+$$
 
 负责：
 
@@ -775,31 +775,31 @@ QK^\top
 
 可以把它压缩成：
 
-\[
+$$
 \boxed{
 QK^\top
 =
 \text{where to read}
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 V
 =
 \text{what to read}
 }
-\]
+$$
 
 这是非常有用的 mental model。
 
 ---
 
-# 13. 为什么要除以 \(\sqrt{d_k}\)？
+## 13. 为什么要除以 $\sqrt{d_k}$？
 
 Scaled Dot-Product Attention 的公式：
 
-\[
+$$
 \boxed{
 \operatorname{Attention}(Q,K,V)
 =
@@ -808,13 +808,13 @@ Scaled Dot-Product Attention 的公式：
 \frac{QK^\top}{\sqrt{d_k}}
 \right)V
 }
-\]
+$$
 
 为什么不能直接：
 
-\[
+$$
 \operatorname{softmax}(QK^\top)V
-\]
+$$
 
 ？
 
@@ -822,51 +822,51 @@ Scaled Dot-Product Attention 的公式：
 
 假设：
 
-\[
+$$
 q_i
-\]
+$$
 
 和：
 
-\[
+$$
 k_i
-\]
+$$
 
 各维独立，
 
 均值：
 
-\[
+$$
 0
-\]
+$$
 
 方差：
 
-\[
+$$
 1
-\]
+$$
 
 dot product：
 
-\[
+$$
 q\cdot k
 =
 \sum_{r=1}^{d_k}q_rk_r
-\]
+$$
 
 那么：
 
-\[
+$$
 \operatorname{Var}(q\cdot k)
 =
 d_k
-\]
+$$
 
 所以：
 
-\[
+$$
 d_k
-\]
+$$
 
 越大，
 
@@ -874,21 +874,21 @@ dot-product magnitude 往往越大。
 
 ---
 
-# 14. Dot Product 太大为什么不好？
+## 14. Dot Product 太大为什么不好？
 
 假设 softmax 输入：
 
-\[
+$$
 [1,2,3]
-\]
+$$
 
 输出还有一定平滑性。
 
 但如果整体 magnitude 变成：
 
-\[
+$$
 [10,20,30]
-\]
+$$
 
 softmax 会非常接近：
 
@@ -904,18 +904,18 @@ softmax 会非常接近：
 
 所以除：
 
-\[
+$$
 \sqrt{d_k}
-\]
+$$
 
 之后：
 
-\[
+$$
 \operatorname{Var}
 \left(
 \frac{q\cdot k}{\sqrt{d_k}}
 \right)
-\]
+$$
 
 大致重新回到常数尺度。
 
@@ -923,63 +923,63 @@ softmax 会非常接近：
 
 ---
 
-# 15. 为什么所有 Token 可以一起算？
+## 15. 为什么所有 Token 可以一起算？
 
 如果 sequence：
 
-\[
+$$
 X
 \in
 \mathbb R^{n\times d_{\text{model}}}
-\]
+$$
 
 那么：
 
-\[
+$$
 Q=XW_Q
-\]
+$$
 
-\[
+$$
 K=XW_K
-\]
+$$
 
-\[
+$$
 V=XW_V
-\]
+$$
 
 全部 token 一次矩阵乘法即可计算。
 
 然后：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 shape：
 
-\[
+$$
 [n,d_k]
 \times
 [d_k,n]
 =
 [n,n]
-\]
+$$
 
 这张矩阵中的：
 
-\[
+$$
 (i,j)
-\]
+$$
 
 位置：
 
-\[
+$$
 q_i^\top k_j
-\]
+$$
 
 正好表示：
 
-> token \(i\) 对 token \(j\) 的 compatibility。
+> token $i$ 对 token $j$ 的 compatibility。
 
 于是一次矩阵运算同时得到：
 
@@ -989,13 +989,13 @@ q_i^\top k_j
 
 ---
 
-# 16. Self-Attention 中为什么叫“Self”？
+## 16. Self-Attention 中为什么叫“Self”？
 
 因为：
 
-\[
+$$
 Q,K,V
-\]
+$$
 
 都来自：
 
@@ -1003,23 +1003,23 @@ Q,K,V
 
 例如 encoder 当前 layer 输入：
 
-\[
+$$
 X
-\]
+$$
 
 则：
 
-\[
+$$
 Q=XW_Q
-\]
+$$
 
-\[
+$$
 K=XW_K
-\]
+$$
 
-\[
+$$
 V=XW_V
-\]
+$$
 
 所以 sequence：
 
@@ -1027,11 +1027,11 @@ V=XW_V
 
 这就是：
 
-\[
+$$
 \boxed{
 \text{Self-Attention}
 }
-\]
+$$
 
 或者原论文提到的：
 
@@ -1039,7 +1039,7 @@ V=XW_V
 
 ---
 
-# 17. Self-Attention 不等于“Token 和自己算 Attention”
+## 17. Self-Attention 不等于“Token 和自己算 Attention”
 
 另一个常见误解。
 
@@ -1049,11 +1049,11 @@ V=XW_V
 
 恰恰相反。
 
-Full self-attention 中 token \(i\) 可以 attend：
+Full self-attention 中 token $i$ 可以 attend：
 
-\[
+$$
 1,2,\ldots,n
-\]
+$$
 
 所有位置，包括自己。
 
@@ -1063,13 +1063,13 @@ Full self-attention 中 token \(i\) 可以 attend：
 
 ---
 
-# 18. 为什么需要 Multi-Head Attention？
+## 18. 为什么需要 Multi-Head Attention？
 
 如果只有一个 attention：
 
-\[
+$$
 \operatorname{Attention}(Q,K,V)
-\]
+$$
 
 所有关系都要压在同一个 attention space 里。
 
@@ -1077,31 +1077,31 @@ Full self-attention 中 token \(i\) 可以 attend：
 
 > 使用多个不同 learned projections 并行做 attention 更有效。
 
-对于 head \(h\)：
+对于 head $h$：
 
-\[
+$$
 Q_h=QW_h^Q
-\]
+$$
 
-\[
+$$
 K_h=KW_h^K
-\]
+$$
 
-\[
+$$
 V_h=VW_h^V
-\]
+$$
 
 然后：
 
-\[
+$$
 head_h
 =
 \operatorname{Attention}(Q_h,K_h,V_h)
-\]
+$$
 
 最后：
 
-\[
+$$
 \boxed{
 \operatorname{MultiHead}(Q,K,V)
 =
@@ -1111,11 +1111,11 @@ head_1,\ldots,head_H
 )
 W^O
 }
-\]
+$$
 
 ---
 
-# 19. 为什么多个 Head 有意义？
+## 19. 为什么多个 Head 有意义？
 
 可以用一个直觉例子。
 
@@ -1133,9 +1133,9 @@ W^O
 
 不同 heads 使用不同：
 
-\[
+$$
 W_i^Q,W_i^K,W_i^V
-\]
+$$
 
 所以它们可以在不同 learned representation subspaces 中工作。
 
@@ -1151,23 +1151,23 @@ W_i^Q,W_i^K,W_i^V
 
 ---
 
-# 20. 原始 Transformer Base 有多少个 Head？
+## 20. 原始 Transformer Base 有多少个 Head？
 
 原论文 base model：
 
-\[
+$$
 d_{\text{model}}=512
-\]
+$$
 
-\[
+$$
 h=8
-\]
+$$
 
 所以每个 head：
 
-\[
+$$
 d_k=d_v=\frac{512}{8}=64
-\]
+$$
 
 也就是：
 
@@ -1189,15 +1189,15 @@ W^O
 
 这样 Multi-Head Attention 输入输出 dimension 保持：
 
-\[
+$$
 512
-\]
+$$
 
 方便 residual connection。
 
 ---
 
-# 21. 到这里 Attention 做的事情是什么？
+## 21. 到这里 Attention 做的事情是什么？
 
 对于每一个 token：
 
@@ -1229,7 +1229,7 @@ Attention 本质上是一种：
 
 ---
 
-# 22. Transformer Encoder 不只有 Attention
+## 22. Transformer Encoder 不只有 Attention
 
 一个常见误解是：
 
@@ -1247,15 +1247,15 @@ Attention 本质上是一种：
 
 原论文 base model 堆：
 
-\[
+$$
 \boxed{N=6}
-\]
+$$
 
 层 encoder。
 
 ---
 
-# 23. 一个 Encoder Layer
+## 23. 一个 Encoder Layer
 
 可以简化画成：
 
@@ -1284,14 +1284,14 @@ X
 
 原论文写：
 
-\[
+$$
 \boxed{
 \operatorname{LayerNorm}
 (
 x+\operatorname{Sublayer}(x)
 )
 }
-\]
+$$
 
 也就是今天通常称为：
 
@@ -1309,19 +1309,19 @@ x+\operatorname{Sublayer}(x)
 
 ---
 
-# 24. Residual Connection 为什么重要？
+## 24. Residual Connection 为什么重要？
 
 Attention layer 输出某种 transformation：
 
-\[
+$$
 F(x)
-\]
+$$
 
 Residual：
 
-\[
+$$
 x+F(x)
-\]
+$$
 
 意味着 layer 不必从头重新构造所有 representation。
 
@@ -1337,13 +1337,13 @@ Residual connection 并不是 Transformer 首创，
 
 ---
 
-# 25. LayerNorm 在做什么？
+## 25. LayerNorm 在做什么？
 
 原论文每个 sublayer 后使用：
 
-\[
+$$
 \operatorname{LayerNorm}
-\]
+$$
 
 帮助稳定 hidden representation 的尺度和训练。
 
@@ -1353,9 +1353,9 @@ Residual connection 并不是 Transformer 首创，
 
 Dataset standardization：
 
-\[
+$$
 (x-\mu)/\sigma
-\]
+$$
 
 是数据预处理。
 
@@ -1369,7 +1369,7 @@ LayerNorm：
 
 ---
 
-# 26. Feed-Forward Network 为什么还需要？
+## 26. Feed-Forward Network 为什么还需要？
 
 Attention 做的是：
 
@@ -1381,37 +1381,37 @@ Attention 做的是：
 
 所以每层还有：
 
-\[
+$$
 \boxed{
 FFN(x)
 =
 \max(0,xW_1+b_1)W_2+b_2
 }
-\]
+$$
 
 原论文：
 
-\[
+$$
 d_{\text{model}}=512
-\]
+$$
 
 先扩大：
 
-\[
+$$
 512\rightarrow2048
-\]
+$$
 
 经过 ReLU，
 
 再：
 
-\[
+$$
 2048\rightarrow512
-\]
+$$
 
 ---
 
-# 27. 为什么叫 Position-Wise FFN？
+## 27. 为什么叫 Position-Wise FFN？
 
 因为同一个 FFN：
 
@@ -1419,21 +1419,21 @@ d_{\text{model}}=512
 
 假设：
 
-\[
+$$
 X\in\mathbb R^{n\times512}
-\]
+$$
 
 对每一个：
 
-\[
+$$
 x_i
-\]
+$$
 
 使用相同：
 
-\[
+$$
 W_1,W_2
-\]
+$$
 
 但：
 
@@ -1455,7 +1455,7 @@ FFN:
 
 ---
 
-# 28. 没有 RNN 后，Transformer 怎么知道顺序？
+## 28. 没有 RNN 后，Transformer 怎么知道顺序？
 
 这是最关键的问题之一。
 
@@ -1479,9 +1479,9 @@ token 集合一样。
 
 Self-attention 如果只输入：
 
-\[
+$$
 X
-\]
+$$
 
 而完全没有 position information，
 
@@ -1495,23 +1495,23 @@ X
 
 ---
 
-# 29. 原论文使用 Sinusoidal Positional Encoding
+## 29. 原论文使用 Sinusoidal Positional Encoding
 
 输入 token embedding：
 
-\[
+$$
 e_{pos}
-\]
+$$
 
 加：
 
-\[
+$$
 PE_{pos}
-\]
+$$
 
 得到：
 
-\[
+$$
 \boxed{
 x_{pos}
 =
@@ -1519,17 +1519,17 @@ e_{pos}
 +
 PE_{pos}
 }
-\]
+$$
 
 两者 dimension 相同：
 
-\[
+$$
 d_{\text{model}}
-\]
+$$
 
 原论文：
 
-\[
+$$
 PE_{(pos,2i)}
 =
 \sin
@@ -1538,9 +1538,9 @@ PE_{(pos,2i)}
 10000^{2i/d_{\text{model}}}
 }
 \right)
-\]
+$$
 
-\[
+$$
 PE_{(pos,2i+1)}
 =
 \cos
@@ -1549,37 +1549,37 @@ PE_{(pos,2i+1)}
 10000^{2i/d_{\text{model}}}
 }
 \right)
-\]
+$$
 
 不同 dimensions 使用不同频率。
 
 ---
 
-# 30. 为什么把 Position “加”到 Embedding 上？
+## 30. 为什么把 Position “加”到 Embedding 上？
 
 因为：
 
-\[
+$$
 embedding
 \in
 \mathbb R^{d_{\text{model}}}
-\]
+$$
 
-\[
+$$
 PE
 \in
 \mathbb R^{d_{\text{model}}}
-\]
+$$
 
 维度一致。
 
 相加后：
 
-\[
+$$
 x
 =
 embedding+position
-\]
+$$
 
 每个 token representation 同时包含：
 
@@ -1596,7 +1596,7 @@ embedding+position
 
 ---
 
-# 31. Positional Encoding 不是 Attention Weight
+## 31. Positional Encoding 不是 Attention Weight
 
 不要混淆：
 
@@ -1622,9 +1622,9 @@ Position information 会影响 token representation，
 
 进而间接影响：
 
-\[
+$$
 Q,K
-\]
+$$
 
 和 attention scores。
 
@@ -1632,71 +1632,71 @@ Q,K
 
 ---
 
-# 32. 原始 Transformer Encoder 的完整 Flow
+## 32. 原始 Transformer Encoder 的完整 Flow
 
 输入 tokens：
 
-\[
+$$
 x_1,\ldots,x_n
-\]
+$$
 
 先 embedding：
 
-\[
+$$
 e_i
-\]
+$$
 
 再加 position：
 
-\[
+$$
 h_i^{(0)}
 =
 e_i+PE_i
-\]
+$$
 
 然后 6 层：
 
-\[
+$$
 H^{(1)}
 =
 EncoderLayer_1(H^{(0)})
-\]
+$$
 
-\[
+$$
 H^{(2)}
 =
 EncoderLayer_2(H^{(1)})
-\]
+$$
 
 ……
 
-\[
+$$
 H^{(6)}
 =
 EncoderLayer_6(H^{(5)})
-\]
+$$
 
 最终：
 
-\[
+$$
 \boxed{
 M=H^{(6)}
 }
-\]
+$$
 
 形成 encoder memory。
 
 每个位置都有自己的：
 
-\[
+$$
 512
-\]
+$$
 
 维 contextual representation。
 
 ---
 
-# 33. Decoder 为什么比 Encoder 多一个 Attention？
+## 33. Decoder 为什么比 Encoder 多一个 Attention？
 
 原论文 decoder 每层有三个主要 sublayers：
 
@@ -1720,13 +1720,13 @@ M=H^{(6)}
 
 ---
 
-# 34. Self-Attention 和 Cross-Attention 的根本区别
+## 34. Self-Attention 和 Cross-Attention 的根本区别
 
-## Self-Attention
+### Self-Attention
 
-\[
+$$
 Q,K,V
-\]
+$$
 
 来自：
 
@@ -1734,15 +1734,15 @@ Q,K,V
 
 例如 encoder：
 
-\[
+$$
 Q=HW_Q,\quad
 K=HW_K,\quad
 V=HW_V
-\]
+$$
 
 ---
 
-## Cross-Attention
+### Cross-Attention
 
 Query 来自一个 sequence：
 
@@ -1754,23 +1754,23 @@ Key / Value 来自另一个 sequence：
 
 即：
 
-\[
+$$
 Q
 =
 H_{\text{decoder}}W_Q
-\]
+$$
 
-\[
+$$
 K
 =
 M_{\text{encoder}}W_K
-\]
+$$
 
-\[
+$$
 V
 =
 M_{\text{encoder}}W_V
-\]
+$$
 
 所以可以理解为：
 
@@ -1778,7 +1778,7 @@ M_{\text{encoder}}W_V
 
 ---
 
-# 35. 一个翻译例子
+## 35. 一个翻译例子
 
 输入：
 
@@ -1826,21 +1826,21 @@ Encoder Keys
 
 ---
 
-# 36. 为什么 Decoder Self-Attention 要 Mask？
+## 36. 为什么 Decoder Self-Attention 要 Mask？
 
 原始 Transformer 是 autoregressive translation model。
 
 预测：
 
-\[
+$$
 y_i
-\]
+$$
 
 时不能偷看：
 
-\[
+$$
 y_{i+1},y_{i+2},\ldots
-\]
+$$
 
 否则训练时：
 
@@ -1850,14 +1850,14 @@ y_{i+1},y_{i+2},\ldots
 
 例如 sequence length 4：
 
-\[
+$$
 \begin{bmatrix}
 0&-\infty&-\infty&-\infty\\
 0&0&-\infty&-\infty\\
 0&0&0&-\infty\\
 0&0&0&0
 \end{bmatrix}
-\]
+$$
 
 加到 attention logits。
 
@@ -1865,17 +1865,17 @@ softmax 后：
 
 > 被 mask 的 future positions 权重为 0。
 
-因此 position \(i\) 只能看：
+因此 position $i$ 只能看：
 
-\[
+$$
 \le i
-\]
+$$
 
 的位置。
 
 ---
 
-# 37. 为什么 Encoder 不需要 Causal Mask？
+## 37. 为什么 Encoder 不需要 Causal Mask？
 
 Encoder 已经一次拿到完整输入：
 
@@ -1899,31 +1899,31 @@ I love cats
 
 在原始 Transformer encoder 中：
 
-\[
+$$
 x_i
-\]
+$$
 
 可以直接读取：
 
-\[
+$$
 x_j
-\]
+$$
 
 无论：
 
-\[
+$$
 j<i
-\]
+$$
 
 还是：
 
-\[
+$$
 j>i
-\]
+$$
 
 ---
 
-# 38. 一个完整原始 Transformer
+## 38. 一个完整原始 Transformer
 
 可以画成：
 
@@ -1977,7 +1977,7 @@ Next-token probabilities
 
 ---
 
-# 39. 为什么论文标题叫 Attention Is All You Need？
+## 39. 为什么论文标题叫 Attention Is All You Need？
 
 这句话经常被理解成：
 
@@ -2001,52 +2001,52 @@ Next-token probabilities
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Attention Is All You Need}
 \neq
 \text{Only Attention Exists}
 }
-\]
+$$
 
 ---
 
-# 40. Self-Attention 为什么更容易并行？
+## 40. Self-Attention 为什么更容易并行？
 
 RNN：
 
-\[
+$$
 h_t=f(h_{t-1},x_t)
-\]
+$$
 
 存在数据依赖链。
 
 Self-attention：
 
-\[
+$$
 Q=XW_Q
-\]
+$$
 
-\[
+$$
 K=XW_K
-\]
+$$
 
-\[
+$$
 V=XW_V
-\]
+$$
 
-\[
+$$
 A
 =
 \operatorname{softmax}
 \left(
 \frac{QK^\top}{\sqrt{d_k}}
 \right)
-\]
+$$
 
-\[
+$$
 O=AV
-\]
+$$
 
 都是大规模矩阵运算。
 
@@ -2056,45 +2056,45 @@ O=AV
 
 所以原论文 Table 1 把最少 sequential operations 写成：
 
-\[
+$$
 \boxed{O(1)}
-\]
+$$
 
 对比 recurrent layer：
 
-\[
+$$
 \boxed{O(n)}
-\]
+$$
 
 ---
 
-# 41. 但 Self-Attention 不是“计算复杂度永远更低”
+## 41. 但 Self-Attention 不是“计算复杂度永远更低”
 
 必须非常严谨。
 
 原论文给出的 per-layer complexity：
 
-### Self-Attention
+#### Self-Attention
 
-\[
+$$
 \boxed{
 O(n^2d)
 }
-\]
+$$
 
-### Recurrent Layer
+#### Recurrent Layer
 
-\[
+$$
 \boxed{
 O(nd^2)
 }
-\]
+$$
 
 所以当：
 
-\[
+$$
 n<d
-\]
+$$
 
 时，
 
@@ -2104,15 +2104,15 @@ self-attention 往往更有计算优势。
 
 但当 sequence：
 
-\[
+$$
 n
-\]
+$$
 
 非常长，
 
-\[
+$$
 n^2
-\]
+$$
 
 会成为严重问题。
 
@@ -2134,7 +2134,7 @@ n^2
 
 ---
 
-# 42. Transformer 的另一个优势：Path Length
+## 42. Transformer 的另一个优势：Path Length
 
 原论文除了 parallelization，
 
@@ -2144,15 +2144,15 @@ n^2
 
 Self-attention：
 
-\[
+$$
 \boxed{O(1)}
-\]
+$$
 
 Recurrent：
 
-\[
+$$
 \boxed{O(n)}
-\]
+$$
 
 Convolution：
 
@@ -2160,9 +2160,9 @@ Convolution：
 
 大致可能：
 
-\[
+$$
 O(\log_k n)
-\]
+$$
 
 或者更长。
 
@@ -2178,7 +2178,7 @@ O(\log_k n)
 
 ---
 
-# 43. 一个简单的 Long-Range Dependency 例子
+## 43. 一个简单的 Long-Range Dependency 例子
 
 sequence：
 
@@ -2211,31 +2211,31 @@ Self-attention 中：
 
 于是：
 
-\[
+$$
 \text{robot}
 \rightarrow
 \text{moves}
-\]
+$$
 
 在一层 attention 中就可以建立直接 connection。
 
 ---
 
-# 44. 但是 Attention Weight 不等于因果解释
+## 44. 但是 Attention Weight 不等于因果解释
 
 一个重要边界。
 
 看到：
 
-\[
+$$
 \alpha_{ij}
-\]
+$$
 
 很大，
 
 可以说：
 
-> 在这个 attention computation 中，position \(i\) 从 position \(j\) 的 value 读取了较大权重。
+> 在这个 attention computation 中，position $i$ 从 position $j$ 的 value 读取了较大权重。
 
 但不能自动推出：
 
@@ -2255,7 +2255,7 @@ Self-attention 中：
 
 ---
 
-# 45. Transformer 是怎样训练出 QKV 的？
+## 45. Transformer 是怎样训练出 QKV 的？
 
 没有：
 
@@ -2285,9 +2285,9 @@ WQ, WK, WV
 
 所以 projection matrices：
 
-\[
+$$
 W_Q,W_K,W_V
-\]
+$$
 
 被优化成：
 
@@ -2299,29 +2299,29 @@ W_Q,W_K,W_V
 
 ---
 
-# 46. Q、K、V 不是三个不同的“输入文件”
+## 46. Q、K、V 不是三个不同的“输入文件”
 
 在 Self-Attention 中：
 
-\[
+$$
 X
-\]
+$$
 
 是同一个 input representation。
 
 然后：
 
-\[
+$$
 Q=XW_Q
-\]
+$$
 
-\[
+$$
 K=XW_K
-\]
+$$
 
-\[
+$$
 V=XW_V
-\]
+$$
 
 所以不是：
 
@@ -2339,13 +2339,13 @@ V=XW_V
 
 ---
 
-# 47. 为什么不用 X 本身同时做 Q、K、V？
+## 47. 为什么不用 X 本身同时做 Q、K、V？
 
 理论上可以设计：
 
-\[
+$$
 Q=K=V=X
-\]
+$$
 
 但 learned projections 提供了更灵活的 representation。
 
@@ -2363,9 +2363,9 @@ Q=K=V=X
 
 这种功能分离由：
 
-\[
+$$
 W_Q,W_K,W_V
-\]
+$$
 
 学习出来。
 
@@ -2373,63 +2373,63 @@ Multi-head 又进一步提供多组这样的 projection。
 
 ---
 
-# 48. 为什么 Attention 输出还是一个向量？
+## 48. 为什么 Attention 输出还是一个向量？
 
-对 token \(i\)：
+对 token $i$：
 
-\[
+$$
 o_i
 =
 \sum_j\alpha_{ij}v_j
-\]
+$$
 
 每个：
 
-\[
+$$
 v_j\in\mathbb R^{d_v}
-\]
+$$
 
 weighted sum 后：
 
-\[
+$$
 o_i\in\mathbb R^{d_v}
-\]
+$$
 
 所以 attention 输出仍是一个 vector representation。
 
 对于所有：
 
-\[
+$$
 n
-\]
+$$
 
 个 queries，
 
 就得到：
 
-\[
+$$
 O\in\mathbb R^{n\times d_v}
-\]
+$$
 
 Multi-head concatenate 后回到：
 
-\[
+$$
 n\times d_{\text{model}}
-\]
+$$
 
 因此 attention 可以作为普通 neural-network layer 继续堆叠。
 
 ---
 
-# 49. Softmax 是不是让模型“选择最相关的一个”？
+## 49. Softmax 是不是让模型“选择最相关的一个”？
 
 不一定。
 
 如果 scores 很接近：
 
-\[
+$$
 [1.0,1.1,0.9]
-\]
+$$
 
 softmax 可能得到：
 
@@ -2451,203 +2451,203 @@ distribution 才可能非常尖锐。
 
 ---
 
-# 50. 为什么 Attention Matrix 是 n × n？
+## 50. 为什么 Attention Matrix 是 n × n？
 
 Self-attention 中：
 
-\[
+$$
 Q\in\mathbb R^{n\times d_k}
-\]
+$$
 
-\[
+$$
 K^\top
 \in\mathbb R^{d_k\times n}
-\]
+$$
 
 所以：
 
-\[
+$$
 QK^\top
 \in
 \mathbb R^{n\times n}
-\]
+$$
 
 第：
 
-\[
+$$
 i
-\]
+$$
 
 行：
 
-> query \(i\) 对所有 keys 的 scores。
+> query $i$ 对所有 keys 的 scores。
 
 第：
 
-\[
+$$
 j
-\]
+$$
 
 列：
 
-> 所有 queries 对 key \(j\) 的 compatibility。
+> 所有 queries 对 key $j$ 的 compatibility。
 
 这张：
 
-\[
+$$
 n\times n
-\]
+$$
 
 matrix 也是 standard self-attention：
 
-\[
+$$
 O(n^2)
-\]
+$$
 
 sequence-length cost 的来源。
 
 ---
 
-# 51. 一个极小 Shape Example
+## 51. 一个极小 Shape Example
 
 假设：
 
-\[
+$$
 n=3
-\]
+$$
 
-\[
+$$
 d_{\text{model}}=4
-\]
+$$
 
 输入：
 
-\[
+$$
 X
 \in
 \mathbb R^{3\times4}
-\]
+$$
 
 假设单头：
 
-\[
+$$
 d_k=d_v=2
-\]
+$$
 
 则：
 
-\[
+$$
 W_Q,W_K,W_V
 \in
 \mathbb R^{4\times2}
-\]
+$$
 
 于是：
 
-\[
+$$
 Q,K,V
 \in
 \mathbb R^{3\times2}
-\]
+$$
 
 scores：
 
-\[
+$$
 QK^\top
 \in
 \mathbb R^{3\times3}
-\]
+$$
 
 attention weights：
 
-\[
+$$
 A
 \in
 \mathbb R^{3\times3}
-\]
+$$
 
 最终：
 
-\[
+$$
 AV
 \in
 \mathbb R^{3\times2}
-\]
+$$
 
 这就是一整个 attention head。
 
 ---
 
-# 52. Multi-Head Shape Example
+## 52. Multi-Head Shape Example
 
 原始 Transformer Base：
 
-\[
+$$
 n
-\]
+$$
 
 个 tokens，
 
-\[
+$$
 d_{\text{model}}=512
-\]
+$$
 
-\[
+$$
 h=8
-\]
+$$
 
 每头：
 
-\[
+$$
 64
-\]
+$$
 
 维。
 
 因此：
 
-\[
+$$
 X:
 [n,512]
-\]
+$$
 
 每个 head：
 
-\[
+$$
 Q_i,K_i,V_i:
 [n,64]
-\]
+$$
 
 attention output：
 
-\[
+$$
 head_i:
 [n,64]
-\]
+$$
 
 8 heads concatenate：
 
-\[
+$$
 [n,512]
-\]
+$$
 
 然后：
 
-\[
+$$
 W^O
-\]
+$$
 
 得到：
 
-\[
+$$
 [n,512]
-\]
+$$
 
 shape 回到原维度。
 
 ---
 
-# 53. 为什么 Transformer Encoder 可以一次看到整个 Sequence？
+## 53. 为什么 Transformer Encoder 可以一次看到整个 Sequence？
 
 因为 encoder 用的是：
 
@@ -2655,23 +2655,23 @@ shape 回到原维度。
 
 所以每一个位置：
 
-\[
+$$
 i
-\]
+$$
 
 可以 attend：
 
-\[
+$$
 1,\ldots,n
-\]
+$$
 
 所有 positions。
 
 因此：
 
-\[
+$$
 h_i
-\]
+$$
 
 不是只包含当前 token 信息。
 
@@ -2703,21 +2703,21 @@ bank account
 
 ---
 
-# 54. Embedding 和 Contextual Representation 的区别
+## 54. Embedding 和 Contextual Representation 的区别
 
 初始 embedding：
 
-\[
+$$
 e_{\text{bank}}
-\]
+$$
 
 主要由 token identity 决定。
 
 经过多层 self-attention：
 
-\[
+$$
 h_{\text{bank}}
-\]
+$$
 
 已经包含 context。
 
@@ -2735,7 +2735,7 @@ Contextual representation:
 
 ---
 
-# 55. Encoder 最终不是把整个句子压成一个 Vector
+## 55. Encoder 最终不是把整个句子压成一个 Vector
 
 经典 seq2seq RNN 有时会把 input 压成一个 fixed context vector。
 
@@ -2743,13 +2743,13 @@ Transformer Encoder 不需要这样。
 
 它输出：
 
-\[
+$$
 \boxed{
 M
 =
 [m_1,\ldots,m_n]
 }
-\]
+$$
 
 整个 memory sequence。
 
@@ -2761,7 +2761,7 @@ Decoder 每个 timestep / query 可以：
 
 ---
 
-# 56. 原始 Decoder 为什么还是顺序生成？
+## 56. 原始 Decoder 为什么还是顺序生成？
 
 这有时会让人困惑：
 
@@ -2773,12 +2773,12 @@ Decoder 每个 timestep / query 可以：
 
 但原始 machine translation 的生成过程仍然 factorize：
 
-\[
+$$
 p(y_1,\ldots,y_m\mid x)
 =
 \prod_{t=1}^{m}
 p(y_t\mid y_{<t},x)
-\]
+$$
 
 所以 inference 时：
 
@@ -2802,7 +2802,7 @@ masked self-attention 可以并行处理所有 target positions。
 
 ---
 
-# 57. 这和 ACT 有一个重要区别
+## 57. 这和 ACT 有一个重要区别
 
 ACT 虽然使用 Transformer Encoder–Decoder，
 
@@ -2812,9 +2812,9 @@ ACT 虽然使用 Transformer Encoder–Decoder，
 
 ACT 一次给出：
 
-\[
+$$
 k
-\]
+$$
 
 个 action query slots。
 
@@ -2824,9 +2824,9 @@ k
 
 然后同时输出：
 
-\[
+$$
 k\times14
-\]
+$$
 
 actions。
 
@@ -2844,7 +2844,7 @@ parallel action-chunk prediction
 
 ---
 
-# 58. 所以“Transformer Decoder = 自回归”是错误的
+## 58. 所以“Transformer Decoder = 自回归”是错误的
 
 Transformer decoder layer 提供的是：
 
@@ -2879,11 +2879,11 @@ ACT：
 
 ---
 
-# 59. Transformer 在 ACT 中具体出现在哪里？
+## 59. Transformer 在 ACT 中具体出现在哪里？
 
 ACT 至少使用 Transformer 的三个位置。
 
-## 1. CVAE Encoder
+### 1. CVAE Encoder
 
 输入：
 
@@ -2897,14 +2897,14 @@ ground-truth action sequence
 
 最终 `[CLS]` hidden representation：
 
-\[
+$$
 \rightarrow
 \mu,\log\sigma^2
-\]
+$$
 
 ---
 
-## 2. Policy Transformer Encoder
+### 2. Policy Transformer Encoder
 
 输入：
 
@@ -2922,13 +2922,13 @@ latent z token
 
 ---
 
-## 3. Policy Transformer Decoder
+### 3. Policy Transformer Decoder
 
 输入：
 
-\[
+$$
 k
-\]
+$$
 
 个 action-query positions。
 
@@ -2939,15 +2939,15 @@ k
 
 产生：
 
-\[
+$$
 k
-\]
+$$
 
 个 future action representations。
 
 ---
 
-# 60. ACT 为什么没有“Word Embedding”？
+## 60. ACT 为什么没有“Word Embedding”？
 
 因为 Transformer 本身并不要求 input 一定是文字。
 
@@ -3003,7 +3003,7 @@ Linear
 
 ---
 
-# 61. Transformer 怎么理解图片？
+## 61. Transformer 怎么理解图片？
 
 严格来说：
 
@@ -3011,25 +3011,25 @@ Linear
 
 ACT 先让 ResNet 把图片转成：
 
-\[
+$$
 15\times20
-\]
+$$
 
 spatial feature grid。
 
 flatten 成：
 
-\[
+$$
 300
-\]
+$$
 
 个 visual tokens。
 
 每个 token：
 
-\[
+$$
 512
-\]
+$$
 
 维。
 
@@ -3051,25 +3051,25 @@ flatten 成：
 
 ---
 
-# 62. Transformer 怎么理解 Robot Joint State？
+## 62. Transformer 怎么理解 Robot Joint State？
 
 同样：
 
-\[
+$$
 q\in\mathbb R^{14}
-\]
+$$
 
 先 Linear：
 
-\[
+$$
 14\rightarrow512
-\]
+$$
 
 成为：
 
-\[
+$$
 1
-\]
+$$
 
 个 token。
 
@@ -3087,7 +3087,7 @@ ACT 就是这样做的。
 
 ---
 
-# 63. Transformer 的真正核心不是 QKV 三个字母
+## 63. Transformer 的真正核心不是 QKV 三个字母
 
 学到这里，可以重新看 Transformer。
 
@@ -3125,43 +3125,43 @@ Encoder–Decoder Cross-Attention：
 
 ---
 
-# 64. 为什么 Attention 能“替代循环”？
+## 64. 为什么 Attention 能“替代循环”？
 
 现在终于可以严格回答标题的问题。
 
 RNN 使用：
 
-\[
+$$
 h_t=f(h_{t-1},x_t)
-\]
+$$
 
 让信息沿 hidden-state chain 传播。
 
 Transformer 不再依赖这种：
 
-\[
+$$
 t-1\rightarrow t
-\]
+$$
 
 的强制 sequential path。
 
 它让每一个位置：
 
-\[
+$$
 i
-\]
+$$
 
 直接通过 attention：
 
-\[
+$$
 \alpha_{ij}
-\]
+$$
 
 从所有位置：
 
-\[
+$$
 j
-\]
+$$
 
 读取信息。
 
@@ -3179,19 +3179,19 @@ j
 
 这就是：
 
-\[
+$$
 \boxed{
 \text{Recurrence}
 \rightarrow
 \text{Self-Attention}
 }
-\]
+$$
 
 最核心的结构变化。
 
 ---
 
-# 65. 但 Transformer 并没有“消灭时间”
+## 65. 但 Transformer 并没有“消灭时间”
 
 没有 recurrence 后，
 
@@ -3229,9 +3229,9 @@ Transformer 中：
 
 ---
 
-# 66. RNN 与 Transformer 的核心差别可以怎样总结？
+## 66. RNN 与 Transformer 的核心差别可以怎样总结？
 
-## RNN
+### RNN
 
 ```text
 结构本身：
@@ -3249,7 +3249,7 @@ parallelism：
 
 ---
 
-## Transformer
+### Transformer
 
 ```text
 结构本身：
@@ -3267,35 +3267,35 @@ parallelism：
 
 ---
 
-# 67. Transformer 的代价是什么？
+## 67. Transformer 的代价是什么？
 
 最明显的代价是 full self-attention：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 需要生成：
 
-\[
+$$
 n\times n
-\]
+$$
 
 attention matrix。
 
 所以 memory / compute 随：
 
-\[
+$$
 n^2
-\]
+$$
 
 增长。
 
 当 sequence 很长：
 
-\[
+$$
 n=100000
-\]
+$$
 
 标准 attention 的成本会非常大。
 
@@ -3309,39 +3309,39 @@ n=100000
 
 ---
 
-# 68. 为什么 2017 年这个 Trade-off 很划算？
+## 68. 为什么 2017 年这个 Trade-off 很划算？
 
 原论文机器翻译场景里：
 
-\[
+$$
 n
-\]
+$$
 
 通常远小于 hidden representation dimension：
 
-\[
+$$
 d
-\]
+$$
 
 论文指出在：
 
-\[
+$$
 n<d
-\]
+$$
 
 时，
 
 self-attention 每层：
 
-\[
+$$
 O(n^2d)
-\]
+$$
 
 可能比 recurrent：
 
-\[
+$$
 O(nd^2)
-\]
+$$
 
 更有优势。
 
@@ -3357,7 +3357,7 @@ quadratic attention 才越来越成为核心研究问题。
 
 ---
 
-# 69. Transformer 的成功不只是“速度快”
+## 69. Transformer 的成功不只是“速度快”
 
 如果只理解成：
 
@@ -3383,7 +3383,7 @@ quadratic attention 才越来越成为核心研究问题。
 
 ---
 
-# 70. 常见误解一：Transformer 就是 Attention
+## 70. 常见误解一：Transformer 就是 Attention
 
 **不完整。**
 
@@ -3396,35 +3396,35 @@ Transformer layer 还有：
 
 ---
 
-# 71. 常见误解二：Attention 就是找最相关的一个 Token
+## 71. 常见误解二：Attention 就是找最相关的一个 Token
 
 **错误。**
 
 它通常是：
 
-\[
+$$
 \sum_j\alpha_jv_j
-\]
+$$
 
 weighted combination。
 
 ---
 
-# 72. 常见误解三：Q、K、V 是人工定义的语义
+## 72. 常见误解三：Q、K、V 是人工定义的语义
 
 **错误。**
 
 它们由：
 
-\[
+$$
 W_Q,W_K,W_V
-\]
+$$
 
 从 representation 学习得到。
 
 ---
 
-# 73. 常见误解四：QKV 是三个不同 Input Sequences
+## 73. 常见误解四：QKV 是三个不同 Input Sequences
 
 在 self-attention 中：
 
@@ -3432,9 +3432,9 @@ W_Q,W_K,W_V
 
 它们都来自同一个：
 
-\[
+$$
 X
-\]
+$$
 
 的不同 projections。
 
@@ -3442,7 +3442,7 @@ Cross-attention 时 source 才不同。
 
 ---
 
-# 74. 常见误解五：Self-Attention 意味着 Token 只看自己
+## 74. 常见误解五：Self-Attention 意味着 Token 只看自己
 
 **错误。**
 
@@ -3452,7 +3452,7 @@ full self-attention 中每个 token 可以看所有 token。
 
 ---
 
-# 75. 常见误解六：Transformer 不需要顺序信息
+## 75. 常见误解六：Transformer 不需要顺序信息
 
 **错误。**
 
@@ -3462,27 +3462,27 @@ full self-attention 中每个 token 可以看所有 token。
 
 ---
 
-# 76. 常见误解七：Transformer 在任何情况下都比 RNN 计算复杂度低
+## 76. 常见误解七：Transformer 在任何情况下都比 RNN 计算复杂度低
 
 **错误。**
 
 原论文：
 
-\[
+$$
 SelfAttention:
 O(n^2d)
-\]
+$$
 
-\[
+$$
 RNN:
 O(nd^2)
-\]
+$$
 
 具体取决于：
 
-\[
+$$
 n,d
-\]
+$$
 
 以及硬件与实现。
 
@@ -3492,7 +3492,7 @@ Transformer 的突出优势之一是：
 
 ---
 
-# 77. 常见误解八：Transformer Decoder 一定 Autoregressive
+## 77. 常见误解八：Transformer Decoder 一定 Autoregressive
 
 **错误。**
 
@@ -3508,21 +3508,21 @@ ACT decoder：
 
 ---
 
-# 78. 常见误解九：Encoder 最终只输出一个 Context Vector
+## 78. 常见误解九：Encoder 最终只输出一个 Context Vector
 
 **错误。**
 
 它输出整个 memory sequence：
 
-\[
+$$
 [m_1,\ldots,m_n]
-\]
+$$
 
 Decoder 可以 cross-attend 所有 positions。
 
 ---
 
-# 79. 常见误解十：Attention Score 就是最终模型解释
+## 79. 常见误解十：Attention Score 就是最终模型解释
 
 **不准确。**
 
@@ -3534,7 +3534,7 @@ Attention 只是复杂网络的一部分。
 
 ---
 
-# 80. 常见误解十一：Multi-Head 的每个 Head 都一定有固定人类语义
+## 80. 常见误解十一：Multi-Head 的每个 Head 都一定有固定人类语义
 
 **没有保证。**
 
@@ -3544,7 +3544,7 @@ Attention 只是复杂网络的一部分。
 
 ---
 
-# 81. 常见误解十二：Position-Wise FFN 会让不同 Token 互相交流
+## 81. 常见误解十二：Position-Wise FFN 会让不同 Token 互相交流
 
 **错误。**
 
@@ -3556,47 +3556,47 @@ FFN 独立地作用于每个 position，
 
 ---
 
-# 82. 常见误解十三：Scaled Attention 除 \(\sqrt{d_k}\) 是为了让概率和为 1
+## 82. 常见误解十三：Scaled Attention 除 $\sqrt{d_k}$ 是为了让概率和为 1
 
 **错误。**
 
 概率和为 1 是：
 
-\[
+$$
 softmax
-\]
+$$
 
 的作用。
 
 除：
 
-\[
+$$
 \sqrt{d_k}
-\]
+$$
 
-是为了控制 dot-product logits 的尺度，避免大 \(d_k\) 时 softmax 过度饱和。
+是为了控制 dot-product logits 的尺度，避免大 $d_k$ 时 softmax 过度饱和。
 
 ---
 
-# 83. 用五条公式记住 Transformer 核心
+## 83. 用五条公式记住 Transformer 核心
 
 如果最后只记住五条公式：
 
-## 1. QKV Projection
+### 1. QKV Projection
 
-\[
+$$
 \boxed{
 Q=XW_Q,\quad
 K=XW_K,\quad
 V=XW_V
 }
-\]
+$$
 
 ---
 
-## 2. Scaled Dot-Product Attention
+### 2. Scaled Dot-Product Attention
 
-\[
+$$
 \boxed{
 \operatorname{Attention}(Q,K,V)
 =
@@ -3605,13 +3605,13 @@ V=XW_V
 \frac{QK^\top}{\sqrt{d_k}}
 \right)V
 }
-\]
+$$
 
 ---
 
-## 3. Multi-Head
+### 3. Multi-Head
 
-\[
+$$
 \boxed{
 \operatorname{MultiHead}(Q,K,V)
 =
@@ -3621,32 +3621,32 @@ head_1,\ldots,head_h
 )
 W^O
 }
-\]
+$$
 
 ---
 
-## 4. Feed-Forward Network
+### 4. Feed-Forward Network
 
-\[
+$$
 \boxed{
 FFN(x)
 =
 \max(0,xW_1+b_1)W_2+b_2
 }
-\]
+$$
 
 ---
 
-## 5. Original Transformer Sublayer
+### 5. Original Transformer Sublayer
 
-\[
+$$
 \boxed{
 \operatorname{LayerNorm}
 (
 x+\operatorname{Sublayer}(x)
 )
 }
-\]
+$$
 
 再加上：
 
@@ -3658,25 +3658,25 @@ x+\operatorname{Sublayer}(x)
 
 ---
 
-# 84. 用一句话理解 Self-Attention
+## 84. 用一句话理解 Self-Attention
 
 > **对于 sequence 中的每个位置，模型根据这个位置当前“想找什么”（Query），与所有位置“适合怎样被检索”（Key）进行匹配，把匹配分数变成权重后，对各位置真正提供的信息（Value）做加权汇总，从而一次并行地得到所有位置的 context-aware representations。**
 
 ---
 
-# 85. 用一句话理解 Transformer
+## 85. 用一句话理解 Transformer
 
 > **Transformer 把传统序列模型中依赖时间链传播的信息交换，替换成基于 attention 的直接全局信息路由：Self-Attention 负责不同位置之间的内容依赖，Multi-Head 提供多个 representation subspaces，Positional Encoding 提供顺序，FFN 对每个位置做非线性变换，而 Encoder–Decoder Cross-Attention 允许输出序列根据自身需求动态读取输入 memory。**
 
 ---
 
-# 86. Transformer 和 ACT 最后怎样连起来？
+## 86. Transformer 和 ACT 最后怎样连起来？
 
 现在回到我们最初学 Transformer 的目的。
 
 ACT 中：
 
-## CVAE Encoder
+### CVAE Encoder
 
 ```text
 [CLS]
@@ -3694,7 +3694,7 @@ h_CLS
 
 ---
 
-## Policy Encoder
+### Policy Encoder
 
 ```text
 1200 visual tokens
@@ -3712,7 +3712,7 @@ observation memory
 
 ---
 
-## Policy Decoder
+### Policy Decoder
 
 ```text
 k action queries
@@ -3740,7 +3740,7 @@ k action representations
 
 ---
 
-# 87. ACT 和原始 Transformer 的关键差异
+## 87. ACT 和原始 Transformer 的关键差异
 
 | | Original Transformer | ACT Policy |
 |---|---|---|
@@ -3751,7 +3751,7 @@ k action representations
 | Decoder 是否 autoregressive | 是 | 否 |
 | Cross-attention | Decoder → Source Memory | Action Queries → Observation Memory |
 | 输出 | Vocabulary Probabilities | 14-D Joint Targets |
-| 输出长度 | 逐步生成 | 固定 \(k\) 个 Action Slots |
+| 输出长度 | 逐步生成 | 固定 $k$ 个 Action Slots |
 
 所以：
 
@@ -3759,7 +3759,7 @@ k action representations
 
 ---
 
-# 88. 下一步应该拆什么？
+## 88. 下一步应该拆什么？
 
 现在 Transformer 主页面已经建立。
 
@@ -3795,7 +3795,7 @@ Cross-Attention
 
 ---
 
-## Primary Source
+### Primary Source
 
 Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,  
 Aidan N. Gomez, Łukasz Kaiser, Illia Polosukhin.
@@ -3824,36 +3824,36 @@ Advances in Neural Information Processing Systems 30, NIPS 2017.
 
 ---
 
-## 原论文 Base Transformer 关键参数
+### 原论文 Base Transformer 关键参数
 
 | Hyperparameter | Value |
 |---|---:|
 | Encoder layers | 6 |
 | Decoder layers | 6 |
-| \(d_{\text{model}}\) | 512 |
-| \(d_{ff}\) | 2048 |
+| $d_{\text{model}}$ | 512 |
+| $d_{ff}$ | 2048 |
 | Attention heads | 8 |
-| \(d_k\) | 64 |
-| \(d_v\) | 64 |
+| $d_k$ | 64 |
+| $d_v$ | 64 |
 | Dropout | 0.1 |
 
 原论文 Section 4 对比：
 
 | Layer | Per-layer Complexity | Sequential Operations | Max Path Length |
 |---|---:|---:|---:|
-| Self-Attention | \(O(n^2d)\) | \(O(1)\) | \(O(1)\) |
-| Recurrent | \(O(nd^2)\) | \(O(n)\) | \(O(n)\) |
-| Convolutional | \(O(knd^2)\) | \(O(1)\) | \(O(\log_k n)\) |
+| Self-Attention | $O(n^2d)$ | $O(1)$ | $O(1)$ |
+| Recurrent | $O(nd^2)$ | $O(n)$ | $O(n)$ |
+| Convolutional | $O(knd^2)$ | $O(1)$ | $O(\log_k n)$ |
 
 这里：
 
-- \(n\)：sequence length；
-- \(d\)：representation dimension；
-- \(k\)：convolution kernel size。
+- $n$：sequence length；
+- $d$：representation dimension；
+- $k$：convolution kernel size。
 
 ---
 
-## 与 ACT 的关系
+### 与 ACT 的关系
 
 Tony Z. Zhao, Vikash Kumar, Sergey Levine, Chelsea Finn.  
 **Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware.**  
@@ -3876,9 +3876,9 @@ ACT 使用：
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### 前置知识
+#### 前置知识
 
 - Vector
 - Matrix
@@ -3886,7 +3886,7 @@ ACT 使用：
 - [Softmax](./softmax.md)
 - Neural Network
 
-### Transformer 核心
+#### Transformer 核心
 
 - [Attention](./attention.md)
 - [Query / Key / Value](./qkv.md)
@@ -3902,20 +3902,20 @@ ACT 使用：
 - [Causal Mask](./causal-mask.md)
 - [Dropout](./dropout.md)
 
-### Transformer 之前
+#### Transformer 之前
 
 - RNN
 - LSTM
 - GRU
 - Sequence-to-Sequence
 
-### Robot Learning
+#### Robot Learning
 
 - [ACT Architecture](../robot-learning/act/architecture.md)
 - [CVAE in ACT](../robot-learning/act/cvae-in-act.md)
 - [ACT Complete Data Flow](../robot-learning/act/complete-data-flow.md)
 
-### 下一步
+#### 下一步
 
 - [Attention](./attention.md)
 - [Query / Key / Value](./qkv.md)

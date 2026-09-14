@@ -35,27 +35,27 @@ x̂
 
 > **为什么我们非要把 Autoencoder 改成这样？**
 
-为什么 encoder 不直接输出一个向量 \(z\)？
+为什么 encoder 不直接输出一个向量 $z$？
 
 为什么要输出：
 
-\[
+$$
 \mu,\sigma^2
-\]
+$$
 
 为什么还要从一个分布里采样？
 
 为什么 loss 里面突然出现：
 
-\[
+$$
 D_{KL}
-\]
+$$
 
 为什么训练时要让 latent distribution 接近：
 
-\[
+$$
 \mathcal N(0,I)
-\]
+$$
 
 以及最关键的：
 
@@ -71,7 +71,7 @@ D_{KL}
 
 ---
 
-# 1. 前置知识：Latent Variable Model
+## 1. 前置知识：Latent Variable Model
 
 如果还没有读过：
 
@@ -83,39 +83,39 @@ D_{KL}
 
 我们假设观测数据：
 
-\[
+$$
 x
-\]
+$$
 
 不是直接凭空产生的。
 
 模型引入一个没有直接观测到的 latent variable：
 
-\[
+$$
 z
-\]
+$$
 
 生成过程为：
 
-\[
+$$
 z\sim p(z)
-\]
+$$
 
 然后：
 
-\[
+$$
 x\sim p_\theta(x\mid z)
-\]
+$$
 
 因此联合分布：
 
-\[
+$$
 \boxed{
 p_\theta(x,z)
 =
 p(z)p_\theta(x\mid z)
 }
-\]
+$$
 
 可以画成：
 
@@ -129,11 +129,11 @@ x
 
 其中：
 
-- \(z\)：latent variable；
-- \(x\)：observed variable；
-- \(p(z)\)：prior；
-- \(p_\theta(x\mid z)\)：generative distribution / likelihood；
-- \(\theta\)：generative model 的参数。
+- $z$：latent variable；
+- $x$：observed variable；
+- $p(z)$：prior；
+- $p_\theta(x\mid z)$：generative distribution / likelihood；
+- $\theta$：generative model 的参数。
 
 VAE 的核心问题，就是：
 
@@ -141,104 +141,104 @@ VAE 的核心问题，就是：
 
 ---
 
-# 2. 我们真正想训练的是什么？
+## 2. 我们真正想训练的是什么？
 
 假设训练数据为：
 
-\[
+$$
 \mathcal D
 =
 \{x^{(1)},x^{(2)},\ldots,x^{(N)}\}
-\]
+$$
 
 我们希望模型给真实数据较高概率。
 
 也就是说，希望最大化：
 
-\[
+$$
 p_\theta(x)
-\]
+$$
 
 对于整个数据集，通常最大化 log-likelihood：
 
-\[
+$$
 \sum_{i=1}^{N}
 \log p_\theta(x^{(i)})
-\]
+$$
 
 所以问题似乎非常简单：
 
-> 直接计算 \(\log p_\theta(x)\)，然后对 \(\theta\) 做梯度优化不就行了吗？
+> 直接计算 $\log p_\theta(x)$，然后对 $\theta$ 做梯度优化不就行了吗？
 
 困难马上出现。
 
 ---
 
-# 3. 因为 z 没有被观察，所以必须把它积分掉
+## 3. 因为 z 没有被观察，所以必须把它积分掉
 
 模型定义的是：
 
-\[
+$$
 p_\theta(x,z)
-\]
+$$
 
 但数据集里只有：
 
-\[
+$$
 x
-\]
+$$
 
 没有真正的：
 
-\[
+$$
 z
-\]
+$$
 
 因此为了得到：
 
-\[
+$$
 p_\theta(x)
-\]
+$$
 
-必须对所有可能的 \(z\) 做 marginalization：
+必须对所有可能的 $z$ 做 marginalization：
 
-\[
+$$
 \boxed{
 p_\theta(x)
 =
 \int
 p_\theta(x,z)\,dz
 }
-\]
+$$
 
 根据：
 
-\[
+$$
 p_\theta(x,z)
 =
 p(z)p_\theta(x\mid z)
-\]
+$$
 
 得到：
 
-\[
+$$
 \boxed{
 p_\theta(x)
 =
 \int
 p(z)p_\theta(x\mid z)\,dz
 }
-\]
+$$
 
 于是：
 
-\[
+$$
 \log p_\theta(x)
 =
 \log
 \int
 p(z)p_\theta(x\mid z)\,dz
-\]
+$$
 
 这就是我们真正希望最大化的 marginal log-likelihood。
 
@@ -248,13 +248,13 @@ p(z)p_\theta(x\mid z)\,dz
 
 ---
 
-# 4. 问题：这个积分通常算不出来
+## 4. 问题：这个积分通常算不出来
 
 如果：
 
-\[
+$$
 p_\theta(x\mid z)
-\]
+$$
 
 是一个非常简单的数学函数，
 
@@ -262,9 +262,9 @@ p_\theta(x\mid z)
 
 但 VAE 希望：
 
-\[
+$$
 p_\theta(x\mid z)
-\]
+$$
 
 可以由神经网络参数化。
 
@@ -280,10 +280,10 @@ distribution parameters of x
 
 这时：
 
-\[
+$$
 \int
 p(z)p_\theta(x\mid z)\,dz
-\]
+$$
 
 通常没有一个简单的闭式解。
 
@@ -297,43 +297,43 @@ Kingma & Welling 在 VAE 原论文中把这称为：
 
 这不仅影响：
 
-\[
+$$
 p_\theta(x)
-\]
+$$
 
 还直接影响另一个更关键的量。
 
 ---
 
-# 5. 我们还想知道：看到 x 后，z 应该是什么？
+## 5. 我们还想知道：看到 x 后，z 应该是什么？
 
 生成方向是：
 
-\[
+$$
 z\rightarrow x
-\]
+$$
 
 但训练数据给我们的方向却是：
 
-\[
+$$
 x
-\]
+$$
 
 已经在眼前。
 
 我们自然会问：
 
-> 哪些 latent variable \(z\) 最可能解释这个 \(x\)？
+> 哪些 latent variable $z$ 最可能解释这个 $x$？
 
 这就是 posterior：
 
-\[
+$$
 p_\theta(z\mid x)
-\]
+$$
 
 根据 Bayes' Rule：
 
-\[
+$$
 \boxed{
 p_\theta(z\mid x)
 =
@@ -343,26 +343,26 @@ p_\theta(x\mid z)p(z)
 p_\theta(x)
 }
 }
-\]
+$$
 
 而分母：
 
-\[
+$$
 p_\theta(x)
 =
 \int
 p(z)p_\theta(x\mid z)\,dz
-\]
+$$
 
 恰好就是刚才那个难算的积分。
 
 所以：
 
-\[
+$$
 \boxed{
 p_\theta(z\mid x)
 }
-\]
+$$
 
 通常也无法直接精确计算。
 
@@ -370,7 +370,7 @@ p_\theta(z\mid x)
 
 ---
 
-# 6. VAE 解决的核心问题，不是“如何压缩图片”
+## 6. VAE 解决的核心问题，不是“如何压缩图片”
 
 VAE 原论文开头真正提出的问题是：
 
@@ -410,42 +410,42 @@ Latent-variable generative model
 
 ---
 
-# 7. 引入 Approximate Posterior
+## 7. 引入 Approximate Posterior
 
 VAE 引入：
 
-\[
+$$
 \boxed{
 q_\phi(z\mid x)
 }
-\]
+$$
 
 去近似真正但难计算的：
 
-\[
+$$
 p_\theta(z\mid x)
-\]
+$$
 
 也就是希望：
 
-\[
+$$
 q_\phi(z\mid x)
 \approx
 p_\theta(z\mid x)
-\]
+$$
 
 这里：
 
-- \(q\)：我们选择的近似分布；
-- \(\phi\)：近似分布的参数；
-- \(p_\theta(z\mid x)\)：真实 posterior；
-- \(q_\phi(z\mid x)\)：approximate posterior / variational posterior。
+- $q$：我们选择的近似分布；
+- $\phi$：近似分布的参数；
+- $p_\theta(z\mid x)$：真实 posterior；
+- $q_\phi(z\mid x)$：approximate posterior / variational posterior。
 
 在 VAE 中：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 通常由一个 neural network 参数化。
 
@@ -463,31 +463,31 @@ q_\phi(z\mid x)
 
 ---
 
-# 8. 为什么它叫 Probabilistic Encoder？
+## 8. 为什么它叫 Probabilistic Encoder？
 
 普通 Autoencoder 的 encoder 可能是：
 
-\[
+$$
 z=f_\phi(x)
-\]
+$$
 
-给定 \(x\)，直接输出一个固定向量 \(z\)。
+给定 $x$，直接输出一个固定向量 $z$。
 
 而 VAE encoder 做的是：
 
-\[
+$$
 x
 \longrightarrow
 q_\phi(z\mid x)
-\]
+$$
 
 也就是说：
 
-> 给定 \(x\)，输出一个关于“哪些 \(z\) 可能解释这个 \(x\)”的概率分布。
+> 给定 $x$，输出一个关于“哪些 $z$ 可能解释这个 $x$”的概率分布。
 
 在经典 Gaussian VAE 中：
 
-\[
+$$
 q_\phi(z\mid x)
 =
 \mathcal N
@@ -495,63 +495,63 @@ q_\phi(z\mid x)
 \mu_\phi(x),
 \operatorname{diag}(\sigma_\phi^2(x))
 \right)
-\]
+$$
 
 因此 encoder 输出的不是最终固定的：
 
-\[
+$$
 z
-\]
+$$
 
 而是这个 distribution 的参数：
 
-\[
+$$
 \mu_\phi(x)
-\]
+$$
 
 以及：
 
-\[
+$$
 \sigma_\phi^2(x)
-\]
+$$
 
 实际代码中，经常输出：
 
-\[
+$$
 \log\sigma^2
-\]
+$$
 
 而不是直接输出 variance。
 
 后面再从这个分布采样：
 
-\[
+$$
 z\sim q_\phi(z\mid x)
-\]
+$$
 
 ---
 
-# 9. 但现在出现一个新问题
+## 9. 但现在出现一个新问题
 
 我们虽然定义了：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 但怎么训练它？
 
 我们真正希望：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 接近：
 
-\[
+$$
 p_\theta(z\mid x)
-\]
+$$
 
 最直接想到的是：
 
@@ -559,14 +559,14 @@ p_\theta(z\mid x)
 
 即：
 
-\[
+$$
 D_{KL}
 \left(
 q_\phi(z\mid x)
 \parallel
 p_\theta(z\mid x)
 \right)
-\]
+$$
 
 然后把它最小化。
 
@@ -574,9 +574,9 @@ p_\theta(z\mid x)
 
 但有一个致命问题：
 
-\[
+$$
 p_\theta(z\mid x)
-\]
+$$
 
 本来就是我们算不出来的东西。
 
@@ -586,11 +586,11 @@ p_\theta(z\mid x)
 
 ---
 
-# 10. ELBO 就是在这个地方出现的
+## 10. ELBO 就是在这个地方出现的
 
 关键恒等式是：
 
-\[
+$$
 \boxed{
 \log p_\theta(x)
 =
@@ -603,13 +603,13 @@ q_\phi(z\mid x)
 p_\theta(z\mid x)
 \right)
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 \mathcal L(\theta,\phi;x)
-\]
+$$
 
 叫：
 
@@ -623,50 +623,50 @@ p_\theta(z\mid x)
 
 因为 KL divergence 永远：
 
-\[
+$$
 D_{KL}(q\parallel p)\ge0
-\]
+$$
 
 所以：
 
-\[
+$$
 \log p_\theta(x)
 \ge
 \mathcal L(\theta,\phi;x)
-\]
+$$
 
 也就是：
 
-\[
+$$
 \boxed{
 \mathcal L(\theta,\phi;x)
 \le
 \log p_\theta(x)
 }
-\]
+$$
 
 ELBO 是 marginal log-likelihood 的一个下界。
 
 ---
 
-# 11. 这个恒等式为什么成立？
+## 11. 这个恒等式为什么成立？
 
 我们一步一步推。
 
 先从：
 
-\[
+$$
 D_{KL}
 \left(
 q_\phi(z\mid x)
 \parallel
 p_\theta(z\mid x)
 \right)
-\]
+$$
 
 的定义开始：
 
-\[
+$$
 D_{KL}
 =
 \mathbb E_{q_\phi(z\mid x)}
@@ -678,11 +678,11 @@ q_\phi(z\mid x)
 p_\theta(z\mid x)
 }
 \right]
-\]
+$$
 
 根据 Bayes：
 
-\[
+$$
 p_\theta(z\mid x)
 =
 \frac{
@@ -690,11 +690,11 @@ p_\theta(x,z)
 }{
 p_\theta(x)
 }
-\]
+$$
 
 代进去：
 
-\[
+$$
 D_{KL}
 =
 \mathbb E_q
@@ -706,11 +706,11 @@ q_\phi(z\mid x)
 p_\theta(x,z)/p_\theta(x)
 }
 \right]
-\]
+$$
 
 整理：
 
-\[
+$$
 D_{KL}
 =
 \mathbb E_q
@@ -721,19 +721,19 @@ D_{KL}
 +
 \log p_\theta(x)
 \right]
-\]
+$$
 
 注意：
 
-\[
+$$
 \log p_\theta(x)
-\]
+$$
 
-与 \(z\) 无关。
+与 $z$ 无关。
 
 所以可以从 expectation 中拿出来：
 
-\[
+$$
 D_{KL}
 =
 \log p_\theta(x)
@@ -744,11 +744,11 @@ D_{KL}
 -
 \log p_\theta(x,z)
 \right]
-\]
+$$
 
 移项：
 
-\[
+$$
 \log p_\theta(x)
 =
 D_{KL}
@@ -759,11 +759,11 @@ D_{KL}
 -
 \log q_\phi(z\mid x)
 \right]
-\]
+$$
 
 于是定义：
 
-\[
+$$
 \boxed{
 \mathcal L(\theta,\phi;x)
 =
@@ -774,11 +774,11 @@ D_{KL}
 \log q_\phi(z\mid x)
 \right]
 }
-\]
+$$
 
 就得到：
 
-\[
+$$
 \boxed{
 \log p_\theta(x)
 =
@@ -786,7 +786,7 @@ D_{KL}
 +
 D_{KL}(q_\phi(z\mid x)\parallel p_\theta(z\mid x))
 }
-\]
+$$
 
 这就是 ELBO 的来源。
 
@@ -794,11 +794,11 @@ D_{KL}(q_\phi(z\mid x)\parallel p_\theta(z\mid x))
 
 ---
 
-# 12. 为什么最大化 ELBO 有意义？
+## 12. 为什么最大化 ELBO 有意义？
 
 回到：
 
-\[
+$$
 \log p_\theta(x)
 =
 \mathcal L
@@ -809,49 +809,49 @@ q_\phi(z\mid x)
 \parallel
 p_\theta(z\mid x)
 \right)
-\]
+$$
 
 KL：
 
-\[
+$$
 \ge0
-\]
+$$
 
 所以提高：
 
-\[
+$$
 \mathcal L
-\]
+$$
 
 会推动我们提高：
 
-\[
+$$
 \log p_\theta(x)
-\]
+$$
 
 的下界。
 
 同时，ELBO 与 approximate posterior：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 有关。
 
 因此我们可以：
 
-> **同时训练 generative model \(p_\theta\) 和 inference model \(q_\phi\)。**
+> **同时训练 generative model $p_\theta$ 和 inference model $q_\phi$。**
 
 这就是 variational learning 的核心。
 
 ---
 
-# 13. ELBO 还可以写成更熟悉的形式
+## 13. ELBO 还可以写成更熟悉的形式
 
 我们已经有：
 
-\[
+$$
 \mathcal L
 =
 \mathbb E_q
@@ -860,29 +860,29 @@ q_\phi(z\mid x)
 -
 \log q_\phi(z\mid x)
 ]
-\]
+$$
 
 联合分布：
 
-\[
+$$
 p_\theta(x,z)
 =
 p_\theta(x\mid z)p(z)
-\]
+$$
 
 所以：
 
-\[
+$$
 \log p_\theta(x,z)
 =
 \log p_\theta(x\mid z)
 +
 \log p(z)
-\]
+$$
 
 代进去：
 
-\[
+$$
 \mathcal L
 =
 \mathbb E_q
@@ -893,11 +893,11 @@ p_\theta(x\mid z)p(z)
 -
 \log q_\phi(z\mid x)
 ]
-\]
+$$
 
 拆开：
 
-\[
+$$
 \mathcal L
 =
 \mathbb E_q
@@ -911,11 +911,11 @@ p_\theta(x\mid z)p(z)
 -
 \log q_\phi(z\mid x)
 ]
-\]
+$$
 
 而：
 
-\[
+$$
 D_{KL}
 (q_\phi(z\mid x)\parallel p(z))
 =
@@ -925,11 +925,11 @@ D_{KL}
 -
 \log p(z)
 \right]
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \mathcal L
 =
@@ -945,17 +945,17 @@ q_\phi(z\mid x)
 p(z)
 \right)
 }
-\]
+$$
 
 这就是 VAE 最经典的目标函数形式。
 
 ---
 
-# 14. 终于出现了大家熟悉的两部分
+## 14. 终于出现了大家熟悉的两部分
 
 ELBO：
 
-\[
+$$
 \boxed{
 \mathcal L
 =
@@ -975,19 +975,19 @@ p(z)
 )
 }_{\text{KL regularization}}
 }
-\]
+$$
 
 训练时我们希望：
 
-\[
+$$
 \max_{\theta,\phi}\mathcal L
-\]
+$$
 
 机器学习代码通常用 gradient descent 最小化 loss。
 
 所以会写成负 ELBO：
 
-\[
+$$
 \boxed{
 \mathcal J_{\text{VAE}}
 =
@@ -996,7 +996,7 @@ p(z)
 +
 D_{KL}(q_\phi(z\mid x)\parallel p(z))
 }
-\]
+$$
 
 于是大家常说：
 
@@ -1016,54 +1016,54 @@ KL Loss
 
 ---
 
-# 15. Reconstruction Term 真正是什么？
+## 15. Reconstruction Term 真正是什么？
 
 第一项：
 
-\[
+$$
 \mathbb E_{q_\phi(z\mid x)}
 [
 \log p_\theta(x\mid z)
 ]
-\]
+$$
 
 含义是：
 
-> 从 approximate posterior 中得到 \(z\) 后，decoder 应该给真实数据 \(x\) 较高概率。
+> 从 approximate posterior 中得到 $z$ 后，decoder 应该给真实数据 $x$ 较高概率。
 
 因此 decoder 定义：
 
-\[
+$$
 p_\theta(x\mid z)
-\]
+$$
 
 VAE 想让：
 
-\[
+$$
 \log p_\theta(x\mid z)
-\]
+$$
 
 尽量大。
 
 也就是：
 
-> 给定这个 latent \(z\)，原始 \(x\) 在 decoder distribution 下应该很合理。
+> 给定这个 latent $z$，原始 $x$ 在 decoder distribution 下应该很合理。
 
 这就是所谓 reconstruction 的概率学来源。
 
 ---
 
-# 16. Reconstruction Loss 不总是 MSE
+## 16. Reconstruction Loss 不总是 MSE
 
 这是一个特别重要的严谨性问题。
 
 经常有人直接写：
 
-\[
+$$
 \mathcal L_{\text{recon}}
 =
 \|x-\hat x\|^2
-\]
+$$
 
 然后说：
 
@@ -1073,25 +1073,25 @@ VAE 想让：
 
 真正的目标是：
 
-\[
+$$
 -\log p_\theta(x\mid z)
-\]
+$$
 
 具体长什么样，取决于你为：
 
-\[
+$$
 p_\theta(x\mid z)
-\]
+$$
 
 选择什么概率分布。
 
 ---
 
-# 17. 如果 decoder 使用 Gaussian likelihood
+## 17. 如果 decoder 使用 Gaussian likelihood
 
 假设：
 
-\[
+$$
 p_\theta(x\mid z)
 =
 \mathcal N
@@ -1099,32 +1099,32 @@ p_\theta(x\mid z)
 \mu_\theta(z),
 \sigma_x^2I
 )
-\]
+$$
 
 并且：
 
-\[
+$$
 \sigma_x^2
-\]
+$$
 
 固定。
 
 Gaussian negative log-likelihood 可以写成：
 
-\[
+$$
 -\log p_\theta(x\mid z)
 =
 \frac{1}{2\sigma_x^2}
 \|x-\mu_\theta(z)\|^2
 +
 C
-\]
+$$
 
 其中：
 
-\[
+$$
 C
-\]
+$$
 
 与模型输出无关。
 
@@ -1136,23 +1136,23 @@ C
 
 ---
 
-# 18. 如果 decoder 使用 Bernoulli likelihood
+## 18. 如果 decoder 使用 Bernoulli likelihood
 
 对于 binary data，VAE 原论文示例使用 Bernoulli decoder。
 
 此时：
 
-\[
+$$
 p_\theta(x\mid z)
-\]
+$$
 
 是 Bernoulli distribution。
 
 对应的：
 
-\[
+$$
 -\log p_\theta(x\mid z)
-\]
+$$
 
 会变成类似 binary cross-entropy 的形式。
 
@@ -1172,46 +1172,46 @@ Bernoulli likelihood
 
 ---
 
-# 19. KL Term 在做什么？
+## 19. KL Term 在做什么？
 
 第二项：
 
-\[
+$$
 D_{KL}
 \left(
 q_\phi(z\mid x)
 \parallel
 p(z)
 \right)
-\]
+$$
 
 要求 approximate posterior：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 不要离 prior：
 
-\[
+$$
 p(z)
-\]
+$$
 
 太远。
 
 经典 VAE 选择：
 
-\[
+$$
 \boxed{
 p(z)=\mathcal N(0,I)
 }
-\]
+$$
 
 因此 KL 项鼓励：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 接近标准多元高斯。
 
@@ -1221,15 +1221,15 @@ Kingma & Welling 原论文明确把这一项解释成：
 
 ---
 
-# 20. 为什么不能只做 Reconstruction？
+## 20. 为什么不能只做 Reconstruction？
 
 假设没有 KL：
 
-\[
+$$
 \mathcal J
 =
 \mathcal J_{\text{reconstruction}}
-\]
+$$
 
 encoder 可以非常自由地给每个训练样本分配不同的 latent region。
 
@@ -1263,15 +1263,15 @@ x₃ → latent another isolated island
 
 因为我们希望训练后可以：
 
-\[
+$$
 z\sim p(z)
-\]
+$$
 
 然后：
 
-\[
+$$
 x\sim p_\theta(x\mid z)
-\]
+$$
 
 生成合理样本。
 
@@ -1279,27 +1279,27 @@ x\sim p_\theta(x\mid z)
 
 从：
 
-\[
+$$
 p(z)
-\]
+$$
 
-随机采样的 \(z\) 可能掉到 decoder 从未学好的区域。
+随机采样的 $z$ 可能掉到 decoder 从未学好的区域。
 
 ---
 
-# 21. KL 让“编码分布”和“生成时采样的分布”对得上
+## 21. KL 让“编码分布”和“生成时采样的分布”对得上
 
 训练时 latent 来自：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 生成时 latent 来自：
 
-\[
+$$
 p(z)
-\]
+$$
 
 如果这两个世界完全没有关系：
 
@@ -1315,12 +1315,12 @@ p(z)
 
 所以 KL：
 
-\[
+$$
 D_{KL}
 (
 q_\phi(z\mid x)\parallel p(z)
 )
-\]
+$$
 
 在做一个非常关键的事情：
 
@@ -1340,13 +1340,13 @@ generate x
 
 ---
 
-# 22. KL 是不是强迫每一个样本都 μ=0、σ²=1？
+## 22. KL 是不是强迫每一个样本都 μ=0、σ²=1？
 
 这是非常常见的误解。
 
 经典 Gaussian VAE 中：
 
-\[
+$$
 q_\phi(z\mid x)
 =
 \mathcal N
@@ -1354,27 +1354,27 @@ q_\phi(z\mid x)
 \mu(x),
 \operatorname{diag}(\sigma^2(x))
 )
-\]
+$$
 
 prior：
 
-\[
+$$
 p(z)=\mathcal N(0,I)
-\]
+$$
 
 如果只考虑：
 
-\[
+$$
 D_{KL}(q_\phi(z\mid x)\parallel p(z))
-\]
+$$
 
 这一项，
 
 它确实在：
 
-\[
+$$
 \mu=0,\qquad\sigma^2=1
-\]
+$$
 
 时达到最小值。
 
@@ -1382,9 +1382,9 @@ D_{KL}(q_\phi(z\mid x)\parallel p(z))
 
 它同时还要做好 reconstruction：
 
-\[
+$$
 \mathbb E_q[\log p_\theta(x\mid z)]
-\]
+$$
 
 所以训练实际上是两种需求之间的平衡：
 
@@ -1400,7 +1400,7 @@ KL
 
 因此正常训练时：
 
-> 不应该理解成“一个 linear layer 专门学习把所有 \(\mu\) 变成 0、所有 variance 变成 1”。
+> 不应该理解成“一个 linear layer 专门学习把所有 $\mu$ 变成 0、所有 variance 变成 1”。
 
 更准确的是：
 
@@ -1408,11 +1408,11 @@ KL
 
 ---
 
-# 23. 这也是为什么 μ 和 variance 不是随便来的
+## 23. 这也是为什么 μ 和 variance 不是随便来的
 
 经典 VAE 假设：
 
-\[
+$$
 q_\phi(z\mid x)
 =
 \mathcal N
@@ -1420,21 +1420,21 @@ q_\phi(z\mid x)
 \mu_\phi(x),
 \operatorname{diag}(\sigma_\phi^2(x))
 )
-\]
+$$
 
 所以为了完整描述这个 Gaussian，
 
 encoder 必须给出：
 
-\[
+$$
 \mu_\phi(x)
-\]
+$$
 
 和：
 
-\[
+$$
 \sigma_\phi^2(x)
-\]
+$$
 
 也就是说：
 
@@ -1465,54 +1465,54 @@ variance target = 1
 
 ---
 
-# 24. 为什么代码里经常输出 log σ²？
+## 24. 为什么代码里经常输出 log σ²？
 
 理论可以写：
 
-\[
+$$
 \sigma^2>0
-\]
+$$
 
 但是 neural network 的普通 linear output：
 
-\[
+$$
 r\in(-\infty,+\infty)
-\]
+$$
 
 没有天然保证输出为正数。
 
 所以常见实现让网络输出：
 
-\[
+$$
 \log\sigma^2
-\]
+$$
 
 它可以是任何实数。
 
 再通过：
 
-\[
+$$
 \sigma^2
 =
 \exp(\log\sigma^2)
-\]
+$$
 
 保证 variance：
 
-\[
+$$
 >0
-\]
+$$
 
 随后：
 
-\[
+$$
 \sigma
 =
 \exp
 \left(
 \frac12\log\sigma^2
 \right)
-\]
+$$
 
 所以代码中经常看到：
 
@@ -1524,19 +1524,19 @@ std = torch.exp(0.5 * logvar)
 
 只是因为：
 
-\[
+$$
 \log\sigma^2
-\]
+$$
 
 比直接让网络输出一个必须为正的 variance 更方便参数化。
 
 ---
 
-# 25. Gaussian KL 可以写成闭式公式
+## 25. Gaussian KL 可以写成闭式公式
 
 对于：
 
-\[
+$$
 q_\phi(z\mid x)
 =
 \mathcal N
@@ -1544,19 +1544,19 @@ q_\phi(z\mid x)
 \mu,
 \operatorname{diag}(\sigma^2)
 )
-\]
+$$
 
 和：
 
-\[
+$$
 p(z)
 =
 \mathcal N(0,I)
-\]
+$$
 
 KL divergence 有解析解：
 
-\[
+$$
 \boxed{
 D_{KL}
 (q_\phi(z\mid x)\parallel p(z))
@@ -1573,31 +1573,31 @@ D_{KL}
 1
 \right)
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 d
-\]
+$$
 
 是 latent dimension。
 
 如果代码使用：
 
-\[
+$$
 \text{logvar}_j
 =
 \log\sigma_j^2
-\]
+$$
 
 那么：
 
-\[
+$$
 \sigma_j^2
 =
 e^{\text{logvar}_j}
-\]
+$$
 
 所以常见代码为：
 
@@ -1615,30 +1615,30 @@ kl = -0.5 * torch.sum(
 
 ---
 
-# 26. 到这里还有一个困难：我们需要从 q(z|x) 采样
+## 26. 到这里还有一个困难：我们需要从 q(z|x) 采样
 
 ELBO 第一项：
 
-\[
+$$
 \mathbb E_{q_\phi(z\mid x)}
 [
 \log p_\theta(x\mid z)
 ]
-\]
+$$
 
 包含一个 expectation。
 
 实际训练时通常使用 Monte Carlo sample：
 
-\[
+$$
 z\sim q_\phi(z\mid x)
-\]
+$$
 
 然后计算：
 
-\[
+$$
 \log p_\theta(x\mid z)
-\]
+$$
 
 所以训练流程变成：
 
@@ -1662,29 +1662,29 @@ reconstruction objective
 
 ---
 
-# 27. 为什么直接“sample z”会让梯度变麻烦？
+## 27. 为什么直接“sample z”会让梯度变麻烦？
 
 假设：
 
-\[
+$$
 z\sim
 \mathcal N(
 \mu_\phi(x),
 \sigma_\phi^2(x)
 )
-\]
+$$
 
 其中：
 
-\[
+$$
 \mu_\phi(x),\sigma_\phi(x)
-\]
+$$
 
 由 encoder 参数：
 
-\[
+$$
 \phi
-\]
+$$
 
 决定。
 
@@ -1704,9 +1704,9 @@ encoder φ
 
 但如果把：
 
-\[
+$$
 z\sim q_\phi(z\mid x)
-\]
+$$
 
 当成一个直接的随机采样操作，
 
@@ -1714,9 +1714,9 @@ z\sim q_\phi(z\mid x)
 
 我们不能简单地像：
 
-\[
+$$
 z=f_\phi(x)
-\]
+$$
 
 那样直接对 sample operation 进行普通 backpropagation。
 
@@ -1728,68 +1728,68 @@ VAE 原论文的关键贡献之一，就是用：
 
 ---
 
-# 28. Reparameterization Trick
+## 28. Reparameterization Trick
 
 对于 Gaussian：
 
-\[
+$$
 z\sim
 \mathcal N(\mu,\sigma^2)
-\]
+$$
 
 等价地可以：
 
 先采样：
 
-\[
+$$
 \epsilon\sim\mathcal N(0,I)
-\]
+$$
 
 然后：
 
-\[
+$$
 \boxed{
 z
 =
 \mu+\sigma\odot\epsilon
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 \odot
-\]
+$$
 
 表示逐元素乘法。
 
 于是随机性被移到了：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 里。
 
-\(\epsilon\) 与：
+$\epsilon$ 与：
 
-\[
+$$
 \phi
-\]
+$$
 
 无关。
 
 而：
 
-\[
+$$
 z
 =
 \mu_\phi(x)
 +
 \sigma_\phi(x)\odot\epsilon
-\]
+$$
 
-对于固定的 \(\epsilon\) 来说，是一个普通 differentiable function。
+对于固定的 $\epsilon$ 来说，是一个普通 differentiable function。
 
 于是梯度可以：
 
@@ -1807,61 +1807,61 @@ encoder parameters φ
 
 ---
 
-# 29. 为什么这没有改变 z 的分布？
+## 29. 为什么这没有改变 z 的分布？
 
 因为如果：
 
-\[
+$$
 \epsilon\sim\mathcal N(0,I)
-\]
+$$
 
 那么：
 
-\[
+$$
 \sigma\odot\epsilon
-\]
+$$
 
 会把标准差从：
 
-\[
+$$
 1
-\]
+$$
 
 缩放成：
 
-\[
+$$
 \sigma
-\]
+$$
 
 再加：
 
-\[
+$$
 \mu
-\]
+$$
 
 会把均值从：
 
-\[
+$$
 0
-\]
+$$
 
 平移到：
 
-\[
+$$
 \mu
-\]
+$$
 
 所以：
 
-\[
+$$
 z=\mu+\sigma\odot\epsilon
-\]
+$$
 
 仍然满足：
 
-\[
+$$
 z\sim\mathcal N(\mu,\operatorname{diag}(\sigma^2))
-\]
+$$
 
 因此我们只是：
 
@@ -1875,19 +1875,19 @@ z\sim\mathcal N(\mu,\operatorname{diag}(\sigma^2))
 
 ---
 
-# 30. ε 和 z 千万不要混
+## 30. ε 和 z 千万不要混
 
 在公式：
 
-\[
+$$
 z
 =
 \mu+\sigma\odot\epsilon
-\]
+$$
 
 中：
 
-### \(\epsilon\)
+#### $\epsilon$
 
 是：
 
@@ -1895,13 +1895,13 @@ z
 
 通常：
 
-\[
+$$
 \epsilon\sim\mathcal N(0,I)
-\]
+$$
 
 ---
 
-### \(z\)
+#### $z$
 
 是：
 
@@ -1909,59 +1909,59 @@ z
 
 它服从：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 z\neq\epsilon
 }
-\]
+$$
 
 只有在特殊情况：
 
-\[
+$$
 \mu=0,\qquad\sigma=1
-\]
+$$
 
 时数值分布才相同。
 
 ---
 
-# 31. VAE 的完整训练流程
+## 31. VAE 的完整训练流程
 
 现在终于可以把整个网络串起来。
 
 ---
 
-## Step 1：输入 x
+### Step 1：输入 x
 
-\[
+$$
 x
-\]
+$$
 
 进入 encoder。
 
 ---
 
-## Step 2：Encoder 输出 approximate posterior 参数
+### Step 2：Encoder 输出 approximate posterior 参数
 
-\[
+$$
 \mu_\phi(x)
-\]
+$$
 
 以及：
 
-\[
+$$
 \log\sigma_\phi^2(x)
-\]
+$$
 
 于是定义：
 
-\[
+$$
 q_\phi(z\mid x)
 =
 \mathcal N
@@ -1969,84 +1969,84 @@ q_\phi(z\mid x)
 \mu_\phi(x),
 \operatorname{diag}(\sigma_\phi^2(x))
 )
-\]
+$$
 
 ---
 
-## Step 3：采样 ε
+### Step 3：采样 ε
 
-\[
+$$
 \epsilon
 \sim
 \mathcal N(0,I)
-\]
+$$
 
 ---
 
-## Step 4：Reparameterize
+### Step 4：Reparameterize
 
-\[
+$$
 z
 =
 \mu
 +
 \sigma\odot\epsilon
-\]
+$$
 
 ---
 
-## Step 5：Decoder 定义 p(x|z)
+### Step 5：Decoder 定义 p(x|z)
 
 将：
 
-\[
+$$
 z
-\]
+$$
 
 输入 decoder，
 
 得到：
 
-\[
+$$
 p_\theta(x\mid z)
-\]
+$$
 
 的 distribution parameters。
 
 例如 Gaussian decoder 可能输出：
 
-\[
+$$
 \mu_\theta(z)
-\]
+$$
 
 ---
 
-## Step 6：计算 Reconstruction / Likelihood Term
+### Step 6：计算 Reconstruction / Likelihood Term
 
-\[
+$$
 -\log p_\theta(x\mid z)
-\]
+$$
 
 或者它对应的具体实现形式。
 
 ---
 
-## Step 7：计算 KL
+### Step 7：计算 KL
 
-\[
+$$
 D_{KL}
 (
 q_\phi(z\mid x)
 \parallel
 p(z)
 )
-\]
+$$
 
 ---
 
-## Step 8：组合 negative ELBO
+### Step 8：组合 negative ELBO
 
-\[
+$$
 \mathcal J
 =
 -
@@ -2057,23 +2057,23 @@ p(z)
 +
 D_{KL}
 (q_\phi(z\mid x)\parallel p(z))
-\]
+$$
 
 ---
 
-## Step 9：Backpropagation
+### Step 9：Backpropagation
 
 同时更新：
 
-\[
+$$
 \phi
-\]
+$$
 
 和：
 
-\[
+$$
 \theta
-\]
+$$
 
 也就是：
 
@@ -2082,7 +2082,7 @@ D_{KL}
 
 ---
 
-# 32. 用一张图看完整数据流
+## 32. 用一张图看完整数据流
 
 ```text
                          ┌──────────────────────┐
@@ -2129,7 +2129,7 @@ qφ(z|x)
 
 ---
 
-# 33. 为什么叫 Variational？
+## 33. 为什么叫 Variational？
 
 现在终于可以解释名字里的：
 
@@ -2143,17 +2143,17 @@ VAE 使用的是：
 
 真实 posterior：
 
-\[
+$$
 p_\theta(z\mid x)
-\]
+$$
 
 很难算。
 
 于是我们选一个容易处理的 distribution family：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 然后在这个 family 中寻找一个尽可能好的近似。
 
@@ -2165,19 +2165,19 @@ q_\phi(z\mid x)
 
 ---
 
-# 34. 那为什么叫 Autoencoder？
+## 34. 那为什么叫 Autoencoder？
 
 因为当：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 和：
 
-\[
+$$
 p_\theta(x\mid z)
-\]
+$$
 
 都由 neural networks 参数化时，
 
@@ -2209,73 +2209,73 @@ Kingma & Welling 也明确指出这种 connection。
 
 ---
 
-# 35. VAE 和普通 Autoencoder 到底差在哪？
+## 35. VAE 和普通 Autoencoder 到底差在哪？
 
-## 普通 Autoencoder
+### 普通 Autoencoder
 
 典型形式：
 
-\[
+$$
 z=f_\phi(x)
-\]
+$$
 
-\[
+$$
 \hat x=g_\theta(z)
-\]
+$$
 
 latent：
 
-\[
+$$
 z
-\]
+$$
 
 通常是一个 deterministic point。
 
 训练目标往往直接是：
 
-\[
+$$
 \|x-\hat x\|
-\]
+$$
 
 ---
 
-## VAE
+### VAE
 
 Encoder：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 输出的是 distribution。
 
 sample：
 
-\[
+$$
 z\sim q_\phi(z\mid x)
-\]
+$$
 
 Decoder：
 
-\[
+$$
 p_\theta(x\mid z)
-\]
+$$
 
 也是概率 distribution。
 
 训练目标是：
 
-\[
+$$
 \text{ELBO}
-\]
+$$
 
 也就是：
 
-\[
+$$
 \mathbb E_q[\log p_\theta(x\mid z)]
 -
 D_{KL}(q_\phi(z\mid x)\parallel p(z))
-\]
+$$
 
 所以 VAE 从头到尾都是：
 
@@ -2283,35 +2283,35 @@ D_{KL}(q_\phi(z\mid x)\parallel p(z))
 
 ---
 
-# 36. VAE 训练好以后怎么生成新数据？
+## 36. VAE 训练好以后怎么生成新数据？
 
 这是 KL prior matching 真正发挥作用的地方。
 
 训练完成以后，不需要输入：
 
-\[
+$$
 x
-\]
+$$
 
 也不需要 encoder。
 
 直接：
 
-\[
+$$
 z\sim p(z)
-\]
+$$
 
 例如：
 
-\[
+$$
 z\sim\mathcal N(0,I)
-\]
+$$
 
 然后：
 
-\[
+$$
 x\sim p_\theta(x\mid z)
-\]
+$$
 
 也就是：
 
@@ -2333,15 +2333,15 @@ encoder 主要用于：
 
 ---
 
-# 37. Reconstruction 和 Generation 是两条不同流程
+## 37. Reconstruction 和 Generation 是两条不同流程
 
-## Reconstruction
+### Reconstruction
 
 有一个已有数据：
 
-\[
+$$
 x
-\]
+$$
 
 流程：
 
@@ -2359,7 +2359,7 @@ reconstruct x
 
 ---
 
-## Generation
+### Generation
 
 没有输入数据：
 
@@ -2379,19 +2379,19 @@ VAE 不是只会：
 
 它真正学习的是一个：
 
-\[
+$$
 p_\theta(x,z)
-\]
+$$
 
 生成模型。
 
 ---
 
-# 38. ELBO 为什么既训练 Encoder 又训练 Decoder？
+## 38. ELBO 为什么既训练 Encoder 又训练 Decoder？
 
 看：
 
-\[
+$$
 \mathcal L
 =
 \mathbb E_{q_\phi(z\mid x)}
@@ -2405,44 +2405,44 @@ q_\phi(z\mid x)
 \parallel
 p(z)
 )
-\]
+$$
 
-### \(\theta\)
+#### $\theta$
 
 出现在：
 
-\[
+$$
 p_\theta(x\mid z)
-\]
+$$
 
 所以 reconstruction / likelihood term 会训练 decoder。
 
 ---
 
-### \(\phi\)
+#### $\phi$
 
 出现在：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 因此：
 
-- sample \(z\) 依赖 \(\phi\)；
-- KL 也依赖 \(\phi\)。
+- sample $z$ 依赖 $\phi$；
+- KL 也依赖 $\phi$。
 
 通过 reparameterization：
 
-\[
+$$
 z=\mu_\phi(x)+\sigma_\phi(x)\odot\epsilon
-\]
+$$
 
 reconstruction gradient 也能传回：
 
-\[
+$$
 \phi
-\]
+$$
 
 所以：
 
@@ -2452,11 +2452,11 @@ reconstruction gradient 也能传回：
 
 ---
 
-# 39. ELBO 的另一个非常重要的理解
+## 39. ELBO 的另一个非常重要的理解
 
 回到恒等式：
 
-\[
+$$
 \log p_\theta(x)
 =
 \mathcal L
@@ -2467,31 +2467,31 @@ q_\phi(z\mid x)
 \parallel
 p_\theta(z\mid x)
 )
-\]
+$$
 
 如果：
 
-\[
+$$
 q_\phi(z\mid x)
 =
 p_\theta(z\mid x)
-\]
+$$
 
 那么：
 
-\[
+$$
 D_{KL}=0
-\]
+$$
 
 于是：
 
-\[
+$$
 \boxed{
 \mathcal L
 =
 \log p_\theta(x)
 }
-\]
+$$
 
 也就是说：
 
@@ -2507,22 +2507,22 @@ D_{KL}=0
 
 ---
 
-# 40. 两个 KL 千万不要混
+## 40. 两个 KL 千万不要混
 
 VAE 学习时经常看到两个形式不同的 KL。
 
 ---
 
-## KL 1：理论 identity 中
+### KL 1：理论 identity 中
 
-\[
+$$
 D_{KL}
 (
 q_\phi(z\mid x)
 \parallel
 p_\theta(z\mid x)
 )
-\]
+$$
 
 这是：
 
@@ -2530,13 +2530,13 @@ p_\theta(z\mid x)
 
 它出现在：
 
-\[
+$$
 \log p_\theta(x)
 =
 ELBO
 +
 KL
-\]
+$$
 
 但因为 true posterior 难算，
 
@@ -2544,16 +2544,16 @@ KL
 
 ---
 
-## KL 2：ELBO 中真正可计算的 regularizer
+### KL 2：ELBO 中真正可计算的 regularizer
 
-\[
+$$
 D_{KL}
 (
 q_\phi(z\mid x)
 \parallel
 p(z)
 )
-\]
+$$
 
 这是：
 
@@ -2561,13 +2561,13 @@ p(z)
 
 它出现在：
 
-\[
+$$
 ELBO
 =
 \mathbb E_q[\log p_\theta(x\mid z)]
 -
 D_{KL}(q_\phi(z\mid x)\parallel p(z))
-\]
+$$
 
 对于 Gaussian case 通常可以解析计算。
 
@@ -2579,41 +2579,41 @@ D_{KL}(q_\phi(z\mid x)\parallel p(z))
 
 ---
 
-# 41. 为什么 ELBO 里的 KL 是 q(z|x) 对 prior，而不是 true posterior？
+## 41. 为什么 ELBO 里的 KL 是 q(z|x) 对 prior，而不是 true posterior？
 
 因为我们把：
 
-\[
+$$
 p_\theta(x,z)
-\]
+$$
 
 分解成：
 
-\[
+$$
 p_\theta(x\mid z)p(z)
-\]
+$$
 
 以后，
 
 ELBO：
 
-\[
+$$
 \mathbb E_q[
 \log p_\theta(x,z)
 -
 \log q(z\mid x)
 ]
-\]
+$$
 
 自然变成：
 
-\[
+$$
 \mathbb E_q[
 \log p_\theta(x\mid z)
 ]
 -
 D_{KL}(q(z\mid x)\parallel p(z))
-\]
+$$
 
 所以：
 
@@ -2623,7 +2623,7 @@ D_{KL}(q(z\mid x)\parallel p(z))
 
 ---
 
-# 42. 为什么 Reconstruction 和 KL 会产生 Trade-off？
+## 42. 为什么 Reconstruction 和 KL 会产生 Trade-off？
 
 如果只追求 reconstruction：
 
@@ -2633,25 +2633,25 @@ D_{KL}(q(z\mid x)\parallel p(z))
 
 最简单的方法是让所有输入都产生：
 
-\[
+$$
 q_\phi(z\mid x)
 =
 p(z)
-\]
+$$
 
 这样 KL：
 
-\[
+$$
 =0
-\]
+$$
 
 但此时：
 
-\[
+$$
 z
-\]
+$$
 
-几乎不再携带关于 \(x\) 的信息。
+几乎不再携带关于 $x$ 的信息。
 
 decoder 可能无法重建。
 
@@ -2671,33 +2671,33 @@ VAE 正是在这两个目标之间平衡。
 
 ---
 
-# 43. 这也解释了 Posterior Collapse
+## 43. 这也解释了 Posterior Collapse
 
 如果 decoder 非常强，
 
-它可能几乎不需要 \(z\) 就能很好地建模 \(x\)。
+它可能几乎不需要 $z$ 就能很好地建模 $x$。
 
 这时优化可能走向：
 
-\[
+$$
 q_\phi(z\mid x)
 \approx
 p(z)
-\]
+$$
 
 于是：
 
-\[
+$$
 D_{KL}\approx0
-\]
+$$
 
 同时：
 
-\[
+$$
 z
-\]
+$$
 
-几乎不包含 \(x\) 的有效信息。
+几乎不包含 $x$ 的有效信息。
 
 这叫：
 
@@ -2709,15 +2709,15 @@ z
 
 所以不能看到网络里存在：
 
-\[
+$$
 z
-\]
+$$
 
 就自动认为模型一定学到了有意义的 latent representation。
 
 ---
 
-# 44. 一个最小 PyTorch 结构
+## 44. 一个最小 PyTorch 结构
 
 下面不是 production implementation。
 
@@ -2794,7 +2794,7 @@ x̂
 
 ---
 
-# 45. 一个最小 Gaussian-style loss
+## 45. 一个最小 Gaussian-style loss
 
 如果把 reconstruction 简化成 squared error：
 
@@ -2822,7 +2822,7 @@ def vae_loss(x_hat, x, mu, logvar):
 
 数学上最一般的 VAE objective 仍然是：
 
-\[
+$$
 -\mathbb E_q[
 \log p_\theta(x\mid z)
 ]
@@ -2833,11 +2833,11 @@ q_\phi(z\mid x)
 \parallel
 p(z)
 )
-\]
+$$
 
 ---
 
-# 46. 常见误解一：VAE 就是普通 Autoencoder 加噪声
+## 46. 常见误解一：VAE 就是普通 Autoencoder 加噪声
 
 **不准确。**
 
@@ -2861,31 +2861,31 @@ reparameterized stochastic gradient
 
 ---
 
-# 47. 常见误解二：Encoder 的目标就是让 μ→0、variance→1
+## 47. 常见误解二：Encoder 的目标就是让 μ→0、variance→1
 
 **错误。**
 
 KL 对：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 确实施加向：
 
-\[
+$$
 \mathcal N(0,I)
-\]
+$$
 
 靠近的压力。
 
-但 reconstruction 同时要求 \(z\) 保留关于 \(x\) 的信息。
+但 reconstruction 同时要求 $z$ 保留关于 $x$ 的信息。
 
 所以 encoder 最终学习的是这两者的折中。
 
 ---
 
-# 48. 常见误解三：KL 是人为加的 regularization trick
+## 48. 常见误解三：KL 是人为加的 regularization trick
 
 **不完整。**
 
@@ -2895,31 +2895,31 @@ q_\phi(z\mid x)
 
 它直接来自 ELBO：
 
-\[
+$$
 \mathcal L
 =
 \mathbb E_q[\log p_\theta(x\mid z)]
 -
 D_{KL}(q_\phi(z\mid x)\parallel p(z))
-\]
+$$
 
 ---
 
-# 49. 常见误解四：Reconstruction Loss 就是 MSE
+## 49. 常见误解四：Reconstruction Loss 就是 MSE
 
 **错误。**
 
 正确对象是：
 
-\[
+$$
 -\log p_\theta(x\mid z)
-\]
+$$
 
 MSE 只是某些 Gaussian likelihood 假设下对应的形式。
 
 ---
 
-# 50. 常见误解五：Encoder 输出 z
+## 50. 常见误解五：Encoder 输出 z
 
 严格来说：
 
@@ -2927,73 +2927,73 @@ MSE 只是某些 Gaussian likelihood 假设下对应的形式。
 
 例如：
 
-\[
+$$
 \mu(x),\log\sigma^2(x)
-\]
+$$
 
 然后：
 
-\[
+$$
 z
 =
 \mu+\sigma\odot\epsilon
-\]
+$$
 
 得到 sample。
 
 ---
 
-# 51. 常见误解六：采样意味着无法反向传播
+## 51. 常见误解六：采样意味着无法反向传播
 
 如果直接把 sampling node 当成参数相关随机操作，普通 pathwise backprop 确实有困难。
 
 但 reparameterization：
 
-\[
+$$
 z
 =
 \mu_\phi(x)
 +
 \sigma_\phi(x)\odot\epsilon
-\]
+$$
 
-把随机性转移到与 \(\phi\) 无关的：
+把随机性转移到与 $\phi$ 无关的：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 于是对：
 
-\[
+$$
 \mu,\sigma
-\]
+$$
 
 可以正常求梯度。
 
 ---
 
-# 52. 常见误解七：训练完成后生成数据还要先输入 x
+## 52. 常见误解七：训练完成后生成数据还要先输入 x
 
 **错误。**
 
 真正 generation：
 
-\[
+$$
 z\sim p(z)
-\]
+$$
 
 然后：
 
-\[
+$$
 x\sim p_\theta(x\mid z)
-\]
+$$
 
 不需要 encoder。
 
 ---
 
-# 53. 常见误解八：q(z|x) 就是真实 posterior
+## 53. 常见误解八：q(z|x) 就是真实 posterior
 
 **错误。**
 
@@ -3003,57 +3003,57 @@ x\sim p_\theta(x\mid z)
 
 真实 posterior：
 
-\[
+$$
 p_\theta(z\mid x)
-\]
+$$
 
 通常正是因为难算，我们才引入：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 ---
 
-# 54. 常见误解九：ELBO = reconstruction + KL
+## 54. 常见误解九：ELBO = reconstruction + KL
 
 符号上要小心。
 
 ELBO 是要：
 
-\[
+$$
 \boxed{
 \text{maximize}
 }
-\]
+$$
 
 的：
 
-\[
+$$
 \mathcal L
 =
 \text{expected log-likelihood}
 -
 KL
-\]
+$$
 
 而代码里的 VAE loss 通常是要：
 
-\[
+$$
 \boxed{
 \text{minimize}
 }
-\]
+$$
 
 的 negative ELBO：
 
-\[
+$$
 -\mathcal L
 =
 \text{negative expected log-likelihood}
 +
 KL
-\]
+$$
 
 所以：
 
@@ -3063,39 +3063,39 @@ KL
 
 ---
 
-# 55. 用四条公式记住 VAE
+## 55. 用四条公式记住 VAE
 
 如果最后只记住四条公式，应该是下面这些。
 
 ---
 
-## 1. Generative Model
+### 1. Generative Model
 
-\[
+$$
 \boxed{
 p_\theta(x,z)
 =
 p(z)p_\theta(x\mid z)
 }
-\]
+$$
 
 ---
 
-## 2. Approximate Posterior
+### 2. Approximate Posterior
 
-\[
+$$
 \boxed{
 q_\phi(z\mid x)
 \approx
 p_\theta(z\mid x)
 }
-\]
+$$
 
 ---
 
-## 3. ELBO
+### 3. ELBO
 
-\[
+$$
 \boxed{
 \mathcal L
 =
@@ -3111,13 +3111,13 @@ q_\phi(z\mid x)
 p(z)
 )
 }
-\]
+$$
 
 ---
 
-## 4. Gaussian Reparameterization
+### 4. Gaussian Reparameterization
 
-\[
+$$
 \boxed{
 z
 =
@@ -3127,35 +3127,35 @@ z
 \qquad
 \epsilon\sim\mathcal N(0,I)
 }
-\]
+$$
 
 几乎整个经典 VAE 都可以围绕这四条式子展开。
 
 ---
 
-# 56. 一句话重新理解 VAE
+## 56. 一句话重新理解 VAE
 
-> **VAE 的本质不是“会随机采样的 Autoencoder”，而是用一个可学习的 approximate posterior \(q_\phi(z\mid x)\) 去解决复杂 latent-variable generative model 中真实 posterior 难以计算的问题，并通过最大化 ELBO 同时学习 inference model 和 generative model。**
+> **VAE 的本质不是“会随机采样的 Autoencoder”，而是用一个可学习的 approximate posterior $q_\phi(z\mid x)$ 去解决复杂 latent-variable generative model 中真实 posterior 难以计算的问题，并通过最大化 ELBO 同时学习 inference model 和 generative model。**
 
 Encoder：
 
-\[
+$$
 q_\phi(z\mid x)
-\]
+$$
 
 回答：
 
-> “看到这个 \(x\)，哪些 \(z\) 可能解释它？”
+> “看到这个 $x$，哪些 $z$ 可能解释它？”
 
 Decoder：
 
-\[
+$$
 p_\theta(x\mid z)
-\]
+$$
 
 回答：
 
-> “给定这个 \(z\)，什么样的 \(x\) 可能被生成？”
+> “给定这个 $z$，什么样的 $x$ 可能被生成？”
 
 ELBO 把二者连接起来。
 
@@ -3163,7 +3163,7 @@ Reparameterization 则让整个随机模型能够使用标准 backpropagation �
 
 ---
 
-# 57. 这和 ACT 有什么关系？
+## 57. 这和 ACT 有什么关系？
 
 ACT 使用的并不是普通 VAE，而是：
 
@@ -3189,9 +3189,9 @@ predict action chunk
 
 同时加入：
 
-\[
+$$
 D_{KL}
-\]
+$$
 
 让 approximate posterior 受到 prior 的约束。
 
@@ -3200,21 +3200,21 @@ D_{KL}
 - prior；
 - posterior；
 - approximate posterior；
-- \(\mu,\sigma^2\)；
+- $\mu,\sigma^2$；
 - KL；
 - reparameterization；
 
 那么 ACT 里的：
 
-\[
+$$
 z
-\]
+$$
 
 很容易被误解成：
 
 > “随便采样出来的一个风格向量。”
 
-下一步我们会先把条件 \(c\) 加进 VAE：
+下一步我们会先把条件 $c$ 加进 VAE：
 
 > [CVAE：条件信息到底改变了什么？](./cvae.md)
 
@@ -3226,7 +3226,7 @@ z
 
 ---
 
-## Primary Source
+### Primary Source
 
 Diederik P. Kingma, Max Welling.  
 **Auto-Encoding Variational Bayes.**  
@@ -3248,9 +3248,9 @@ arXiv:1312.6114, first submitted 2013; later published at ICLR 2014.
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### 前置知识
+#### 前置知识
 
 - [Latent Variable](./latent-variable.md)
 - Probability Distribution
@@ -3258,7 +3258,7 @@ arXiv:1312.6114, first submitted 2013; later published at ICLR 2014.
 - Bayes' Rule
 - Marginalization
 
-### 数学核心
+#### 数学核心
 
 - Expectation
 - [Normal Distribution](../mathematics/normal-distribution.md)
@@ -3267,13 +3267,13 @@ arXiv:1312.6114, first submitted 2013; later published at ICLR 2014.
 - Variance
 - [KL Divergence](../mathematics/kl-divergence.md)
 
-### VAE 核心
+#### VAE 核心
 
 - [Reparameterization Trick](./reparameterization-trick.md)
 - ELBO
 - [CVAE](./cvae.md)
 
-### Robot Learning
+#### Robot Learning
 
 - [ACT](../robot-learning/act/act-what-problem-does-it-solve.md)
 - [CVAE in ACT](../robot-learning/act/cvae-in-act.md)

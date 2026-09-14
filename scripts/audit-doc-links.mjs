@@ -1,9 +1,14 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { createMarkdownRenderer } from 'vitepress'
+import { useKatexMath } from '../docs/.vitepress/markdown/katex.mjs'
 
 const docsRoot = path.resolve('docs')
-const markdown = await createMarkdownRenderer(docsRoot, { math: true })
+const markdown = await createMarkdownRenderer(docsRoot, {
+  config(instance) {
+    useKatexMath(instance)
+  }
+})
 
 function walk(directory) {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -49,8 +54,11 @@ let checkedAnchors = 0
 const outgoingLinks = new Map()
 
 for (const file of files) {
-  const lines = fs.readFileSync(file, 'utf8').split('\n')
+  const source = fs.readFileSync(file, 'utf8')
+  const lines = source.split('\n')
   let inFence = false
+  let h1Count = 0
+  let displayDelimiterCount = 0
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index]
@@ -60,6 +68,12 @@ for (const file of files) {
       continue
     }
     if (inFence) continue
+
+    if (/^#\s+/.test(line)) h1Count += 1
+    if (/\\\[|\\\]|\\\(|\\\)/.test(line)) {
+      errors.push(`${path.relative(process.cwd(), file)}:${index + 1} uses an unsupported escaped math delimiter`)
+    }
+    displayDelimiterCount += (line.match(/\$\$/g) ?? []).length
 
     for (const match of line.matchAll(/(?<!!)\[[^\]\n]+\]\(([^)\s]+)\)/g)) {
       const rawTarget = match[1]
@@ -88,6 +102,15 @@ for (const file of files) {
         }
       }
     }
+  }
+
+  if (inFence) errors.push(`${path.relative(process.cwd(), file)} has an unclosed code fence`)
+  const expectedH1Count = source.includes('<HomePage />') ? 0 : 1
+  if (h1Count !== expectedH1Count) {
+    errors.push(`${path.relative(process.cwd(), file)} has ${h1Count} top-level headings; expected ${expectedH1Count}`)
+  }
+  if (displayDelimiterCount % 2 !== 0) {
+    errors.push(`${path.relative(process.cwd(), file)} has an unbalanced display-math delimiter`)
   }
 }
 

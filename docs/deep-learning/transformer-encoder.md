@@ -51,19 +51,19 @@ Add & Norm
 7. “6 个 identical encoder layers”是不是 6 层共享同一套权重？
 8. ACT 为什么用 4 个 Encoder layers，却把 FFN 扩成 3200？
 9. ACT 里面明明有两个 Transformer Encoder，它们是不是同一个模块？
-10. Policy Encoder 的 \(1202\times512\) 到底怎样一层层变成 observation memory？
+10. Policy Encoder 的 $1202\times512$ 到底怎样一层层变成 observation memory？
 
 这一篇把完整 Encoder stack 拆开。
 
 ---
 
-# 1. Transformer Encoder 的任务是什么？
+## 1. Transformer Encoder 的任务是什么？
 
 先不要急着看公式。
 
 Encoder 接收一组 input representations：
 
-\[
+$$
 X^{(0)}
 =
 [
@@ -72,15 +72,15 @@ x_2^{(0)},
 \ldots,
 x_n^{(0)}
 ]
-\]
+$$
 
 每个 token：
 
-\[
+$$
 x_i^{(0)}
 \in
 \mathbb R^{d_{\text{model}}}
-\]
+$$
 
 Encoder 的目标不是：
 
@@ -92,7 +92,7 @@ Encoder 的目标不是：
 
 最终：
 
-\[
+$$
 X^{(N)}
 =
 [
@@ -100,13 +100,13 @@ x_1^{(N)},
 \ldots,
 x_n^{(N)}
 ]
-\]
+$$
 
 仍然有：
 
-\[
+$$
 n
-\]
+$$
 
 个 positions。
 
@@ -114,23 +114,23 @@ n
 
 所以 Encoder 更像：
 
-\[
+$$
 \boxed{
 \text{contextual representation builder}
 }
-\]
+$$
 
 ---
 
-# 2. 原始 Transformer Encoder 有多少层？
+## 2. 原始 Transformer Encoder 有多少层？
 
 《Attention Is All You Need》Section 3.1：
 
-\[
+$$
 \boxed{
 N=6
 }
-\]
+$$
 
 也就是：
 
@@ -152,73 +152,73 @@ N=6
 
 ---
 
-# 3. “相同结构”不等于“参数共享”
+## 3. “相同结构”不等于“参数共享”
 
 第 1 层有自己的：
 
-\[
+$$
 W_Q^{(1)},
 W_K^{(1)},
 W_V^{(1)},
 W_O^{(1)}
-\]
+$$
 
 以及 FFN：
 
-\[
+$$
 W_1^{(1)},W_2^{(1)}
-\]
+$$
 
 第 2 层有自己的：
 
-\[
+$$
 W_Q^{(2)},
 W_K^{(2)},\ldots
-\]
+$$
 
 通常：
 
-\[
+$$
 W_Q^{(1)}
 \neq
 W_Q^{(2)}
-\]
+$$
 
 它们是不同 trainable parameters。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{same layer design}
 \neq
 \text{shared weights}
 }
-\]
+$$
 
 这也是为什么不同深度的 layers 可以学到不同层级的 representations。
 
 ---
 
-# 4. 一个 Encoder Layer 只有两个核心 Sub-Layers
+## 4. 一个 Encoder Layer 只有两个核心 Sub-Layers
 
 原始论文定义每一个 Encoder Layer 包含：
 
-### Sub-layer 1
+#### Sub-layer 1
 
-\[
+$$
 \boxed{
 \text{Multi-Head Self-Attention}
 }
-\]
+$$
 
-### Sub-layer 2
+#### Sub-layer 2
 
-\[
+$$
 \boxed{
 \text{Position-wise Feed-Forward Network}
 }
-\]
+$$
 
 每个 sub-layer 外面再加：
 
@@ -227,13 +227,13 @@ W_Q^{(2)}
 
 原始 2017 Transformer 的形式是：
 
-\[
+$$
 \boxed{
 LayerNorm(
 x+Sublayer(x)
 )
 }
-\]
+$$
 
 这就是经典：
 
@@ -241,31 +241,31 @@ x+Sublayer(x)
 
 ---
 
-# 5. 原始 Encoder Layer 的完整公式
+## 5. 原始 Encoder Layer 的完整公式
 
 假设输入：
 
-\[
+$$
 X
-\]
+$$
 
 第一步 Self-Attention：
 
-\[
+$$
 A
 =
 MHA(X)
-\]
+$$
 
 然后 residual：
 
-\[
+$$
 X+A
-\]
+$$
 
 然后 LayerNorm：
 
-\[
+$$
 \boxed{
 H
 =
@@ -273,25 +273,25 @@ LN(
 X+MHA(X)
 )
 }
-\]
+$$
 
 接着 FFN：
 
-\[
+$$
 F
 =
 FFN(H)
-\]
+$$
 
 再 residual：
 
-\[
+$$
 H+F
-\]
+$$
 
 再 LayerNorm：
 
-\[
+$$
 \boxed{
 Y
 =
@@ -299,11 +299,11 @@ LN(
 H+FFN(H)
 )
 }
-\]
+$$
 
 所以一整层：
 
-\[
+$$
 \boxed{
 X
 \rightarrow
@@ -321,11 +321,11 @@ LN
 \rightarrow
 Y
 }
-\]
+$$
 
 ---
 
-# 6. Dropout 放在哪里？
+## 6. Dropout 放在哪里？
 
 原始 Transformer 论文训练部分明确写：
 
@@ -333,7 +333,7 @@ Y
 
 所以更完整：
 
-\[
+$$
 \boxed{
 H=
 LN(
@@ -343,11 +343,11 @@ MHA(X)
 )
 )
 }
-\]
+$$
 
 以及：
 
-\[
+$$
 \boxed{
 Y=
 LN(
@@ -357,38 +357,38 @@ FFN(H)
 )
 )
 }
-\]
+$$
 
 Base Transformer：
 
-\[
+$$
 P_{drop}=0.1
-\]
+$$
 
 ---
 
-# 7. Encoder Layer 为什么不会改变 Token 数量？
+## 7. Encoder Layer 为什么不会改变 Token 数量？
 
 假设输入：
 
-\[
+$$
 X
 \in
 \mathbb R^{n\times d_{\text{model}}}
-\]
+$$
 
 MHA 输出：
 
-\[
+$$
 \in
 \mathbb R^{n\times d_{\text{model}}}
-\]
+$$
 
 Residual 要求：
 
-\[
+$$
 X+MHA(X)
-\]
+$$
 
 shape 完全一致。
 
@@ -398,51 +398,51 @@ LayerNorm：
 
 FFN：
 
-\[
+$$
 d_{\text{model}}
 \rightarrow
 d_{ff}
 \rightarrow
 d_{\text{model}}
-\]
+$$
 
 最终又回到：
 
-\[
+$$
 n\times d_{\text{model}}
-\]
+$$
 
 所以一整层：
 
-\[
+$$
 \boxed{
 [n,d_{\text{model}}]
 \rightarrow
 [n,d_{\text{model}}]
 }
-\]
+$$
 
 ---
 
-# 8. 为什么 d_model 必须在 Sub-Layer 外保持不变？
+## 8. 为什么 d_model 必须在 Sub-Layer 外保持不变？
 
 因为 residual connection 需要：
 
-\[
+$$
 x+F(x)
-\]
+$$
 
 如果：
 
-\[
+$$
 x\in\mathbb R^{512}
-\]
+$$
 
 而：
 
-\[
+$$
 F(x)\in\mathbb R^{300}
-\]
+$$
 
 就不能直接相加。
 
@@ -450,41 +450,41 @@ F(x)\in\mathbb R^{300}
 
 > 所有 sub-layers 和 embedding layers 的输出都具有：
 
-\[
+$$
 d_{\text{model}}=512
-\]
+$$
 
 这样 residual path 才能自然工作。
 
 ---
 
-# 9. 第一个 Sub-Layer：Multi-Head Self-Attention
+## 9. 第一个 Sub-Layer：Multi-Head Self-Attention
 
 输入：
 
-\[
+$$
 X
 =
 [x_1,\ldots,x_n]
-\]
+$$
 
 每个 head：
 
-\[
+$$
 Q_h=XW_h^Q
-\]
+$$
 
-\[
+$$
 K_h=XW_h^K
-\]
+$$
 
-\[
+$$
 V_h=XW_h^V
-\]
+$$
 
 然后：
 
-\[
+$$
 head_h
 =
 softmax
@@ -495,17 +495,17 @@ Q_hK_h^\top
 \sqrt{d_k}
 }
 \right)V_h
-\]
+$$
 
 所有 heads：
 
-\[
+$$
 MHA(X)
 =
 Concat(
 head_1,\ldots,head_H
 )W^O
-\]
+$$
 
 所以 Self-Attention 的职责可以概括成：
 
@@ -513,30 +513,30 @@ head_1,\ldots,head_H
 
 ---
 
-# 10. 为什么 Attention 是“跨 Token”操作？
+## 10. 为什么 Attention 是“跨 Token”操作？
 
-对于第 \(i\) 个 token：
+对于第 $i$ 个 token：
 
-\[
+$$
 o_i
 =
 \sum_j
 \alpha_{ij}v_j
-\]
+$$
 
 它显式包含：
 
-\[
+$$
 j=1,\ldots,n
-\]
+$$
 
 其他 positions 的信息。
 
 所以：
 
-\[
+$$
 x_i
-\]
+$$
 
 经过 Attention 后，
 
@@ -551,15 +551,15 @@ x_i
 
 这就是：
 
-\[
+$$
 \boxed{
 \text{token mixing}
 }
-\]
+$$
 
 ---
 
-# 11. Attention 之后为什么还需要 FFN？
+## 11. Attention 之后为什么还需要 FFN？
 
 这是理解 Encoder 最关键的问题之一。
 
@@ -579,21 +579,21 @@ Attention 主要做：
 
 所以可以非常粗略地分工：
 
-\[
+$$
 \boxed{
 Attention
 =
 \text{where to get information from}
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 FFN
 =
 \text{how to transform the resulting features}
 }
-\]
+$$
 
 这不是数学上的严格唯一分解，
 
@@ -601,11 +601,11 @@ FFN
 
 ---
 
-# 12. Position-Wise FFN 的原始公式
+## 12. Position-Wise FFN 的原始公式
 
 Transformer 原论文 Section 3.3：
 
-\[
+$$
 \boxed{
 FFN(x)
 =
@@ -615,11 +615,11 @@ xW_1+b_1
 )
 W_2+b_2
 }
-\]
+$$
 
 也就是：
 
-\[
+$$
 \boxed{
 Linear
 \rightarrow
@@ -627,21 +627,21 @@ ReLU
 \rightarrow
 Linear
 }
-\]
+$$
 
 对于 Base Transformer：
 
-\[
+$$
 d_{\text{model}}=512
-\]
+$$
 
-\[
+$$
 d_{ff}=2048
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 512
 \rightarrow
@@ -649,51 +649,51 @@ d_{ff}=2048
 \rightarrow
 512
 }
-\]
+$$
 
 ---
 
-# 13. 为什么叫 Position-Wise？
+## 13. 为什么叫 Position-Wise？
 
 假设：
 
-\[
+$$
 X
 \in
 \mathbb R^{n\times512}
-\]
+$$
 
 FFN 对每个 row：
 
-\[
+$$
 x_i
-\]
+$$
 
 独立应用同一个函数：
 
-\[
+$$
 FFN(x_i)
-\]
+$$
 
 也就是说：
 
-\[
+$$
 \boxed{
 y_i=FFN(x_i)
 }
-\]
+$$
 
 不会直接计算：
 
-\[
+$$
 x_i
-\]
+$$
 
 和：
 
-\[
+$$
 x_j
-\]
+$$
 
 之间的 interaction。
 
@@ -703,29 +703,29 @@ x_j
 
 ---
 
-# 14. 但所有 Token 使用的是同一个 FFN 参数
+## 14. 但所有 Token 使用的是同一个 FFN 参数
 
 在同一 Encoder layer 中：
 
-\[
+$$
 x_1
-\]
+$$
 
 用：
 
-\[
+$$
 W_1,W_2,b_1,b_2
-\]
+$$
 
-\[
+$$
 x_2
-\]
+$$
 
 也用同一套：
 
-\[
+$$
 W_1,W_2,b_1,b_2
-\]
+$$
 
 所以它不是：
 
@@ -733,11 +733,11 @@ W_1,W_2,b_1,b_2
 
 而是：
 
-\[
+$$
 \boxed{
 \text{same FFN function applied independently to every position}
 }
-\]
+$$
 
 这就是论文所谓：
 
@@ -745,7 +745,7 @@ W_1,W_2,b_1,b_2
 
 ---
 
-# 15. 不同 Encoder Layers 的 FFN 参数一样吗？
+## 15. 不同 Encoder Layers 的 FFN 参数一样吗？
 
 不一样。
 
@@ -755,11 +755,11 @@ W_1,W_2,b_1,b_2
 
 所以：
 
-\[
+$$
 FFN^{(1)}
 \neq
 FFN^{(2)}
-\]
+$$
 
 通常成立。
 
@@ -769,31 +769,31 @@ FFN^{(2)}
 
 ---
 
-# 16. FFN 为什么先扩维再缩回？
+## 16. FFN 为什么先扩维再缩回？
 
 原始：
 
-\[
+$$
 512
 \rightarrow
 2048
 \rightarrow
 512
-\]
+$$
 
 中间宽度是：
 
-\[
+$$
 4\times
-\]
+$$
 
 model width。
 
 为什么不直接：
 
-\[
+$$
 512\rightarrow512
-\]
+$$
 
 ？
 
@@ -803,54 +803,54 @@ model width。
 
 第一层：
 
-\[
+$$
 h=xW_1+b_1
-\]
+$$
 
 把 512-D representation 映射到：
 
-\[
+$$
 2048
-\]
+$$
 
 个 intermediate features。
 
 然后 ReLU：
 
-\[
+$$
 h'=\max(0,h)
-\]
+$$
 
 引入非线性。
 
 最后：
 
-\[
+$$
 h'W_2+b_2
-\]
+$$
 
 重新组合回 512-D。
 
 ---
 
-# 17. 如果没有 ReLU，两层 Linear 会怎样？
+## 17. 如果没有 ReLU，两层 Linear 会怎样？
 
 如果：
 
-\[
+$$
 FFN(x)
 =
 (xW_1)W_2
-\]
+$$
 
 没有非线性，
 
 那么：
 
-\[
+$$
 =
 x(W_1W_2)
-\]
+$$
 
 仍然只是：
 
@@ -858,43 +858,43 @@ x(W_1W_2)
 
 即使：
 
-\[
+$$
 512\rightarrow2048\rightarrow512
-\]
+$$
 
 也可以合并成一个：
 
-\[
+$$
 512\rightarrow512
-\]
+$$
 
 矩阵。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{hidden expansion 本身不是重点}
 }
-\]
+$$
 
 真正关键是：
 
-\[
+$$
 \boxed{
 \text{expansion + nonlinear activation}
 }
-\]
+$$
 
 ---
 
-# 18. ReLU 提供了什么？
+## 18. ReLU 提供了什么？
 
-\[
+$$
 ReLU(z)
 =
 \max(0,z)
-\]
+$$
 
 它让不同 input regions：
 
@@ -916,13 +916,13 @@ ReLU(z)
 
 但原始 Transformer 是：
 
-\[
+$$
 ReLU
-\]
+$$
 
 ---
 
-# 19. 为什么 Attention 本身还不够 Nonlinear？
+## 19. 为什么 Attention 本身还不够 Nonlinear？
 
 Attention 有 Softmax，
 
@@ -950,23 +950,23 @@ token 内 feature transformation
 
 ---
 
-# 20. 一个很好用的二维思维
+## 20. 一个很好用的二维思维
 
 Transformer representation 有两个主要轴：
 
-\[
+$$
 \boxed{
 \text{Sequence Axis}
 }
-\]
+$$
 
 和：
 
-\[
+$$
 \boxed{
 \text{Feature Axis}
 }
-\]
+$$
 
 Self-Attention 主要沿：
 
@@ -982,29 +982,29 @@ FFN 主要沿：
 
 所以可以粗略记：
 
-\[
+$$
 \boxed{
 \text{Attention mixes tokens}
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 \text{FFN mixes channels/features}
 }
-\]
+$$
 
 ---
 
-# 21. 但 Attention 也会混合 Features
+## 21. 但 Attention 也会混合 Features
 
 严格来说：
 
 Multi-Head Attention 里面：
 
-\[
+$$
 W_Q,W_K,W_V,W_O
-\]
+$$
 
 本身也做 feature projections。
 
@@ -1018,27 +1018,27 @@ W_Q,W_K,W_V,W_O
 
 ---
 
-# 22. Residual Connection 到底是什么？
+## 22. Residual Connection 到底是什么？
 
 假设一个 sub-layer：
 
-\[
+$$
 F(x)
-\]
+$$
 
 Residual Connection：
 
-\[
+$$
 \boxed{
 y=x+F(x)
 }
-\]
+$$
 
 不是：
 
-\[
+$$
 y=F(x)
-\]
+$$
 
 原始 ResNet 工作把这种设计解释为：
 
@@ -1053,13 +1053,13 @@ Transformer 把同样思想包围在：
 
 ---
 
-# 23. 为什么叫 Skip Connection？
+## 23. 为什么叫 Skip Connection？
 
 因为 input：
 
-\[
+$$
 x
-\]
+$$
 
 有一条路径：
 
@@ -1085,13 +1085,13 @@ F(x)               │
 
 ---
 
-# 24. Residual 的直觉是什么？
+## 24. Residual 的直觉是什么？
 
 没有 residual：
 
-\[
+$$
 x\rightarrow F(x)
-\]
+$$
 
 sub-layer 必须自己产生：
 
@@ -1099,9 +1099,9 @@ sub-layer 必须自己产生：
 
 有 residual：
 
-\[
+$$
 x\rightarrow x+F(x)
-\]
+$$
 
 sub-layer 可以更自然地学习：
 
@@ -1109,37 +1109,37 @@ sub-layer 可以更自然地学习：
 
 所以可以理解：
 
-\[
+$$
 \boxed{
 F(x)
 =
 \text{representation update}
 }
-\]
+$$
 
 而：
 
-\[
+$$
 x
-\]
+$$
 
 保留原信息的直接路径。
 
 ---
 
-# 25. Attention Residual 可以怎样理解？
+## 25. Attention Residual 可以怎样理解？
 
 输入 token representation：
 
-\[
+$$
 x_i
-\]
+$$
 
 Attention 返回：
 
-\[
+$$
 a_i
-\]
+$$
 
 其中包含：
 
@@ -1147,9 +1147,9 @@ a_i
 
 Residual：
 
-\[
+$$
 x_i+a_i
-\]
+$$
 
 可以直觉化：
 
@@ -1159,25 +1159,25 @@ x_i+a_i
 
 ---
 
-# 26. FFN Residual 又怎样理解？
+## 26. FFN Residual 又怎样理解？
 
 经过 Attention/Norm 后：
 
-\[
+$$
 h_i
-\]
+$$
 
 FFN 提供：
 
-\[
+$$
 f_i=FFN(h_i)
-\]
+$$
 
 Residual：
 
-\[
+$$
 h_i+f_i
-\]
+$$
 
 可以理解：
 
@@ -1185,7 +1185,7 @@ h_i+f_i
 
 ---
 
-# 27. Residual 为什么对 Deep Network 有帮助？
+## 27. Residual 为什么对 Deep Network 有帮助？
 
 ResNet 原论文的核心动机就是：
 
@@ -1195,24 +1195,24 @@ ResNet 原论文的核心动机就是：
 
 若：
 
-\[
+$$
 y=x+F(x)
-\]
+$$
 
 那么：
 
-\[
+$$
 \frac{\partial y}{\partial x}
 =
 I+
 \frac{\partial F}{\partial x}
-\]
+$$
 
 所以 gradient 有一条：
 
-\[
+$$
 I
-\]
+$$
 
 identity path。
 
@@ -1228,13 +1228,13 @@ identity path。
 
 ---
 
-# 28. LayerNorm 又为什么出现？
+## 28. LayerNorm 又为什么出现？
 
 Residual addition 后：
 
-\[
+$$
 x+F(x)
-\]
+$$
 
 不同 features 的数值分布可能变化很大。
 
@@ -1246,39 +1246,39 @@ Transformer 使用：
 
 原论文的 Post-LN 形式：
 
-\[
+$$
 \boxed{
 LN(
 x+F(x)
 )
 }
-\]
+$$
 
 ---
 
-# 29. LayerNorm 到底 Normalize 什么？
+## 29. LayerNorm 到底 Normalize 什么？
 
 对于单个 token：
 
-\[
+$$
 x=
 [x_1,x_2,\ldots,x_d]
-\]
+$$
 
 先计算该 token feature dimensions 的 mean：
 
-\[
+$$
 \boxed{
 \mu
 =
 \frac1d
 \sum_{j=1}^{d}x_j
 }
-\]
+$$
 
 variance：
 
-\[
+$$
 \boxed{
 \sigma^2
 =
@@ -1286,11 +1286,11 @@ variance：
 \sum_{j=1}^{d}
 (x_j-\mu)^2
 }
-\]
+$$
 
 然后：
 
-\[
+$$
 \hat x_j
 =
 \frac{
@@ -1298,21 +1298,21 @@ x_j-\mu
 }{
 \sqrt{\sigma^2+\epsilon}
 }
-\]
+$$
 
 最后 learned affine：
 
-\[
+$$
 \boxed{
 y_j
 =
 \gamma_j\hat x_j+\beta_j
 }
-\]
+$$
 
 ---
 
-# 30. LayerNorm 是对 Batch 求 Mean 吗？
+## 30. LayerNorm 是对 Batch 求 Mean 吗？
 
 **不是。**
 
@@ -1320,17 +1320,17 @@ y_j
 
 Transformer 中常见：
 
-\[
+$$
 X
 \in
 [B,N,D]
-\]
+$$
 
 LayerNorm 通常对：
 
-\[
+$$
 D
-\]
+$$
 
 也就是最后一个 feature dimension 做 normalization。
 
@@ -1343,27 +1343,27 @@ token n
 
 分别计算自己的：
 
-\[
+$$
 \mu_{b,n}
-\]
+$$
 
 和：
 
-\[
+$$
 \sigma_{b,n}
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \text{一个 token 的 LN 不需要其他 batch samples}
 }
-\]
+$$
 
 ---
 
-# 31. LayerNorm 会让不同 Tokens 互相交流吗？
+## 31. LayerNorm 会让不同 Tokens 互相交流吗？
 
 不会。
 
@@ -1377,12 +1377,12 @@ Token 2：
 
 所以：
 
-\[
+$$
 \boxed{
 LayerNorm
 \text{ does not perform token mixing}
 }
-\]
+$$
 
 跨 token 信息流仍主要由：
 
@@ -1392,7 +1392,7 @@ LayerNorm
 
 ---
 
-# 32. 为什么 LayerNorm 特别适合 Sequence Models？
+## 32. 为什么 LayerNorm 特别适合 Sequence Models？
 
 LayerNorm 原论文的重要特点之一是：
 
@@ -1407,13 +1407,13 @@ LayerNorm 原论文的重要特点之一是：
 
 ---
 
-# 33. LayerNorm 后不是 Mean=0、Variance=1 吗？
+## 33. LayerNorm 后不是 Mean=0、Variance=1 吗？
 
 在：
 
-\[
+$$
 \hat x
-\]
+$$
 
 阶段：
 
@@ -1421,21 +1421,21 @@ LayerNorm 原论文的重要特点之一是：
 
 但最终还有 learned：
 
-\[
+$$
 \gamma,\beta
-\]
+$$
 
 所以输出：
 
-\[
+$$
 y=\gamma\odot\hat x+\beta
-\]
+$$
 
 不要求最终严格：
 
-\[
+$$
 mean=0,\quad variance=1
-\]
+$$
 
 LayerNorm 不是把网络永远锁死在标准正态分布。
 
@@ -1443,13 +1443,13 @@ LayerNorm 不是把网络永远锁死在标准正态分布。
 
 ---
 
-# 34. LayerNorm 也不是“把 Representation 变成高斯分布”
+## 34. LayerNorm 也不是“把 Representation 变成高斯分布”
 
 Normalization：
 
-\[
+$$
 (x-\mu)/\sigma
-\]
+$$
 
 只约束：
 
@@ -1469,7 +1469,7 @@ Normalization：
 
 ---
 
-# 35. 原始 Transformer 为什么叫 Post-LN？
+## 35. 原始 Transformer 为什么叫 Post-LN？
 
 因为 LayerNorm 放在 sub-layer 和 residual addition：
 
@@ -1477,14 +1477,14 @@ Normalization：
 
 即：
 
-\[
+$$
 \boxed{
 y=
 LN(
 x+F(x)
 )
 }
-\]
+$$
 
 所以叫：
 
@@ -1492,11 +1492,11 @@ x+F(x)
 
 ---
 
-# 36. Pre-LN 又是什么？
+## 36. Pre-LN 又是什么？
 
 后来非常常见的设计是：
 
-\[
+$$
 \boxed{
 y=
 x+
@@ -1504,35 +1504,35 @@ F(
 LN(x)
 )
 }
-\]
+$$
 
 即先：
 
-\[
+$$
 LN(x)
-\]
+$$
 
 再进入 sub-layer。
 
 例如 Attention：
 
-\[
+$$
 x
 +
 MHA(
 LN(x)
 )
-\]
+$$
 
 FFN：
 
-\[
+$$
 h
 +
 FFN(
 LN(h)
 )
-\]
+$$
 
 这叫：
 
@@ -1540,9 +1540,9 @@ LN(h)
 
 ---
 
-# 37. Post-LN vs Pre-LN 图
+## 37. Post-LN vs Pre-LN 图
 
-## Post-LN
+### Post-LN
 
 ```text
 x
@@ -1563,7 +1563,7 @@ Sublayer(x)     │
 
 ---
 
-## Pre-LN
+### Pre-LN
 
 ```text
 x ─────────────────────┐
@@ -1582,7 +1582,7 @@ Sublayer               │
 
 ---
 
-# 38. 哪一个才是“Transformer 正宗结构”？
+## 38. 哪一个才是“Transformer 正宗结构”？
 
 如果问：
 
@@ -1590,21 +1590,21 @@ Sublayer               │
 
 答案明确是：
 
-\[
+$$
 \boxed{
 Post-LN
 }
-\]
+$$
 
 论文 Section 3.1：
 
-\[
+$$
 \boxed{
 LayerNorm(
 x+Sublayer(x)
 )
 }
-\]
+$$
 
 ---
 
@@ -1618,7 +1618,7 @@ x+Sublayer(x)
 
 ---
 
-# 39. ACT 官方代码支持两种
+## 39. ACT 官方代码支持两种
 
 ACT `TransformerEncoderLayer` 有：
 
@@ -1657,7 +1657,7 @@ forward_pre
 
 ---
 
-# 40. ACT 当前默认是哪一个？
+## 40. ACT 当前默认是哪一个？
 
 当前 `detr/main.py`：
 
@@ -1670,9 +1670,9 @@ parser.add_argument(
 
 默认：
 
-\[
+$$
 False
-\]
+$$
 
 而 `Transformer` 默认：
 
@@ -1682,17 +1682,17 @@ normalize_before=False
 
 所以 released default configuration 是：
 
-\[
+$$
 \boxed{
 Post-LN
 }
-\]
+$$
 
 也就是和原始 Transformer 的 Add → Norm 顺序一致。
 
 ---
 
-# 41. ACT Post-LN Encoder Layer 的官方代码骨架
+## 41. ACT Post-LN Encoder Layer 的官方代码骨架
 
 官方 `forward_post` 逻辑：
 
@@ -1726,23 +1726,23 @@ src = norm2(src)
 
 ---
 
-# 42. 把 ACT 代码翻译成数学
+## 42. 把 ACT 代码翻译成数学
 
 设当前 input：
 
-\[
+$$
 X
-\]
+$$
 
 position：
 
-\[
+$$
 P
-\]
+$$
 
 Attention：
 
-\[
+$$
 \boxed{
 A=
 MHA(
@@ -1751,11 +1751,11 @@ K=X+P,
 V=X
 )
 }
-\]
+$$
 
 然后：
 
-\[
+$$
 \boxed{
 H=
 LN_1(
@@ -1763,11 +1763,11 @@ X+
 Dropout(A)
 )
 }
-\]
+$$
 
 FFN：
 
-\[
+$$
 \boxed{
 F=
 W_2
@@ -1779,11 +1779,11 @@ W_1H+b_1
 )
 +b_2
 }
-\]
+$$
 
 然后：
 
-\[
+$$
 \boxed{
 Y=
 LN_2(
@@ -1791,21 +1791,21 @@ H+
 Dropout(F)
 )
 }
-\]
+$$
 
 这就是当前 ACT default Encoder Layer。
 
 ---
 
-# 43. 为什么 ACT 的 Position 只显式加到 Q/K，而 V=src？
+## 43. 为什么 ACT 的 Position 只显式加到 Q/K，而 V=src？
 
 这是 DETR-style Transformer 的设计。
 
 Attention matching：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 需要知道：
 
@@ -1813,17 +1813,17 @@ QK^\top
 
 所以：
 
-\[
+$$
 src+pos
-\]
+$$
 
 用于 Q/K。
 
 Value：
 
-\[
+$$
 src
-\]
+$$
 
 主要传递 content representation。
 
@@ -1839,37 +1839,37 @@ src
 
 ---
 
-# 44. ACT 的 FFN 是 512→2048→512 吗？
+## 44. ACT 的 FFN 是 512→2048→512 吗？
 
 **论文最终配置不是。**
 
 原始 Transformer Base：
 
-\[
+$$
 512
 \rightarrow
 2048
 \rightarrow
 512
-\]
+$$
 
 ACT Table III：
 
-\[
+$$
 \boxed{
 hidden\ dimension=512
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 feedforward\ dimension=3200
 }
-\]
+$$
 
 所以 ACT：
 
-\[
+$$
 \boxed{
 512
 \rightarrow
@@ -1877,11 +1877,11 @@ feedforward\ dimension=3200
 \rightarrow
 512
 }
-\]
+$$
 
 ---
 
-# 45. 为什么 ACT Code 里 default 写 2048？
+## 45. 为什么 ACT Code 里 default 写 2048？
 
 因为代码 function 定义：
 
@@ -1912,15 +1912,15 @@ README 示例也是：
 
 ---
 
-# 46. ACT 一共有多少 Encoder Layers？
+## 46. ACT 一共有多少 Encoder Layers？
 
 ACT Table III：
 
-\[
+$$
 \boxed{
 4\text{ encoder layers}
 }
-\]
+$$
 
 当前 training script 也固定：
 
@@ -1930,9 +1930,9 @@ enc_layers = 4
 
 所以 Policy Transformer Encoder：
 
-\[
+$$
 4
-\]
+$$
 
 层。
 
@@ -1944,21 +1944,21 @@ args.enc_layers
 
 因此同一配置下也是：
 
-\[
+$$
 4
-\]
+$$
 
 层。
 
 ---
 
-# 47. 但 ACT 其实有两个不同的 Encoder Stack
+## 47. 但 ACT 其实有两个不同的 Encoder Stack
 
 这是非常重要的一点。
 
 ---
 
-## Encoder A：CVAE Encoder
+### Encoder A：CVAE Encoder
 
 Training-only。
 
@@ -1972,27 +1972,27 @@ action tokens
 
 长度：
 
-\[
+$$
 k+2
-\]
+$$
 
 作用：
 
 > 根据 current joints + demonstration action chunk 推断：
 
-\[
+$$
 \mu,\log\sigma^2
-\]
+$$
 
 最终得到 latent：
 
-\[
+$$
 z
-\]
+$$
 
 ---
 
-## Encoder B：Policy Observation Encoder
+### Encoder B：Policy Observation Encoder
 
 Training 和 inference 都使用。
 
@@ -2006,9 +2006,9 @@ joint token
 
 长度：
 
-\[
+$$
 1202
-\]
+$$
 
 作用：
 
@@ -2016,7 +2016,7 @@ joint token
 
 ---
 
-# 48. 这两个 Encoder 是不是共享参数？
+## 48. 这两个 Encoder 是不是共享参数？
 
 **不是。**
 
@@ -2038,17 +2038,17 @@ joint token
 
 所以：
 
-\[
+$$
 \boxed{
 \text{same architecture/config}
 \neq
 \text{same network weights}
 }
-\]
+$$
 
 ---
 
-# 49. 为什么 ACT 要两个 Encoder？
+## 49. 为什么 ACT 要两个 Encoder？
 
 因为它们解决完全不同的问题。
 
@@ -2066,19 +2066,19 @@ Policy Encoder：
 
 ---
 
-# 50. CVAE Encoder 一层发生什么？
+## 50. CVAE Encoder 一层发生什么？
 
 假设：
 
-\[
+$$
 k=100
-\]
+$$
 
 input sequence：
 
-\[
+$$
 102
-\]
+$$
 
 tokens：
 
@@ -2092,79 +2092,79 @@ a₉₉
 
 shape：
 
-\[
+$$
 \boxed{
 [B,102,512]
 }
-\]
+$$
 
 每一层：
 
-\[
+$$
 [B,102,512]
 \rightarrow
 [B,102,512]
-\]
+$$
 
 4 层后仍：
 
-\[
+$$
 [B,102,512]
-\]
+$$
 
 最后只取：
 
-\[
+$$
 [CLS]
-\]
+$$
 
 位置：
 
-\[
+$$
 h_{\text{CLS}}
 \in
 \mathbb R^{512}
-\]
+$$
 
 再 Linear：
 
-\[
+$$
 512\rightarrow64
-\]
+$$
 
 split：
 
-\[
+$$
 32
-\]
+$$
 
 维：
 
-\[
+$$
 \mu
-\]
+$$
 
 和：
 
-\[
+$$
 32
-\]
+$$
 
 维：
 
-\[
+$$
 \log\sigma^2
-\]
+$$
 
 ---
 
-# 51. 为什么 `[CLS]` 能汇总整个 Action Sequence？
+## 51. 为什么 `[CLS]` 能汇总整个 Action Sequence？
 
 因为 Self-Attention 里：
 
-\[
+$$
 q_{\text{CLS}}
-\]
+$$
 
 可以读取：
 
@@ -2173,9 +2173,9 @@ q_{\text{CLS}}
 
 经过第一层后：
 
-\[
+$$
 h_{\text{CLS}}^{(1)}
-\]
+$$
 
 已经可以包含全 sequence context。
 
@@ -2185,30 +2185,30 @@ h_{\text{CLS}}^{(1)}
 
 所以最终：
 
-\[
+$$
 h_{\text{CLS}}^{(4)}
-\]
+$$
 
 可以成为 latent posterior prediction 的 sequence summary。
 
 ---
 
-# 52. Policy Encoder 一层发生什么？
+## 52. Policy Encoder 一层发生什么？
 
 ACT paper：
 
 4 张图像：
 
-\[
+$$
 4\times
 (15\times20)
-\]
+$$
 
 总 visual positions：
 
-\[
+$$
 1200
-\]
+$$
 
 再加：
 
@@ -2217,49 +2217,49 @@ ACT paper：
 
 总：
 
-\[
+$$
 \boxed{
 1202
 }
-\]
+$$
 
 hidden：
 
-\[
+$$
 512
-\]
+$$
 
 所以：
 
-\[
+$$
 X^{(0)}
 \in
 \mathbb R^{1202\times512}
-\]
+$$
 
 忽略 batch。
 
 一层后：
 
-\[
+$$
 X^{(1)}
 \in
 \mathbb R^{1202\times512}
-\]
+$$
 
 4 层后：
 
-\[
+$$
 X^{(4)}
 \in
 \mathbb R^{1202\times512}
-\]
+$$
 
 这个：
 
-\[
+$$
 X^{(4)}
-\]
+$$
 
 就是：
 
@@ -2267,33 +2267,33 @@ X^{(4)}
 
 ---
 
-# 53. Encoder 并不会把 1202 Tokens 压成一个 Vector
+## 53. Encoder 并不会把 1202 Tokens 压成一个 Vector
 
 这是非常重要的。
 
 Policy Encoder：
 
-\[
+$$
 1202\times512
-\]
+$$
 
 进去，
 
 仍然：
 
-\[
+$$
 1202\times512
-\]
+$$
 
 出来。
 
 它不会：
 
-\[
+$$
 1202\times512
 \rightarrow
 512
-\]
+$$
 
 因为后面的 Decoder Cross-Attention 希望保留：
 
@@ -2303,7 +2303,7 @@ Policy Encoder：
 
 ---
 
-# 54. 那么“Encoder synthesizes information”是什么意思？
+## 54. 那么“Encoder synthesizes information”是什么意思？
 
 ACT 论文说 Transformer Encoder：
 
@@ -2323,13 +2323,13 @@ ACT 论文说 Transformer Encoder：
 
 ---
 
-# 55. 所以 Memory Token 已经不是“纯 Patch”了
+## 55. 所以 Memory Token 已经不是“纯 Patch”了
 
 Layer 0：
 
-\[
+$$
 x_j^{(0)}
-\]
+$$
 
 可能主要是：
 
@@ -2337,27 +2337,27 @@ x_j^{(0)}
 
 经过：
 
-\[
+$$
 x_j^{(1)}
 =
 EncoderLayer_1(x_j^{(0)},X^{(0)})
-\]
+$$
 
 它可以吸收其他 tokens。
 
 再经过：
 
-\[
+$$
 x_j^{(2)}
-\]
+$$
 
 继续融合。
 
 所以最终：
 
-\[
+$$
 m_j=x_j^{(4)}
-\]
+$$
 
 是：
 
@@ -2371,21 +2371,21 @@ m_j=x_j^{(4)}
 
 ---
 
-# 56. 为什么要堆多层？
+## 56. 为什么要堆多层？
 
 一层 Self-Attention 已经能让任意 token 直接读任意 token。
 
 那为什么还要：
 
-\[
+$$
 4
-\]
+$$
 
 层或：
 
-\[
+$$
 6
-\]
+$$
 
 层？
 
@@ -2407,33 +2407,33 @@ FFN 转换这些 features。
 
 ---
 
-# 57. 第二层 Attention 看到的已经不是原始输入
+## 57. 第二层 Attention 看到的已经不是原始输入
 
 第 1 层输入：
 
-\[
+$$
 X^{(0)}
-\]
+$$
 
 第 1 层输出：
 
-\[
+$$
 X^{(1)}
-\]
+$$
 
 第 2 层：
 
-\[
+$$
 Q^{(2)}
 =
 X^{(1)}W_Q^{(2)}
-\]
+$$
 
 而不是：
 
-\[
+$$
 X^{(0)}W_Q^{(2)}
-\]
+$$
 
 所以第二层 matching geometry 建立在：
 
@@ -2443,23 +2443,23 @@ X^{(0)}W_Q^{(2)}
 
 ---
 
-# 58. 一个逐层直觉
+## 58. 一个逐层直觉
 
 可以非常粗略地想象：
 
-### Layer 1
+#### Layer 1
 
 “哪些 tokens 可能相关？”
 
-### FFN 1
+#### FFN 1
 
 “把刚刚聚合的信息变成更有用的 features。”
 
-### Layer 2
+#### Layer 2
 
 “基于新的理解，再次判断哪些 tokens 应该交互。”
 
-### FFN 2
+#### FFN 2
 
 “再加工。”
 
@@ -2473,13 +2473,13 @@ X^{(0)}W_Q^{(2)}
 
 ---
 
-# 59. 为什么每一层 Q/K/V 参数不同？
+## 59. 为什么每一层 Q/K/V 参数不同？
 
 如果所有层共享：
 
-\[
+$$
 W_Q,W_K,W_V
-\]
+$$
 
 每层更像重复同一种 matching rule。
 
@@ -2497,104 +2497,104 @@ W_Q,W_K,W_V
 
 ---
 
-# 60. ACT Official Encoder Layer 的 Shape
+## 60. ACT Official Encoder Layer 的 Shape
 
 Policy Encoder 当前：
 
-\[
+$$
 D=512
-\]
+$$
 
 heads：
 
-\[
+$$
 H=8
-\]
+$$
 
 所以每 head：
 
-\[
+$$
 d_k=d_v=64
-\]
+$$
 
 sequence：
 
-\[
+$$
 N=1202
-\]
+$$
 
 Multi-Head Self-Attention：
 
-\[
+$$
 Q,K,V:
 [B,8,1202,64]
-\]
+$$
 
 scores：
 
-\[
+$$
 [B,8,1202,1202]
-\]
+$$
 
 head outputs：
 
-\[
+$$
 [B,8,1202,64]
-\]
+$$
 
 concat：
 
-\[
+$$
 [B,1202,512]
-\]
+$$
 
 然后 FFN：
 
-\[
+$$
 [B,1202,512]
 \rightarrow
 [B,1202,3200]
 \rightarrow
 [B,1202,512]
-\]
+$$
 
 整层 shape 不变。
 
 ---
 
-# 61. FFN 3200 中间表示会变成 1202×3200 吗？
+## 61. FFN 3200 中间表示会变成 1202×3200 吗？
 
 是。
 
 概念上：
 
-\[
+$$
 X
 \in
 [B,1202,512]
-\]
+$$
 
 Linear 1：
 
-\[
+$$
 \boxed{
 [B,1202,3200]
 }
-\]
+$$
 
 ReLU：
 
-\[
+$$
 [B,1202,3200]
-\]
+$$
 
 Linear 2：
 
-\[
+$$
 \boxed{
 [B,1202,512]
 }
-\]
+$$
 
 注意：
 
@@ -2604,39 +2604,39 @@ Linear 2：
 
 ---
 
-# 62. FFN 的参数量其实很大
+## 62. FFN 的参数量其实很大
 
 ACT：
 
-\[
+$$
 W_1:
 512\times3200
-\]
+$$
 
 参数：
 
-\[
+$$
 1,638,400
-\]
+$$
 
-\[
+$$
 W_2:
 3200\times512
-\]
+$$
 
 也是：
 
-\[
+$$
 1,638,400
-\]
+$$
 
 只算这两个 weight matrices：
 
-\[
+$$
 \boxed{
 3,276,800
 }
-\]
+$$
 
 约 3.28M。
 
@@ -2646,38 +2646,38 @@ W_2:
 
 ---
 
-# 63. Attention Projection 参数量对比
+## 63. Attention Projection 参数量对比
 
 MHA 的 Q/K/V/O：
 
 每个大致：
 
-\[
+$$
 512\times512
-\]
+$$
 
 4 个：
 
-\[
+$$
 4\times512^2
-\]
+$$
 
-\[
+$$
 =
 1,048,576
-\]
+$$
 
 约：
 
-\[
+$$
 1.05M
-\]
+$$
 
 所以在 ACT 的：
 
-\[
+$$
 d_{ff}=3200
-\]
+$$
 
 配置下，
 
@@ -2691,7 +2691,7 @@ d_{ff}=3200
 
 ---
 
-# 64. “Attention Is All You Need” 不等于模型里只有 Attention
+## 64. “Attention Is All You Need” 不等于模型里只有 Attention
 
 原论文标题容易让初学者误解。
 
@@ -2713,25 +2713,25 @@ Transformer Layer 中非常重要的组件还有：
 
 ---
 
-# 65. Transformer Encoder 更准确的核心是两种操作交替
+## 65. Transformer Encoder 更准确的核心是两种操作交替
 
 可以压成：
 
-\[
+$$
 \boxed{
 \text{Communication}
 \rightarrow
 \text{Computation}
 }
-\]
+$$
 
 其中：
 
-### Attention
+#### Attention
 
 不同 positions 之间 communication。
 
-### FFN
+#### FFN
 
 每个 position 内部 computation。
 
@@ -2741,7 +2741,7 @@ Transformer Layer 中非常重要的组件还有：
 
 ---
 
-# 66. 为什么 LayerNorm 放在每个 Sub-Layer 外，而不是整个 Encoder 最后一次？
+## 66. 为什么 LayerNorm 放在每个 Sub-Layer 外，而不是整个 Encoder 最后一次？
 
 原始设计希望每次：
 
@@ -2758,7 +2758,7 @@ Transformer Layer 中非常重要的组件还有：
 
 ---
 
-# 67. ACT Post-LN 默认有没有额外 Encoder Final Norm？
+## 67. ACT Post-LN 默认有没有额外 Encoder Final Norm？
 
 当前 DETR-derived code 在文件头注释里写：
 
@@ -2775,15 +2775,15 @@ encoder_norm =
 
 ACT 默认：
 
-\[
+$$
 normalize\_before=False
-\]
+$$
 
 所以：
 
-\[
+$$
 encoder\_norm=None
-\]
+$$
 
 每个 Encoder Layer 自己已经做两次 Post-LN，
 
@@ -2791,13 +2791,13 @@ stack 末尾没有再额外加一个 LayerNorm。
 
 ---
 
-# 68. 为什么 Pre-LN 分支反而有 Encoder Final Norm？
+## 68. 为什么 Pre-LN 分支反而有 Encoder Final Norm？
 
 当前代码如果：
 
-\[
+$$
 normalize\_before=True
-\]
+$$
 
 每个 layer 是 Pre-LN：
 
@@ -2807,9 +2807,9 @@ LN → sublayer → residual
 
 stack 最后会配置：
 
-\[
+$$
 encoder\_norm=LayerNorm(d)
-\]
+$$
 
 因此最后再做一次 LN。
 
@@ -2819,25 +2819,25 @@ encoder\_norm=LayerNorm(d)
 
 ---
 
-# 69. 这里必须区分“原始论文”和“现代实现”
+## 69. 这里必须区分“原始论文”和“现代实现”
 
-### Original Transformer
+#### Original Transformer
 
-\[
+$$
 Post\text{-}LN
-\]
+$$
 
-### Many modern Transformers
+#### Many modern Transformers
 
-\[
+$$
 Pre\text{-}LN
-\]
+$$
 
-### ACT released default
+#### ACT released default
 
-\[
+$$
 Post\text{-}LN
-\]
+$$
 
 但 ACT code保留：
 
@@ -2853,7 +2853,7 @@ Post\text{-}LN
 
 ---
 
-# 70. 为什么现代模型常喜欢 Pre-LN？
+## 70. 为什么现代模型常喜欢 Pre-LN？
 
 大量后续研究和工程实践发现：
 
@@ -2873,7 +2873,7 @@ Post\text{-}LN
 
 ---
 
-# 71. LayerNorm 会删除绝对 Feature Magnitude 信息吗？
+## 71. LayerNorm 会删除绝对 Feature Magnitude 信息吗？
 
 Normalization 确实去掉每个 token 的：
 
@@ -2882,9 +2882,9 @@ Normalization 确实去掉每个 token 的：
 
 然后再通过：
 
-\[
+$$
 \gamma,\beta
-\]
+$$
 
 做 learned affine。
 
@@ -2906,19 +2906,19 @@ Normalization 确实去掉每个 token 的：
 
 ---
 
-# 72. Residual + LayerNorm 的顺序为什么重要？
+## 72. Residual + LayerNorm 的顺序为什么重要？
 
 比较：
 
-\[
+$$
 LN(x+F(x))
-\]
+$$
 
 和：
 
-\[
+$$
 x+F(LN(x))
-\]
+$$
 
 它们不是代数等价。
 
@@ -2926,56 +2926,56 @@ LayerNorm 是非线性、sample-dependent normalization。
 
 所以：
 
-\[
+$$
 \boxed{
 Post\text{-}LN
 \neq
 Pre\text{-}LN
 }
-\]
+$$
 
 不能随便交换位置。
 
 ---
 
-# 73. Residual 为什么要求 Dropout 在 Add 前？
+## 73. Residual 为什么要求 Dropout 在 Add 前？
 
 原始 Transformer residual dropout：
 
-\[
+$$
 x+
 Dropout(
 F(x)
 )
-\]
+$$
 
 训练时随机抑制 sub-layer update 的部分 contributions。
 
 identity path：
 
-\[
+$$
 x
-\]
+$$
 
 本身仍直接保留。
 
 这和对：
 
-\[
+$$
 x+F(x)
-\]
+$$
 
 整体 Dropout 是不同操作。
 
 ---
 
-# 74. Evaluation 时 Dropout 怎么办？
+## 74. Evaluation 时 Dropout 怎么办？
 
 训练：
 
-\[
+$$
 Dropout
-\]
+$$
 
 随机关闭部分 units / contributions。
 
@@ -3001,9 +3001,9 @@ model.eval()
 
 ACT inference 中：
 
-\[
+$$
 z=0
-\]
+$$
 
 且 policy `.eval()`，
 
@@ -3011,7 +3011,7 @@ z=0
 
 ---
 
-# 75. Encoder Self-Attention 需要 Causal Mask 吗？
+## 75. Encoder Self-Attention 需要 Causal Mask 吗？
 
 原始 Transformer Encoder：
 
@@ -3037,15 +3037,15 @@ CVAE Encoder Training：
 
 ---
 
-# 76. ACT CVAE Encoder 的 Padding Mask
+## 76. ACT CVAE Encoder 的 Padding Mask
 
 Training sample 接近 episode 末尾时，
 
 action chunk 不足：
 
-\[
+$$
 k
-\]
+$$
 
 步。
 
@@ -3057,9 +3057,9 @@ k
 
 所以 CVAE encoder 使用：
 
-\[
+$$
 src\_key\_padding\_mask
-\]
+$$
 
 屏蔽 padding positions。
 
@@ -3071,7 +3071,7 @@ src\_key\_padding\_mask
 
 ---
 
-# 77. Policy Encoder 里的 Padding Mask 呢？
+## 77. Policy Encoder 里的 Padding Mask 呢？
 
 视觉 input 在 ACT 当前 fixed-camera/fixed-grid pipeline 中：
 
@@ -3087,45 +3087,45 @@ latent/joint 也固定存在。
 
 ---
 
-# 78. 为什么 Encoder 输出叫 Memory？
+## 78. 为什么 Encoder 输出叫 Memory？
 
 因为它接下来被 Decoder 当作：
 
-\[
+$$
 K/V
-\]
+$$
 
 source。
 
 经过 Encoder stack：
 
-\[
+$$
 X^{(0)}
 \rightarrow
 X^{(4)}
-\]
+$$
 
 得到：
 
-\[
+$$
 M
-\]
+$$
 
 Decoder 每个 action query 通过 Cross-Attention：
 
-\[
+$$
 Q\leftarrow Decoder
-\]
+$$
 
-\[
+$$
 K,V\leftarrow M
-\]
+$$
 
 所以：
 
-\[
+$$
 M
-\]
+$$
 
 就是可以被后续 Query 反复读取的：
 
@@ -3133,7 +3133,7 @@ M
 
 ---
 
-# 79. Memory 不是某种特殊神经网络存储器
+## 79. Memory 不是某种特殊神经网络存储器
 
 它其实就是：
 
@@ -3141,13 +3141,13 @@ M
 
 例如 ACT：
 
-\[
+$$
 \boxed{
 M
 \in
 [B,1202,512]
 }
-\]
+$$
 
 在官方 code 里变量名直接是：
 
@@ -3165,7 +3165,7 @@ memory
 
 ---
 
-# 80. 为什么 Decoder 用 Encoder 最后一层，而不是所有层？
+## 80. 为什么 Decoder 用 Encoder 最后一层，而不是所有层？
 
 原始 Transformer 架构：
 
@@ -3192,13 +3192,13 @@ hs = self.decoder(
 
 ---
 
-# 81. ACT Policy Encoder 从 1202 个 Token 到底发生什么？
+## 81. ACT Policy Encoder 从 1202 个 Token 到底发生什么？
 
 完整写一遍。
 
 初始：
 
-\[
+$$
 X^{(0)}
 =
 [
@@ -3209,13 +3209,13 @@ v_2,
 \ldots,
 v_{1200}
 ]
-\]
+$$
 
 每个：
 
-\[
+$$
 512
-\]
+$$
 
 维。
 
@@ -3223,110 +3223,110 @@ v_{1200}
 
 Layer 1：
 
-\[
+$$
 X^{(1)}
 =
 EncoderLayer_1(
 X^{(0)}
 )
-\]
+$$
 
 ---
 
 Layer 2：
 
-\[
+$$
 X^{(2)}
 =
 EncoderLayer_2(
 X^{(1)}
 )
-\]
+$$
 
 ---
 
 Layer 3：
 
-\[
+$$
 X^{(3)}
 =
 EncoderLayer_3(
 X^{(2)}
 )
-\]
+$$
 
 ---
 
 Layer 4：
 
-\[
+$$
 \boxed{
 M=
 X^{(4)}
 }
-\]
+$$
 
 shape 始终：
 
-\[
+$$
 1202\times512
-\]
+$$
 
 ---
 
-# 82. 每一层内发生：
+## 82. 每一层内发生：
 
-\[
+$$
 X^{(l)}
-\]
+$$
 
 先：
 
-\[
+$$
 Q,K=
 X^{(l)}+P
-\]
+$$
 
 Value：
 
-\[
+$$
 V=X^{(l)}
-\]
+$$
 
 Multi-Head Self-Attention：
 
-\[
+$$
 A^{(l)}
 =
 MHA(
 X^{(l)},P
 )
-\]
+$$
 
 Residual + Norm：
 
-\[
+$$
 H^{(l)}
 =
 LN_1(
 X^{(l)}+
 Dropout(A^{(l)})
 )
-\]
+$$
 
 FFN：
 
-\[
+$$
 F^{(l)}
 =
 FFN(
 H^{(l)}
 )
-\]
+$$
 
 再：
 
-\[
+$$
 \boxed{
 X^{(l+1)}
 =
@@ -3335,13 +3335,13 @@ H^{(l)}+
 Dropout(F^{(l)})
 )
 }
-\]
+$$
 
 这就是 ACT Policy Encoder 的 layer-by-layer math。
 
 ---
 
-# 83. CVAE Encoder 的数学骨架几乎一样
+## 83. CVAE Encoder 的数学骨架几乎一样
 
 区别主要不是 Encoder Layer 本身，
 
@@ -3351,7 +3351,7 @@ Dropout(F^{(l)})
 
 CVAE：
 
-\[
+$$
 X_{\text{CVAE}}
 =
 [
@@ -3359,11 +3359,11 @@ CLS,
 q,
 a_0,\ldots,a_{k-1}
 ]
-\]
+$$
 
 Policy：
 
-\[
+$$
 X_{\text{policy}}
 =
 [
@@ -3371,7 +3371,7 @@ z,
 q,
 visual_1,\ldots,visual_{1200}
 ]
-\]
+$$
 
 所以同一个 Transformer Encoder abstraction：
 
@@ -3379,7 +3379,7 @@ visual_1,\ldots,visual_{1200}
 
 ---
 
-# 84. 这说明 Transformer Encoder 是一种 General Sequence Processor
+## 84. 这说明 Transformer Encoder 是一种 General Sequence Processor
 
 它并不要求 token 一定是：
 
@@ -3387,9 +3387,9 @@ visual_1,\ldots,visual_{1200}
 
 只要你能把某种对象变成：
 
-\[
+$$
 d_{\text{model}}
-\]
+$$
 
 维 tokens，
 
@@ -3410,7 +3410,7 @@ Encoder 就可以对其做：
 
 ---
 
-# 85. 为什么所有不同 Modality 都要投影到 512？
+## 85. 为什么所有不同 Modality 都要投影到 512？
 
 ACT：
 
@@ -3420,9 +3420,9 @@ ACT：
 
 因为它们要进入同一个 Transformer hidden space：
 
-\[
+$$
 d_{\text{model}}=512
-\]
+$$
 
 这样：
 
@@ -3435,17 +3435,17 @@ d_{\text{model}}=512
 
 所以：
 
-\[
+$$
 \boxed{
 \text{common hidden width}
 =
 \text{shared representation interface}
 }
-\]
+$$
 
 ---
 
-# 86. 512 维意味着不同 Token 语义相同吗？
+## 86. 512 维意味着不同 Token 语义相同吗？
 
 当然不是。
 
@@ -3463,9 +3463,9 @@ latent token：
 
 它们只是都被映射成：
 
-\[
+$$
 512
-\]
+$$
 
 维 vector。
 
@@ -3479,7 +3479,7 @@ latent token：
 
 ---
 
-# 87. Position Embedding 又帮模型区分结构角色
+## 87. Position Embedding 又帮模型区分结构角色
 
 Policy Encoder 中：
 
@@ -3496,7 +3496,7 @@ Policy Encoder 中：
 
 ---
 
-# 88. Encoder Layer 会不会直接预测 z 或 action？
+## 88. Encoder Layer 会不会直接预测 z 或 action？
 
 不会。
 
@@ -3506,15 +3506,15 @@ CVAE Encoder stack：
 
 之后：
 
-\[
+$$
 h_{\text{CLS}}
-\]
+$$
 
 再进入 latent projection：
 
-\[
+$$
 \rightarrow\mu,\log\sigma^2
-\]
+$$
 
 ---
 
@@ -3530,19 +3530,19 @@ Policy Encoder：
 
 所以：
 
-\[
+$$
 \boxed{
 Encoder
 =
 \text{representation stage}
 }
-\]
+$$
 
 不是最终 task head。
 
 ---
 
-# 89. 为什么一个 Encoder Layer 有两个 Norm，而不是一个？
+## 89. 为什么一个 Encoder Layer 有两个 Norm，而不是一个？
 
 因为它有两个 independently residualized sub-layers：
 
@@ -3551,11 +3551,11 @@ Encoder
 
 原始 architecture 对每一个 sub-layer 都定义：
 
-\[
+$$
 LayerNorm(
 x+Sublayer(x)
 )
-\]
+$$
 
 所以自然：
 
@@ -3563,23 +3563,23 @@ x+Sublayer(x)
 
 ---
 
-# 90. 为什么 FFN 后还要 Residual？
+## 90. 为什么 FFN 后还要 Residual？
 
 如果只有 Attention residual，
 
 FFN 会：
 
-\[
+$$
 H\rightarrow FFN(H)
-\]
+$$
 
 完全替换 representation。
 
 加入：
 
-\[
+$$
 H+FFN(H)
-\]
+$$
 
 让 FFN 也作为：
 
@@ -3589,23 +3589,23 @@ H+FFN(H)
 
 ---
 
-# 91. 为什么 LayerNorm 参数也是 Learned？
+## 91. 为什么 LayerNorm 参数也是 Learned？
 
 LayerNorm：
 
-\[
+$$
 y=
 \gamma\odot
 \frac{x-\mu}{\sqrt{\sigma^2+\epsilon}}
 +
 \beta
-\]
+$$
 
 其中：
 
-\[
+$$
 \gamma,\beta
-\]
+$$
 
 是 trainable。
 
@@ -3619,43 +3619,43 @@ y=
 
 ---
 
-# 92. LayerNorm 有多少参数？
+## 92. LayerNorm 有多少参数？
 
 如果：
 
-\[
+$$
 d_{\text{model}}=512
-\]
+$$
 
 一个 LayerNorm 有：
 
-\[
+$$
 512
-\]
+$$
 
-个 \(\gamma\)，
+个 $\gamma$，
 
 加：
 
-\[
+$$
 512
-\]
+$$
 
-个 \(\beta\)。
+个 $\beta$。
 
 共：
 
-\[
+$$
 1024
-\]
+$$
 
 trainable scalars。
 
 一个 Post-LN Encoder Layer 有两个 LN：
 
-\[
+$$
 2048
-\]
+$$
 
 LayerNorm parameters。
 
@@ -3665,7 +3665,7 @@ LayerNorm parameters。
 
 ---
 
-# 93. FFN 是不是一种 1×1 Convolution？
+## 93. FFN 是不是一种 1×1 Convolution？
 
 原始 Transformer 论文明确说：
 
@@ -3675,11 +3675,11 @@ LayerNorm parameters。
 
 对 sequence 每个 position 独立做：
 
-\[
+$$
 d_{\text{model}}
 \rightarrow d_{ff}
 \rightarrow d_{\text{model}}
-\]
+$$
 
 等价于：
 
@@ -3691,39 +3691,39 @@ d_{\text{model}}
 
 ---
 
-# 94. ACT 的 1202×3200 会很大，为什么还可行？
+## 94. ACT 的 1202×3200 会很大，为什么还可行？
 
 因为 FFN 对 token 独立。
 
 它不形成：
 
-\[
+$$
 1202\times1202\times3200
-\]
+$$
 
 这种 tensor。
 
 主要计算近似：
 
-\[
+$$
 N
 \cdot
 D
 \cdot
 D_{ff}
-\]
+$$
 
 而 Attention 主要：
 
-\[
+$$
 N^2D
-\]
+$$
 
 当：
 
-\[
+$$
 N=1202
-\]
+$$
 
 两部分都不便宜，
 
@@ -3731,35 +3731,35 @@ N=1202
 
 ---
 
-# 95. Attention vs FFN Complexity
+## 95. Attention vs FFN Complexity
 
 粗略：
 
-### Self-Attention
+#### Self-Attention
 
-\[
+$$
 O(N^2D)
-\]
+$$
 
 再加 projections：
 
-\[
+$$
 O(ND^2)
-\]
+$$
 
-### FFN
+#### FFN
 
-\[
+$$
 O(
 ND D_{ff}
 )
-\]
+$$
 
 如果：
 
-\[
+$$
 D_{ff}
-\]
+$$
 
 很大，
 
@@ -3771,7 +3771,7 @@ FFN 计算和参数也会非常显著。
 
 ---
 
-# 96. Encoder 深度会不会改变 receptive field？
+## 96. Encoder 深度会不会改变 receptive field？
 
 Full Self-Attention 一层已经：
 
@@ -3793,7 +3793,7 @@ Encoder 深度主要不是为了：
 
 ---
 
-# 97. 为什么一层能全局，但仍需要深度？
+## 97. 为什么一层能全局，但仍需要深度？
 
 可以用一个计算论直觉：
 
@@ -3811,39 +3811,39 @@ Transformer depth 提供：
 
 所以：
 
-\[
+$$
 \boxed{
 global access
 \neq
 single-step sufficient computation
 }
-\]
+$$
 
 ---
 
-# 98. Self-Attention 每层都会重新生成 Attention Matrix
+## 98. Self-Attention 每层都会重新生成 Attention Matrix
 
-第 \(l\) 层：
+第 $l$ 层：
 
-\[
+$$
 A^{(l)}
 =
 softmax(
 Q^{(l)}K^{(l)\top}
 )
-\]
+$$
 
 下一层 input 已变：
 
-\[
+$$
 X^{(l+1)}
-\]
+$$
 
 所以：
 
-\[
+$$
 A^{(l+1)}
-\]
+$$
 
 也重新计算。
 
@@ -3855,13 +3855,13 @@ A^{(l+1)}
 
 ---
 
-# 99. Residual Stream 可以怎样理解？
+## 99. Residual Stream 可以怎样理解？
 
 现代 Transformer 教学中常把：
 
-\[
+$$
 X
-\]
+$$
 
 看成一条：
 
@@ -3869,17 +3869,17 @@ X
 
 Attention 和 FFN 不断向它写入 updates：
 
-\[
+$$
 X
 \leftarrow
 X+\Delta_{\text{attn}}
-\]
+$$
 
-\[
+$$
 X
 \leftarrow
 X+\Delta_{\text{ffn}}
-\]
+$$
 
 在原始 Post-LN 中，每次 update 后再做 normalization。
 
@@ -3891,13 +3891,13 @@ X+\Delta_{\text{ffn}}
 
 ---
 
-# 100. 为什么 Encoder Output 不能简单理解成“Attention Result”？
+## 100. 为什么 Encoder Output 不能简单理解成“Attention Result”？
 
 因为经过一层后：
 
-\[
+$$
 Y
-\]
+$$
 
 已经包含：
 
@@ -3918,7 +3918,7 @@ Y
 
 ---
 
-# 101. 常见误解一：Transformer Encoder 就是一层 Self-Attention
+## 101. 常见误解一：Transformer Encoder 就是一层 Self-Attention
 
 **错误。**
 
@@ -3931,7 +3931,7 @@ Y
 
 ---
 
-# 102. 常见误解二：FFN 负责 Token 之间的信息交换
+## 102. 常见误解二：FFN 负责 Token 之间的信息交换
 
 **错误。**
 
@@ -3941,7 +3941,7 @@ Y
 
 ---
 
-# 103. 常见误解三：FFN 只是为了把 Shape 改回 512
+## 103. 常见误解三：FFN 只是为了把 Shape 改回 512
 
 **错误。**
 
@@ -3949,7 +3949,7 @@ Y
 
 ---
 
-# 104. 常见误解四：512→2048→512 是两个 Linear，所以仍然等于一个 Linear
+## 104. 常见误解四：512→2048→512 是两个 Linear，所以仍然等于一个 Linear
 
 只有在：
 
@@ -3961,7 +3961,7 @@ ReLU 使其不能简单合并。
 
 ---
 
-# 105. 常见误解五：所有 6 个 Encoder Layers 共用一套参数
+## 105. 常见误解五：所有 6 个 Encoder Layers 共用一套参数
 
 **错误。**
 
@@ -3971,7 +3971,7 @@ ReLU 使其不能简单合并。
 
 ---
 
-# 106. 常见误解六：LayerNorm 对整个 Batch 算 Mean/Variance
+## 106. 常见误解六：LayerNorm 对整个 Batch 算 Mean/Variance
 
 **错误。**
 
@@ -3979,7 +3979,7 @@ Transformer 常见 LayerNorm 对单个 token 的 feature dimension normalization
 
 ---
 
-# 107. 常见误解七：LayerNorm 会让所有 Tokens 变得一样
+## 107. 常见误解七：LayerNorm 会让所有 Tokens 变得一样
 
 **错误。**
 
@@ -3989,7 +3989,7 @@ Transformer 常见 LayerNorm 对单个 token 的 feature dimension normalization
 
 ---
 
-# 108. 常见误解八：LayerNorm 会让 Representation 服从标准正态分布
+## 108. 常见误解八：LayerNorm 会让 Representation 服从标准正态分布
 
 **错误。**
 
@@ -3997,27 +3997,27 @@ Transformer 常见 LayerNorm 对单个 token 的 feature dimension normalization
 
 ---
 
-# 109. 常见误解九：Residual 就是把上一层输出和这一层输出平均
+## 109. 常见误解九：Residual 就是把上一层输出和这一层输出平均
 
 **错误。**
 
 是：
 
-\[
+$$
 x+F(x)
-\]
+$$
 
 普通加法，
 
 不是：
 
-\[
+$$
 (x+F(x))/2
-\]
+$$
 
 ---
 
-# 110. 常见误解十：Residual 只是防止信息丢失，和训练无关
+## 110. 常见误解十：Residual 只是防止信息丢失，和训练无关
 
 不完整。
 
@@ -4027,21 +4027,21 @@ x+F(x)
 
 ---
 
-# 111. 常见误解十一：Transformer 原论文是 Pre-LN
+## 111. 常见误解十一：Transformer 原论文是 Pre-LN
 
 **错误。**
 
 原始 2017：
 
-\[
+$$
 \boxed{
 Post-LN
 }
-\]
+$$
 
 ---
 
-# 112. 常见误解十二：所有现代 Transformer 都是 Post-LN
+## 112. 常见误解十二：所有现代 Transformer 都是 Post-LN
 
 也错误。
 
@@ -4051,7 +4051,7 @@ Post-LN
 
 ---
 
-# 113. 常见误解十三：ACT 默认使用 Pre-LN
+## 113. 常见误解十三：ACT 默认使用 Pre-LN
 
 **当前 released default 不是。**
 
@@ -4065,21 +4065,21 @@ Post-LN
 
 ---
 
-# 114. 常见误解十四：ACT 的 FFN 是原始 Transformer 的 2048
+## 114. 常见误解十四：ACT 的 FFN 是原始 Transformer 的 2048
 
 **论文实际配置不是。**
 
 ACT：
 
-\[
+$$
 \boxed{
 d_{ff}=3200
 }
-\]
+$$
 
 ---
 
-# 115. 常见误解十五：ACT 只有一个 Transformer Encoder
+## 115. 常见误解十五：ACT 只有一个 Transformer Encoder
 
 **错误。**
 
@@ -4090,7 +4090,7 @@ d_{ff}=3200
 
 ---
 
-# 116. 常见误解十六：两个 ACT Encoders 都是 4 层，所以共享权重
+## 116. 常见误解十六：两个 ACT Encoders 都是 4 层，所以共享权重
 
 **错误。**
 
@@ -4098,21 +4098,21 @@ d_{ff}=3200
 
 ---
 
-# 117. 常见误解十七：Policy Encoder 把 1202 Tokens 压成一个 Vector
+## 117. 常见误解十七：Policy Encoder 把 1202 Tokens 压成一个 Vector
 
 **错误。**
 
 输出仍是：
 
-\[
+$$
 1202\times512
-\]
+$$
 
 memory sequence。
 
 ---
 
-# 118. 常见误解十八：Encoder 输出每个 visual token 仍只包含那个 patch
+## 118. 常见误解十八：Encoder 输出每个 visual token 仍只包含那个 patch
 
 **不准确。**
 
@@ -4122,7 +4122,7 @@ memory sequence。
 
 ---
 
-# 119. 常见误解十九：Attention 已经有 Softmax，所以 FFN 没必要
+## 119. 常见误解十九：Attention 已经有 Softmax，所以 FFN 没必要
 
 **错误。**
 
@@ -4132,7 +4132,7 @@ FFN 是 Transformer block 的核心组成。
 
 ---
 
-# 120. 常见误解二十：Attention Is All You Need 意味着网络只有 Attention
+## 120. 常见误解二十：Attention Is All You Need 意味着网络只有 Attention
 
 **错误。**
 
@@ -4142,213 +4142,213 @@ FFN 是 Transformer block 的核心组成。
 
 ---
 
-# 121. 一层 Encoder 的完整 Shape Flow：原始 Transformer Base
+## 121. 一层 Encoder 的完整 Shape Flow：原始 Transformer Base
 
 输入：
 
-\[
+$$
 X:
 [B,N,512]
-\]
+$$
 
 ---
 
-## Multi-Head Self-Attention
+### Multi-Head Self-Attention
 
 8 heads：
 
-\[
+$$
 d_h=64
-\]
+$$
 
 输出：
 
-\[
+$$
 [B,N,512]
-\]
+$$
 
 ---
 
-## Residual + LayerNorm
+### Residual + LayerNorm
 
-\[
+$$
 [B,N,512]
-\]
+$$
 
 ---
 
-## FFN Linear 1
+### FFN Linear 1
 
-\[
+$$
 [B,N,512]
 \rightarrow
 [B,N,2048]
-\]
+$$
 
 ---
 
-## ReLU
+### ReLU
 
-\[
+$$
 [B,N,2048]
-\]
+$$
 
 ---
 
-## FFN Linear 2
+### FFN Linear 2
 
-\[
+$$
 [B,N,2048]
 \rightarrow
 [B,N,512]
-\]
+$$
 
 ---
 
-## Residual + LayerNorm
+### Residual + LayerNorm
 
-\[
+$$
 \boxed{
 [B,N,512]
 }
-\]
+$$
 
 ---
 
-# 122. ACT Policy Encoder 的完整 Shape Flow
+## 122. ACT Policy Encoder 的完整 Shape Flow
 
 输入：
 
-\[
+$$
 \boxed{
 [B,1202,512]
 }
-\]
+$$
 
 注意官方 PyTorch internal convention 常转成：
 
-\[
+$$
 [1202,B,512]
-\]
+$$
 
 但语义不变。
 
 ---
 
-## MHA
+### MHA
 
-\[
+$$
 [B,1202,512]
-\]
+$$
 
 ---
 
-## Add & Norm
+### Add & Norm
 
-\[
+$$
 [B,1202,512]
-\]
+$$
 
 ---
 
-## FFN
+### FFN
 
-\[
+$$
 [B,1202,512]
 \rightarrow
 [B,1202,3200]
 \rightarrow
 [B,1202,512]
-\]
+$$
 
 ---
 
-## Add & Norm
+### Add & Norm
 
-\[
+$$
 [B,1202,512]
-\]
+$$
 
 一层完成。
 
 重复：
 
-\[
+$$
 4
-\]
+$$
 
 次。
 
 最终：
 
-\[
+$$
 \boxed{
 Memory:
 [B,1202,512]
 }
-\]
+$$
 
 ---
 
-# 123. ACT CVAE Encoder 的完整 Shape Flow
+## 123. ACT CVAE Encoder 的完整 Shape Flow
 
 假设：
 
-\[
+$$
 k=100
-\]
+$$
 
 输入：
 
-\[
+$$
 \boxed{
 [B,102,512]
 }
-\]
+$$
 
 每层：
 
-\[
+$$
 [B,102,512]
 \rightarrow
 [B,102,512]
-\]
+$$
 
 4 层后：
 
-\[
+$$
 [B,102,512]
-\]
+$$
 
 取 CLS：
 
-\[
+$$
 [B,512]
-\]
+$$
 
 latent head：
 
-\[
+$$
 [B,512]
 \rightarrow
 [B,64]
-\]
+$$
 
 split：
 
-\[
+$$
 \mu:
 [B,32]
-\]
+$$
 
-\[
+$$
 \log\sigma^2:
 [B,32]
-\]
+$$
 
 ---
 
-# 124. 为什么 Policy Encoder 和 CVAE Encoder 可以用同一种 Layer？
+## 124. 为什么 Policy Encoder 和 CVAE Encoder 可以用同一种 Layer？
 
 因为 Transformer Encoder Layer 只要求：
 
@@ -4372,41 +4372,41 @@ Token 的语义来自：
 
 ---
 
-# 125. 一句最重要的分工
+## 125. 一句最重要的分工
 
 如果要把整个 Encoder Layer 压成一句最实用的 mental model：
 
-\[
+$$
 \boxed{
 \text{Self-Attention}
 :
 \text{让 Tokens 互相交流}
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 \text{FFN}
 :
 \text{让每个 Token 自己做深度非线性加工}
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 \text{Residual}
 :
 \text{保留 identity path，并学习增量更新}
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 \text{LayerNorm}
 :
 \text{规范每个 Token 的 feature scale}
 }
-\]
+$$
 
 四者合起来，
 
@@ -4414,27 +4414,27 @@ Token 的语义来自：
 
 ---
 
-# 126. 一句话真正理解 Transformer Encoder
+## 126. 一句话真正理解 Transformer Encoder
 
 > **Transformer Encoder 不是一个“把 sequence 压缩成向量”的模块，而是一个保持 token 数量不变的深层 contextualization stack：每一层先通过 Multi-Head Self-Attention 让所有允许的位置根据当前内容动态交换信息，再通过 residual 与 LayerNorm 保留并规范 representation，随后用 position-wise FFN 对每个 token 的 feature vector 进行高维 nonlinear transformation，再经过第二次 residual 与 normalization；多层重复后，每个 token 都变成结合整个输入 context 的 memory representation。**
 
 ---
 
-# 127. 一句话理解 ACT Policy Encoder
+## 127. 一句话理解 ACT Policy Encoder
 
-> **ACT Policy Encoder 把 \(1200\) 个多摄像头视觉 token、1 个 joint token 和 1 个 latent token 放进统一的 512-D hidden space，通过 4 层、8-head、\(512\rightarrow3200\rightarrow512\) 的 Post-LN Transformer Encoder反复进行全局信息交换和 per-token nonlinear refinement，最终仍输出 \(1202\times512\) 的 contextual observation memory，供 action-query Decoder 通过 Cross-Attention读取。**
+> **ACT Policy Encoder 把 $1200$ 个多摄像头视觉 token、1 个 joint token 和 1 个 latent token 放进统一的 512-D hidden space，通过 4 层、8-head、$512\rightarrow3200\rightarrow512$ 的 Post-LN Transformer Encoder反复进行全局信息交换和 per-token nonlinear refinement，最终仍输出 $1202\times512$ 的 contextual observation memory，供 action-query Decoder 通过 Cross-Attention读取。**
 
 ACT 论文明确写出 Policy Encoder 输入是：
 
-\[
+$$
 1202\times512
-\]
+$$
 
 并将 Transformer Encoder描述为融合不同 camera viewpoints、joint positions 和 style variable 的模块；Table III 给出 4 层 Encoder、512 hidden、3200 feedforward、8 heads、dropout 0.1。
 
 ---
 
-# 128. 下一步：Transformer Decoder
+## 128. 下一步：Transformer Decoder
 
 现在 Encoder 已经完整。
 
@@ -4467,13 +4467,13 @@ Residual + LayerNorm
 - 为什么 Decoder Query 先和其他 output positions 交流，再读取 Encoder Memory；
 - Post-LN / Pre-LN 的三次 normalization；
 - ACT 的 Decoder 为什么 Self-Attention 不 causal；
-- ACT 中 \(k\) 个 action slots 如何从 zero `tgt` + query embedding 开始；
+- ACT 中 $k$ 个 action slots 如何从 zero `tgt` + query embedding 开始；
 - 每一层怎样把 `[k,512]` action representations 逐步变成 observation-conditioned outputs；
 - ACT Paper 的 7 decoder layers 与 current released-code intermediate-output行为如何区分。
 
 ---
 
-## Primary Source：Transformer
+### Primary Source：Transformer
 
 Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,  
 Aidan N. Gomez, Łukasz Kaiser, Illia Polosukhin.
@@ -4486,37 +4486,37 @@ NeurIPS 2017.
 
 本文主要依据：
 
-### Section 3.1 — Encoder
+#### Section 3.1 — Encoder
 
 原论文规定：
 
 - Encoder stack：
-  \[
+  $$
   N=6
-  \]
+  $$
   个 identical-architecture layers；
 - 每层两个 sub-layers：
   1. Multi-Head Self-Attention；
   2. Position-wise FFN；
 - 每个 sub-layer 使用 residual connection；
 - residual 后做 LayerNorm：
-  \[
+  $$
   \boxed{
   LayerNorm(x+Sublayer(x))
   }
-  \]
+  $$
 - 所有 sub-layers 维度：
-  \[
+  $$
   d_{\text{model}}=512
-  \]
+  $$
 
 ---
 
-### Section 3.3 — Position-wise FFN
+#### Section 3.3 — Position-wise FFN
 
 原论文：
 
-\[
+$$
 \boxed{
 FFN(x)
 =
@@ -4525,21 +4525,21 @@ FFN(x)
 xW_1+b_1
 )W_2+b_2
 }
-\]
+$$
 
 Base Model：
 
-\[
+$$
 \boxed{
 d_{\text{model}}=512
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 d_{ff}=2048
 }
-\]
+$$
 
 同一 layer 内：
 
@@ -4551,7 +4551,7 @@ d_{ff}=2048
 
 ---
 
-### Section 5.4 — Residual Dropout
+#### Section 5.4 — Residual Dropout
 
 原论文：
 
@@ -4559,13 +4559,13 @@ d_{ff}=2048
 
 Base dropout：
 
-\[
+$$
 0.1
-\]
+$$
 
 ---
 
-## Residual Connection Background
+### Residual Connection Background
 
 Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun.
 
@@ -4576,11 +4576,11 @@ CVPR 2016.
 
 Residual framework 的核心形式：
 
-\[
+$$
 \boxed{
 y=x+F(x)
 }
-\]
+$$
 
 其目的之一是：
 
@@ -4595,7 +4595,7 @@ sub-layers 外。
 
 ---
 
-## Layer Normalization Background
+### Layer Normalization Background
 
 Jimmy Lei Ba, Jamie Ryan Kiros, Geoffrey E. Hinton.
 
@@ -4610,22 +4610,22 @@ LayerNorm 使用单个 training case 内 layer activations 的统计量，
 
 在 Transformer hidden vector 上可以写：
 
-\[
+$$
 \mu
 =
 \frac1d
 \sum_jx_j
-\]
+$$
 
-\[
+$$
 \sigma^2
 =
 \frac1d
 \sum_j
 (x_j-\mu)^2
-\]
+$$
 
-\[
+$$
 \boxed{
 LN(x)
 =
@@ -4641,11 +4641,11 @@ x-\mu
 +
 \beta
 }
-\]
+$$
 
 ---
 
-## ACT Primary Source
+### ACT Primary Source
 
 Tony Z. Zhao, Vikash Kumar, Sergey Levine, Chelsea Finn.
 
@@ -4662,53 +4662,53 @@ ACT Section IV-C：
 - Transformer Encoder 融合：
   - camera viewpoints；
   - joint positions；
-  - latent \(z\)；
+  - latent $z$；
 - Policy Encoder 输入：
-  \[
+  $$
   1202\times512
-  \]
+  $$
 
 ACT Table III：
 
-\[
+$$
 \boxed{
 \#encoder\ layers=4
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 hidden\ dimension=512
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 feedforward\ dimension=3200
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 \#heads=8
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 dropout=0.1
 }
-\]
+$$
 
 ---
 
-## Official ACT Implementation
+### Official ACT Implementation
 
 Repository:
 
 https://github.com/tonyzhaozh/act
 
-### `detr/models/transformer.py`
+#### `detr/models/transformer.py`
 
 当前 `TransformerEncoderLayer`：
 
@@ -4764,7 +4764,7 @@ Self-Attention
 
 ---
 
-### Position Injection
+#### Position Injection
 
 官方 Post-LN Encoder：
 
@@ -4786,17 +4786,17 @@ src2 =
 
 即概念上：
 
-\[
+$$
 Q,K\leftarrow src+pos
-\]
+$$
 
-\[
+$$
 V\leftarrow src
-\]
+$$
 
 ---
 
-### Encoder Stack
+#### Encoder Stack
 
 ```python
 for layer in self.layers:
@@ -4822,7 +4822,7 @@ _get_clones(...)
 
 ---
 
-### ACT Training Configuration
+#### ACT Training Configuration
 
 `imitate_episodes.py` 当前固定：
 
@@ -4852,31 +4852,31 @@ hidden_dim
 
 ---
 
-## ACT 的两个 Encoder
+### ACT 的两个 Encoder
 
-### CVAE Encoder
+#### CVAE Encoder
 
 `DETRVAE.self.encoder`
 
 输入：
 
-\[
+$$
 [CLS]+qpos+actions
-\]
+$$
 
 Training-only。
 
 ---
 
-### Policy Observation Encoder
+#### Policy Observation Encoder
 
 `DETRVAE.self.transformer.encoder`
 
 输入：
 
-\[
+$$
 latent+proprio+visual
-\]
+$$
 
 Training + Inference 都使用。
 
@@ -4886,24 +4886,24 @@ Training + Inference 都使用。
 
 但：
 
-\[
+$$
 \boxed{
 \text{参数不共享}
 }
-\]
+$$
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### 前置
+#### 前置
 
 - [Transformer](./transformer.md)
 - [Self-Attention](./self-attention.md)
 - [Multi-Head Attention](./multi-head-attention.md)
 - [Positional Encoding](./positional-encoding.md)
 
-### Encoder Components
+#### Encoder Components
 
 - [Residual Connection](./residual-connection.md)
 - [Layer Normalization](./layer-normalization.md)
@@ -4911,19 +4911,19 @@ Training + Inference 都使用。
 - [ReLU](./relu.md)
 - [Dropout](./dropout.md)
 
-### 后续
+#### 后续
 
 - [Transformer Decoder](./transformer-decoder.md)
 - [Cross-Attention](./cross-attention.md)
 - Pre-LN vs Post-LN
 
-### Robot Learning
+#### Robot Learning
 
 - [ACT Architecture](../robot-learning/act/architecture.md)
 - [CVAE in ACT](../robot-learning/act/cvae-in-act.md)
 - [ACT Training](../robot-learning/act/training.md)
 - [ACT Complete Data Flow](../robot-learning/act/complete-data-flow.md)
 
-### 下一步
+#### 下一步
 
 - [Transformer Decoder](./transformer-decoder.md)

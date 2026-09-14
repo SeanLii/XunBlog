@@ -47,33 +47,33 @@ de-normalize
 
 ---
 
-# 1. Inference 和 Training 最大的区别
+## 1. Inference 和 Training 最大的区别
 
 训练时：
 
-\[
+$$
 (o_t,a_{t:t+k})
-\]
+$$
 
 两者都已知。
 
 所以可以用 ground-truth future action chunk 运行 CVAE encoder：
 
-\[
+$$
 q_\phi(z\mid a_{t:t+k},q_t)
-\]
+$$
 
 得到：
 
-\[
+$$
 \mu,\log\sigma^2
-\]
+$$
 
 再 sample：
 
-\[
+$$
 z=\mu+\sigma\odot\epsilon
-\]
+$$
 
 ---
 
@@ -81,15 +81,15 @@ z=\mu+\sigma\odot\epsilon
 
 我们只有：
 
-\[
+$$
 o_t
-\]
+$$
 
 而：
 
-\[
+$$
 a_{t:t+k}
-\]
+$$
 
 正是未知答案。
 
@@ -97,25 +97,25 @@ a_{t:t+k}
 
 ACT 原论文明确规定：
 
-\[
+$$
 \boxed{z=0}
-\]
+$$
 
 即使用 unit Gaussian prior 的均值做 deterministic decoding。
 
 所以 inference policy 可以写成：
 
-\[
+$$
 \boxed{
 \hat a_{t:t+k}
 =
 \pi_\theta(o_t,z=0)
 }
-\]
+$$
 
 ---
 
-# 2. 先加载哪个 Checkpoint？
+## 2. 先加载哪个 Checkpoint？
 
 ACT 原论文写得很明确：
 
@@ -151,21 +151,21 @@ dataset_stats.pkl
 
 ---
 
-# 3. 为什么 Inference 还需要 Training Dataset 的 Statistics？
+## 3. 为什么 Inference 还需要 Training Dataset 的 Statistics？
 
 训练时 qpos 和 actions 做过：
 
-\[
+$$
 q_{\text{norm}}
 =
 \frac{q-\mu_q}{\sigma_q}
-\]
+$$
 
-\[
+$$
 a_{\text{norm}}
 =
 \frac{a-\mu_a}{\sigma_a}
-\]
+$$
 
 因此 policy 学到的是：
 
@@ -204,7 +204,7 @@ post_process = lambda a:
 
 ---
 
-# 4. 第 t 个 Timestep：先读取 Observation
+## 4. 第 t 个 Timestep：先读取 Observation
 
 每一步 rollout：
 
@@ -214,21 +214,21 @@ obs = ts.observation
 
 然后取：
 
-\[
+$$
 q_t
-\]
+$$
 
 以及 camera images。
 
 qpos：
 
-\[
+$$
 q_t\in\mathbb R^{14}
-\]
+$$
 
 先转成 normalized coordinates：
 
-\[
+$$
 \boxed{
 \tilde q_t
 =
@@ -238,25 +238,25 @@ q_t-\mu_q
 \sigma_q
 }
 }
-\]
+$$
 
 然后变成 batch tensor：
 
-\[
+$$
 [1,14]
-\]
+$$
 
 这里 batch size：
 
-\[
+$$
 B=1
-\]
+$$
 
 因为机器人当前只需要处理一个实时 observation。
 
 ---
 
-# 5. Camera Images 怎样进入 Policy？
+## 5. Camera Images 怎样进入 Policy？
 
 官方：
 
@@ -294,7 +294,7 @@ visual tokens
 
 ---
 
-# 6. CVAE Encoder 在这里已经不存在
+## 6. CVAE Encoder 在这里已经不存在
 
 这是 inference 最重要的分叉。
 
@@ -332,11 +332,11 @@ latent_sample = torch.zeros(...)
 
 因此：
 
-\[
+$$
 \boxed{
 z_t=\mathbf 0
 }
-\]
+$$
 
 并不是：
 
@@ -348,29 +348,29 @@ z_t=\mathbf 0
 
 ---
 
-# 7. 一次 Policy Forward 输出什么？
+## 7. 一次 Policy Forward 输出什么？
 
 输入：
 
-\[
+$$
 \tilde q_t
-\]
+$$
 
 当前 images：
 
-\[
+$$
 I_t
-\]
+$$
 
 以及：
 
-\[
+$$
 z=0
-\]
+$$
 
 ACT policy 输出：
 
-\[
+$$
 \boxed{
 \hat A_t
 =
@@ -381,23 +381,23 @@ ACT policy 输出：
 \hat a_{t+k-1}^{(t)}
 ]
 }
-\]
+$$
 
 shape：
 
-\[
+$$
 [1,k,14]
-\]
+$$
 
 这里上标：
 
-\[
+$$
 (t)
-\]
+$$
 
 表示：
 
-> 这条预测是在 query time \(t\) 产生的。
+> 这条预测是在 query time $t$ 产生的。
 
 下标：
 
@@ -405,37 +405,37 @@ shape：
 
 例如：
 
-\[
+$$
 \hat a_{t+17}^{(t)}
-\]
+$$
 
 就是：
 
-> 在当前 \(t\) 时，根据当前 observation，预测未来第 17 步应该执行的 14-D joint target。
+> 在当前 $t$ 时，根据当前 observation，预测未来第 17 步应该执行的 14-D joint target。
 
 ---
 
-# 8. 如果 k=100，一次就预测 100 个未来动作
+## 8. 如果 k=100，一次就预测 100 个未来动作
 
 原论文默认：
 
-\[
+$$
 k=100
-\]
+$$
 
 因此一次 forward：
 
-\[
+$$
 o_t
 \rightarrow
 100\times14
-\]
+$$
 
 也就是：
 
-\[
+$$
 1400
-\]
+$$
 
 个连续 action values。
 
@@ -443,9 +443,9 @@ o_t
 
 它们来自 Transformer decoder 的：
 
-\[
+$$
 100
-\]
+$$
 
 个 action-query slots，
 
@@ -457,7 +457,7 @@ o_t
 
 ---
 
-# 9. 最朴素的 Action Chunk Inference 会怎么做？
+## 9. 最朴素的 Action Chunk Inference 会怎么做？
 
 如果没有 Temporal Ensemble，可以采用：
 
@@ -479,15 +479,15 @@ t = 100
 
 如果：
 
-\[
+$$
 k=100
-\]
+$$
 
 那么每：
 
-\[
+$$
 100
-\]
+$$
 
 步才重新根据新 observation 规划一次。
 
@@ -503,7 +503,7 @@ k=100
 
 ---
 
-# 10. 官方代码里“不开 Temporal Ensemble”就是接近这种执行方式
+## 10. 官方代码里“不开 Temporal Ensemble”就是接近这种执行方式
 
 released eval code 初始：
 
@@ -514,9 +514,9 @@ query_frequency =
 
 而：
 
-\[
+$$
 num\_queries=k
-\]
+$$
 
 所以没有：
 
@@ -526,17 +526,17 @@ num\_queries=k
 
 时：
 
-\[
+$$
 \boxed{
 query\_frequency=k
 }
-\]
+$$
 
 policy 只在：
 
-\[
+$$
 t\bmod k=0
-\]
+$$
 
 时重新 forward：
 
@@ -565,7 +565,7 @@ chunk 用完再 query
 
 ---
 
-# 11. 开启 Temporal Ensemble 后发生关键变化
+## 11. 开启 Temporal Ensemble 后发生关键变化
 
 如果：
 
@@ -581,11 +581,11 @@ query_frequency = 1
 
 于是：
 
-\[
+$$
 \boxed{
 \text{每一个 timestep 都重新 query policy}
 }
-\]
+$$
 
 这正是原论文 Algorithm 2。
 
@@ -610,17 +610,17 @@ action chunks 开始大量 overlap。
 
 ---
 
-# 12. 重新写出 k=4 的例子
+## 12. 重新写出 k=4 的例子
 
 假设：
 
-\[
+$$
 k=4
-\]
+$$
 
-### t = 0
+#### t = 0
 
-\[
+$$
 \hat A_0
 =
 [
@@ -629,11 +629,11 @@ k=4
 \hat a_2^{(0)},
 \hat a_3^{(0)}
 ]
-\]
+$$
 
-### t = 1
+#### t = 1
 
-\[
+$$
 \hat A_1
 =
 [
@@ -642,11 +642,11 @@ k=4
 \hat a_3^{(1)},
 \hat a_4^{(1)}
 ]
-\]
+$$
 
-### t = 2
+#### t = 2
 
-\[
+$$
 \hat A_2
 =
 [
@@ -655,7 +655,7 @@ k=4
 \hat a_4^{(2)},
 \hat a_5^{(2)}
 ]
-\]
+$$
 
 排列起来：
 
@@ -668,24 +668,24 @@ query t=3:                 a₃³  a₄³  a₅³  a₆³
 
 因此当前真实执行：
 
-\[
+$$
 t=3
-\]
+$$
 
 时，
 
 已经有四个 predictions：
 
-\[
+$$
 \hat a_3^{(0)},
 \hat a_3^{(1)},
 \hat a_3^{(2)},
 \hat a_3^{(3)}
-\]
+$$
 
 ---
 
-# 13. 官方代码怎样保存这些 Overlapping Chunks？
+## 13. 官方代码怎样保存这些 Overlapping Chunks？
 
 开启 temporal aggregation 后，代码创建：
 
@@ -702,19 +702,19 @@ all_time_actions =
 
 概念上是一个三维表：
 
-\[
+$$
 [
 \text{query time},
 \text{execution time},
 \text{action dim}
 ]
-\]
+$$
 
 其中：
 
-\[
+$$
 state\_dim=14
-\]
+$$
 
 可以画成：
 
@@ -729,21 +729,21 @@ query 3                       a3    a4
 
 ---
 
-# 14. 新 Chunk 怎样写进这个 Buffer？
+## 14. 新 Chunk 怎样写进这个 Buffer？
 
 第：
 
-\[
+$$
 t
-\]
+$$
 
 步得到：
 
-\[
+$$
 all\_actions
 \in
 [1,k,14]
-\]
+$$
 
 代码：
 
@@ -756,7 +756,7 @@ all_time_actions[
 
 含义：
 
-> 把 query time \(t\) 预测的未来 \(k\) 个 actions，放到 execution-time 轴的 \(t\) 到 \(t+k-1\)。
+> 把 query time $t$ 预测的未来 $k$ 个 actions，放到 execution-time 轴的 $t$ 到 $t+k-1$。
 
 因此：
 
@@ -769,13 +769,13 @@ column = 什么时候执行
 
 ---
 
-# 15. 当前 Timestep 怎样取出所有预测？
+## 15. 当前 Timestep 怎样取出所有预测？
 
 假设当前：
 
-\[
+$$
 t
-\]
+$$
 
 官方：
 
@@ -786,13 +786,13 @@ actions_for_curr_step =
 
 也就是：
 
-> 取整个二维时间矩阵的第 \(t\) 列。
+> 取整个二维时间矩阵的第 $t$ 列。
 
 这会得到所有 query times 对：
 
-\[
+$$
 \text{execution time}=t
-\]
+$$
 
 产生过的 prediction。
 
@@ -817,7 +817,7 @@ actions_for_curr_step =
 
 最终得到：
 
-\[
+$$
 A_t
 =
 [
@@ -825,11 +825,11 @@ A_t
 \ldots,
 \hat a_t^{(j_n)}
 ]
-\]
+$$
 
 ---
 
-# 16. 这里有一个 Released-Code 的小陷阱：用 0 判断“有没有预测”
+## 16. 这里有一个 Released-Code 的小陷阱：用 0 判断“有没有预测”
 
 官方代码用：
 
@@ -848,9 +848,9 @@ torch.all(
 
 如果一个合法 action 某个维度恰好精确为：
 
-\[
+$$
 0
-\]
+$$
 
 这行可能会被错误判断为未填充。
 
@@ -866,23 +866,23 @@ torch.all(
 
 ---
 
-# 17. Temporal Ensemble 权重怎样计算？
+## 17. Temporal Ensemble 权重怎样计算？
 
 原论文定义：
 
-\[
+$$
 \boxed{
 w_i
 =
 \exp(-mi)
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 w_0
-\]
+$$
 
 对应：
 
@@ -910,21 +910,21 @@ k = 0.01
 
 不要和：
 
-> chunk size \(k\)
+> chunk size $k$
 
 混淆。
 
 它其实对应论文里的：
 
-\[
+$$
 m
-\]
+$$
 
 即 exponential decay coefficient。
 
 ---
 
-# 18. 权重归一化
+## 18. 权重归一化
 
 代码：
 
@@ -936,7 +936,7 @@ exp_weights =
 
 所以：
 
-\[
+$$
 \alpha_i
 =
 \frac{
@@ -944,17 +944,17 @@ e^{-mi}
 }{
 \sum_j e^{-mj}
 }
-\]
+$$
 
 满足：
 
-\[
+$$
 \sum_i\alpha_i=1
-\]
+$$
 
 然后：
 
-\[
+$$
 \boxed{
 \tilde a_t
 =
@@ -962,7 +962,7 @@ e^{-mi}
 \alpha_i
 A_t[i]
 }
-\]
+$$
 
 这一步仍然发生在：
 
@@ -972,33 +972,33 @@ A_t[i]
 
 ---
 
-# 19. 为什么 Older Prediction 权重反而更大？
+## 19. 为什么 Older Prediction 权重反而更大？
 
 ACT 原论文明确规定：
 
-\[
+$$
 w_0
-\]
+$$
 
 对应 oldest prediction，
 
 而：
 
-\[
+$$
 w_i=e^{-mi}
-\]
+$$
 
 因此：
 
-\[
+$$
 w_0>w_1>w_2>\cdots
-\]
+$$
 
 只要：
 
-\[
+$$
 m>0
-\]
+$$
 
 这一点确实有些反直觉。
 
@@ -1010,7 +1010,7 @@ m>0
 
 论文明确说的是：
 
-> \(m\) 控制吸收新 observation 的速度，较小 \(m\) 意味着更快吸收新 observation。
+> $m$ 控制吸收新 observation 的速度，较小 $m$ 意味着更快吸收新 observation。
 
 因此不要替论文发明：
 
@@ -1024,7 +1024,7 @@ m>0
 
 ---
 
-# 20. 重要：Temporal Ensemble 平均的是 Normalized Actions
+## 20. 重要：Temporal Ensemble 平均的是 Normalized Actions
 
 官方 sequence：
 
@@ -1044,9 +1044,9 @@ policy output 仍然在：
 
 只有 Temporal Ensemble 得到当前：
 
-\[
+$$
 raw\_action
-\]
+$$
 
 之后，
 
@@ -1059,7 +1059,7 @@ action =
 
 也就是：
 
-\[
+$$
 \boxed{
 a_t
 =
@@ -1068,69 +1068,69 @@ a_t
 +
 \mu_a
 }
-\]
+$$
 
 恢复真实 joint target units。
 
 ---
 
-# 21. 在这种线性 Normalization 下，先平均再反归一化其实等价于先反归一化再平均
+## 21. 在这种线性 Normalization 下，先平均再反归一化其实等价于先反归一化再平均
 
 因为：
 
-\[
+$$
 post(a)
 =
 a\odot\sigma+\mu
-\]
+$$
 
 是 affine transformation。
 
 假设：
 
-\[
+$$
 \sum_i\alpha_i=1
-\]
+$$
 
 那么：
 
-\[
+$$
 post\left(
 \sum_i\alpha_i a_i
 \right)
-\]
+$$
 
 等于：
 
-\[
+$$
 \left(
 \sum_i\alpha_i a_i
 \right)\sigma+\mu
-\]
+$$
 
 而：
 
-\[
+$$
 \sum_i
 \alpha_i
 (a_i\sigma+\mu)
-\]
+$$
 
 等于：
 
-\[
+$$
 \sigma
 \sum_i\alpha_i a_i
 +
 \mu
 \sum_i\alpha_i
-\]
+$$
 
 由于：
 
-\[
+$$
 \sum_i\alpha_i=1
-\]
+$$
 
 得到同样结果。
 
@@ -1142,19 +1142,19 @@ post\left(
 
 ---
 
-# 22. 得到 Current Action 后，才真正发送给环境
+## 22. 得到 Current Action 后，才真正发送给环境
 
 Temporal Ensemble 最终产生：
 
-\[
+$$
 raw\_action
 \in
 \mathbb R^{14}
-\]
+$$
 
 反 normalization：
 
-\[
+$$
 target\_qpos
 =
 raw\_action
@@ -1162,7 +1162,7 @@ raw\_action
 \sigma_a
 +
 \mu_a
-\]
+$$
 
 然后：
 
@@ -1181,27 +1181,27 @@ ts =
 
 虽然 policy 一次预测了：
 
-\[
+$$
 k
-\]
+$$
 
 个 actions，
 
 Temporal Ensemble 模式下此时只执行：
 
-\[
+$$
 \boxed{
 a_t
 }
-\]
+$$
 
 下一 timestep 会重新观察，再重新预测整个 chunk。
 
 ---
 
-# 23. 这就是 Receding-Horizon 风格的 Closed Loop
+## 23. 这就是 Receding-Horizon 风格的 Closed Loop
 
-在 \(t\)：
+在 $t$：
 
 ```text
 看当前 observation
@@ -1213,9 +1213,9 @@ a_t
 
 执行：
 
-\[
+$$
 a_t
-\]
+$$
 
 后：
 
@@ -1223,9 +1223,9 @@ a_t
 
 于是到了：
 
-\[
+$$
 t+1
-\]
+$$
 
 重新：
 
@@ -1247,93 +1247,93 @@ t+1
 
 ---
 
-# 24. 一个完整 k=4 Rollout
+## 24. 一个完整 k=4 Rollout
 
 假设：
 
-\[
+$$
 k=4
-\]
+$$
 
 ---
 
-## t = 0
+### t = 0
 
 观察：
 
-\[
+$$
 o_0
-\]
+$$
 
 normalize qpos。
 
 令：
 
-\[
+$$
 z=0
-\]
+$$
 
 policy：
 
-\[
+$$
 [
 \hat a_0^{(0)},
 \hat a_1^{(0)},
 \hat a_2^{(0)},
 \hat a_3^{(0)}
 ]
-\]
+$$
 
 当前只有：
 
-\[
+$$
 \hat a_0^{(0)}
-\]
+$$
 
 所以执行：
 
-\[
+$$
 a_0
 =
 \hat a_0^{(0)}
-\]
+$$
 
 ---
 
-## t = 1
+### t = 1
 
 得到新 observation：
 
-\[
+$$
 o_1
-\]
+$$
 
 重新 forward：
 
-\[
+$$
 [
 \hat a_1^{(1)},
 \hat a_2^{(1)},
 \hat a_3^{(1)},
 \hat a_4^{(1)}
 ]
-\]
+$$
 
-现在针对 \(t=1\) 有：
+现在针对 $t=1$ 有：
 
-\[
+$$
 \hat a_1^{(0)}
-\]
+$$
 
 和：
 
-\[
+$$
 \hat a_1^{(1)}
-\]
+$$
 
 Temporal Ensemble：
 
-\[
+$$
 a_1
 =
 \alpha_0
@@ -1341,34 +1341,34 @@ a_1
 +
 \alpha_1
 \hat a_1^{(1)}
-\]
+$$
 
 执行。
 
 ---
 
-## t = 2
+### t = 2
 
 重新观察：
 
-\[
+$$
 o_2
-\]
+$$
 
 新 chunk：
 
-\[
+$$
 [
 \hat a_2^{(2)},
 \hat a_3^{(2)},
 \hat a_4^{(2)},
 \hat a_5^{(2)}
 ]
-\]
+$$
 
 当前：
 
-\[
+$$
 a_2
 =
 \alpha_0\hat a_2^{(0)}
@@ -1376,75 +1376,75 @@ a_2
 \alpha_1\hat a_2^{(1)}
 +
 \alpha_2\hat a_2^{(2)}
-\]
+$$
 
 执行。
 
 ---
 
-## t = 3
+### t = 3
 
 又重新 query。
 
 现在有 4 个 prediction：
 
-\[
+$$
 \hat a_3^{(0)},
 \hat a_3^{(1)},
 \hat a_3^{(2)},
 \hat a_3^{(3)}
-\]
+$$
 
 weighted average 后执行。
 
 从这里开始，在 episode 中间：
 
-> 当前 timestep 通常最多有 \(k\) 个 action predictions。
+> 当前 timestep 通常最多有 $k$ 个 action predictions。
 
 ---
 
-# 25. 当前 Timestep 最多有多少个 Candidate Actions？
+## 25. 当前 Timestep 最多有多少个 Candidate Actions？
 
 episode 从：
 
-\[
+$$
 t=0
-\]
+$$
 
 开始。
 
 chunk size：
 
-\[
+$$
 k
-\]
+$$
 
 则当前 timestep：
 
-\[
+$$
 t
-\]
+$$
 
 被以下 query 覆盖：
 
-\[
+$$
 j
 \in
 [
 \max(0,t-k+1),
 t
 ]
-\]
+$$
 
 所以 candidate 数量：
 
-\[
+$$
 \boxed{
 N_t
 =
 \min(k,t+1)
 }
-\]
+$$
 
 因此：
 
@@ -1460,13 +1460,13 @@ t=k-1   → k 个
 
 ---
 
-# 26. 为什么不是使用 Future Chunk 中最新那个 Action？
+## 26. 为什么不是使用 Future Chunk 中最新那个 Action？
 
 一个简单方法是始终执行：
 
-\[
+$$
 \hat a_t^{(t)}
-\]
+$$
 
 也就是最新 observation 产生的 prediction。
 
@@ -1482,9 +1482,9 @@ t=k-1   → k 个
 
 论文实验中 Temporal Ensemble 对 ACT 平均带来约：
 
-\[
+$$
 3.3\%
-\]
+$$
 
 的性能提升。
 
@@ -1492,27 +1492,27 @@ t=k-1   → k 个
 
 ---
 
-# 27. 为什么 Temporal Ensemble 不是普通 Action Smoothing？
+## 27. 为什么 Temporal Ensemble 不是普通 Action Smoothing？
 
 普通 smoothing 可能平均：
 
-\[
+$$
 a_{t-1},a_t,a_{t+1}
-\]
+$$
 
 它们本来对应不同实际时刻。
 
 ACT 平均：
 
-\[
+$$
 \hat a_t^{(t-k+1)},
 \ldots,
 \hat a_t^{(t)}
-\]
+$$
 
 全部都在回答：
 
-> **同一个实际 timestep \(t\)，应该执行什么？**
+> **同一个实际 timestep $t$，应该执行什么？**
 
 所以它不会直接把：
 
@@ -1524,17 +1524,17 @@ ACT 平均：
 
 ---
 
-# 28. 一个关键区别：Policy Prediction Time 和 Execution Time
+## 28. 一个关键区别：Policy Prediction Time 和 Execution Time
 
 学习 ACT inference 最容易混的就是两个“时间”。
 
 必须区分：
 
-## Query / Prediction Time
+### Query / Prediction Time
 
-\[
+$$
 j
-\]
+$$
 
 表示：
 
@@ -1542,11 +1542,11 @@ j
 
 ---
 
-## Execution Time
+### Execution Time
 
-\[
+$$
 t
-\]
+$$
 
 表示：
 
@@ -1554,13 +1554,13 @@ t
 
 所以：
 
-\[
+$$
 \hat a_t^{(j)}
-\]
+$$
 
 表示：
 
-> 在时间 \(j\) 预测的、要在时间 \(t\) 执行的 action。
+> 在时间 $j$ 预测的、要在时间 $t$ 执行的 action。
 
 只要把这两个 index 分清，
 
@@ -1568,7 +1568,7 @@ Temporal Ensemble 就不再混乱。
 
 ---
 
-# 29. 为什么每一步都重新 Prediction 还保留 Action Chunking 的意义？
+## 29. 为什么每一步都重新 Prediction 还保留 Action Chunking 的意义？
 
 有人会问：
 
@@ -1578,17 +1578,17 @@ Temporal Ensemble 就不再混乱。
 
 因为模型每次 forward 学习和输出的对象仍然是：
 
-\[
+$$
 \boxed{
 a_{t:t+k}
 }
-\]
+$$
 
 而不是：
 
-\[
+$$
 a_t
-\]
+$$
 
 也就是说：
 
@@ -1598,9 +1598,9 @@ Transformer decoder 中不同未来 action slots 还会互相 self-attend。
 
 因此当前 action：
 
-\[
+$$
 \hat a_t^{(t)}
-\]
+$$
 
 并不是一个 single-step model 独立预测的结果。
 
@@ -1610,7 +1610,7 @@ Transformer decoder 中不同未来 action slots 还会互相 self-attend。
 
 ---
 
-# 30. Action Chunking 的“有效 Horizon”与 Every-Step Query 并不矛盾
+## 30. Action Chunking 的“有效 Horizon”与 Every-Step Query 并不矛盾
 
 Action Chunking 改变的是：
 
@@ -1618,15 +1618,15 @@ Action Chunking 改变的是：
 
 从：
 
-\[
+$$
 a_t
-\]
+$$
 
 变成：
 
-\[
+$$
 a_{t:t+k}
-\]
+$$
 
 Temporal Ensemble 则改变：
 
@@ -1654,13 +1654,13 @@ Inference:
 
 ---
 
-# 31. Inference 时 z=0 会不会每个 Timestep 都重新创建？
+## 31. Inference 时 z=0 会不会每个 Timestep 都重新创建？
 
 概念上：
 
-\[
+$$
 z_t=0
-\]
+$$
 
 对每个 timestep 都一样。
 
@@ -1683,33 +1683,33 @@ torch.zeros(
 
 而不是：
 
-\[
+$$
 z
-\]
+$$
 
 ---
 
-# 32. 所以 Policy 为什么仍然会每一步输出不同动作？
+## 32. 所以 Policy 为什么仍然会每一步输出不同动作？
 
 因为：
 
-\[
+$$
 \pi_\theta(a\mid o_t,z=0)
-\]
+$$
 
 虽然：
 
-\[
+$$
 z
-\]
+$$
 
 固定，
 
 但 observation：
 
-\[
+$$
 o_t
-\]
+$$
 
 不断变化。
 
@@ -1722,23 +1722,23 @@ o_t
 
 于是：
 
-\[
+$$
 o_t\neq o_{t+1}
-\]
+$$
 
 因此：
 
-\[
+$$
 \pi(o_t,0)
 \neq
 \pi(o_{t+1},0)
-\]
+$$
 
 完全正常。
 
 ---
 
-# 33. Inference 时为什么还需要 Image Normalization？
+## 33. Inference 时为什么还需要 Image Normalization？
 
 因为 ResNet18 training 时看到的是：
 
@@ -1770,13 +1770,13 @@ ImageNet normalization
 
 ---
 
-# 34. Action 为什么必须 De-normalize？
+## 34. Action 为什么必须 De-normalize？
 
 policy 输出：
 
-\[
+$$
 raw\_action
-\]
+$$
 
 不是直接的 physical target joint positions。
 
@@ -1784,7 +1784,7 @@ raw\_action
 
 因此必须：
 
-\[
+$$
 \boxed{
 a_{\mathrm{physical}}
 =
@@ -1794,7 +1794,7 @@ a_{\mathrm{norm}}
 +
 \mu_a
 }
-\]
+$$
 
 如果忘记 post-process，
 
@@ -1808,7 +1808,7 @@ a_{\mathrm{norm}}
 
 ---
 
-# 35. Target Joint Position 后发生什么？
+## 35. Target Joint Position 后发生什么？
 
 论文定义 action：
 
@@ -1844,31 +1844,31 @@ ACT 位于：
 
 ---
 
-# 36. ACT 的 Control Loop 是多少 Hz？
+## 36. ACT 的 Control Loop 是多少 Hz？
 
 论文中的 ALOHA teleoperation / control 数据以：
 
-\[
+$$
 50\text{ Hz}
-\]
+$$
 
 高频运行。
 
 时间间隔：
 
-\[
+$$
 \Delta t
 =
 \frac1{50}
 =
 0.02\text{ s}
-\]
+$$
 
 所以每：
 
-\[
+$$
 20\text{ ms}
-\]
+$$
 
 大约一个 timestep。
 
@@ -1878,21 +1878,21 @@ ACT 位于：
 
 它甚至专门做了：
 
-\[
+$$
 50\text{ Hz}
-\]
+$$
 
 对：
 
-\[
+$$
 5\text{ Hz}
-\]
+$$
 
 的用户实验。
 
 ---
 
-# 37. 但论文 Policy Inference 本身报告约 0.01 秒
+## 37. 但论文 Policy Inference 本身报告约 0.01 秒
 
 ACT 论文报告：
 
@@ -1900,15 +1900,15 @@ ACT 论文报告：
 
 也就是约：
 
-\[
+$$
 10\text{ ms}
-\]
+$$
 
 这比：
 
-\[
+$$
 20\text{ ms}
-\]
+$$
 
 的 50 Hz control interval 更短。
 
@@ -1928,7 +1928,7 @@ ACT 论文报告：
 
 ---
 
-# 38. 官方 Evaluation 为什么使用 torch.inference_mode()？
+## 38. 官方 Evaluation 为什么使用 torch.inference_mode()？
 
 代码：
 
@@ -1966,7 +1966,7 @@ torch.inference_mode()
 
 ---
 
-# 39. 为什么 Load Best Validation Checkpoint 后还要 set_seed？
+## 39. 为什么 Load Best Validation Checkpoint 后还要 set_seed？
 
 官方 evaluation 会：
 
@@ -1984,9 +1984,9 @@ set_seed(1000)
 
 ACT policy 自己因为：
 
-\[
+$$
 z=0
-\]
+$$
 
 而不再引入 latent sampling stochasticity。
 
@@ -2000,7 +2000,7 @@ policy mapping 是 deterministic 的。
 
 ---
 
-# 40. 真实环境当然仍然不是完全 Deterministic
+## 40. 真实环境当然仍然不是完全 Deterministic
 
 论文说：
 
@@ -2023,59 +2023,59 @@ policy mapping 是 deterministic 的。
 
 ACT 的 deterministic 只表示：
 
-\[
+$$
 o
-\]
+$$
 
 固定时：
 
-> 不会因为随机采 \(z\) 而额外得到不同 action chunk。
+> 不会因为随机采 $z$ 而额外得到不同 action chunk。
 
 ---
 
-# 41. 没有 Temporal Ensemble 时为什么 Query Frequency = k？
+## 41. 没有 Temporal Ensemble 时为什么 Query Frequency = k？
 
 因为一条 chunk 本身就有：
 
-\[
+$$
 k
-\]
+$$
 
 个 actions。
 
 query 在：
 
-\[
+$$
 t=0
-\]
+$$
 
 得到：
 
-\[
+$$
 a_0,\ldots,a_{k-1}
-\]
+$$
 
 接下来可以依次执行。
 
 直到：
 
-\[
+$$
 t=k
-\]
+$$
 
 才需要新 chunk。
 
 所以：
 
-\[
+$$
 query\_frequency=k
-\]
+$$
 
 就是最直接 naive chunk execution。
 
 ---
 
-# 42. Temporal Ensemble 时为什么 Query Frequency 必须 = 1？
+## 42. Temporal Ensemble 时为什么 Query Frequency 必须 = 1？
 
 要让同一个 timestep 有多个 overlapping predictions，
 
@@ -2083,9 +2083,9 @@ query\_frequency=k
 
 如果每：
 
-\[
+$$
 k
-\]
+$$
 
 步才 query：
 
@@ -2107,45 +2107,45 @@ k ... 2k-1
 
 所以 Temporal Ensemble 的前提就是：
 
-\[
+$$
 \boxed{
 query\ every\ timestep
 }
-\]
+$$
 
 ---
 
-# 43. Temporal Ensemble 会让 Policy Forward 数量增加多少？
+## 43. Temporal Ensemble 会让 Policy Forward 数量增加多少？
 
 naive chunk execution：
 
-\[
+$$
 T/k
-\]
+$$
 
 次左右 policy queries。
 
 Temporal Ensemble：
 
-\[
+$$
 T
-\]
+$$
 
 次 policy queries。
 
 因此 forward 次数大约增加：
 
-\[
+$$
 k
-\]
+$$
 
 倍。
 
 如果：
 
-\[
+$$
 k=100
-\]
+$$
 
 这是非常显著的 inference compute 增加。
 
@@ -2155,7 +2155,7 @@ k=100
 
 ---
 
-# 44. 但不能把这个 k 倍简单等同于实际 wall-clock 慢 k 倍
+## 44. 但不能把这个 k 倍简单等同于实际 wall-clock 慢 k 倍
 
 因为真实系统还存在：
 
@@ -2168,7 +2168,7 @@ k=100
 
 所以只能说：
 
-> policy forward 的调用次数从约 \(T/k\) 变成 \(T\)。
+> policy forward 的调用次数从约 $T/k$ 变成 $T$。
 
 不能在没有 benchmark 的情况下直接说：
 
@@ -2176,25 +2176,25 @@ k=100
 
 ---
 
-# 45. Buffer 为什么开成 max_timesteps × (max_timesteps + k)？
+## 45. Buffer 为什么开成 max_timesteps × (max_timesteps + k)？
 
 因为第：
 
-\[
+$$
 t
-\]
+$$
 
 个 query 会预测到：
 
-\[
+$$
 t+k-1
-\]
+$$
 
 所以 execution-time 轴必须比：
 
-\[
+$$
 T
-\]
+$$
 
 再长一些，
 
@@ -2220,23 +2220,23 @@ T
 
 论文 Algorithm 2 把它抽象成：
 
-> FIFO buffers \(\mathcal B[0:T]\)。
+> FIFO buffers $\mathcal B[0:T]$。
 
 ---
 
-# 46. 为什么论文说 FIFO Buffer，而代码是大 Tensor？
+## 46. 为什么论文说 FIFO Buffer，而代码是大 Tensor？
 
 它们表达的是同一逻辑。
 
 论文层面：
 
-\[
+$$
 \mathcal B[t]
-\]
+$$
 
 存：
 
-> 所有预测 execution timestep \(t\) 的 actions。
+> 所有预测 execution timestep $t$ 的 actions。
 
 代码层面：
 
@@ -2246,7 +2246,7 @@ all_time_actions[:, t]
 
 就是：
 
-> 当前 \(t\) 的所有 predictions。
+> 当前 $t$ 的所有 predictions。
 
 所以：
 
@@ -2264,7 +2264,7 @@ all_time_actions matrix
 
 ---
 
-# 47. Inference 时 Padding 不再出现吗？
+## 47. Inference 时 Padding 不再出现吗？
 
 training target padding 不再需要。
 
@@ -2274,9 +2274,9 @@ training target padding 不再需要。
 
 policy 永远直接输出固定：
 
-\[
+$$
 k
-\]
+$$
 
 个 actions。
 
@@ -2288,14 +2288,14 @@ episode 最后几步时：
 
 ---
 
-# 48. Inference 时还有 KL Loss 吗？
+## 48. Inference 时还有 KL Loss 吗？
 
 没有。
 
 test time：
 
 - 没有 training posterior；
-- 不计算 \(\mu,\sigma\)；
+- 不计算 $\mu,\sigma$；
 - 不计算 reconstruction；
 - 不计算 KL；
 - 不 backward；
@@ -2303,11 +2303,11 @@ test time：
 
 只做：
 
-\[
+$$
 \boxed{
 \text{forward + action selection}
 }
-\]
+$$
 
 因此不要把：
 
@@ -2321,15 +2321,15 @@ test time：
 
 ---
 
-# 49. Inference 时 ResNet 和 Transformer 参数还更新吗？
+## 49. Inference 时 ResNet 和 Transformer 参数还更新吗？
 
 不更新。
 
 所有参数：
 
-\[
+$$
 \theta
-\]
+$$
 
 固定。
 
@@ -2355,7 +2355,7 @@ actions
 
 ---
 
-# 50. 一个完整官方式 Pseudocode
+## 50. 一个完整官方式 Pseudocode
 
 ```python
 load_best_checkpoint()
@@ -2421,7 +2421,7 @@ for t in range(T):
 
 ---
 
-# 51. 如果关闭 Temporal Ensemble，Pseudocode 会怎样？
+## 51. 如果关闭 Temporal Ensemble，Pseudocode 会怎样？
 
 ```python
 for t in range(T):
@@ -2446,7 +2446,7 @@ for t in range(T):
 
 ---
 
-# 52. 为什么论文 Algorithm 2 只写 Temporal Ensemble 版本？
+## 52. 为什么论文 Algorithm 2 只写 Temporal Ensemble 版本？
 
 因为 Algorithm 2 描述的是：
 
@@ -2472,11 +2472,11 @@ released code 保留：
 
 ---
 
-# 53. ACT Inference 的真正 Closed-Loop 在哪里？
+## 53. ACT Inference 的真正 Closed-Loop 在哪里？
 
 “Closed-loop”意味着：
 
-\[
+$$
 \text{action}
 \rightarrow
 \text{environment changes}
@@ -2484,7 +2484,7 @@ released code 保留：
 \text{new observation}
 \rightarrow
 \text{new action}
-\]
+$$
 
 ACT Temporal Ensemble 模式：
 
@@ -2510,23 +2510,23 @@ execute aₜ₊₁
 
 ---
 
-# 54. 为什么仅预测 Chunk 还不够？
+## 54. 为什么仅预测 Chunk 还不够？
 
 因为机器人实际执行永远存在误差：
 
-\[
+$$
 q_{t+1}^{\text{actual}}
 \neq
 q_{t+1}^{\text{predicted ideal}}
-\]
+$$
 
 物体也可能因为 contact 产生偏移。
 
 所以如果完全 open-loop 地执行：
 
-\[
+$$
 a_t,\ldots,a_{t+k-1}
-\]
+$$
 
 后半段 prediction 的前提可能已经不成立。
 
@@ -2536,7 +2536,7 @@ every-step re-query 允许：
 
 ---
 
-# 55. 为什么不干脆变回 Single-Step Prediction？
+## 55. 为什么不干脆变回 Single-Step Prediction？
 
 因为 action chunk 仍提供：
 
@@ -2561,51 +2561,51 @@ Temporal Ensemble 就是连接两者的 execution rule。
 
 ---
 
-# 56. Inference 中最核心的三个时间尺度
+## 56. Inference 中最核心的三个时间尺度
 
 可以把 ACT 看成有三层时间尺度。
 
-## 1. Physical Control Timestep
+### 1. Physical Control Timestep
 
 每一步：
 
-\[
+$$
 t\rightarrow t+1
-\]
+$$
 
 机器人执行一个 14-D target。
 
 ---
 
-## 2. Action Chunk Horizon
+### 2. Action Chunk Horizon
 
 一次 policy forward 预测：
 
-\[
+$$
 k
-\]
+$$
 
 步未来。
 
 ---
 
-## 3. Episode Horizon
+### 3. Episode Horizon
 
 整个任务：
 
-\[
+$$
 T
-\]
+$$
 
 个 timesteps。
 
 ACT 的核心就是：
 
-> 在长度 \(T\) 的任务里，不断滚动长度 \(k\) 的局部 future plan。
+> 在长度 $T$ 的任务里，不断滚动长度 $k$ 的局部 future plan。
 
 ---
 
-# 57. ACT 的 Inference 很像 MPC 吗？
+## 57. ACT 的 Inference 很像 MPC 吗？
 
 在高层直觉上有一点像：
 
@@ -2647,7 +2647,7 @@ ACT：
 
 ---
 
-# 58. 真实机器人和 Simulation 的 Rollout 有什么共同点？
+## 58. 真实机器人和 Simulation 的 Rollout 有什么共同点？
 
 无论 sim 还是真机：
 
@@ -2677,7 +2677,7 @@ ACT policy 本身不需要知道：
 
 ---
 
-# 59. Simulation 中 Success Rate 怎样计算？
+## 59. Simulation 中 Success Rate 怎样计算？
 
 official eval：
 
@@ -2692,17 +2692,17 @@ episode_highest_reward =
 
 如果：
 
-\[
+$$
 episode\_highest\_reward
 =
 env\_max\_reward
-\]
+$$
 
 就算 success。
 
 最后：
 
-\[
+$$
 \boxed{
 success\ rate
 =
@@ -2712,13 +2712,13 @@ success\ rate
 \text{num rollouts}
 }
 }
-\]
+$$
 
 默认 simulation evaluation：
 
-\[
+$$
 50
-\]
+$$
 
 个 rollouts。
 
@@ -2728,15 +2728,15 @@ success\ rate
 
 ---
 
-# 60. 真机上为什么没有同样的 Reward？
+## 60. 真机上为什么没有同样的 Reward？
 
 真实世界环境通常没有一个完美自动 reward function。
 
 official real-robot branch：
 
-\[
+$$
 env\_max\_reward=0
-\]
+$$
 
 真实任务 success 往往需要：
 
@@ -2754,7 +2754,7 @@ env\_max\_reward=0
 
 ---
 
-# 61. Inference 时为什么只输出 qpos，不输出 qvel？
+## 61. Inference 时为什么只输出 qpos，不输出 qvel？
 
 虽然 dataset 文件可以包含：
 
@@ -2783,7 +2783,7 @@ obs['qpos']
 
 ---
 
-# 62. Temporal Ensemble 的 m 在官方实现是多少？
+## 62. Temporal Ensemble 的 m 在官方实现是多少？
 
 official eval：
 
@@ -2795,35 +2795,35 @@ k = 0.01
 
 对应论文：
 
-\[
+$$
 \boxed{
 m=0.01
 }
-\]
+$$
 
 权重：
 
-\[
+$$
 w_i=e^{-0.01i}
-\]
+$$
 
 例如：
 
-\[
+$$
 w_0=1
-\]
+$$
 
-\[
+$$
 w_1\approx0.9900
-\]
+$$
 
-\[
+$$
 w_{10}\approx0.9048
-\]
+$$
 
-\[
+$$
 w_{99}\approx0.3716
-\]
+$$
 
 所以 decay 实际上相当缓慢。
 
@@ -2831,36 +2831,36 @@ newer predictions 仍然保留显著贡献。
 
 ---
 
-# 63. m=0.01 时 k=100 的 Oldest/Newest 权重差多少？
+## 63. m=0.01 时 k=100 的 Oldest/Newest 权重差多少？
 
 如果已有完整：
 
-\[
+$$
 100
-\]
+$$
 
 个 candidate predictions，
 
 oldest：
 
-\[
+$$
 w_0=1
-\]
+$$
 
 newest 对应：
 
-\[
+$$
 i=99
-\]
+$$
 
 所以：
 
-\[
+$$
 w_{99}
 =
 e^{-0.99}
 \approx0.3716
-\]
+$$
 
 也就是说：
 
@@ -2868,10 +2868,10 @@ e^{-0.99}
 
 只是 oldest 的 raw weight 大约是它的：
 
-\[
+$$
 \frac1{0.3716}
 \approx2.69
-\]
+$$
 
 倍。
 
@@ -2879,21 +2879,21 @@ e^{-0.99}
 
 ---
 
-# 64. Temporal Ensemble 有没有学参数？
+## 64. Temporal Ensemble 有没有学参数？
 
 没有。
 
-\[
+$$
 m
-\]
+$$
 
 不是神经网络学出来的。
 
 权重：
 
-\[
+$$
 e^{-mi}
-\]
+$$
 
 是人为设计的 inference rule。
 
@@ -2921,13 +2921,13 @@ Temporal Ensemble Weight
 
 ---
 
-# 65. 一个非常容易混淆的问题：哪个 action 最终被执行？
+## 65. 一个非常容易混淆的问题：哪个 action 最终被执行？
 
 policy output：
 
-\[
+$$
 [\hat a_t,\hat a_{t+1},...]
-\]
+$$
 
 不是全部立刻执行。
 
@@ -2935,19 +2935,19 @@ Temporal Ensemble 模式下：
 
 > 当前 timestep 只执行一个最终 action：
 
-\[
+$$
 \boxed{
 a_t
 }
-\]
+$$
 
 这个：
 
-\[
+$$
 a_t
-\]
+$$
 
-由所有针对 timestep \(t\) 的 chunk predictions 融合得到。
+由所有针对 timestep $t$ 的 chunk predictions 融合得到。
 
 chunk 里的其他 predictions：
 
@@ -2955,35 +2955,35 @@ chunk 里的其他 predictions：
 
 ---
 
-# 66. 旧 Prediction 会保存多久？
+## 66. 旧 Prediction 会保存多久？
 
 一个 query time：
 
-\[
+$$
 j
-\]
+$$
 
 产生：
 
-\[
+$$
 j,j+1,\ldots,j+k-1
-\]
+$$
 
 这些 execution-time predictions。
 
 所以它最多会对未来：
 
-\[
+$$
 k
-\]
+$$
 
 个 timesteps 有贡献。
 
 当真实时间超过：
 
-\[
+$$
 j+k-1
-\]
+$$
 
 这条 chunk 已经无法覆盖当前 timestep，
 
@@ -2991,13 +2991,13 @@ j+k-1
 
 所以 influence window 长度就是：
 
-\[
+$$
 k
-\]
+$$
 
 ---
 
-# 67. 为什么 Buffer 不需要显式删除旧 Chunk？
+## 67. 为什么 Buffer 不需要显式删除旧 Chunk？
 
 因为代码每次只取：
 
@@ -3005,7 +3005,7 @@ k
 all_time_actions[:, t]
 ```
 
-也就是 execution-time column \(t\)。
+也就是 execution-time column $t$。
 
 已经过期的 chunk 在这一列没有值，
 
@@ -3017,73 +3017,73 @@ all_time_actions[:, t]
 
 ---
 
-# 68. Episode 开头为什么 Ensemble 很弱？
+## 68. Episode 开头为什么 Ensemble 很弱？
 
 在：
 
-\[
+$$
 t=0
-\]
+$$
 
 只有 1 个 prediction。
 
 在：
 
-\[
+$$
 t=1
-\]
+$$
 
 只有 2 个。
 
 直到：
 
-\[
+$$
 t=k-1
-\]
+$$
 
 才积累到：
 
-\[
+$$
 k
-\]
+$$
 
 个。
 
 所以 Temporal Ensemble 的稳定 aggregation effect：
 
-> 会在 rollout 开始后的前 \(k\) 步逐渐建立起来。
+> 会在 rollout 开始后的前 $k$ 步逐渐建立起来。
 
 这也是公式：
 
-\[
+$$
 N_t=\min(k,t+1)
-\]
+$$
 
 的物理含义。
 
 ---
 
-# 69. Episode 结束时会执行 Chunk 中超出的部分吗？
+## 69. Episode 结束时会执行 Chunk 中超出的部分吗？
 
 不会。
 
 rollout loop 只运行：
 
-\[
+$$
 t=0,\ldots,T-1
-\]
+$$
 
 所以最后一次 query 可能预测：
 
-\[
+$$
 T-1,\ldots,T+k-2
-\]
+$$
 
 但：
 
-\[
+$$
 T
-\]
+$$
 
 以后 episode 已结束。
 
@@ -3093,7 +3093,7 @@ T
 
 ---
 
-# 70. 为什么 Inference Output 仍然叫 Action Chunk，而不是 Plan？
+## 70. 为什么 Inference Output 仍然叫 Action Chunk，而不是 Plan？
 
 叫 plan 作为直觉没问题。
 
@@ -3109,9 +3109,9 @@ T
 
 它是一个 learned policy 直接回归：
 
-\[
+$$
 k
-\]
+$$
 
 个 future target joint positions。
 
@@ -3123,7 +3123,7 @@ k
 
 ---
 
-# 71. 常见误解一：推理时还要运行 CVAE Encoder
+## 71. 常见误解一：推理时还要运行 CVAE Encoder
 
 **错误。**
 
@@ -3133,69 +3133,69 @@ test time 被完全 discard。
 
 ---
 
-# 72. 常见误解二：推理时 z 从 N(0,I) 随机采样
+## 72. 常见误解二：推理时 z 从 N(0,I) 随机采样
 
 **原始 ACT 不这样做。**
 
 它直接：
 
-\[
+$$
 \boxed{z=0}
-\]
+$$
 
 进行 deterministic decode。
 
 ---
 
-# 73. 常见误解三：一次 Policy Forward 只输出当前 Action
+## 73. 常见误解三：一次 Policy Forward 只输出当前 Action
 
 **错误。**
 
 一次：
 
-\[
+$$
 o_t
-\]
+$$
 
 输入产生：
 
-\[
+$$
 k
-\]
+$$
 
 个 future actions。
 
 ---
 
-# 74. 常见误解四：预测 k 个动作就会全部执行完
+## 74. 常见误解四：预测 k 个动作就会全部执行完
 
 **Temporal Ensemble 模式下错误。**
 
 当前只执行：
 
-\[
+$$
 a_t
-\]
+$$
 
 下一 timestep 会重新 observation + forward。
 
 ---
 
-# 75. 常见误解五：每 timestep forward 等于没有 Action Chunking
+## 75. 常见误解五：每 timestep forward 等于没有 Action Chunking
 
 **错误。**
 
 模型预测对象仍然是：
 
-\[
+$$
 a_{t:t+k}
-\]
+$$
 
 而不是 single-step action。
 
 ---
 
-# 76. 常见误解六：Temporal Ensemble 平均的是相邻实际动作
+## 76. 常见误解六：Temporal Ensemble 平均的是相邻实际动作
 
 **错误。**
 
@@ -3205,7 +3205,7 @@ a_{t:t+k}
 
 ---
 
-# 77. 常见误解七：Temporal Ensemble 在 Physical Joint Units 里做
+## 77. 常见误解七：Temporal Ensemble 在 Physical Joint Units 里做
 
 released implementation 中：
 
@@ -3215,22 +3215,22 @@ released implementation 中：
 
 ---
 
-# 78. 常见误解八：模型输出可以直接发给 Robot
+## 78. 常见误解八：模型输出可以直接发给 Robot
 
 **错误。**
 
 必须先用 training action statistics：
 
-\[
+$$
 a=
 a_{\text{norm}}\sigma_a+\mu_a
-\]
+$$
 
 恢复 physical joint coordinate scale。
 
 ---
 
-# 79. 常见误解九：ACT 直接输出 Motor Torque
+## 79. 常见误解九：ACT 直接输出 Motor Torque
 
 **错误。**
 
@@ -3242,7 +3242,7 @@ a_{\text{norm}}\sigma_a+\mu_a
 
 ---
 
-# 80. 常见误解十：Temporal Ensemble 是 Transformer 的一部分
+## 80. 常见误解十：Temporal Ensemble 是 Transformer 的一部分
 
 **错误。**
 
@@ -3254,7 +3254,7 @@ a_{\text{norm}}\sigma_a+\mu_a
 
 ---
 
-# 81. 常见误解十一：Policy Output Deterministic = Robot World Deterministic
+## 81. 常见误解十一：Policy Output Deterministic = Robot World Deterministic
 
 **错误。**
 
@@ -3266,7 +3266,7 @@ a_{\text{norm}}\sigma_a+\mu_a
 
 ---
 
-# 82. 常见误解十二：不开 Temporal Ensemble 时仍每一步 Query Policy
+## 82. 常见误解十二：不开 Temporal Ensemble 时仍每一步 Query Policy
 
 released original code：
 
@@ -3274,33 +3274,33 @@ released original code：
 
 关闭 temporal aggregation：
 
-\[
+$$
 query\_frequency=k
-\]
+$$
 
 开启：
 
-\[
+$$
 query\_frequency=1
-\]
+$$
 
 这也是 ablation 能比较两种 execution style 的关键。
 
 ---
 
-# 83. 常见误解十三：Temporal Ensemble 权重是训练出来的
+## 83. 常见误解十三：Temporal Ensemble 权重是训练出来的
 
 **错误。**
 
-\[
+$$
 w_i=e^{-mi}
-\]
+$$
 
 是 hand-designed。
 
 ---
 
-# 84. 常见误解十四：Newest Prediction 权重最大
+## 84. 常见误解十四：Newest Prediction 权重最大
 
 按照原论文和官方 code：
 
@@ -3308,15 +3308,15 @@ w_i=e^{-mi}
 
 oldest：
 
-\[
+$$
 i=0
-\]
+$$
 
 权重最大。
 
 ---
 
-# 85. 常见误解十五：Inference 还需要 KL
+## 85. 常见误解十五：Inference 还需要 KL
 
 **错误。**
 
@@ -3326,21 +3326,21 @@ test time 没有 loss。
 
 ---
 
-# 86. 用五步记住 ACT Inference
+## 86. 用五步记住 ACT Inference
 
 如果所有细节最后只留下五步：
 
-## 1. Observe
+### 1. Observe
 
-\[
+$$
 o_t=(images_t,q_t)
-\]
+$$
 
 ---
 
-## 2. Predict Chunk
+### 2. Predict Chunk
 
-\[
+$$
 \boxed{
 \hat A_t
 =
@@ -3348,25 +3348,25 @@ o_t=(images_t,q_t)
 o_t,z=0
 )
 }
-\]
+$$
 
 ---
 
-## 3. Store Overlapping Predictions
+### 3. Store Overlapping Predictions
 
 把：
 
-\[
+$$
 \hat A_t
-\]
+$$
 
 写入未来各 execution timestep 的 buffers。
 
 ---
 
-## 4. Aggregate Current Timestep
+### 4. Aggregate Current Timestep
 
-\[
+$$
 \boxed{
 a_t^{norm}
 =
@@ -3376,13 +3376,13 @@ a_t^{norm}
 \sum_i e^{-mi}
 }
 }
-\]
+$$
 
 ---
 
-## 5. De-normalize and Execute
+### 5. De-normalize and Execute
 
-\[
+$$
 \boxed{
 a_t
 =
@@ -3391,21 +3391,21 @@ a_t^{norm}
 +
 \mu_a
 }
-\]
+$$
 
 发送给 low-level controller。
 
 然后：
 
-\[
+$$
 t\leftarrow t+1
-\]
+$$
 
 重新开始。
 
 ---
 
-# 87. 一张完整 Inference Flow
+## 87. 一张完整 Inference Flow
 
 ```text
                          TIMESTEP t
@@ -3465,7 +3465,7 @@ t\leftarrow t+1
 
 ---
 
-# 88. 训练与推理最后做一次对照
+## 88. 训练与推理最后做一次对照
 
 | | Training | Inference |
 |---|---|---|
@@ -3473,9 +3473,9 @@ t\leftarrow t+1
 | 当前 qpos | 有 | 有 |
 | Ground-truth future actions | 有 | 没有 |
 | CVAE encoder | 使用 | 丢弃 |
-| \(\mu,\log\sigma^2\) | 计算 | 不计算 |
-| \(z\) | posterior sample | \(0\) |
-| Policy 输出 | \(k\) actions | \(k\) actions |
+| $\mu,\log\sigma^2$ | 计算 | 不计算 |
+| $z$ | posterior sample | $0$ |
+| Policy 输出 | $k$ actions | $k$ actions |
 | L1 loss | 有 | 无 |
 | KL loss | 有 | 无 |
 | Backward | 有 | 无 |
@@ -3489,27 +3489,27 @@ t\leftarrow t+1
 
 ---
 
-# 89. 一句话重新理解 ACT Inference
+## 89. 一句话重新理解 ACT Inference
 
-> **ACT 推理时在每个 timestep 读取最新多视角图像和 joint state，用训练时保存的 statistics 做相同 preprocessing，固定 latent \(z=0\)，一次预测未来 \(k\) 个 normalized target-joint actions；最终 ACT 每一步都会重新 query policy，使 chunks 相互重叠，再用指数权重融合所有针对当前 execution timestep 的 predictions，随后把结果反归一化成真实 14-D target joint positions，交给底层 PID 执行，并根据执行后的新 observation 进入下一轮闭环。**
+> **ACT 推理时在每个 timestep 读取最新多视角图像和 joint state，用训练时保存的 statistics 做相同 preprocessing，固定 latent $z=0$，一次预测未来 $k$ 个 normalized target-joint actions；最终 ACT 每一步都会重新 query policy，使 chunks 相互重叠，再用指数权重融合所有针对当前 execution timestep 的 predictions，随后把结果反归一化成真实 14-D target joint positions，交给底层 PID 执行，并根据执行后的新 observation 进入下一轮闭环。**
 
 这就是从：
 
-\[
+$$
 \text{camera pixels}
-\]
+$$
 
 到：
 
-\[
+$$
 \text{robot motion}
-\]
+$$
 
 的完整 test-time loop。
 
 ---
 
-# 90. 下一步：把 ACT 从头到尾连成一个完整 Data Flow
+## 90. 下一步：把 ACT 从头到尾连成一个完整 Data Flow
 
 现在我们已经分别理解：
 
@@ -3539,9 +3539,9 @@ Inference
 
 而是拿一个具体例子：
 
-\[
+$$
 k=4
-\]
+$$
 
 从：
 
@@ -3581,7 +3581,7 @@ k=4
 
 ---
 
-## Primary Source
+### Primary Source
 
 Tony Z. Zhao, Vikash Kumar, Sergey Levine, Chelsea Finn.  
 **Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware.**  
@@ -3601,7 +3601,7 @@ Robotics: Science and Systems (RSS), 2023.
 
 Algorithm 2 的核心过程是：
 
-\[
+$$
 \hat a_{t:t+k}
 \sim
 \pi_\theta(
@@ -3609,13 +3609,13 @@ Algorithm 2 的核心过程是：
 \mid
 o_t,z=0
 )
-\]
+$$
 
 将这些预测加入各 execution timestep buffer，
 
 再：
 
-\[
+$$
 a_t
 =
 \frac{
@@ -3623,25 +3623,25 @@ a_t
 }{
 \sum_iw_i
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 w_i=e^{-mi}
-\]
+$$
 
 且：
 
-\[
+$$
 w_0
-\]
+$$
 
 对应 oldest prediction。
 
 ---
 
-## Official Implementation
+### Official Implementation
 
 ACT official repository:
 
@@ -3674,9 +3674,9 @@ released evaluation implementation 可确认：
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### ACT 主线
+#### ACT 主线
 
 - [ACT 到底解决了什么问题？](./act-what-problem-does-it-solve.md)
 - [Action Chunking](./action-chunking.md)
@@ -3686,18 +3686,18 @@ released evaluation implementation 可确认：
 - [ACT Architecture](./architecture.md)
 - [ACT Training](./training.md)
 
-### Robot Control
+#### Robot Control
 
 - Joint Position
 - PID Controller
 - Closed-Loop Control
 - Model Predictive Control
 
-### Deep Learning
+#### Deep Learning
 
 - Normalization
 - [Transformer](../../deep-learning/transformer.md)
 
-### 下一步
+#### 下一步
 
 - [ACT Complete Data Flow](./complete-data-flow.md)

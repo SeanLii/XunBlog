@@ -43,19 +43,19 @@ action chunk
 
 > `[CLS]` 为什么能“读懂”整段动作？
 
-> 为什么 `[CLS]` 后面接一个 Linear 就能得到 \(\mu\) 和 \(\sigma^2\)？
+> 为什么 `[CLS]` 后面接一个 Linear 就能得到 $\mu$ 和 $\sigma^2$？
 
-> \(z\) 是随机采出来的，为什么还能帮助 decoder 预测正确动作？
+> $z$ 是随机采出来的，为什么还能帮助 decoder 预测正确动作？
 
-> 为什么训练时 \(z\) 来自 encoder，推理时 encoder 却被直接删掉？
+> 为什么训练时 $z$ 来自 encoder，推理时 encoder 却被直接删掉？
 
-> 为什么推理不是从 \(\mathcal N(0,I)\) 随机采样，而是直接令：
+> 为什么推理不是从 $\mathcal N(0,I)$ 随机采样，而是直接令：
 
-\[
+$$
 z=0
-\]
+$$
 
-> 既然推理时永远 \(z=0\)，训练这个 CVAE 到底有什么意义？
+> 既然推理时永远 $z=0$，训练这个 CVAE 到底有什么意义？
 
 这一篇不再泛泛解释 CVAE。
 
@@ -65,7 +65,7 @@ z=0
 
 ---
 
-# 1. 先回答：ACT 为什么要有 CVAE？
+## 1. 先回答：ACT 为什么要有 CVAE？
 
 先回到论文提出的问题。
 
@@ -87,21 +87,21 @@ ACT 要从 human demonstrations 学习机器人动作。
 
 所以 ACT 不希望把 human demonstration 简单看成：
 
-\[
+$$
 o_t
 \longrightarrow
 \text{唯一的 action chunk}
-\]
+$$
 
 而是希望学习：
 
-\[
+$$
 p(
 a_{t:t+k}
 \mid
 o_t
 )
-\]
+$$
 
 即：
 
@@ -113,31 +113,31 @@ o_t
 
 ---
 
-# 2. 在 ACT 里，CVAE 的三个变量分别是什么？
+## 2. 在 ACT 里，CVAE 的三个变量分别是什么？
 
 把一般 CVAE 的符号映射到 ACT。
 
 一般 CVAE：
 
-\[
+$$
 p(y\mid c)
-\]
+$$
 
 其中：
 
-- \(c\)：condition
-- \(y\)：output
-- \(z\)：latent variable
+- $c$：condition
+- $y$：output
+- $z$：latent variable
 
 在 ACT 中：
 
-### Condition
+#### Condition
 
-\[
+$$
 c
 =
 o_t
-\]
+$$
 
 即当前 observation。
 
@@ -148,23 +148,23 @@ o_t
 
 ---
 
-### Output
+#### Output
 
-\[
+$$
 y
 =
 a_{t:t+k}
-\]
+$$
 
 即未来的 action chunk。
 
 ---
 
-### Latent Variable
+#### Latent Variable
 
-\[
+$$
 z
-\]
+$$
 
 论文称为：
 
@@ -174,7 +174,7 @@ z
 
 因此 ACT 从高层上是在建模：
 
-\[
+$$
 \boxed{
 p_\theta(
 a_{t:t+k}
@@ -182,66 +182,66 @@ a_{t:t+k}
 o_t
 )
 }
-\]
+$$
 
-并通过 latent \(z\) 写成类似：
+并通过 latent $z$ 写成类似：
 
-\[
+$$
 p_\theta(
 a_{t:t+k}
 \mid
 o_t,z
 )
-\]
+$$
 
 ---
 
-# 3. 但 ACT 并没有完全照搬原始 CVAE
+## 3. 但 ACT 并没有完全照搬原始 CVAE
 
 在一般 CVAE 中，我们可以有：
 
-\[
+$$
 p_\theta(z\mid c)
-\]
+$$
 
 即 conditional prior。
 
 但 ACT 没有单独学习一个：
 
-\[
+$$
 p_\theta(z\mid o_t)
-\]
+$$
 
 它使用固定 prior：
 
-\[
+$$
 \boxed{
 p(z)=\mathcal N(0,I)
 }
-\]
+$$
 
 训练时 approximate posterior：
 
-\[
+$$
 q_\phi(
 z
 \mid
 a_{t:t+k},
 \bar o_t
 )
-\]
+$$
 
 被 KL regularize toward：
 
-\[
+$$
 \mathcal N(0,I)
-\]
+$$
 
 这里：
 
-\[
+$$
 \bar o_t
-\]
+$$
 
 表示：
 
@@ -255,35 +255,35 @@ a_{t:t+k},
 
 ---
 
-# 4. 为什么 Encoder 不是 q(z | observation, actions) 的完整 observation？
+## 4. 为什么 Encoder 不是 q(z | observation, actions) 的完整 observation？
 
 论文 Algorithm 1 写：
 
-\[
+$$
 q_\phi(
 z
 \mid
 a_{t:t+k},
 \bar o_t
 )
-\]
+$$
 
 而不是：
 
-\[
+$$
 q_\phi(
 z
 \mid
 a_{t:t+k},
 o_t
 )
-\]
+$$
 
 区别在：
 
-\[
+$$
 \bar o_t
-\]
+$$
 
 不包含 image observations。
 
@@ -315,19 +315,19 @@ camera images
 
 更准确的是：
 
-> **训练时 ACT 的 latent encoder 使用 joint positions + demonstration action sequence 推断 \(z\)，而视觉信息主要进入 decoder / policy。**
+> **训练时 ACT 的 latent encoder 使用 joint positions + demonstration action sequence 推断 $z$，而视觉信息主要进入 decoder / policy。**
 
 ---
 
-# 5. 为什么 Encoder 要看 Ground-Truth Action Sequence？
+## 5. 为什么 Encoder 要看 Ground-Truth Action Sequence？
 
 这是 CVAE 最关键的问题之一。
 
 训练时我们有一条真实 demonstration：
 
-\[
+$$
 a_{t:t+k}
-\]
+$$
 
 假设相似 observation 下可能存在两条合理轨迹：
 
@@ -341,9 +341,9 @@ Trajectory B
 
 仅仅给 encoder 看当前：
 
-\[
+$$
 o_t
-\]
+$$
 
 它可能无法知道：
 
@@ -351,26 +351,26 @@ o_t
 
 但如果把真实 action chunk：
 
-\[
+$$
 a_{t:t+k}
-\]
+$$
 
 也给它，
 
 encoder 就能回答：
 
-> “既然这条 demonstration 实际上是这样走的，什么样的 latent \(z\) 可以描述这次动作序列中的 variation？”
+> “既然这条 demonstration 实际上是这样走的，什么样的 latent $z$ 可以描述这次动作序列中的 variation？”
 
 因此训练时：
 
-\[
+$$
 q_\phi(
 z
 \mid
 a_{t:t+k},
 \bar o_t
 )
-\]
+$$
 
 实际上是在做：
 
@@ -382,15 +382,15 @@ future action prediction 是 decoder / policy 的工作。
 
 ---
 
-# 6. ACT CVAE Encoder 的输入到底长什么样？
+## 6. ACT CVAE Encoder 的输入到底长什么样？
 
 论文实现部分给得非常具体。
 
 假设 action chunk 中有：
 
-\[
+$$
 k
-\]
+$$
 
 个 actions。
 
@@ -407,43 +407,43 @@ action_t+k-1
 
 因此总 token 数：
 
-\[
+$$
 \boxed{
 k+2
 }
-\]
+$$
 
 分别是：
 
 1. 一个 learned `[CLS]` token；
 2. 一个 current joint-position token；
-3. \(k\) 个 action tokens。
+3. $k$ 个 action tokens。
 
 ---
 
-# 7. 每个输入原本维度并不一样
+## 7. 每个输入原本维度并不一样
 
 ALOHA 是双臂机器人。
 
 论文中：
 
-\[
+$$
 7+7=14
-\]
+$$
 
 个 joint dimensions。
 
 因此当前 joint positions：
 
-\[
+$$
 q_t\in\mathbb R^{14}
-\]
+$$
 
 每一个 action 也是两个机械臂的 absolute target joint positions：
 
-\[
+$$
 a_t\in\mathbb R^{14}
-\]
+$$
 
 但 Transformer 不能直接要求：
 
@@ -459,7 +459,7 @@ action: 14
 
 ---
 
-# 8. Joint Position Projection
+## 8. Joint Position Projection
 
 官方实现中：
 
@@ -469,51 +469,51 @@ self.encoder_joint_proj = nn.Linear(14, hidden_dim)
 
 于是：
 
-\[
+$$
 q_t
 \in
 \mathbb R^{14}
-\]
+$$
 
 变成：
 
-\[
+$$
 e_q
 \in
 \mathbb R^{d}
-\]
+$$
 
 其中：
 
-\[
+$$
 d=\text{hidden dimension}
-\]
+$$
 
 论文 hyperparameter 中：
 
-\[
+$$
 d=512
-\]
+$$
 
 所以可以理解为：
 
-\[
+$$
 \boxed{
 \mathbb R^{14}
 \rightarrow
 \mathbb R^{512}
 }
-\]
+$$
 
 ---
 
-# 9. Action Projection
+## 9. Action Projection
 
 每一个 action：
 
-\[
+$$
 a_{t+i}\in\mathbb R^{14}
-\]
+$$
 
 也使用 Linear：
 
@@ -523,27 +523,27 @@ self.encoder_action_proj = nn.Linear(14, hidden_dim)
 
 投影成：
 
-\[
+$$
 e_{a_{t+i}}
 \in
 \mathbb R^{512}
-\]
+$$
 
 所以 action sequence：
 
-\[
+$$
 [k,14]
-\]
+$$
 
 变成：
 
-\[
+$$
 [k,512]
-\]
+$$
 
 ---
 
-# 10. [CLS] Token 是什么？
+## 10. [CLS] Token 是什么？
 
 ACT 还额外定义一个：
 
@@ -553,11 +553,11 @@ self.cls_embed = nn.Embedding(1, hidden_dim)
 
 也就是一个可学习向量：
 
-\[
+$$
 e_{\mathrm{CLS}}
 \in
 \mathbb R^{512}
-\]
+$$
 
 它不是：
 
@@ -571,7 +571,7 @@ e_{\mathrm{CLS}}
 
 完整输入：
 
-\[
+$$
 [
 e_{\mathrm{CLS}},
 e_q,
@@ -579,19 +579,19 @@ e_{a_t},
 \ldots,
 e_{a_{t+k-1}}
 ]
-\]
+$$
 
 shape 为：
 
-\[
+$$
 \boxed{
 (k+2)\times512
 }
-\]
+$$
 
 ---
 
-# 11. [CLS] 为什么最后能代表整段序列？
+## 11. [CLS] 为什么最后能代表整段序列？
 
 这是一个非常容易被讲成“魔法”的地方。
 
@@ -612,9 +612,9 @@ shape 为：
 
 经过多层 Transformer 后：
 
-\[
+$$
 h_{\mathrm{CLS}}
-\]
+$$
 
 已经不再只是最初那个 learned embedding。
 
@@ -646,13 +646,13 @@ h_{\mathrm{CLS}}
 
 ---
 
-# 12. 但“CLS 读取所有 token”只是直觉说法
+## 12. 但“CLS 读取所有 token”只是直觉说法
 
 更严格地说：
 
 Transformer encoder 对整个 token sequence 产生：
 
-\[
+$$
 H
 =
 [
@@ -661,15 +661,15 @@ h_q,
 h_{a_t},
 \ldots
 ]
-\]
+$$
 
 ACT 只取：
 
-\[
+$$
 \boxed{
 h_{\mathrm{CLS}}
 }
-\]
+$$
 
 作为后续 latent distribution prediction 的 summary representation。
 
@@ -699,22 +699,22 @@ encoder_output = encoder_output[0]
 
 它之所以会承担这个角色，是因为后续所有：
 
-\[
+$$
 \mu,\log\sigma^2
-\]
+$$
 
 都只能从这个 token 的输出产生。
 
 ---
 
-# 13. h_CLS 如何变成 μ 和 log σ²？
+## 13. h_CLS 如何变成 μ 和 log σ²？
 
 拿到：
 
-\[
+$$
 h_{\mathrm{CLS}}
 \in\mathbb R^{512}
-\]
+$$
 
 以后，
 
@@ -729,25 +729,25 @@ self.latent_proj = nn.Linear(
 
 官方代码中：
 
-\[
+$$
 latent\_dim=32
-\]
+$$
 
 所以：
 
-\[
+$$
 512
 \rightarrow
 64
-\]
+$$
 
 输出：
 
-\[
+$$
 latent\_info
 \in
 \mathbb R^{64}
-\]
+$$
 
 然后一分为二：
 
@@ -758,21 +758,21 @@ logvar = latent_info[:, latent_dim:]
 
 即：
 
-\[
+$$
 \boxed{
 \mu\in\mathbb R^{32}
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 \log\sigma^2\in\mathbb R^{32}
 }
-\]
+$$
 
 于是 approximate posterior 为：
 
-\[
+$$
 \boxed{
 q_\phi(z\mid a_{t:t+k},\bar o_t)
 =
@@ -782,63 +782,63 @@ q_\phi(z\mid a_{t:t+k},\bar o_t)
 \operatorname{diag}(\sigma^2)
 \right)
 }
-\]
+$$
 
 ---
 
-# 14. 这个 Linear Layer 到底在学什么？
+## 14. 这个 Linear Layer 到底在学什么？
 
 这里非常容易产生一种错误理解：
 
-> “这个 Linear layer 的目标，就是把 \(h_{\mathrm{CLS}}\) 映射成 \(\mu\approx0\)、\(\sigma^2\approx1\)。”
+> “这个 Linear layer 的目标，就是把 $h_{\mathrm{CLS}}$ 映射成 $\mu\approx0$、$\sigma^2\approx1$。”
 
 不准确。
 
 这个 Linear layer 的作用是：
 
-> **把 sequence representation \(h_{\mathrm{CLS}}\) 转换成 approximate posterior 的参数。**
+> **把 sequence representation $h_{\mathrm{CLS}}$ 转换成 approximate posterior 的参数。**
 
 也就是：
 
-\[
+$$
 h_{\mathrm{CLS}}
 \longrightarrow
 (\mu,\log\sigma^2)
-\]
+$$
 
 这些参数同时受到两股 training pressure。
 
 ---
 
-## Reconstruction Pressure
+### Reconstruction Pressure
 
 模型需要用从这个 distribution 采样出的：
 
-\[
+$$
 z
-\]
+$$
 
 帮助 decoder 重建当前 demonstration action chunk。
 
 因此：
 
-> \(q_\phi(z|\cdot)\) 不能完全丢掉与这条 demonstration 有关的信息。
+> $q_\phi(z|\cdot)$ 不能完全丢掉与这条 demonstration 有关的信息。
 
 ---
 
-## KL Pressure
+### KL Pressure
 
 同时：
 
-\[
+$$
 q_\phi(z|\cdot)
-\]
+$$
 
 受到：
 
-\[
+$$
 \mathcal N(0,I)
-\]
+$$
 
 的约束。
 
@@ -846,33 +846,33 @@ q_\phi(z|\cdot)
 
 > 不能为了重建每个 training sample 而随意跑到 latent space 的任何位置。
 
-所以 \(\mu\) 和 \(\sigma^2\) 是：
+所以 $\mu$ 和 $\sigma^2$ 是：
 
 > **reconstruction 与 prior regularization 共同优化出来的结果。**
 
 不是单独追求：
 
-\[
+$$
 \mu=0,\qquad\sigma^2=1
-\]
+$$
 
 ---
 
-# 15. 如果所有 μ 都真的变成 0、σ² 都变成 1 会怎样？
+## 15. 如果所有 μ 都真的变成 0、σ² 都变成 1 会怎样？
 
 如果对于所有 training examples：
 
-\[
+$$
 q_\phi(z\mid a,\bar o)
 =
 \mathcal N(0,I)
-\]
+$$
 
 那么：
 
-\[
+$$
 z
-\]
+$$
 
 将几乎不再包含关于当前 action sequence 的 information。
 
@@ -909,13 +909,13 @@ KL
 
 ---
 
-# 16. ACT 为什么叫 z “Style Variable”？
+## 16. ACT 为什么叫 z “Style Variable”？
 
 论文把：
 
-\[
+$$
 z
-\]
+$$
 
 称为：
 
@@ -935,7 +935,7 @@ z
 
 两条都合理。
 
-\(z\) 可以帮助 decoder 表达：
+$z$ 可以帮助 decoder 表达：
 
 > 当前 training demonstration 中没有被 observation 唯一确定的 action-sequence variation。
 
@@ -957,42 +957,42 @@ z₃ = 力量
 
 ---
 
-# 17. μ 和 log σ² 得到以后发生什么？
+## 17. μ 和 log σ² 得到以后发生什么？
 
 现在 encoder 给出：
 
-\[
+$$
 \mu
-\]
+$$
 
 和：
 
-\[
+$$
 \log\sigma^2
-\]
+$$
 
 先恢复：
 
-\[
+$$
 \sigma
 =
 \exp
 \left(
 \frac12\log\sigma^2
 \right)
-\]
+$$
 
 然后采：
 
-\[
+$$
 \epsilon
 \sim
 \mathcal N(0,I)
-\]
+$$
 
 最后：
 
-\[
+$$
 \boxed{
 z
 =
@@ -1000,7 +1000,7 @@ z
 +
 \sigma\odot\epsilon
 }
-\]
+$$
 
 官方代码：
 
@@ -1022,23 +1022,23 @@ def reparametrize(mu, logvar):
 
 ---
 
-# 18. z 是随机的，那它怎么能“正确”？
+## 18. z 是随机的，那它怎么能“正确”？
 
 这也是理解 ACT 最容易卡住的问题。
 
 假设 encoder 输出：
 
-\[
+$$
 q_\phi(z\mid a,\bar o)
 =
 \mathcal N(\mu,\sigma^2)
-\]
+$$
 
 然后随机采一个：
 
-\[
+$$
 z
-\]
+$$
 
 看起来像：
 
@@ -1048,21 +1048,21 @@ z
 
 关键是：
 
-> \(z\) 不是从整个空间无约束地随机抽。
+> $z$ 不是从整个空间无约束地随机抽。
 
 它是从：
 
-\[
+$$
 q_\phi(z\mid a,\bar o)
-\]
+$$
 
 中采样。
 
 而这个 distribution 的：
 
-\[
+$$
 \mu,\sigma^2
-\]
+$$
 
 正是 encoder 根据当前：
 
@@ -1096,83 +1096,83 @@ sample z
 
 ---
 
-# 19. Decoder / Policy 到底输入什么？
+## 19. Decoder / Policy 到底输入什么？
 
 训练阶段得到：
 
-\[
+$$
 z
-\]
+$$
 
 以后，
 
 ACT 的 decoder，也就是最终 policy：
 
-\[
+$$
 \pi_\theta(
 \hat a_{t:t+k}
 \mid
 o_t,z
 )
-\]
+$$
 
 输入包括：
 
-### 1. Camera Images
+#### 1. Camera Images
 
 论文使用 4 个 RGB images：
 
-\[
+$$
 480\times640
-\]
+$$
 
 ---
 
-### 2. Current Joint Positions
+#### 2. Current Joint Positions
 
-\[
+$$
 q_t\in\mathbb R^{14}
-\]
+$$
 
 ---
 
-### 3. Latent Style z
+#### 3. Latent Style z
 
 官方实现：
 
-\[
+$$
 z\in\mathbb R^{32}
-\]
+$$
 
 ---
 
 输出：
 
-\[
+$$
 \boxed{
 \hat a_{t:t+k}
 \in
 \mathbb R^{k\times14}
 }
-\]
+$$
 
-即未来 \(k\) 步两个机械臂的 target joint positions。
+即未来 $k$ 步两个机械臂的 target joint positions。
 
 ---
 
-# 20. z 进入 Decoder 前也要做 Projection
+## 20. z 进入 Decoder 前也要做 Projection
 
 因为 Transformer hidden dimension 是：
 
-\[
+$$
 512
-\]
+$$
 
 而官方：
 
-\[
+$$
 z\in\mathbb R^{32}
-\]
+$$
 
 所以不能直接作为同宽 token 使用。
 
@@ -1187,112 +1187,112 @@ self.latent_out_proj = nn.Linear(
 
 于是：
 
-\[
+$$
 z\in\mathbb R^{32}
-\]
+$$
 
 被投影为：
 
-\[
+$$
 e_z\in\mathbb R^{512}
-\]
+$$
 
 同样，joint positions：
 
-\[
+$$
 q_t\in\mathbb R^{14}
-\]
+$$
 
 也被投影成：
 
-\[
+$$
 e_q\in\mathbb R^{512}
-\]
+$$
 
 于是它们可以和 image features 一起进入 Transformer encoder。
 
 ---
 
-# 21. 图像是怎么变成 Transformer 输入的？
+## 21. 图像是怎么变成 Transformer 输入的？
 
 论文实现使用 ResNet18。
 
 每张：
 
-\[
+$$
 480\times640\times3
-\]
+$$
 
 图像经过 ResNet18 后得到：
 
-\[
+$$
 15\times20\times512
-\]
+$$
 
 feature map。
 
 把空间维度：
 
-\[
+$$
 15\times20
-\]
+$$
 
 flatten：
 
-\[
+$$
 300
-\]
+$$
 
 得到：
 
-\[
+$$
 300\times512
-\]
+$$
 
 的 token sequence。
 
 4 个 camera：
 
-\[
+$$
 4\times300=1200
-\]
+$$
 
 所以图像总共形成：
 
-\[
+$$
 1200\times512
-\]
+$$
 
 visual tokens。
 
 再加入：
 
 - joint token；
-- latent \(z\) token；
+- latent $z$ token；
 
 得到：
 
-\[
+$$
 \boxed{
 1202\times512
 }
-\]
+$$
 
 作为 Transformer encoder 的输入。
 
 ---
 
-# 22. 这里有两个完全不同的 Transformer Encoder
+## 22. 这里有两个完全不同的 Transformer Encoder
 
 ACT 很容易因为“encoder”这个词太多而混乱。
 
 至少存在：
 
-## A. CVAE Encoder
+### A. CVAE Encoder
 
 作用：
 
-> training 时推断 \(z\)。
+> training 时推断 $z$。
 
 输入：
 
@@ -1304,19 +1304,19 @@ ground-truth action sequence
 
 输出：
 
-\[
+$$
 \mu,\log\sigma^2
-\]
+$$
 
 它只在训练时存在。
 
 ---
 
-## B. Policy Transformer Encoder
+### B. Policy Transformer Encoder
 
 作用：
 
-> 融合当前视觉、joint positions 和 latent \(z\)。
+> 融合当前视觉、joint positions 和 latent $z$。
 
 输入：
 
@@ -1346,7 +1346,7 @@ policy transformer encoder
 
 ---
 
-# 23. Decoder 也有两个含义
+## 23. Decoder 也有两个含义
 
 这里同样容易混。
 
@@ -1389,7 +1389,7 @@ CVAE Decoder / ACT Policy
 
 ---
 
-# 24. Policy Transformer Encoder 在做什么？
+## 24. Policy Transformer Encoder 在做什么？
 
 它接收：
 
@@ -1419,21 +1419,21 @@ CVAE Decoder / ACT Policy
 
 ---
 
-# 25. Transformer Decoder 如何生成 k 个 Actions？
+## 25. Transformer Decoder 如何生成 k 个 Actions？
 
 Transformer decoder 需要产生：
 
-\[
+$$
 k
-\]
+$$
 
 个输出位置。
 
 论文中使用长度：
 
-\[
+$$
 k
-\]
+$$
 
 的位置/query embeddings。
 
@@ -1452,32 +1452,32 @@ Policy Encoder Memory
 
 最终得到：
 
-\[
+$$
 k\times512
-\]
+$$
 
 decoder features。
 
 再经过 output head：
 
-\[
+$$
 512
 \rightarrow14
-\]
+$$
 
 得到：
 
-\[
+$$
 \boxed{
 k\times14
 }
-\]
+$$
 
 未来 action chunk。
 
 ---
 
-# 26. 所以 z 并不是直接变成 Action
+## 26. 所以 z 并不是直接变成 Action
 
 这是一个非常重要的认识。
 
@@ -1509,7 +1509,7 @@ Transformer decoder
 future action sequence
 ```
 
-所以 \(z\) 更像：
+所以 $z$ 更像：
 
 > **一个额外 conditioning signal。**
 
@@ -1524,40 +1524,40 @@ future action sequence
 
 ---
 
-# 27. 训练阶段完整 Data Flow
+## 27. 训练阶段完整 Data Flow
 
 现在把所有东西一次串起来。
 
 ---
 
-## Step 1：从 Demonstration 采样
+### Step 1：从 Demonstration 采样
 
 取：
 
-\[
+$$
 o_t
-\]
+$$
 
 以及：
 
-\[
+$$
 a_{t:t+k}
-\]
+$$
 
 其中：
 
-\[
+$$
 o_t
 =
 (
 \text{images}_t,
 q_t
 )
-\]
+$$
 
 ---
 
-## Step 2：CVAE Encoder 推断 z
+### Step 2：CVAE Encoder 推断 z
 
 Encoder 不使用 images。
 
@@ -1574,47 +1574,47 @@ a_t+k-1
 
 经过 BERT-like Transformer encoder：
 
-\[
+$$
 \longrightarrow
 h_{\mathrm{CLS}}
-\]
+$$
 
 ---
 
-## Step 3：预测 Distribution Parameters
+### Step 3：预测 Distribution Parameters
 
-\[
+$$
 h_{\mathrm{CLS}}
 \longrightarrow
 \mu,\log\sigma^2
-\]
+$$
 
 定义：
 
-\[
+$$
 q_\phi(
 z\mid
 a_{t:t+k},q_t
 )
-\]
+$$
 
 ---
 
-## Step 4：Reparameterization
+### Step 4：Reparameterization
 
-\[
+$$
 \epsilon\sim\mathcal N(0,I)
-\]
+$$
 
-\[
+$$
 z
 =
 \mu+\sigma\odot\epsilon
-\]
+$$
 
 ---
 
-## Step 5：ACT Policy Predicts Action Chunk
+### Step 5：ACT Policy Predicts Action Chunk
 
 Policy 输入：
 
@@ -1628,31 +1628,31 @@ z
 
 输出：
 
-\[
+$$
 \hat a_{t:t+k}
-\]
+$$
 
 ---
 
-## Step 6：Reconstruction Loss
+### Step 6：Reconstruction Loss
 
 比较：
 
-\[
+$$
 \hat a_{t:t+k}
-\]
+$$
 
 和：
 
-\[
+$$
 a_{t:t+k}
-\]
+$$
 
 ---
 
-## Step 7：KL Regularization
+### Step 7：KL Regularization
 
-\[
+$$
 D_{KL}
 \left(
 q_\phi(
@@ -1662,23 +1662,23 @@ a_{t:t+k},q_t
 \parallel
 \mathcal N(0,I)
 \right)
-\]
+$$
 
 ---
 
-## Step 8：Joint Optimization
+### Step 8：Joint Optimization
 
 更新：
 
-\[
+$$
 \phi
-\]
+$$
 
 和：
 
-\[
+$$
 \theta
-\]
+$$
 
 即：
 
@@ -1687,7 +1687,7 @@ a_{t:t+k},q_t
 
 ---
 
-# 28. 把训练过程画成一张图
+## 28. 把训练过程画成一张图
 
 ```text
                  DEMONSTRATION
@@ -1741,22 +1741,22 @@ q(z | A_t,q_t)
 
 ---
 
-# 29. ACT 的 Loss 到底是什么？
+## 29. ACT 的 Loss 到底是什么？
 
 论文 Algorithm 1 概括为：
 
-\[
+$$
 \mathcal L
 =
 \mathcal L_{\mathrm{reconst}}
 +
 \beta
 \mathcal L_{\mathrm{reg}}
-\]
+$$
 
 其中：
 
-\[
+$$
 \mathcal L_{\mathrm{reg}}
 =
 D_{KL}
@@ -1765,32 +1765,32 @@ q_\phi(z\mid a_{t:t+k},\bar o_t)
 \parallel
 \mathcal N(0,I)
 \right)
-\]
+$$
 
 论文给出的 ACT hyperparameter：
 
-\[
+$$
 \boxed{
 \beta=10
 }
-\]
+$$
 
 所以 KL 并不是和 reconstruction 等权。
 
 ---
 
-# 30. 一个论文里非常值得注意的小矛盾：MSE 还是 L1？
+## 30. 一个论文里非常值得注意的小矛盾：MSE 还是 L1？
 
 如果只看 Algorithm 1，会看到：
 
-\[
+$$
 \mathcal L_{\mathrm{reconst}}
 =
 MSE(
 \hat a_{t:t+k},
 a_{t:t+k}
 )
-\]
+$$
 
 但论文正文 Section IV-C 明确写：
 
@@ -1821,11 +1821,11 @@ loss =
 
 答案应该是：
 
-\[
+$$
 \boxed{
 L1
 }
-\]
+$$
 
 而不是照抄 Algorithm 1 的 MSE。
 
@@ -1835,7 +1835,7 @@ L1
 
 ---
 
-# 31. Padding 为什么还要 Mask？
+## 31. Padding 为什么还要 Mask？
 
 action chunks 在 episode 尾部可能不足完整长度。
 
@@ -1872,7 +1872,7 @@ CVAE encoder 的 Transformer 也使用 padding mask，
 
 ---
 
-# 32. 为什么 [CLS] 和 Joint Token 不能被 Mask？
+## 32. 为什么 [CLS] 和 Joint Token 不能被 Mask？
 
 官方代码专门创建：
 
@@ -1914,24 +1914,24 @@ padding     → masked
 
 ---
 
-# 33. 现在进入最关键的问题：推理时 z 从哪里来？
+## 33. 现在进入最关键的问题：推理时 z 从哪里来？
 
 训练时：
 
-\[
+$$
 z
 \sim
 q_\phi(
 z\mid
 a_{t:t+k},q_t
 )
-\]
+$$
 
 但是推理时我们没有：
 
-\[
+$$
 a_{t:t+k}
-\]
+$$
 
 因为：
 
@@ -1939,12 +1939,12 @@ a_{t:t+k}
 
 因此：
 
-\[
+$$
 q_\phi(
 z\mid
 a_{t:t+k},q_t
 )
-\]
+$$
 
 根本无法使用。
 
@@ -1958,7 +1958,7 @@ a_{t:t+k},q_t
 
 ---
 
-# 34. 这不是 ACT 特有的奇怪操作
+## 34. 这不是 ACT 特有的奇怪操作
 
 在 VAE / CVAE 中：
 
@@ -1966,21 +1966,21 @@ a_{t:t+k},q_t
 
 真正的 generative model 是：
 
-\[
+$$
 p(z)
-\]
+$$
 
 加：
 
-\[
+$$
 p_\theta(y\mid c,z)
-\]
+$$
 
 训练时 encoder：
 
-\[
+$$
 q_\phi
-\]
+$$
 
 帮助我们近似 posterior。
 
@@ -1992,33 +1992,33 @@ q_\phi
 
 真正特别的地方是：
 
-> **ACT 如何选择 test-time \(z\)。**
+> **ACT 如何选择 test-time $z$。**
 
 ---
 
-# 35. 一般 CVAE 推理时可以随机采 z
+## 35. 一般 CVAE 推理时可以随机采 z
 
 因为 ACT prior 为：
 
-\[
+$$
 p(z)
 =
 \mathcal N(0,I)
-\]
+$$
 
 最直接的 CVAE 推理方式其实可以是：
 
-\[
+$$
 z
 \sim
 \mathcal N(0,I)
-\]
+$$
 
 每次 sample 不同的：
 
-\[
+$$
 z
-\]
+$$
 
 然后得到不同 action chunks。
 
@@ -2044,45 +2044,45 @@ trajectory 2
 
 ---
 
-# 36. ACT 推理直接设 z = 0
+## 36. ACT 推理直接设 z = 0
 
 ACT 原论文明确规定：
 
-\[
+$$
 \boxed{
 z=0
 }
-\]
+$$
 
 原因首先是一个非常直接的概率事实：
 
 prior：
 
-\[
+$$
 p(z)
 =
 \mathcal N(0,I)
-\]
+$$
 
 它的均值是：
 
-\[
+$$
 \boxed{
 \mathbb E[z]=0
 }
-\]
+$$
 
 所以：
 
-\[
+$$
 z=0
-\]
+$$
 
 就是 prior mean。
 
 论文说：
 
-> At test time, we set \(z\) to be the mean of the prior distribution i.e. zero to deterministically decode.
+> At test time, we set $z$ to be the mean of the prior distribution i.e. zero to deterministically decode.
 
 官方代码完全一致：
 
@@ -2101,7 +2101,7 @@ latent_input =
 
 ---
 
-# 37. 为什么 ACT 不随机采样？
+## 37. 为什么 ACT 不随机采样？
 
 论文给出的直接目的非常明确：
 
@@ -2111,9 +2111,9 @@ latent_input =
 
 相同：
 
-\[
+$$
 o_t
-\]
+$$
 
 输入时，
 
@@ -2139,43 +2139,43 @@ Appendix 也明确指出：
 
 ---
 
-# 38. 但 z = 0 为什么还能工作？
+## 38. 但 z = 0 为什么还能工作？
 
 现在可以给出比“因为 prior 均值是 0”更完整的理解。
 
 训练时 KL 在不断约束：
 
-\[
+$$
 q_\phi(
 z\mid a,q
 )
-\]
+$$
 
 不要离：
 
-\[
+$$
 \mathcal N(0,I)
-\]
+$$
 
 太远。
 
-所以 decoder / policy 在训练过程中看到的 \(z\) 被鼓励分布在：
+所以 decoder / policy 在训练过程中看到的 $z$ 被鼓励分布在：
 
 > unit Gaussian prior 所覆盖的区域附近。
 
 而：
 
-\[
+$$
 z=0
-\]
+$$
 
 正是 prior 的中心。
 
 因此推理时选择：
 
-\[
+$$
 0
-\]
+$$
 
 不是：
 
@@ -2197,41 +2197,41 @@ z=0
 
 ---
 
-# 39. z=0 也不意味着“把 style 信息全部删除了”
+## 39. z=0 也不意味着“把 style 信息全部删除了”
 
 这是一个非常常见的直觉误区。
 
 会有人说：
 
-> 训练时 \(z\) 编码 style，推理时 \(z=0\)，那岂不是 style 被删掉了？
+> 训练时 $z$ 编码 style，推理时 $z=0$，那岂不是 style 被删掉了？
 
 要更仔细一点。
 
 训练的最终对象是：
 
-\[
+$$
 \pi_\theta(
 a_{t:t+k}
 \mid
 o_t,z
 )
-\]
+$$
 
 这个 policy 的参数：
 
-\[
+$$
 \theta
-\]
+$$
 
 在整个训练过程中已经通过大量：
 
 - observations；
 - demonstrations；
-- sampled \(z\)；
+- sampled $z$；
 
 被优化过。
 
-推理时 \(z=0\) 的意思是：
+推理时 $z=0$ 的意思是：
 
 > **固定 latent conditioning 到 prior mean 所对应的一个 canonical condition。**
 
@@ -2248,7 +2248,7 @@ o_t,z
 
 里面。
 
-所以 \(z\) 是一个 conditioning variable，
+所以 $z$ 是一个 conditioning variable，
 
 而不是：
 
@@ -2256,7 +2256,7 @@ o_t,z
 
 ---
 
-# 40. 一个更合适的直觉：训练时让模型“解释 variation”，推理时选一个中心 style
+## 40. 一个更合适的直觉：训练时让模型“解释 variation”，推理时选一个中心 style
 
 可以这样理解：
 
@@ -2272,9 +2272,9 @@ action sequence
 
 CVAE 用：
 
-\[
+$$
 z
-\]
+$$
 
 帮助模型把其中一部分 variation 显式表示出来。
 
@@ -2282,7 +2282,7 @@ z
 
 于是：
 
-> 固定 \(z\) 到 prior center。
+> 固定 $z$ 到 prior center。
 
 这相当于选择一个：
 
@@ -2294,60 +2294,60 @@ z
 
 但仍然要记住：
 
-> “canonical style”是帮助理解的说法，不是论文对 \(z=0\) 的严格语义证明。
+> “canonical style”是帮助理解的说法，不是论文对 $z=0$ 的严格语义证明。
 
 ---
 
-# 41. β 为什么很重要？
+## 41. β 为什么很重要？
 
 ACT loss：
 
-\[
+$$
 L
 =
 L_{\mathrm{reconst}}
 +
 \beta
 L_{\mathrm{KL}}
-\]
+$$
 
 论文使用：
 
-\[
+$$
 \beta=10
-\]
+$$
 
 并明确指出：
 
-> 更大的 \(\beta\) 会让 \(z\) 传输更少的信息。
+> 更大的 $\beta$ 会让 $z$ 传输更少的信息。
 
 为什么？
 
 如果：
 
-\[
+$$
 \beta
-\]
+$$
 
 很大，
 
 模型会更强烈地惩罚：
 
-\[
+$$
 q_\phi(z|\cdot)
-\]
+$$
 
 偏离：
 
-\[
+$$
 \mathcal N(0,I)
-\]
+$$
 
 那么 encoder 就更难用：
 
-\[
+$$
 \mu,\sigma
-\]
+$$
 
 携带大量 demonstration-specific information。
 
@@ -2363,33 +2363,33 @@ posterior 更接近 prior
 z 可携带的信息倾向减少
 ```
 
-这与 \(\beta\)-VAE 的思想有关。
+这与 $\beta$-VAE 的思想有关。
 
 ---
 
-# 42. 那为什么不让 β 无限大？
+## 42. 那为什么不让 β 无限大？
 
 如果：
 
-\[
+$$
 \beta\rightarrow\infty
-\]
+$$
 
 最简单的方式就是：
 
-\[
+$$
 q_\phi(z|\cdot)
 \approx
 \mathcal N(0,I)
-\]
+$$
 
 对于所有 demonstrations 都一样。
 
 这样：
 
-\[
+$$
 z
-\]
+$$
 
 几乎完全不再表达 demonstration variation。
 
@@ -2409,13 +2409,13 @@ z
 
 ACT 通过实验选择：
 
-\[
+$$
 \beta=10
-\]
+$$
 
 ---
 
-# 43. ACT 的 Ablation 证明 CVAE 有作用吗？
+## 43. ACT 的 Ablation 证明 CVAE 有作用吗？
 
 论文专门做了：
 
@@ -2457,7 +2457,7 @@ human demonstrations 具有：
 
 ---
 
-# 44. 为什么 Images 不进入 CVAE Encoder，却仍然能学到合理 z？
+## 44. 为什么 Images 不进入 CVAE Encoder，却仍然能学到合理 z？
 
 这是一个很好的问题。
 
@@ -2499,7 +2499,7 @@ images + q_t + z
 
 ---
 
-# 45. z 会不会偷偷编码整个 Action Chunk？
+## 45. z 会不会偷偷编码整个 Action Chunk？
 
 理论上：
 
@@ -2511,15 +2511,15 @@ images + q_t + z
 
 如果没有 KL，encoder 可以把：
 
-\[
+$$
 a_{t:t+k}
-\]
+$$
 
 几乎完整编码进：
 
-\[
+$$
 z
-\]
+$$
 
 然后 decoder 只需把它解码回来。
 
@@ -2527,23 +2527,23 @@ z
 
 但 test time：
 
-\[
+$$
 z
-\]
+$$
 
 来自 prior 时就会崩溃。
 
 所以 KL 限制了：
 
-> training posterior 不能无限自由地把 target actions 全部塞进 \(z\)。
+> training posterior 不能无限自由地把 target actions 全部塞进 $z$。
 
 这也是为什么论文说：
 
-> higher \(\beta\) means less information transmitted in \(z\)。
+> higher $\beta$ means less information transmitted in $z$。
 
 ---
 
-# 46. [CLS] 是不是把 Action Chunk “压缩”成 z？
+## 46. [CLS] 是不是把 Action Chunk “压缩”成 z？
 
 作为直觉：
 
@@ -2551,7 +2551,7 @@ z
 
 更严格地分成两步：
 
-### Step 1
+#### Step 1
 
 Transformer encoder 将：
 
@@ -2567,47 +2567,47 @@ action sequence
 
 其中：
 
-\[
+$$
 h_{\mathrm{CLS}}
-\]
+$$
 
 被选为 sequence-level representation。
 
 ---
 
-### Step 2
+#### Step 2
 
 Linear projection 将：
 
-\[
+$$
 h_{\mathrm{CLS}}
-\]
+$$
 
 映射为：
 
-\[
+$$
 \mu,\log\sigma^2
-\]
+$$
 
 参数化：
 
-\[
+$$
 q_\phi(z|\cdot)
-\]
+$$
 
 再从中 sample：
 
-\[
+$$
 z
-\]
+$$
 
 所以严格来说：
 
-> **不是 `[CLS]` 直接等于 \(z\)**。
+> **不是 `[CLS]` 直接等于 $z$**。
 
 关系是：
 
-\[
+$$
 \boxed{
 [CLS]
 \rightarrow
@@ -2619,28 +2619,28 @@ q(z|\cdot)
 \rightarrow
 z
 }
-\]
+$$
 
 这条链非常重要。
 
 ---
 
-# 47. h_CLS 是 z 吗？
+## 47. h_CLS 是 z 吗？
 
 **不是。**
 
 官方代码中：
 
-\[
+$$
 h_{\mathrm{CLS}}
 \in\mathbb R^{512}
-\]
+$$
 
 而：
 
-\[
+$$
 z\in\mathbb R^{32}
-\]
+$$
 
 中间还经过：
 
@@ -2651,9 +2651,9 @@ latent_info =
 
 因此：
 
-\[
+$$
 h_{\mathrm{CLS}}
-\]
+$$
 
 只是：
 
@@ -2663,77 +2663,77 @@ h_{\mathrm{CLS}}
 
 ---
 
-# 48. μ 是 z 吗？
+## 48. μ 是 z 吗？
 
 也不是。
 
-\[
+$$
 \mu
-\]
+$$
 
 只是：
 
-> \(q(z|\cdot)\) 的 mean。
+> $q(z|\cdot)$ 的 mean。
 
 训练时：
 
-\[
+$$
 z
 =
 \mu+\sigma\epsilon
-\]
+$$
 
 所以一般：
 
-\[
+$$
 z\neq\mu
-\]
+$$
 
 除非：
 
-\[
+$$
 \epsilon=0
-\]
+$$
 
 或者：
 
-\[
+$$
 \sigma=0
-\]
+$$
 
 等特殊情况。
 
 而 inference 时 ACT 使用：
 
-\[
+$$
 z=0
-\]
+$$
 
 甚至不计算：
 
-\[
+$$
 \mu
-\]
+$$
 
 因为整个 CVAE encoder 都被删掉了。
 
 ---
 
-# 49. z=0 是不是 Encoder 学出来的？
+## 49. z=0 是不是 Encoder 学出来的？
 
 **不是。**
 
 训练阶段：
 
-\[
+$$
 z
-\]
+$$
 
 来自：
 
-\[
+$$
 q_\phi(z|\cdot)
-\]
+$$
 
 推理阶段：
 
@@ -2751,9 +2751,9 @@ latent_sample = torch.zeros(
 
 因此：
 
-\[
+$$
 z=0
-\]
+$$
 
 是：
 
@@ -2763,25 +2763,25 @@ z=0
 
 ---
 
-# 50. 这也解释了为什么 inference 不需要 μ 和 σ
+## 50. 这也解释了为什么 inference 不需要 μ 和 σ
 
 很多人会问：
 
-> 推理时 observation 进入模型，为什么不再预测一个 \(\mu\) 和 \(\sigma\)？
+> 推理时 observation 进入模型，为什么不再预测一个 $\mu$ 和 $\sigma$？
 
 因为 ACT 没有一个：
 
-\[
+$$
 q(z\mid o_t)
-\]
+$$
 
 这样的 test-time encoder。
 
 训练 encoder 是：
 
-\[
+$$
 q(z\mid a_{t:t+k},q_t)
-\]
+$$
 
 它依赖：
 
@@ -2793,21 +2793,21 @@ q(z\mid a_{t:t+k},q_t)
 
 ACT 没有另外训练 conditional prior：
 
-\[
+$$
 p(z\mid o_t)
-\]
+$$
 
 所以 test-time 直接使用固定 prior mean：
 
-\[
+$$
 z=0
-\]
+$$
 
 逻辑就闭合了。
 
 ---
 
-# 51. 用概率图重新看 ACT CVAE
+## 51. 用概率图重新看 ACT CVAE
 
 训练时可以概念化成：
 
@@ -2827,23 +2827,23 @@ images ───────────────→ future actions
 
 其中 recognition side：
 
-\[
+$$
 q_\phi(z\mid a,q)
-\]
+$$
 
 只帮助训练。
 
 generative / policy side：
 
-\[
+$$
 \pi_\theta(a\mid o,z)
-\]
+$$
 
 才是真正 test-time 使用的模型。
 
 ---
 
-# 52. 训练时 z 和推理时 z 的区别
+## 52. 训练时 z 和推理时 z 的区别
 
 可以做成一张表。
 
@@ -2851,8 +2851,8 @@ generative / policy side：
 |---|---|---|
 | Ground-truth action chunk | 有 | 没有 |
 | CVAE encoder | 使用 | 丢弃 |
-| \(\mu,\log\sigma^2\) | 计算 | 不计算 |
-| \(z\) 来源 | \(q_\phi(z\mid a,q)\) sample | fixed \(z=0\) |
+| $\mu,\log\sigma^2$ | 计算 | 不计算 |
+| $z$ 来源 | $q_\phi(z\mid a,q)$ sample | fixed $z=0$ |
 | Camera images | policy 使用 | policy 使用 |
 | Joint positions | encoder + policy 使用 | policy 使用 |
 | Policy decoder | 使用 | 使用 |
@@ -2863,7 +2863,7 @@ generative / policy side：
 
 ---
 
-# 53. 官方代码中的 Training Branch
+## 53. 官方代码中的 Training Branch
 
 官方 `detr_vae.py` 判断：
 
@@ -2913,7 +2913,7 @@ latent_sample =
 
 ---
 
-# 54. 官方代码中的 Inference Branch
+## 54. 官方代码中的 Inference Branch
 
 如果：
 
@@ -2940,7 +2940,7 @@ latent_input =
 
 说明：
 
-> policy 后半部分根本不在意这个 \(z\) 是 training posterior sample 还是 zero vector。
+> policy 后半部分根本不在意这个 $z$ 是 training posterior sample 还是 zero vector。
 
 它只接收一个 latent conditioning vector。
 
@@ -2950,7 +2950,7 @@ latent_input =
 
 ---
 
-# 55. 这也是理解代码最好的方式：网络不是两套，而是 z 的来源分叉
+## 55. 这也是理解代码最好的方式：网络不是两套，而是 z 的来源分叉
 
 可以画成：
 
@@ -2992,9 +2992,9 @@ sample z
 
 真正的 action-generating policy：
 
-\[
+$$
 \pi_\theta
-\]
+$$
 
 是共享的。
 
@@ -3002,7 +3002,7 @@ sample z
 
 ---
 
-# 56. ACT 为什么需要 CVAE，而不是直接加 Noise？
+## 56. ACT 为什么需要 CVAE，而不是直接加 Noise？
 
 你也可以想：
 
@@ -3012,9 +3012,9 @@ sample z
 
 随机 noise：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 本身并不会根据 demonstration 学会：
 
@@ -3022,17 +3022,17 @@ sample z
 
 而 CVAE encoder：
 
-\[
+$$
 q_\phi(z\mid a,q)
-\]
+$$
 
 会根据当前实际 action sequence 推断一个 posterior。
 
 所以：
 
-\[
+$$
 z
-\]
+$$
 
 不是纯粹无语义 noise。
 
@@ -3042,29 +3042,29 @@ z
 
 reparameterization 里的：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 才是纯辅助随机噪声。
 
 再次强调：
 
-\[
+$$
 \boxed{
 z\neq\epsilon
 }
-\]
+$$
 
 ---
 
-# 57. 为什么不是直接把 Action Sequence 编成一个 Deterministic Vector？
+## 57. 为什么不是直接把 Action Sequence 编成一个 Deterministic Vector？
 
 例如：
 
-\[
+$$
 z=f(a,q)
-\]
+$$
 
 然后 decoder reconstruction。
 
@@ -3080,42 +3080,42 @@ z=f(a,q)
 
 test time 没有一个明确、匹配 training distribution 的方式生成：
 
-\[
+$$
 z
-\]
+$$
 
 而 CVAE 通过：
 
-\[
+$$
 D_{KL}
 (
 q_\phi(z|\cdot)
 \parallel
 \mathcal N(0,I)
 )
-\]
+$$
 
 把 training posterior 约束到一个已知 prior 周围。
 
 于是 test time 才有：
 
-\[
+$$
 p(z)=\mathcal N(0,I)
-\]
+$$
 
 这个明确的 latent reference distribution。
 
 ACT 再进一步选择它的 mean：
 
-\[
+$$
 0
-\]
+$$
 
 作为 deterministic inference condition。
 
 ---
 
-# 58. 一个非常重要的理解：CVAE 在 ACT 里主要是 Training Device + Latent Regularizer
+## 58. 一个非常重要的理解：CVAE 在 ACT 里主要是 Training Device + Latent Regularizer
 
 从最终 inference 角度：
 
@@ -3141,17 +3141,17 @@ CVAE 在 training 阶段改变了 policy 学习 demonstration data 的方式。
 
 并通过：
 
-\[
+$$
 KL
-\]
+$$
 
 限制这种 latent information。
 
 最终得到的 decoder / policy 参数：
 
-\[
+$$
 \theta
-\]
+$$
 
 是在这种训练目标下学出来的。
 
@@ -3171,13 +3171,13 @@ KL
 
 ---
 
-# 59. 常见误解一：[CLS] 本身就是 z
+## 59. 常见误解一：[CLS] 本身就是 z
 
 **错误。**
 
 真正链条：
 
-\[
+$$
 [CLS]
 \rightarrow
 h_{\mathrm{CLS}}
@@ -3185,44 +3185,44 @@ h_{\mathrm{CLS}}
 \mu,\log\sigma^2
 \rightarrow
 z
-\]
+$$
 
 ---
 
-# 60. 常见误解二：Linear Layer 学习把 μ 变成 0、variance 变成 1
+## 60. 常见误解二：Linear Layer 学习把 μ 变成 0、variance 变成 1
 
 **不准确。**
 
 Linear layer 学的是：
 
-\[
+$$
 h_{\mathrm{CLS}}
 \rightarrow
 q_\phi(z|\cdot)
 \text{ 的参数}
-\]
+$$
 
 KL 会推动 posterior 向 prior 靠近，
 
-reconstruction 又要求 \(z\) 保留有用信息。
+reconstruction 又要求 $z$ 保留有用信息。
 
 ---
 
-# 61. 常见误解三：z 是完全随机猜出来的
+## 61. 常见误解三：z 是完全随机猜出来的
 
 **错误。**
 
 训练时：
 
-\[
+$$
 z
-\]
+$$
 
 来自：
 
-\[
+$$
 q_\phi(z\mid a,q)
-\]
+$$
 
 而这个 distribution 是 encoder 根据当前 demonstration 推断出的。
 
@@ -3230,29 +3230,29 @@ q_\phi(z\mid a,q)
 
 ---
 
-# 62. 常见误解四：z 就是 ε
+## 62. 常见误解四：z 就是 ε
 
 **错误。**
 
-\[
+$$
 \epsilon
 \sim
 \mathcal N(0,I)
-\]
+$$
 
 是 auxiliary noise。
 
-\[
+$$
 z
 =
 \mu+\sigma\epsilon
-\]
+$$
 
 是 latent sample。
 
 ---
 
-# 63. 常见误解五：CVAE Encoder 训练时看 Camera Images
+## 63. 常见误解五：CVAE Encoder 训练时看 Camera Images
 
 ACT 实际实现中：
 
@@ -3269,7 +3269,7 @@ images 进入的是：
 
 ---
 
-# 64. 常见误解六：推理时 z 还是 Encoder 预测的
+## 64. 常见误解六：推理时 z 还是 Encoder 预测的
 
 **错误。**
 
@@ -3279,23 +3279,23 @@ test time：
 
 官方代码直接：
 
-\[
+$$
 z=0
-\]
+$$
 
 ---
 
-# 65. 常见误解七：推理时 z=0 是因为 z 没用
+## 65. 常见误解七：推理时 z=0 是因为 z 没用
 
 **错误。**
 
-\(z\) 在 training objective 中承担 latent variation modeling。
+$z$ 在 training objective 中承担 latent variation modeling。
 
 test time：
 
-\[
+$$
 z=0
-\]
+$$
 
 是选取 prior mean 做 deterministic decoding。
 
@@ -3305,27 +3305,27 @@ z=0
 
 ---
 
-# 66. 常见误解八：一般 CVAE 推理都必须 z=0
+## 66. 常见误解八：一般 CVAE 推理都必须 z=0
 
 **错误。**
 
 一般 CVAE 完全可以：
 
-\[
+$$
 z\sim p(z)
-\]
+$$
 
 随机生成多个 outputs。
 
-\[
+$$
 z=0
-\]
+$$
 
 是 ACT 的具体 inference design。
 
 ---
 
-# 67. 常见误解九：论文 ACT reconstruction 就是 MSE
+## 67. 常见误解九：论文 ACT reconstruction 就是 MSE
 
 需要更谨慎。
 
@@ -3333,15 +3333,15 @@ Algorithm 1 写 MSE。
 
 但正文明确说实际使用：
 
-\[
+$$
 L1
-\]
+$$
 
 官方代码也是：
 
-\[
+$$
 L1
-\]
+$$
 
 所以如果讨论：
 
@@ -3351,7 +3351,7 @@ L1
 
 ---
 
-# 68. 常见误解十：CVAE Decoder 就是 Transformer Decoder
+## 68. 常见误解十：CVAE Decoder 就是 Transformer Decoder
 
 **错误。**
 
@@ -3370,15 +3370,15 @@ ACT 论文里的：
 
 ---
 
-# 69. 用五条公式记住 ACT 的 CVAE
+## 69. 用五条公式记住 ACT 的 CVAE
 
 如果最后只留下五条公式：
 
 ---
 
-## 1. Training Encoder
+### 1. Training Encoder
 
-\[
+$$
 \boxed{
 q_\phi(
 z
@@ -3387,21 +3387,21 @@ a_{t:t+k},
 \bar o_t
 )
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 \bar o_t
-\]
+$$
 
 不包含 images。
 
 ---
 
-## 2. Approximate Posterior
+### 2. Approximate Posterior
 
-\[
+$$
 \boxed{
 q_\phi(z|\cdot)
 =
@@ -3411,13 +3411,13 @@ q_\phi(z|\cdot)
 \operatorname{diag}(\sigma^2)
 )
 }
-\]
+$$
 
 ---
 
-## 3. Reparameterization
+### 3. Reparameterization
 
-\[
+$$
 \boxed{
 z
 =
@@ -3425,13 +3425,13 @@ z
 \qquad
 \epsilon\sim\mathcal N(0,I)
 }
-\]
+$$
 
 ---
 
-## 4. Policy
+### 4. Policy
 
-\[
+$$
 \boxed{
 \pi_\theta(
 \hat a_{t:t+k}
@@ -3439,13 +3439,13 @@ z
 o_t,z
 )
 }
-\]
+$$
 
 ---
 
-## 5. Prior Regularization
+### 5. Prior Regularization
 
-\[
+$$
 \boxed{
 D_{KL}
 \left(
@@ -3454,34 +3454,34 @@ q_\phi(z|\cdot)
 \mathcal N(0,I)
 \right)
 }
-\]
+$$
 
 推理时：
 
-\[
+$$
 \boxed{
 z=0
 }
-\]
+$$
 
 ---
 
-# 70. 一句话重新理解
+## 70. 一句话重新理解
 
-> **ACT 的 CVAE encoder 在训练时阅读当前 joint state 和真实 future action chunk，用 `[CLS]` 的 Transformer representation 预测一个 Gaussian latent posterior \(q_\phi(z|\cdot)\)；从中重参数化采样得到的 \(z\) 作为额外 condition 输入真正的 ACT policy，帮助模型解释 human demonstrations 中的 action-sequence variation。**
+> **ACT 的 CVAE encoder 在训练时阅读当前 joint state 和真实 future action chunk，用 `[CLS]` 的 Transformer representation 预测一个 Gaussian latent posterior $q_\phi(z|\cdot)$；从中重参数化采样得到的 $z$ 作为额外 condition 输入真正的 ACT policy，帮助模型解释 human demonstrations 中的 action-sequence variation。**
 
 KL：
 
-\[
+$$
 D_{KL}
 (
 q_\phi(z|\cdot)
 \parallel
 \mathcal N(0,I)
 )
-\]
+$$
 
-限制 \(z\) 不要成为一个完全自由的 demonstration memory。
+限制 $z$ 不要成为一个完全自由的 demonstration memory。
 
 而推理时 ground-truth future actions 不存在，
 
@@ -3489,9 +3489,9 @@ q_\phi(z|\cdot)
 
 ACT 不随机 sample prior，而是直接选择：
 
-\[
+$$
 z=0
-\]
+$$
 
 即 unit Gaussian prior 的均值，
 
@@ -3499,7 +3499,7 @@ z=0
 
 ---
 
-# 71. 下一步
+## 71. 下一步
 
 现在我们已经完整走通：
 
@@ -3527,12 +3527,12 @@ CVAE in ACT
 
 它会专门回答：
 
-- 为什么训练 posterior 必须向 \(\mathcal N(0,I)\) 靠近；
+- 为什么训练 posterior 必须向 $\mathcal N(0,I)$ 靠近；
 - 为什么 prior mean 是 0；
-- \(z=0\) 到底删除了什么、又没有删除什么；
+- $z=0$ 到底删除了什么、又没有删除什么；
 - 为什么不是随机 sample；
 - 为什么不能把它理解成“把额外因素全部消除掉”；
-- \(\beta\) 和 \(z=0\) 有什么关系。
+- $\beta$ 和 $z=0$ 有什么关系。
 
 如果开始进入 ACT 的完整 Transformer 网络：
 
@@ -3562,7 +3562,7 @@ k × 14 Actions
 
 ---
 
-## Primary Source
+### Primary Source
 
 Tony Z. Zhao, Vikash Kumar, Sergey Levine, Chelsea Finn.  
 **Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware.**  
@@ -3585,7 +3585,7 @@ Robotics: Science and Systems (RSS), 2023.
 
 ---
 
-## Official Implementation
+### Official Implementation
 
 Official ACT repository:
 
@@ -3602,17 +3602,17 @@ policy.py
 
 - latent dimension = 32；
 - `[CLS]` + joint + action sequence 进入 CVAE encoder；
-- `[CLS]` output 经过 Linear 得到 \(\mu\) 和 `logvar`；
-- training 使用 reparameterized \(z\)；
+- `[CLS]` output 经过 Linear 得到 $\mu$ 和 `logvar`；
+- training 使用 reparameterized $z$；
 - inference 使用全零 latent vector；
 - actual ACT reconstruction implementation 使用 L1；
 - loss 为 L1 + weighted KL。
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### 前置知识
+#### 前置知识
 
 - [ACT 到底解决了什么问题？](./act-what-problem-does-it-solve.md)
 - [Action Chunking](./action-chunking.md)
@@ -3621,7 +3621,7 @@ policy.py
 - [Reparameterization Trick](../../generative-models/reparameterization-trick.md)
 - [CVAE](../../generative-models/cvae.md)
 
-### Transformer 基础
+#### Transformer 基础
 
 - [Attention](../../deep-learning/attention.md)
 - [Query / Key / Value](../../deep-learning/qkv.md)
@@ -3629,7 +3629,7 @@ policy.py
 - CLS Token
 - [Positional Encoding](../../deep-learning/positional-encoding.md)
 
-### 数学
+#### 数学
 
 - [Normal Distribution](../../mathematics/normal-distribution.md)
 - Standard Normal Distribution
@@ -3637,7 +3637,7 @@ policy.py
 - Variance
 - [KL Divergence](../../mathematics/kl-divergence.md)
 
-### 下一步
+#### 下一步
 
 - [为什么 ACT 推理时令 z = 0？](./why-z-zero-at-inference.md)
 - [ACT Architecture](./architecture.md)

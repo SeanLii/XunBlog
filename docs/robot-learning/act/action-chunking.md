@@ -13,15 +13,15 @@ updated: "2026-09-15"
 
 普通行为克隆通常预测一个动作：
 
-\[
+$$
 \pi_\theta(a_t\mid s_t)
-\]
+$$
 
 ACT 则预测一段未来动作：
 
-\[
+$$
 \pi_\theta(a_{t:t+k}\mid s_t)
-\]
+$$
 
 这就是 **Action Chunking**。
 
@@ -34,9 +34,9 @@ ACT 则预测一段未来动作：
 我们至少还需要回答四个问题：
 
 1. 为什么一次预测一段动作能够缓解累积误差？
-2. 论文所说的 **effective horizon 缩短 \(k\) 倍** 到底是什么意思？
+2. 论文所说的 **effective horizon 缩短 $k$ 倍** 到底是什么意思？
 3. Action Chunking 为什么还能帮助处理人类示范中的 non-Markovian behavior？
-4. \(k\) 是不是越大越好？
+4. $k$ 是不是越大越好？
 
 这一篇只解决 Action Chunking 本身。
 
@@ -46,25 +46,25 @@ ACT 则预测一段未来动作：
 
 ---
 
-# 1. 从最普通的单步行为克隆开始
+## 1. 从最普通的单步行为克隆开始
 
 假设我们有一条专家示范：
 
-\[
+$$
 (s_1,a_1),(s_2,a_2),\ldots,(s_T,a_T)
-\]
+$$
 
 其中：
 
-- \(s_t\)：时间步 \(t\) 的状态或观察；
-- \(a_t\)：专家在这个时间步执行的动作；
-- \(T\)：一条完整轨迹的长度。
+- $s_t$：时间步 $t$ 的状态或观察；
+- $a_t$：专家在这个时间步执行的动作；
+- $T$：一条完整轨迹的长度。
 
 最简单的 [行为克隆（Behavior Cloning）](../imitation-learning/behavior-cloning-distribution-shift.md) 学习：
 
-\[
+$$
 \pi_\theta(a_t\mid s_t)
-\]
+$$
 
 也就是说：
 
@@ -72,9 +72,9 @@ ACT 则预测一段未来动作：
 
 训练时，我们拥有专家真正访问过的状态：
 
-\[
+$$
 s_1,s_2,\ldots,s_T
-\]
+$$
 
 所以模型不断学习：
 
@@ -92,59 +92,59 @@ s_1,s_2,\ldots,s_T
 
 ---
 
-# 2. 单步预测为什么会产生 Compounding Error？
+## 2. 单步预测为什么会产生 Compounding Error？
 
-假设专家在某个状态 \(s_t\) 应该执行：
+假设专家在某个状态 $s_t$ 应该执行：
 
-\[
+$$
 a_t
-\]
+$$
 
 而机器人预测：
 
-\[
+$$
 \hat a_t
-\]
+$$
 
 并且：
 
-\[
+$$
 \hat a_t \neq a_t
-\]
+$$
 
 哪怕只是一个很小的误差，也可能导致下一时刻机器人到达：
 
-\[
+$$
 \hat s_{t+1}
-\]
+$$
 
 而不是专家示范中的：
 
-\[
+$$
 s_{t+1}
-\]
+$$
 
 于是：
 
-\[
+$$
 \hat s_{t+1}\neq s_{t+1}
-\]
+$$
 
 接下来模型必须在自己造成的新状态上继续预测：
 
-\[
+$$
 \pi_\theta(a_{t+1}\mid \hat s_{t+1})
-\]
+$$
 
 但训练时它主要看到的是专家状态分布。
 
-如果 \(\hat s_{t+1}\) 已经偏离训练数据，模型可能更容易再次出错。
+如果 $\hat s_{t+1}$ 已经偏离训练数据，模型可能更容易再次出错。
 
 然后：
 
-\[
+$$
 \hat s_{t+2}
-\]
+$$
 
 继续偏离。
 
@@ -172,31 +172,31 @@ ACT 原论文明确把它作为高精度模仿学习中的核心问题。
 
 ---
 
-# 3. 为什么高频机器人控制尤其容易遇到这个问题？
+## 3. 为什么高频机器人控制尤其容易遇到这个问题？
 
 ALOHA 中的动作数据是高频采集的。
 
 论文中的遥操作控制频率为：
 
-\[
+$$
 50\text{ Hz}
-\]
+$$
 
 也就是每秒大约 50 个控制时间步。
 
 假设一个操作持续 10 秒，那么轨迹长度大约就是：
 
-\[
+$$
 T=50\times10=500
-\]
+$$
 
 也就是说，一个看起来并不算特别长的动作，可能已经需要经历数百个时间步。
 
 如果策略每一步都独立预测：
 
-\[
+$$
 a_1,a_2,\ldots,a_{500}
-\]
+$$
 
 那么机器人就要连续经历很长的预测链。
 
@@ -208,13 +208,13 @@ ACT 作者希望改变的，正是这种：
 
 ---
 
-# 4. Action Chunking：改变“预测的基本单位”
+## 4. Action Chunking：改变“预测的基本单位”
 
 普通单步策略的基本单位是：
 
-\[
+$$
 a_t
-\]
+$$
 
 Action Chunking 把基本单位改成：
 
@@ -222,45 +222,45 @@ Action Chunking 把基本单位改成：
 
 为了避免下标产生歧义，我们在这篇文章里定义：
 
-\[
+$$
 \mathbf A_t
 =
 (a_t,a_{t+1},\ldots,a_{t+k-1})
-\]
+$$
 
 其中：
 
-- \(\mathbf A_t\)：从时间步 \(t\) 开始的一个 action chunk；
-- \(k\)：chunk size，也就是一个 chunk 中包含多少个动作。
+- $\mathbf A_t$：从时间步 $t$ 开始的一个 action chunk；
+- $k$：chunk size，也就是一个 chunk 中包含多少个动作。
 
 于是策略从：
 
-\[
+$$
 \pi_\theta(a_t\mid s_t)
-\]
+$$
 
 变成：
 
-\[
+$$
 \pi_\theta(\mathbf A_t\mid s_t)
-\]
+$$
 
 即：
 
-\[
+$$
 \pi_\theta(
 a_t,a_{t+1},\ldots,a_{t+k-1}
 \mid s_t
 )
-\]
+$$
 
 ACT 原论文写作：
 
-\[
+$$
 \pi_\theta(a_{t:t+k}\mid s_t)
-\]
+$$
 
-并将其描述为预测接下来的 \(k\) 个动作。
+并将其描述为预测接下来的 $k$ 个动作。
 
 这里最重要的变化不是符号。
 
@@ -270,7 +270,7 @@ ACT 原论文写作：
 
 ---
 
-# 5. 一个最简单的例子
+## 5. 一个最简单的例子
 
 假设机器人要把电池插进插槽。
 
@@ -289,9 +289,9 @@ ACT 原论文写作：
 
 如果：
 
-\[
+$$
 k=1
-\]
+$$
 
 模型每次只预测一个动作：
 
@@ -313,9 +313,9 @@ k=1
 
 如果：
 
-\[
+$$
 k=4
-\]
+$$
 
 则可以把未来动作组织成：
 
@@ -331,7 +331,7 @@ Chunk 2
 
 ---
 
-# 6. 什么叫 Effective Horizon？
+## 6. 什么叫 Effective Horizon？
 
 这是 Action Chunking 中最容易被“听懂了但其实没懂”的词。
 
@@ -339,17 +339,17 @@ Chunk 2
 
 假设任务需要：
 
-\[
+$$
 T
-\]
+$$
 
 个物理时间步。
 
 如果每一步是一个决策单位，那么从策略角度看，需要处理大约：
 
-\[
+$$
 T
-\]
+$$
 
 个连续决策单位。
 
@@ -359,9 +359,9 @@ T
 
 如果每个 chunk 包含：
 
-\[
+$$
 k
-\]
+$$
 
 个动作，并且先考虑论文描述的最朴素 chunk 执行方式：
 
@@ -377,101 +377,101 @@ k
 
 那么整个任务大约会被划分成：
 
-\[
+$$
 \left\lceil \frac{T}{k}\right\rceil
-\]
+$$
 
 个 chunk。
 
-如果 \(T\) 恰好能被 \(k\) 整除：
+如果 $T$ 恰好能被 $k$ 整除：
 
-\[
+$$
 \frac{T}{k}
-\]
+$$
 
 于是原来长度约为：
 
-\[
+$$
 T
-\]
+$$
 
 的单步决策链，变成长度约为：
 
-\[
+$$
 \frac{T}{k}
-\]
+$$
 
 的 chunk-level 决策链。
 
 所以论文称它带来：
 
-\[
+$$
 k\text{-fold reduction in effective horizon}
-\]
+$$
 
 即：
 
-> **有效 horizon 缩短约 \(k\) 倍。**
+> **有效 horizon 缩短约 $k$ 倍。**
 
 ---
 
-# 7. 一个具体数字例子
+## 7. 一个具体数字例子
 
 假设：
 
-\[
+$$
 T=500
-\]
+$$
 
 也就是说任务有 500 个控制时间步。
 
-### 单步策略
+#### 单步策略
 
-\[
+$$
 k=1
-\]
+$$
 
 有效决策链大约是：
 
-\[
+$$
 500
-\]
+$$
 
 个单位。
 
 ---
 
-### Action Chunking
+#### Action Chunking
 
 假设：
 
-\[
+$$
 k=100
-\]
+$$
 
 那么如果使用最朴素的 chunk 执行方式：
 
-\[
+$$
 \frac{500}{100}=5
-\]
+$$
 
 任务可以被理解为大约 5 个 chunk-level 单位。
 
 从这个角度：
 
-\[
+$$
 500\rightarrow5
-\]
+$$
 
 effective horizon 缩短了约：
 
-\[
+$$
 100\times
-\]
+$$
 
 ---
 
-# 8. 但必须马上澄清：物理动作没有减少
+## 8. 但必须马上澄清：物理动作没有减少
 
 这句话非常重要：
 
@@ -479,17 +479,17 @@ effective horizon 缩短了约：
 
 如果机器人原本需要执行：
 
-\[
+$$
 500
-\]
+$$
 
 个关节目标，
 
 用了 Action Chunking 后，它仍然需要执行：
 
-\[
+$$
 500
-\]
+$$
 
 个关节目标。
 
@@ -497,7 +497,7 @@ effective horizon 缩短了约：
 
 变化的是：
 
-> **策略把未来动作按照长度 \(k\) 的序列来预测和建模。**
+> **策略把未来动作按照长度 $k$ 的序列来预测和建模。**
 
 所以：
 
@@ -528,7 +528,7 @@ effective horizon 缩短了约：
 
 ---
 
-# 9. 为什么 horizon 变短可能缓解累积误差？
+## 9. 为什么 horizon 变短可能缓解累积误差？
 
 这里需要非常谨慎。
 
@@ -538,25 +538,25 @@ Action Chunking **不是数学上把 compounding error 消灭了**。
 
 单步策略不断进行：
 
-\[
+$$
 s_t\rightarrow a_t
-\]
+$$
 
 然后依赖执行后的新状态继续：
 
-\[
+$$
 s_{t+1}\rightarrow a_{t+1}
-\]
+$$
 
 每一个动作都处在一个很长的逐步闭环链条里。
 
 而 chunk policy 一次预测：
 
-\[
+$$
 s_t
 \rightarrow
 (a_t,\ldots,a_{t+k-1})
-\]
+$$
 
 于是模型直接学习：
 
@@ -590,25 +590,25 @@ Action Chunking：
 
 ---
 
-# 10. 这并不意味着“预测越远越准确”
+## 10. 这并不意味着“预测越远越准确”
 
 这里很容易产生错误推理：
 
-> 如果预测 \(k\) 步可以缩短 horizon，那把 \(k\) 设成整个 episode 不就最好？
+> 如果预测 $k$ 步可以缩短 horizon，那把 $k$ 设成整个 episode 不就最好？
 
 不是。
 
 当：
 
-\[
+$$
 k=T
-\]
+$$
 
 时，策略在第一次观察后直接预测完整任务：
 
-\[
+$$
 (a_1,a_2,\ldots,a_T)
-\]
+$$
 
 这实际上接近：
 
@@ -630,7 +630,7 @@ k=T
 
 而精细操作偏偏非常依赖闭环视觉反馈。
 
-所以 \(k\) 存在一个基本 trade-off：
+所以 $k$ 存在一个基本 trade-off：
 
 ```text
 k 太小
@@ -655,17 +655,17 @@ k 太大
 
 因此：
 
-> **\(k\) 不是越大越好。**
+> **$k$ 不是越大越好。**
 
 ---
 
-# 11. 原论文的 Ablation 正好验证了这一点
+## 11. 原论文的 Ablation 正好验证了这一点
 
-ACT 论文专门改变 chunk size \(k\) 做了 ablation。
+ACT 论文专门改变 chunk size $k$ 做了 ablation。
 
 作者给出两个极端：
 
-### \(k=1\)
+#### $k=1$
 
 等价于：
 
@@ -675,7 +675,7 @@ ACT 论文专门改变 chunk size \(k\) 做了 ablation。
 
 ---
 
-### \(k=\text{episode length}\)
+#### $k=\text{episode length}$
 
 等价于：
 
@@ -685,25 +685,25 @@ ACT 论文专门改变 chunk size \(k\) 做了 ablation。
 
 ---
 
-作者在 4 个实验设置上比较不同 \(k\)。
+作者在 4 个实验设置上比较不同 $k$。
 
 在关闭 Temporal Ensemble、单独观察 Action Chunking 作用时，ACT 的平均成功率从：
 
-\[
+$$
 1\%\quad (k=1)
-\]
+$$
 
 提升到：
 
-\[
+$$
 44\%\quad (k=100)
-\]
+$$
 
 但继续增大到：
 
-\[
+$$
 k=200,\;400
-\]
+$$
 
 性能又略微下降。
 
@@ -718,7 +718,7 @@ k=200,\;400
 
 ---
 
-# 12. 一个重要细节：Action Chunking 不依赖 Transformer 才成立
+## 12. 一个重要细节：Action Chunking 不依赖 Transformer 才成立
 
 因为 ACT 的名字叫：
 
@@ -734,11 +734,11 @@ k=200,\;400
 
 例如对于 BC-ConvMLP，作者只需要把输出维度增加为：
 
-\[
+$$
 k\times \text{action\_dim}
-\]
+$$
 
-模型就可以一次输出 \(k\) 个动作。
+模型就可以一次输出 $k$ 个动作。
 
 也就是说：
 
@@ -750,27 +750,27 @@ Transformer 只是 ACT 用来建模复杂视觉输入和动作序列的重要架
 
 ---
 
-# 13. 从 Tensor Shape 看会更直观
+## 13. 从 Tensor Shape 看会更直观
 
 假设单个动作维度是：
 
-\[
+$$
 D_a
-\]
+$$
 
 batch size 是：
 
-\[
+$$
 B
-\]
+$$
 
 ---
 
 普通单步策略的输出可以写成：
 
-\[
+$$
 [B,D_a]
-\]
+$$
 
 即每个样本预测一个动作。
 
@@ -778,15 +778,15 @@ B
 
 如果 chunk size 为：
 
-\[
+$$
 k
-\]
+$$
 
 Action Chunking 的输出则可以写成：
 
-\[
+$$
 [B,k,D_a]
-\]
+$$
 
 含义是：
 
@@ -809,57 +809,57 @@ Batch
 
 输入一个当前观察：
 
-\[
+$$
 s_t
-\]
+$$
 
 target 不再是：
 
-\[
+$$
 a_t
-\]
+$$
 
 而是：
 
-\[
+$$
 \mathbf A_t
 =
 (a_t,\ldots,a_{t+k-1})
-\]
+$$
 
 ---
 
-# 14. Training Data 是怎么构造出来的？
+## 14. Training Data 是怎么构造出来的？
 
 假设一条示范轨迹为：
 
-\[
+$$
 (a_1,a_2,a_3,a_4,a_5,a_6,\ldots)
-\]
+$$
 
 并且：
 
-\[
+$$
 k=4
-\]
+$$
 
-那么在时间步 \(t=1\)，训练 target 可以是：
+那么在时间步 $t=1$，训练 target 可以是：
 
-\[
+$$
 (a_1,a_2,a_3,a_4)
-\]
+$$
 
-在 \(t=2\)：
+在 $t=2$：
 
-\[
+$$
 (a_2,a_3,a_4,a_5)
-\]
+$$
 
-在 \(t=3\)：
+在 $t=3$：
 
-\[
+$$
 (a_3,a_4,a_5,a_6)
-\]
+$$
 
 所以：
 
@@ -873,7 +873,7 @@ k=4
 
 ---
 
-# 15. Action Chunking 还有第二个作用：建模时间相关行为
+## 15. Action Chunking 还有第二个作用：建模时间相关行为
 
 到这里，我们一直围绕：
 
@@ -895,21 +895,21 @@ k=4
 
 也就是：
 
-\[
+$$
 a_t\sim\pi(a_t\mid s_t)
-\]
+$$
 
 如果两个时刻的：
 
-\[
+$$
 s_t
-\]
+$$
 
 完全一样，那么策略看到的信息也一样。
 
 ---
 
-# 16. “停顿”为什么可能让单步策略困惑？
+## 16. “停顿”为什么可能让单步策略困惑？
 
 论文举了一个非常好的例子：
 
@@ -917,9 +917,9 @@ s_t
 
 假设机器人看到同样的视觉和关节状态：
 
-\[
+$$
 s
-\]
+$$
 
 但人类有时正处在：
 
@@ -935,9 +935,9 @@ s
 
 如果状态表示本身没有编码“我已经停了多久”，那么从单步策略看：
 
-\[
+$$
 s=s
-\]
+$$
 
 输入几乎一样。
 
@@ -945,9 +945,9 @@ s=s
 
 这种 temporally correlated confounder 会让：
 
-\[
+$$
 \pi(a_t\mid s_t)
-\]
+$$
 
 很难单独表示行为。
 
@@ -957,19 +957,19 @@ s=s
 
 ---
 
-# 17. Chunk 为什么能够帮助？
+## 17. Chunk 为什么能够帮助？
 
 因为 chunk policy 不再独立预测一个瞬间：
 
-\[
+$$
 a_t
-\]
+$$
 
 而是联合预测：
 
-\[
+$$
 (a_t,a_{t+1},\ldots,a_{t+k-1})
-\]
+$$
 
 如果某个时间相关因素完整地落在 chunk 内，那么模型可以直接学习：
 
@@ -1003,7 +1003,7 @@ ACT 论文对此的表述非常谨慎：
 
 ---
 
-# 18. Action Chunking 和 History-Conditioned Policy 有什么区别？
+## 18. Action Chunking 和 History-Conditioned Policy 有什么区别？
 
 处理非 Markov 信息，一个自然想法是：
 
@@ -1011,13 +1011,13 @@ ACT 论文对此的表述非常谨慎：
 
 例如：
 
-\[
+$$
 \pi(
 a_t
 \mid
 s_{t-h:t}
 )
-\]
+$$
 
 这叫 history-conditioned policy。
 
@@ -1045,7 +1045,7 @@ Action Chunking 采取的是另一个方向：
 
 ---
 
-# 19. 一个极其重要的边界：Naive Action Chunking ≠ 最终 ACT
+## 19. 一个极其重要的边界：Naive Action Chunking ≠ 最终 ACT
 
 到目前为止，我们为了理解 effective horizon，一直使用最朴素的执行方式：
 
@@ -1065,21 +1065,21 @@ ACT 原论文自己也先这样定义 Action Chunking。
 
 > **naive implementation can be sub-optimal**
 
-原因是新的环境观察每隔 \(k\) 步才突然加入。
+原因是新的环境观察每隔 $k$ 步才突然加入。
 
 这会带来两个问题：
 
-### 1. Reactive behavior 下降
+#### 1. Reactive behavior 下降
 
 在 chunk 内发生环境变化时，策略不能立刻根据新观察修正。
 
-### 2. 动作可能不平滑
+#### 2. 动作可能不平滑
 
 每次从旧 chunk 切换到新 chunk 时，新 observation 会突然改变预测结果，产生 jerky motion。
 
 所以：
 
-> **最终 ACT 并没有简单地每 \(k\) 步才 query 一次 policy。**
+> **最终 ACT 并没有简单地每 $k$ 步才 query 一次 policy。**
 
 它改成：
 
@@ -1093,7 +1093,7 @@ ACT 原论文自己也先这样定义 Action Chunking。
 
 ---
 
-# 20. 那最终 ACT 每步都重新预测，为什么还叫“缩短 Effective Horizon”？
+## 20. 那最终 ACT 每步都重新预测，为什么还叫“缩短 Effective Horizon”？
 
 这是最值得澄清的问题之一。
 
@@ -1103,7 +1103,7 @@ ACT 原论文自己也先这样定义 Action Chunking。
 
 那么显然不能说：
 
-> “最终 ACT 的模型 forward 次数从 \(T\) 降成了 \(T/k\)。”
+> “最终 ACT 的模型 forward 次数从 $T$ 降成了 $T/k$。”
 
 这不是事实。
 
@@ -1111,23 +1111,23 @@ Temporal Ensemble 甚至会增加 inference-time computation。
 
 所以：
 
-> **论文中的 \(k\)-fold effective-horizon reduction，不应该理解成最终 ACT 只做 \(T/k\) 次网络推理。**
+> **论文中的 $k$-fold effective-horizon reduction，不应该理解成最终 ACT 只做 $T/k$ 次网络推理。**
 
 更准确地说，它描述的是 **Action Chunking 这种输出表示带来的时间抽象**：
 
-\[
+$$
 \pi(a_t\mid s_t)
-\]
+$$
 
 被改为：
 
-\[
+$$
 \pi(a_{t:t+k}\mid s_t)
-\]
+$$
 
 策略一次直接对未来一段行为进行建模，而不是只对一个瞬时动作进行建模。
 
-最朴素执行时，这确实对应大约 \(T/k\) 个 chunk-level 决策。
+最朴素执行时，这确实对应大约 $T/k$ 个 chunk-level 决策。
 
 而最终 ACT 为了恢复高频闭环反馈，又在推理阶段对这些 chunks 进行重叠预测和 Temporal Ensemble。
 
@@ -1152,61 +1152,61 @@ Inference execution
 
 ---
 
-# 21. Action Chunking 真正带来的是什么？
+## 21. Action Chunking 真正带来的是什么？
 
 现在可以更准确地总结。
 
 它至少带来三个效果。
 
-## 1. Temporal abstraction
+### 1. Temporal abstraction
 
 把：
 
-\[
+$$
 \text{single action}
-\]
+$$
 
 提升为：
 
-\[
+$$
 \text{short action sequence}
-\]
+$$
 
 作为策略的预测单位。
 
 ---
 
-## 2. Shorter effective horizon
+### 2. Shorter effective horizon
 
 从论文的 chunk-level 视角：
 
-\[
+$$
 T
-\]
+$$
 
 变为大约：
 
-\[
+$$
 T/k
-\]
+$$
 
 从而缓解长序列单步模仿学习中的累积误差问题。
 
 ---
 
-## 3. Sequence-level temporal structure
+### 3. Sequence-level temporal structure
 
 模型可以直接学习一段行为内部的时间关系：
 
-\[
+$$
 (a_t,a_{t+1},\ldots,a_{t+k-1})
-\]
+$$
 
 因此能够更好地表示某些短时间范围内的 non-Markovian behavior。
 
 ---
 
-# 22. 它没有解决什么？
+## 22. 它没有解决什么？
 
 同样重要的是：
 
@@ -1214,7 +1214,7 @@ T/k
 
 Action Chunking 本身没有自动解决：
 
-### 人类示范的多模态性
+#### 人类示范的多模态性
 
 同一个 observation 可能有多种合理 action chunks。
 
@@ -1222,7 +1222,7 @@ ACT 通过 [CVAE](../../generative-models/cvae.md) 处理这个问题。
 
 ---
 
-### Chunk 切换和平滑问题
+#### Chunk 切换和平滑问题
 
 Naive chunking 甚至会产生 jerky motion。
 
@@ -1230,7 +1230,7 @@ ACT 通过 [Temporal Ensemble](./temporal-ensemble.md) 改善。
 
 ---
 
-### 视觉理解
+#### 视觉理解
 
 图像中哪个物体重要、机械臂当前在哪里，不是 Action Chunking 本身负责。
 
@@ -1238,13 +1238,13 @@ ACT 还需要视觉 backbone 和 [Transformer](../../deep-learning/transformer.m
 
 ---
 
-### 无限长时序建模
+#### 无限长时序建模
 
-\(k\) 太长时，序列本身反而更难预测，并且策略会越来越接近 open-loop。
+$k$ 太长时，序列本身反而更难预测，并且策略会越来越接近 open-loop。
 
 ---
 
-# 23. 常见误解一：Action Chunking = 每 k 步才看一次环境
+## 23. 常见误解一：Action Chunking = 每 k 步才看一次环境
 
 **不完整。**
 
@@ -1264,23 +1264,23 @@ ACT 还需要视觉 backbone 和 [Transformer](../../deep-learning/transformer.m
 
 ---
 
-# 24. 常见误解二：Action Chunking 减少了机器人动作数量
+## 24. 常见误解二：Action Chunking 减少了机器人动作数量
 
 **错误。**
 
 如果轨迹仍然有：
 
-\[
+$$
 T
-\]
+$$
 
 个控制时间步，
 
 机器人仍然需要执行：
 
-\[
+$$
 T
-\]
+$$
 
 个动作目标。
 
@@ -1290,19 +1290,19 @@ Action Chunking 改变的是：
 
 ---
 
-# 25. 常见误解三：k 越大越好
+## 25. 常见误解三：k 越大越好
 
 **错误。**
 
 论文 ablation 已经显示：
 
-\[
+$$
 k=1
-\]
+$$
 
 不好。
 
-但 \(k\) 接近 episode length 也会下降。
+但 $k$ 接近 episode length 也会下降。
 
 因为：
 
@@ -1324,7 +1324,7 @@ k=1
 
 ---
 
-# 26. 常见误解四：Transformer 才让 Action Chunking 成立
+## 26. 常见误解四：Transformer 才让 Action Chunking 成立
 
 **错误。**
 
@@ -1332,9 +1332,9 @@ Action Chunking 是一种更一般的策略设计。
 
 只要模型能够输出：
 
-\[
+$$
 [B,k,D_a]
-\]
+$$
 
 原则上就可以实现 Action Chunking。
 
@@ -1342,7 +1342,7 @@ ACT 论文甚至在 BC-ConvMLP 和 VINN 上进行了相应扩展，并观察到�
 
 ---
 
-# 27. 常见误解五：Action Chunking 本质只是“减少推理次数”
+## 27. 常见误解五：Action Chunking 本质只是“减少推理次数”
 
 **错误。**
 
@@ -1356,15 +1356,15 @@ ACT 论文甚至在 BC-ConvMLP 和 VINN 上进行了相应扩展，并观察到�
 
 ---
 
-# 28. 用一句公式重新理解
+## 28. 用一句公式重新理解
 
 普通行为克隆：
 
-\[
+$$
 \boxed{
 \pi_\theta(a_t\mid s_t)
 }
-\]
+$$
 
 问题是：
 
@@ -1374,14 +1374,14 @@ ACT 论文甚至在 BC-ConvMLP 和 VINN 上进行了相应扩展，并观察到�
 
 Action Chunking：
 
-\[
+$$
 \boxed{
 \pi_\theta(
 a_t,a_{t+1},\ldots,a_{t+k-1}
 \mid s_t
 )
 }
-\]
+$$
 
 变化是：
 
@@ -1391,7 +1391,7 @@ a_t,a_{t+1},\ldots,a_{t+k-1}
 
 ---
 
-# 29. 从设计思想上重新看 ACT
+## 29. 从设计思想上重新看 ACT
 
 Action Chunking 体现了一个非常重要的机器人学习思想：
 
@@ -1399,9 +1399,9 @@ Action Chunking 体现了一个非常重要的机器人学习思想：
 
 如果一直预测：
 
-\[
+$$
 \text{one action}
-\]
+$$
 
 那么即使换一个更大的网络，仍然在解决：
 
@@ -1411,21 +1411,21 @@ Action Chunking 体现了一个非常重要的机器人学习思想：
 
 ACT 首先改变的是：
 
-\[
+$$
 \text{prediction target}
-\]
+$$
 
 从：
 
-\[
+$$
 a_t
-\]
+$$
 
 变成：
 
-\[
+$$
 a_{t:t+k}
-\]
+$$
 
 然后才选择 Transformer 来建模这种序列结构。
 
@@ -1453,7 +1453,7 @@ Transformer 很强
 
 ---
 
-# 30. 下一步：为什么还需要 Temporal Ensemble？
+## 30. 下一步：为什么还需要 Temporal Ensemble？
 
 现在我们已经理解 Action Chunking 的优势。
 
@@ -1487,12 +1487,12 @@ ACT 的解决方式非常巧妙：
 
 例如：
 
-\[
+$$
 \hat a_t^{(t-3)},
 \hat a_t^{(t-2)},
 \hat a_t^{(t-1)},
 \hat a_t^{(t)}
-\]
+$$
 
 然后把它们组合起来。
 
@@ -1502,17 +1502,17 @@ ACT 的解决方式非常巧妙：
 
 ---
 
-# 31. 如果只记住一件事
+## 31. 如果只记住一件事
 
 > **Action Chunking 不是“让机器人一次执行很多动作”，而是把策略的预测单位从单个动作改成一段动作序列。**
 
 它让模型直接学习：
 
-\[
+$$
 \text{当前状态}
 \rightarrow
 \text{未来短时间行为}
-\]
+$$
 
 从而缩短论文意义上的 effective horizon，并帮助建模短时间范围内的时间相关行为。
 
@@ -1526,7 +1526,7 @@ ACT 的解决方式非常巧妙：
 
 ---
 
-## Primary Source
+### Primary Source
 
 Tony Z. Zhao, Vikash Kumar, Sergey Levine, Chelsea Finn.  
 **Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware.**  
@@ -1546,23 +1546,23 @@ Robotics: Science and Systems (RSS), 2023.
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### 前置知识
+#### 前置知识
 
 - [ACT 到底解决了什么问题？](./act-what-problem-does-it-solve.md)
 - [模仿学习（Imitation Learning）](../imitation-learning.md)
 - [行为克隆（Behavior Cloning）](../imitation-learning/behavior-cloning-distribution-shift.md)
 
-### 本文概念
+#### 本文概念
 
 - Markov Property
 
-### 下一步
+#### 下一步
 
 - [Temporal Ensemble](./temporal-ensemble.md)
 
-### ACT 中的其他组件
+#### ACT 中的其他组件
 
 - [Transformer](../../deep-learning/transformer.md)
 - [CVAE](../../generative-models/cvae.md)

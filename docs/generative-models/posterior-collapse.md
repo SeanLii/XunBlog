@@ -7,31 +7,31 @@ canonical: /generative-models/posterior-collapse
 updated: "2026-09-15"
 ---
 
-# Posterior Collapse：CVAE 明明有 \(z\)，Decoder 为什么可能完全不理它？
+# Posterior Collapse：CVAE 明明有 $z$，Decoder 为什么可能完全不理它？
 
 前面我们已经知道 ACT 的 CVAE 训练流程：
 
-\[
+$$
 [\text{current qpos},\text{future action chunk}]
 \rightarrow
 \text{CVAE Encoder}
 \rightarrow
 \mu,\log\sigma^2
-\]
+$$
 
 然后：
 
-\[
+$$
 z
 =
 \mu+\sigma\epsilon
-\]
+$$
 
 再把：
 
-\[
+$$
 z
-\]
+$$
 
 和：
 
@@ -40,7 +40,7 @@ z
 
 一起输入 policy：
 
-\[
+$$
 \boxed{
 \hat a_{t:t+k-1}
 =
@@ -49,11 +49,11 @@ o_t,
 z
 )
 }
-\]
+$$
 
 训练目标：
 
-\[
+$$
 \boxed{
 L
 =
@@ -61,39 +61,39 @@ L_{\text{recon}}
 +
 \beta L_{\text{KL}}
 }
-\]
+$$
 
 ACT 官方实现中：
 
-\[
+$$
 L_{\text{recon}}
 =
 L_1
-\]
+$$
 
 并且 canonical：
 
-\[
+$$
 \beta=10
-\]
+$$
 
 到这里我们很容易产生一个直觉：
 
-> 既然网络里专门有一个 \(z\)，而且还花了一整个 CVAE Encoder 去预测 \(\mu\) 和 \(\log\sigma^2\)，那 \(z\) 肯定学到了 demonstration style。
+> 既然网络里专门有一个 $z$，而且还花了一整个 CVAE Encoder 去预测 $\mu$ 和 $\log\sigma^2$，那 $z$ 肯定学到了 demonstration style。
 
 但这句话：
 
-\[
+$$
 \boxed{
 \text{不一定成立。}
 }
-\]
+$$
 
 一个 VAE/CVAE 可以：
 
 - 有 Encoder；
-- 有 \(\mu\)；
-- 有 \(\log\sigma^2\)；
+- 有 $\mu$；
+- 有 $\log\sigma^2$；
 - 有 reparameterization；
 - 有 latent tensor；
 - 有 KL loss；
@@ -102,19 +102,19 @@ L_1
 
 但 Decoder 最终可能学会：
 
-\[
+$$
 \boxed{
 \text{几乎完全忽略 }z
 }
-\]
+$$
 
 这就是：
 
-\[
+$$
 \boxed{
 \text{Posterior Collapse}
 }
-\]
+$$
 
 后验坍缩。
 
@@ -125,39 +125,39 @@ L_1
 1. 什么叫 posterior collapse？
 2. “posterior collapse”到底是哪一个 posterior collapsed？
 3. 为什么：
-   \[
+   $$
    q_\phi(z|x)\approx p(z)
-   \]
+   $$
    意味着 latent 几乎不携带 input information？
 4. 为什么 collapse 时 variance 不是趋近 0，而往往是趋近 prior variance 1？
-5. 为什么一个很强的 Decoder 反而可能更容易忽略 \(z\)？
+5. 为什么一个很强的 Decoder 反而可能更容易忽略 $z$？
 6. KL 为什么一方面让 latent space可采样，一方面又会“惩罚信息”？
 7. Mutual Information：
-   \[
+   $$
    I(X;Z)
-   \]
+   $$
    和 KL 到底什么关系？
 8. CVAE 中应该看：
-   \[
+   $$
    I(Y;Z|C)
-   \]
-   而不是简单 \(I(X;Z)\) 吗？
+   $$
+   而不是简单 $I(X;Z)$ 吗？
 9. 什么是 aggregated posterior？
 10. Rate–Distortion 视角是什么？
 11. KL 很小一定代表 collapse 吗？
 12. KL 很大一定代表 latent 很有用吗？
 13. 某些 latent dimensions collapse 和整个 latent collapse有什么区别？
 14. 什么叫 Active Units？
-15. \(\beta\) 太大为什么可能压死 \(z\)？
-16. \(\beta\) 太小又为什么会造成 prior mismatch？
+15. $\beta$ 太大为什么可能压死 $z$？
+16. $\beta$ 太小又为什么会造成 prior mismatch？
 17. KL annealing为什么有用？
 18. Free Bits 是什么？
-19. 为什么 weakening decoder有时可以逼 decoder 使用 \(z\)？
+19. 为什么 weakening decoder有时可以逼 decoder 使用 $z$？
 20. “强 Decoder 导致 collapse”是不是完整原因？
 21. Lagging Inference Networks 提出了什么不同解释？
 22. ACT 的 Decoder 会不会发生 posterior collapse？
-23. ACT 的 \(z=0\) inference 和 collapse是什么关系？
-24. 如果 ACT 已经 collapse，\(z=0\) 还有意义吗？
+23. ACT 的 $z=0$ inference 和 collapse是什么关系？
+24. 如果 ACT 已经 collapse，$z=0$ 还有意义吗？
 25. ACT 的 CVAE ablation 从 human-data success 35.3% 降到 2% 到底能证明什么？
 26. 它又不能证明什么？
 27. 怎么真正实验诊断 ACT 的 32-D latent 是否被使用？
@@ -170,49 +170,49 @@ L_1
 
 ---
 
-# 1. 先回到 VAE 最基本的目标
+## 1. 先回到 VAE 最基本的目标
 
 普通 VAE：
 
-\[
+$$
 p_\theta(x,z)
 =
 p(z)p_\theta(x|z)
-\]
+$$
 
 我们希望：
 
-\[
+$$
 z
-\]
+$$
 
 解释：
 
-> \(x\) 中的重要 variation。
+> $x$ 中的重要 variation。
 
 但真正 posterior：
 
-\[
+$$
 p_\theta(z|x)
-\]
+$$
 
 通常难算。
 
 所以引入：
 
-\[
+$$
 q_\phi(z|x)
-\]
+$$
 
 作为 approximate posterior。
 
 ---
 
-# 2. ELBO
+## 2. ELBO
 
 经典：
 
-\[
+$$
 \boxed{
 \log p_\theta(x)
 \ge
@@ -228,13 +228,13 @@ q_\phi(z|x)
 p(z)
 )
 }
-\]
+$$
 
 最大化 ELBO。
 
 如果写成最小化 loss：
 
-\[
+$$
 \boxed{
 L
 =
@@ -242,53 +242,53 @@ L_{\text{reconstruction}}
 +
 L_{\text{KL}}
 }
-\]
+$$
 
 ---
 
-# 3. 两项的目标其实在“拉扯”
+## 3. 两项的目标其实在“拉扯”
 
 Reconstruction 项希望：
 
-> \(z\) 尽可能携带对重建有帮助的信息。
+> $z$ 尽可能携带对重建有帮助的信息。
 
 KL 项希望：
 
-\[
+$$
 q_\phi(z|x)
-\]
+$$
 
 不要离 prior：
 
-\[
+$$
 p(z)
-\]
+$$
 
 太远。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{information usefulness}
 \leftrightarrow
 \text{prior regularization}
 }
-\]
+$$
 
 之间存在 tradeoff。
 
 ---
 
-# 4. 为什么需要 KL？
+## 4. 为什么需要 KL？
 
 如果完全没有 KL，
 
 Encoder可以把每个：
 
-\[
+$$
 x
-\]
+$$
 
 映射到非常任意、互不相关的位置。
 
@@ -296,9 +296,9 @@ Decoder可以很好重建，
 
 但训练后从：
 
-\[
+$$
 z\sim\mathcal N(0,I)
-\]
+$$
 
 采样时：
 
@@ -310,63 +310,63 @@ z\sim\mathcal N(0,I)
 
 ---
 
-# 5. 但 KL 有一个副作用
+## 5. 但 KL 有一个副作用
 
 如果：
 
-\[
+$$
 q_\phi(z|x)
-\]
+$$
 
 携带很多关于：
 
-\[
+$$
 x
-\]
+$$
 
 的信息，
 
 通常它就必须：
 
-> 根据不同 \(x\) 发生变化。
+> 根据不同 $x$ 发生变化。
 
 例如：
 
-\[
+$$
 x_1
 \rightarrow
 q(z|x_1)
-\]
+$$
 
 和：
 
-\[
+$$
 x_2
 \rightarrow
 q(z|x_2)
-\]
+$$
 
 不同。
 
 ---
 
-# 6. 可是 KL 在不断说
+## 6. 可是 KL 在不断说
 
 每个：
 
-\[
+$$
 q(z|x)
-\]
+$$
 
 都最好靠近：
 
-\[
+$$
 p(z)
-\]
+$$
 
 如果最极端：
 
-\[
+$$
 \boxed{
 q_\phi(z|x)
 =
@@ -374,104 +374,104 @@ p(z)
 \quad
 \forall x
 }
-\]
+$$
 
 那么：
 
-\[
+$$
 D_{KL}=0
-\]
+$$
 
 达到 KL 项的最小值。
 
 ---
 
-# 7. 但此时发生了什么？
+## 7. 但此时发生了什么？
 
 如果所有 input：
 
-\[
+$$
 x
-\]
+$$
 
 得到完全相同的 latent distribution：
 
-\[
+$$
 q(z|x)=p(z)
-\]
+$$
 
 那么知道：
 
-\[
+$$
 z
-\]
+$$
 
 几乎不能告诉你：
 
-> 这是哪个 \(x\)。
+> 这是哪个 $x$。
 
 也就是说：
 
-\[
+$$
 \boxed{
 z
 \text{ 不再携带 }x\text{ 的信息}
 }
-\]
+$$
 
 ---
 
-# 8. 这就是 Posterior Collapse 的核心状态
+## 8. 这就是 Posterior Collapse 的核心状态
 
 最典型定义：
 
-\[
+$$
 \boxed{
 q_\phi(z|x)
 \approx
 p(z)
 }
-\]
+$$
 
 同时 Decoder：
 
-\[
+$$
 p_\theta(x|z)
-\]
+$$
 
 实际上：
 
-> 对 \(z\) 很不敏感，甚至完全忽略它。
+> 对 $z$ 很不敏感，甚至完全忽略它。
 
 ---
 
-# 9. 为什么叫 Posterior Collapse？
+## 9. 为什么叫 Posterior Collapse？
 
 因为本来：
 
-\[
+$$
 q_\phi(z|x)
-\]
+$$
 
 应该随着：
 
-\[
+$$
 x
-\]
+$$
 
 变化。
 
 collapse后：
 
-\[
+$$
 q_\phi(z|x)
-\]
+$$
 
 全部“塌”到：
 
-\[
+$$
 p(z)
-\]
+$$
 
 附近。
 
@@ -488,7 +488,7 @@ input-specific posterior structure消失。
 
 ---
 
-# 10. 一个非常重要的纠错：Collapse 不是 variance → 0
+## 10. 一个非常重要的纠错：Collapse 不是 variance → 0
 
 很多二手解释会说：
 
@@ -496,97 +496,97 @@ input-specific posterior structure消失。
 
 这是：
 
-\[
+$$
 \boxed{
 \text{错误的。}
 }
-\]
+$$
 
 ---
 
-# 11. 标准 Gaussian VAE 的 Prior
+## 11. 标准 Gaussian VAE 的 Prior
 
-\[
+$$
 p(z)
 =
 \mathcal N(0,I)
-\]
+$$
 
 如果完全 collapse：
 
-\[
+$$
 q(z|x)
 =
 \mathcal N(0,I)
-\]
+$$
 
 那么：
 
-\[
+$$
 \boxed{
 \mu(x)\rightarrow0
 }
-\]
+$$
 
 以及：
 
-\[
+$$
 \boxed{
 \sigma^2(x)\rightarrow1
 }
-\]
+$$
 
 ---
 
-# 12. 用 log-variance 表示
+## 12. 用 log-variance 表示
 
 如果：
 
-\[
+$$
 \log\sigma^2=0
-\]
+$$
 
 那么：
 
-\[
+$$
 \sigma^2
 =
 e^0
 =
 1
-\]
+$$
 
 所以 collapsed posterior常见形式：
 
-\[
+$$
 \boxed{
 \mu\approx0,
 \qquad
 \logvar\approx0
 }
-\]
+$$
 
 不是：
 
-\[
+$$
 \sigma^2\approx0
-\]
+$$
 
 ---
 
-# 13. Variance → 0 是另一种现象
+## 13. Variance → 0 是另一种现象
 
 如果：
 
-\[
+$$
 \sigma^2\rightarrow0
-\]
+$$
 
 那么 posterior：
 
-\[
+$$
 q(z|x)
-\]
+$$
 
 反而会变得：
 
@@ -600,33 +600,33 @@ q(z|x)
 
 ---
 
-# 14. 所以一定区分
+## 14. 所以一定区分
 
-### Posterior Collapse
+#### Posterior Collapse
 
-\[
+$$
 q(z|x)
 \rightarrow
 p(z)
 =
 \mathcal N(0,I)
-\]
+$$
 
 因此：
 
-\[
+$$
 \mu\rightarrow0,
 \quad
 \sigma^2\rightarrow1
-\]
+$$
 
 ---
 
-### Deterministic / Variance Collapse
+#### Deterministic / Variance Collapse
 
-\[
+$$
 \sigma^2\rightarrow0
-\]
+$$
 
 Posterior变得：
 
@@ -636,37 +636,37 @@ Posterior变得：
 
 ---
 
-# 15. 为什么 Decoder 会愿意忽略 z？
+## 15. 为什么 Decoder 会愿意忽略 z？
 
 设 VAE Decoder：
 
-\[
+$$
 p_\theta(x|z)
-\]
+$$
 
 如果 Decoder能力很强，
 
 它可能发现：
 
-> 即使不读取 \(z\)，也可以把数据分布建模得不错。
+> 即使不读取 $z$，也可以把数据分布建模得不错。
 
 于是：
 
-\[
+$$
 p_\theta(x|z)
 \approx
 p_\theta(x)
-\]
+$$
 
 ---
 
-# 16. 如果 Decoder 不需要 z
+## 16. 如果 Decoder 不需要 z
 
 那 Encoder再往：
 
-\[
+$$
 z
-\]
+$$
 
 里塞信息有什么好处？
 
@@ -680,21 +680,21 @@ Reconstruction：
 
 所以 optimizer最划算的选择：
 
-\[
+$$
 \boxed{
 q(z|x)=p(z)
 }
-\]
+$$
 
 KL直接：
 
-\[
+$$
 0
-\]
+$$
 
 ---
 
-# 17. 这就是经典“Powerful Decoder”解释
+## 17. 这就是经典“Powerful Decoder”解释
 
 Bowman et al. 在 sentence VAE 中观察到：
 
@@ -710,31 +710,31 @@ Bowman et al. 在 sentence VAE 中观察到：
 
 ---
 
-# 18. 一个极端例子
+## 18. 一个极端例子
 
 假设 Decoder能直接看到完整 target：
 
-\[
+$$
 x
-\]
+$$
 
 那么它根本不需要：
 
-\[
+$$
 z
-\]
+$$
 
 即可完美输出：
 
-\[
+$$
 x
-\]
+$$
 
 此时最优：
 
-\[
+$$
 q(z|x)=p(z)
-\]
+$$
 
 因为：
 
@@ -743,7 +743,7 @@ q(z|x)=p(z)
 
 ---
 
-# 19. 现实中 Decoder 不会直接看到 target
+## 19. 现实中 Decoder 不会直接看到 target
 
 但它可能有很多其他强信息。
 
@@ -757,57 +757,57 @@ Decoder每一步看到：
 
 Global latent：
 
-\[
+$$
 z
-\]
+$$
 
 变得可有可无。
 
 ---
 
-# 20. CVAE 中这个问题更明显
+## 20. CVAE 中这个问题更明显
 
 CVAE：
 
-\[
+$$
 p_\theta(y|c,z)
-\]
+$$
 
 其中：
 
-\[
+$$
 c
-\]
+$$
 
 是 condition。
 
 如果 condition：
 
-\[
+$$
 c
-\]
+$$
 
 已经足够预测：
 
-\[
+$$
 y
-\]
+$$
 
 那么：
 
-\[
+$$
 z
-\]
+$$
 
 就更加容易被忽略。
 
 ---
 
-# 21. ACT 正是 CVAE
+## 21. ACT 正是 CVAE
 
 ACT 可以写成：
 
-\[
+$$
 \boxed{
 p_\theta(
 A
@@ -815,22 +815,22 @@ A
 O,z
 )
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 O
-\]
+$$
 
 代表当前：
 
 - images；
 - qpos。
 
-\[
+$$
 A
-\]
+$$
 
 代表：
 
@@ -838,25 +838,25 @@ A
 
 ---
 
-# 22. 如果当前 Observation 已经足够预测 Action Chunk
+## 22. 如果当前 Observation 已经足够预测 Action Chunk
 
 那么 Decoder可以学：
 
-\[
+$$
 \boxed{
 p_\theta(A|O,z)
 \approx
 p_\theta(A|O)
 }
-\]
+$$
 
 此时：
 
-> \(z\) 没必要。
+> $z$ 没必要。
 
 ---
 
-# 23. 这就是 ACT 可能发生 Collapse 的理论入口
+## 23. 这就是 ACT 可能发生 Collapse 的理论入口
 
 ACT 的 policy decoder很强：
 
@@ -874,19 +874,19 @@ ACT 的 policy decoder很强：
 
 ---
 
-# 24. 但 Human Demonstrations 为什么让 z 更有机会被使用？
+## 24. 但 Human Demonstrations 为什么让 z 更有机会被使用？
 
 因为同一个或非常相近的：
 
-\[
+$$
 O
-\]
+$$
 
 可能对应多个：
 
-\[
+$$
 A
-\]
+$$
 
 例如人类 demonstration存在：
 
@@ -898,25 +898,25 @@ A
 
 于是：
 
-\[
+$$
 O
-\]
+$$
 
 不能完全解释：
 
-\[
+$$
 A
-\]
+$$
 
 ---
 
-# 25. 这时 latent 有一个明确用途
+## 25. 这时 latent 有一个明确用途
 
 Encoder训练时看到：
 
-\[
+$$
 (O,A)
-\]
+$$
 
 可以把：
 
@@ -924,29 +924,29 @@ Encoder训练时看到：
 
 编码进：
 
-\[
+$$
 z
-\]
+$$
 
 然后 decoder：
 
-\[
+$$
 p(A|O,z)
-\]
+$$
 
 利用它重建对应 trajectory。
 
 ---
 
-# 26. 所以 ACT 中真正希望 z 编码什么？
+## 26. 所以 ACT 中真正希望 z 编码什么？
 
 理想上：
 
-\[
+$$
 \boxed{
 \text{action variation not already determined by current observation}
 }
-\]
+$$
 
 可以粗略叫：
 
@@ -958,7 +958,7 @@ p(A|O,z)
 
 ---
 
-# 27. 现在进入 Mutual Information
+## 27. 现在进入 Mutual Information
 
 如果我们想严谨表达：
 
@@ -966,19 +966,19 @@ p(A|O,z)
 
 最自然的量是：
 
-\[
+$$
 \boxed{
 I(X;Z)
 }
-\]
+$$
 
 Mutual Information。
 
 ---
 
-# 28. Mutual Information 的定义
+## 28. Mutual Information 的定义
 
-\[
+$$
 \boxed{
 I(X;Z)
 =
@@ -989,11 +989,11 @@ q(x,z)
 q(x)q(z)
 )
 }
-\]
+$$
 
 等价：
 
-\[
+$$
 \boxed{
 I(X;Z)
 =
@@ -1007,73 +1007,73 @@ q(z)
 )
 ]
 }
-\]
+$$
 
 ---
 
-# 29. 如果 X 和 Z 独立
+## 29. 如果 X 和 Z 独立
 
-\[
+$$
 q(z|x)=q(z)
-\]
+$$
 
 则：
 
-\[
+$$
 \boxed{
 I(X;Z)=0
 }
-\]
+$$
 
 所以知道：
 
-\[
+$$
 z
-\]
+$$
 
 不会减少对：
 
-\[
+$$
 x
-\]
+$$
 
 的不确定性。
 
 ---
 
-# 30. Posterior Collapse 对 Mutual Information 意味着什么？
+## 30. Posterior Collapse 对 Mutual Information 意味着什么？
 
 如果：
 
-\[
+$$
 q(z|x)=p(z)
-\]
+$$
 
 对所有：
 
-\[
+$$
 x
-\]
+$$
 
 成立，
 
 那么 aggregated posterior：
 
-\[
+$$
 q(z)=p(z)
-\]
+$$
 
 因此：
 
-\[
+$$
 \boxed{
 I(X;Z)=0
 }
-\]
+$$
 
 ---
 
-# 31. 这比“KL 变小”更本质
+## 31. 这比“KL 变小”更本质
 
 Posterior Collapse真正可怕的地方不是：
 
@@ -1081,19 +1081,19 @@ Posterior Collapse真正可怕的地方不是：
 
 而是：
 
-\[
+$$
 \boxed{
 \text{latent stops carrying information about the data}
 }
-\]
+$$
 
 ---
 
-# 32. 为什么 Expected KL 和 Mutual Information 有关系？
+## 32. 为什么 Expected KL 和 Mutual Information 有关系？
 
 考虑：
 
-\[
+$$
 R
 =
 \mathbb E_{q(x)}
@@ -1105,17 +1105,17 @@ q(z|x)
 p(z)
 )
 ]
-\]
+$$
 
 把：
 
-\[
+$$
 q(z)
-\]
+$$
 
 插进去，可以得到：
 
-\[
+$$
 \boxed{
 R
 =
@@ -1128,13 +1128,13 @@ q(z)
 p(z)
 )
 }
-\]
+$$
 
 ---
 
-# 33. 推导第一步
+## 33. 推导第一步
 
-\[
+$$
 R
 =
 \mathbb E_{q(x,z)}
@@ -1142,17 +1142,17 @@ R
 \log
 \frac{q(z|x)}{p(z)}
 \right]
-\]
+$$
 
 乘除：
 
-\[
+$$
 q(z)
-\]
+$$
 
 ：
 
-\[
+$$
 =
 \mathbb E
 \left[
@@ -1162,13 +1162,13 @@ q(z)
 \log
 \frac{q(z)}{p(z)}
 \right]
-\]
+$$
 
 ---
 
-# 34. 第一项
+## 34. 第一项
 
-\[
+$$
 \mathbb E
 \left[
 \log
@@ -1178,21 +1178,21 @@ q(z)
 \boxed{
 I(X;Z)
 }
-\]
+$$
 
 ---
 
-# 35. 第二项
+## 35. 第二项
 
 对：
 
-\[
+$$
 x
-\]
+$$
 
 积分掉后：
 
-\[
+$$
 \boxed{
 D_{KL}
 (
@@ -1201,11 +1201,11 @@ q(z)
 p(z)
 )
 }
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \mathbb E_x KL(q(z|x)\|p(z))
 =
@@ -1213,21 +1213,21 @@ I(X;Z)
 +
 KL(q(z)\|p(z))
 }
-\]
+$$
 
 ---
 
-# 36. 这条公式非常重要
+## 36. 这条公式非常重要
 
 因为右边两项都：
 
-\[
+$$
 \ge0
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 I(X;Z)
 \le
@@ -1236,25 +1236,25 @@ KL(
 q(z|x)\|p(z)
 )
 }
-\]
+$$
 
 ---
 
-# 37. 所以如果 Average KL → 0
+## 37. 所以如果 Average KL → 0
 
 那么必然：
 
-\[
+$$
 \boxed{
 I(X;Z)\rightarrow0
 }
-\]
+$$
 
 以及：
 
-\[
+$$
 q(z)\rightarrow p(z)
-\]
+$$
 
 也就是说：
 
@@ -1262,127 +1262,127 @@ q(z)\rightarrow p(z)
 
 ---
 
-# 38. 这也是为什么 KL 是 Collapse Diagnostic
+## 38. 这也是为什么 KL 是 Collapse Diagnostic
 
 如果训练后：
 
-\[
+$$
 KL\approx0
-\]
+$$
 
 尤其每个维度都接近0，
 
 这是非常强的警告：
 
-\[
+$$
 \boxed{
 z\text{ 可能几乎没被使用}
 }
-\]
+$$
 
 ---
 
-# 39. 但反过来不成立
+## 39. 但反过来不成立
 
 如果：
 
-\[
+$$
 KL>0
-\]
+$$
 
 不能直接得出：
 
-\[
+$$
 \boxed{
 z\text{ 一定对 Decoder 有用}
 }
-\]
+$$
 
 为什么？
 
 因为 KL包含两个部分：
 
-\[
+$$
 I(X;Z)
-\]
+$$
 
 和：
 
-\[
+$$
 KL(q(z)\|p(z))
-\]
+$$
 
 ---
 
-# 40. KL 可以大，但只是 Aggregated Posterior 没对齐 Prior
+## 40. KL 可以大，但只是 Aggregated Posterior 没对齐 Prior
 
 也就是说：
 
-\[
+$$
 q(z)
-\]
+$$
 
 整体偏离：
 
-\[
+$$
 p(z)
-\]
+$$
 
 很多，
 
 但不同：
 
-\[
+$$
 x
-\]
+$$
 
 之间可能没有携带很多区分信息。
 
 所以：
 
-\[
+$$
 \boxed{
 KL\text{ nonzero}
 \not\Rightarrow
 \text{useful latent}
 }
-\]
+$$
 
 ---
 
-# 41. CVAE 中真正关心的是 Conditional Mutual Information
+## 41. CVAE 中真正关心的是 Conditional Mutual Information
 
 ACT的 latent不是单独解释：
 
-\[
+$$
 A
-\]
+$$
 
 而是解释：
 
-> 已经知道 observation \(O\) 以后，action chunk中剩余的 variation。
+> 已经知道 observation $O$ 以后，action chunk中剩余的 variation。
 
 所以更自然的量：
 
-\[
+$$
 \boxed{
 I(A;Z|O)
 }
-\]
+$$
 
 ---
 
-# 42. Conditional Mutual Information 在这里意味着什么？
+## 42. Conditional Mutual Information 在这里意味着什么？
 
 它问：
 
-> 已经知道当前 observation \(O\) 后，再知道 \(Z\)，还能额外获得多少关于 future action chunk \(A\) 的信息？
+> 已经知道当前 observation $O$ 后，再知道 $Z$，还能额外获得多少关于 future action chunk $A$ 的信息？
 
 如果：
 
-\[
+$$
 I(A;Z|O)=0
-\]
+$$
 
 意味着：
 
@@ -1390,76 +1390,76 @@ I(A;Z|O)=0
 
 ---
 
-# 43. 这正是 CVAE Collapse 的理想数学定义之一
+## 43. 这正是 CVAE Collapse 的理想数学定义之一
 
 如果：
 
-\[
+$$
 \boxed{
 q_\phi(z|O,A)
 \approx
 p(z|O)
 }
-\]
+$$
 
 而 Decoder也：
 
-\[
+$$
 p_\theta(A|O,z)
 \approx
 p_\theta(A|O)
-\]
+$$
 
 那么 latent branch基本失效。
 
 ---
 
-# 44. ACT 的 Prior 更简单
+## 44. ACT 的 Prior 更简单
 
 ACT 使用固定：
 
-\[
+$$
 \boxed{
 p(z)
 =
 \mathcal N(0,I)
 }
-\]
+$$
 
 而不是 learned conditional prior：
 
-\[
+$$
 p(z|O)
-\]
+$$
 
 所以 collapse趋向：
 
-\[
+$$
 \boxed{
 q_\phi(z|O,A)
 \approx
 \mathcal N(0,I)
 }
-\]
+$$
 
 ---
 
-# 45. ACT 的 Conditional KL Decomposition
+## 45. ACT 的 Conditional KL Decomposition
 
 定义 aggregated posterior：
 
-\[
+$$
 q(z|O)
 =
 \mathbb E_{A\sim p_{\text{data}}(A|O)}
 [
 q(z|O,A)
 ]
-\]
+$$
 
 那么：
 
-\[
+$$
 \boxed{
 \mathbb E_{O,A}
 [
@@ -1470,11 +1470,11 @@ p(z)
 )
 ]
 }
-\]
+$$
 
 可以分解为：
 
-\[
+$$
 \boxed{
 I(A;Z|O)
 +
@@ -1487,79 +1487,79 @@ p(z)
 )
 ]
 }
-\]
+$$
 
 ---
 
-# 46. 这对 ACT 意义非常大
+## 46. 这对 ACT 意义非常大
 
 ACT 的 KL loss同时在做两件事：
 
-### 1. 惩罚 Conditional Information Rate
+#### 1. 惩罚 Conditional Information Rate
 
-\[
+$$
 I(A;Z|O)
-\]
+$$
 
 也就是：
 
 > action chunk通过 latent传递多少额外信息。
 
-### 2. 让 Aggregated Posterior 靠近 Prior
+#### 2. 让 Aggregated Posterior 靠近 Prior
 
-\[
+$$
 q(z|O)
 \approx
 p(z)
-\]
+$$
 
 以便 test-time prior latent有意义。
 
 ---
 
-# 47. 所以 KL 本质上确实在“收费”
+## 47. 所以 KL 本质上确实在“收费”
 
 如果 Encoder想通过：
 
-\[
+$$
 z
-\]
+$$
 
 告诉 Decoder很多关于：
 
-\[
+$$
 A
-\]
+$$
 
 的信息，
 
 通常就要支付：
 
-\[
+$$
 \boxed{
 KL\text{ cost}
 }
-\]
+$$
 
 ---
 
-# 48. 这就是 Rate–Distortion 视角
+## 48. 这就是 Rate–Distortion 视角
 
 Alemi et al. 把 VAE训练解释成：
 
-\[
+$$
 \boxed{
 \text{Rate}
 \leftrightarrow
 \text{Distortion}
 }
-\]
+$$
 
 tradeoff。
 
 ---
 
-# 49. Distortion 是什么？
+## 49. Distortion 是什么？
 
 Distortion大致代表：
 
@@ -1567,32 +1567,32 @@ Distortion大致代表：
 
 例如：
 
-\[
+$$
 D
 =
 -\mathbb E
 [
 \log p_\theta(x|z)
 ]
-\]
+$$
 
 ACT里可类比：
 
-\[
+$$
 \boxed{
 D
 \sim
 L_1
 }
-\]
+$$
 
 ---
 
-# 50. Rate 是什么？
+## 50. Rate 是什么？
 
 典型 VAE中：
 
-\[
+$$
 \boxed{
 R
 =
@@ -1605,7 +1605,7 @@ p(z)
 )
 ]
 }
-\]
+$$
 
 它与：
 
@@ -1615,61 +1615,61 @@ p(z)
 
 ---
 
-# 51. 所以 Objective 可以粗略理解为
+## 51. 所以 Objective 可以粗略理解为
 
-\[
+$$
 \boxed{
 L
 =
 D+\beta R
 }
-\]
+$$
 
 ---
 
-# 52. β 大时
+## 52. β 大时
 
 信息变贵。
 
 Encoder每多通过：
 
-\[
+$$
 z
-\]
+$$
 
 传一点信息，
 
 都要付更多：
 
-\[
+$$
 \beta KL
-\]
+$$
 
 代价。
 
 于是模型倾向：
 
-\[
+$$
 \boxed{
 \text{更低 Rate}
 }
-\]
+$$
 
 ---
 
-# 53. β 极大时可能怎样？
+## 53. β 极大时可能怎样？
 
 最便宜：
 
-\[
+$$
 R\rightarrow0
-\]
+$$
 
 也就是：
 
-\[
+$$
 q(z|x)\rightarrow p(z)
-\]
+$$
 
 如果 Decoder还能维持 acceptable reconstruction：
 
@@ -1677,7 +1677,7 @@ q(z|x)\rightarrow p(z)
 
 ---
 
-# 54. β 小时
+## 54. β 小时
 
 latent information变便宜。
 
@@ -1689,13 +1689,13 @@ Encoder可以更自由地：
 
 ---
 
-# 55. 但 β 太小也有问题
+## 55. 但 β 太小也有问题
 
 如果几乎：
 
-\[
+$$
 \beta=0
-\]
+$$
 
 模型接近普通 stochastic/deterministic autoencoder。
 
@@ -1705,17 +1705,17 @@ Posterior可以：
 
 于是训练时：
 
-\[
+$$
 z\sim q(z|x)
-\]
+$$
 
 很好用，
 
 但测试从：
 
-\[
+$$
 z\sim p(z)
-\]
+$$
 
 采样：
 
@@ -1723,35 +1723,35 @@ z\sim p(z)
 
 ---
 
-# 56. 所以 β 不是“越小越防 Collapse越好”
+## 56. 所以 β 不是“越小越防 Collapse越好”
 
 真正需要平衡：
 
-\[
+$$
 \boxed{
 \text{use latent}
 }
-\]
+$$
 
 和：
 
-\[
+$$
 \boxed{
 \text{make prior usable}
 }
-\]
+$$
 
 ---
 
-# 57. ACT 的 β = 10 要怎样理解？
+## 57. ACT 的 β = 10 要怎样理解？
 
 ACT canonical：
 
-\[
+$$
 \boxed{
 \beta=10
 }
-\]
+$$
 
 但不能单独看到“10很大”就说：
 
@@ -1759,96 +1759,96 @@ ACT canonical：
 
 因为：
 
-\[
+$$
 L_1
-\]
+$$
 
 和：
 
-\[
+$$
 KL
-\]
+$$
 
 本身 scale不同。
 
 ---
 
-# 58. Loss Weight 的绝对意义依赖 Scale
+## 58. Loss Weight 的绝对意义依赖 Scale
 
 如果：
 
-\[
+$$
 L_1=0.02
-\]
+$$
 
 而：
 
-\[
+$$
 KL=0.001
-\]
+$$
 
 乘10：
 
-\[
+$$
 0.01
-\]
+$$
 
 两者同量级。
 
 如果：
 
-\[
+$$
 KL=10
-\]
+$$
 
 乘10就是：
 
-\[
+$$
 100
-\]
+$$
 
 完全不同。
 
 所以必须看：
 
-\[
+$$
 \boxed{
 \text{actual loss magnitudes and gradients}
 }
-\]
+$$
 
 ---
 
-# 59. ACT Objective 还有一个严格数学细节
+## 59. ACT Objective 还有一个严格数学细节
 
 标准 VAE ELBO reconstruction term：
 
-\[
+$$
 -\mathbb E_q
 [
 \log p_\theta(A|O,z)
 ]
-\]
+$$
 
 ACT official implementation直接使用：
 
-\[
+$$
 \boxed{
 L_1(A,\hat A)
 }
-\]
+$$
 
 ---
 
-# 60. L1 可以有 Probabilistic Interpretation
+## 60. L1 可以有 Probabilistic Interpretation
 
 如果假设：
 
-\[
+$$
 p_\theta(
 A|O,z
 )
-\]
+$$
 
 是 fixed-scale Laplace distribution，
 
@@ -1858,15 +1858,15 @@ A|O,z
 
 ---
 
-# 61. 但 ACT 还用了 β=10
+## 61. 但 ACT 还用了 β=10
 
 所以它更像：
 
-\[
+$$
 \boxed{
-\text{β-weighted CVAE-style objective}
+\beta\text{-weighted CVAE-style objective}
 }
-\]
+$$
 
 而不是：
 
@@ -1880,39 +1880,39 @@ A|O,z
 
 ---
 
-# 62. 什么叫 Full Collapse？
+## 62. 什么叫 Full Collapse？
 
 假设 latent：
 
-\[
+$$
 z\in\mathbb R^{32}
-\]
+$$
 
 如果所有32维：
 
-\[
+$$
 q(z_j|x)
 \approx
 \mathcal N(0,1)
-\]
+$$
 
 且 Decoder不依赖任何：
 
-\[
+$$
 z_j
-\]
+$$
 
 那么：
 
-\[
+$$
 \boxed{
 \text{full posterior collapse}
 }
-\]
+$$
 
 ---
 
-# 63. Partial Collapse
+## 63. Partial Collapse
 
 更常见：
 
@@ -1930,53 +1930,53 @@ dim 3  KL = 0.0000
 
 可能只有：
 
-\[
+$$
 5
-\]
+$$
 
 维真正被使用。
 
 ---
 
-# 64. 所以只看 Total KL 不够
+## 64. 所以只看 Total KL 不够
 
 假设：
 
-\[
+$$
 KL_{\text{total}}=8
-\]
+$$
 
 可能：
 
-### Case A
+#### Case A
 
 32维每个：
 
-\[
+$$
 0.25
-\]
+$$
 
 都在工作。
 
-### Case B
+#### Case B
 
 1维：
 
-\[
+$$
 8
-\]
+$$
 
 其他31维：
 
-\[
+$$
 0
-\]
+$$
 
 两者表示完全不同的 latent usage。
 
 ---
 
-# 65. ACT 官方 `kl_divergence` 已经计算了 Dim-Wise KL
+## 65. ACT 官方 `kl_divergence` 已经计算了 Dim-Wise KL
 
 `policy.py`：
 
@@ -2000,46 +2000,46 @@ total_kld[0]
 
 ---
 
-# 66. 这正好可以拿来诊断 ACT Latent Usage
+## 66. 这正好可以拿来诊断 ACT Latent Usage
 
 训练后应该至少画：
 
-\[
+$$
 \boxed{
 KL_j
 }
-\]
+$$
 
 for：
 
-\[
+$$
 j=1,\ldots,32
-\]
+$$
 
 ---
 
-# 67. Gaussian Per-Dimension KL
+## 67. Gaussian Per-Dimension KL
 
 ACT：
 
-\[
+$$
 q(z_j)
 =
 \mathcal N(
 \mu_j,
 \sigma_j^2
 )
-\]
+$$
 
 prior：
 
-\[
+$$
 \mathcal N(0,1)
-\]
+$$
 
 单维：
 
-\[
+$$
 \boxed{
 KL_j
 =
@@ -2054,23 +2054,23 @@ KL_j
 \log\sigma_j^2
 )
 }
-\]
+$$
 
 ---
 
-# 68. 如果完全 collapsed
+## 68. 如果完全 collapsed
 
-\[
+$$
 \mu_j=0
-\]
+$$
 
-\[
+$$
 \sigma_j^2=1
-\]
+$$
 
 则：
 
-\[
+$$
 KL_j
 =
 \frac12(
@@ -2080,23 +2080,23 @@ KL_j
 \boxed{
 0
 }
-\]
+$$
 
 ---
 
-# 69. 为什么 KL_j > 0？
+## 69. 为什么 KL_j > 0？
 
 可能因为：
 
-\[
+$$
 \mu_j\neq0
-\]
+$$
 
 或者：
 
-\[
+$$
 \sigma_j^2\neq1
-\]
+$$
 
 或者两者都有。
 
@@ -2106,15 +2106,15 @@ KL_j
 
 ---
 
-# 70. 但再次强调：偏离 Prior ≠ Decoder 真正使用
+## 70. 但再次强调：偏离 Prior ≠ Decoder 真正使用
 
 Encoder可能产生 nonzero KL，
 
 但 Decoder weights对：
 
-\[
+$$
 z
-\]
+$$
 
 很不敏感。
 
@@ -2124,7 +2124,7 @@ z
 
 ---
 
-# 71. 什么叫 Active Units？
+## 71. 什么叫 Active Units？
 
 VAE文献常用一个 metric：
 
@@ -2132,22 +2132,22 @@ VAE文献常用一个 metric：
 
 一种常见思路是看 posterior mean：
 
-\[
+$$
 \mu_j(x)
-\]
+$$
 
 跨数据集是否有足够 variance。
 
 ---
 
-# 72. 如果某维 μ 几乎总是0
+## 72. 如果某维 μ 几乎总是0
 
-\[
+$$
 Var_x[
 \mu_j(x)
 ]
 \approx0
-\]
+$$
 
 那么这个维度很可能：
 
@@ -2155,7 +2155,7 @@ Var_x[
 
 ---
 
-# 73. 但 Active Units 只是 Diagnostic
+## 73. 但 Active Units 只是 Diagnostic
 
 它不是：
 
@@ -2171,81 +2171,81 @@ Var_x[
 
 ---
 
-# 74. 一个更直接的问题：改变 z，Output 会不会变？
+## 74. 一个更直接的问题：改变 z，Output 会不会变？
 
 这是 ACT 最有意义的实验之一。
 
 固定 observation：
 
-\[
+$$
 O
-\]
+$$
 
 改变：
 
-\[
+$$
 z
-\]
+$$
 
 观察：
 
-\[
+$$
 \hat A(O,z)
-\]
+$$
 
 是否变化。
 
 ---
 
-# 75. 如果 Decoder 完全忽略 z
+## 75. 如果 Decoder 完全忽略 z
 
 那么：
 
-\[
+$$
 \boxed{
 \hat A(O,z_1)
 \approx
 \hat A(O,z_2)
 }
-\]
+$$
 
 对各种：
 
-\[
+$$
 z_1,z_2
-\]
+$$
 
 都成立。
 
 ---
 
-# 76. 这就是 Latent Sensitivity Test
+## 76. 这就是 Latent Sensitivity Test
 
 可以固定一条 observation，
 
 采样：
 
-\[
+$$
 z^{(1)},...,z^{(M)}
 \sim
 \mathcal N(0,I)
-\]
+$$
 
 计算：
 
-\[
+$$
 A^{(m)}
 =
 f(O,z^{(m)})
-\]
+$$
 
 ---
 
-# 77. 然后测 Output Variance
+## 77. 然后测 Output Variance
 
 例如：
 
-\[
+$$
 \boxed{
 S_z
 =
@@ -2255,13 +2255,13 @@ Var_m[
 A^{(m)}_{t,j}
 ]
 }
-\]
+$$
 
 如果：
 
-\[
+$$
 S_z\approx0
-\]
+$$
 
 说明：
 
@@ -2269,19 +2269,19 @@ S_z\approx0
 
 ---
 
-# 78. 但 Prior Sensitivity 还不够
+## 78. 但 Prior Sensitivity 还不够
 
 因为 ACT训练时 Decoder主要看到：
 
-\[
+$$
 z\sim q(z|O,A)
-\]
+$$
 
 而不是随机任意：
 
-\[
+$$
 z\sim p(z)
-\]
+$$
 
 所以还应测试：
 
@@ -2289,65 +2289,65 @@ z\sim p(z)
 
 ---
 
-# 79. Posterior Reconstruction Test
+## 79. Posterior Reconstruction Test
 
 对 training/validation example：
 
-\[
+$$
 (O,A)
-\]
+$$
 
 计算：
 
-\[
+$$
 \mu,\logvar
-\]
+$$
 
 取：
 
-\[
+$$
 z=\mu
-\]
+$$
 
 或者 posterior sample。
 
 得到：
 
-\[
+$$
 \hat A_{\text{post}}
-\]
+$$
 
 ---
 
-# 80. 再与 z=0 比较
+## 80. 再与 z=0 比较
 
-\[
+$$
 \hat A_{0}
 =
 f(O,0)
-\]
+$$
 
 比较：
 
-\[
+$$
 L_1(
 A,
 \hat A_{\text{post}}
 )
-\]
+$$
 
 vs：
 
-\[
+$$
 L_1(
 A,
 \hat A_0
 )
-\]
+$$
 
 ---
 
-# 81. 如果两者几乎完全一样
+## 81. 如果两者几乎完全一样
 
 这提示：
 
@@ -2359,11 +2359,11 @@ A,
 
 ---
 
-# 82. 定义 Reconstruction Gain
+## 82. 定义 Reconstruction Gain
 
 例如：
 
-\[
+$$
 \boxed{
 G
 =
@@ -2371,13 +2371,13 @@ L_1(A,f(O,0))
 -
 L_1(A,f(O,\mu))
 }
-\]
+$$
 
 如果：
 
-\[
+$$
 G>0
-\]
+$$
 
 说明 posterior mean：
 
@@ -2385,58 +2385,58 @@ G>0
 
 如果长期：
 
-\[
+$$
 G\approx0
-\]
+$$
 
 要怀疑 latent usage很弱。
 
 ---
 
-# 83. 还可以做 Latent Shuffle Test
+## 83. 还可以做 Latent Shuffle Test
 
 一个非常强的实验：
 
 Batch里有：
 
-\[
+$$
 (O_i,A_i,z_i)
-\]
+$$
 
 把 latent随机打乱：
 
-\[
+$$
 z_i
 \rightarrow
 z_{\pi(i)}
-\]
+$$
 
 再 decode：
 
-\[
+$$
 \hat A_i
 =
 f(
 O_i,
 z_{\pi(i)}
 )
-\]
+$$
 
 ---
 
-# 84. 如果 Shuffle 完全不影响 Reconstruction
+## 84. 如果 Shuffle 完全不影响 Reconstruction
 
 那说明：
 
-\[
+$$
 \boxed{
 Decoder\text{ 很可能没在用 sample-specific }z
 }
-\]
+$$
 
 ---
 
-# 85. 如果 Reconstruction 明显变差
+## 85. 如果 Reconstruction 明显变差
 
 说明：
 
@@ -2448,19 +2448,19 @@ Decoder\text{ 很可能没在用 sample-specific }z
 
 ---
 
-# 86. Latent Zeroing Test
+## 86. Latent Zeroing Test
 
 训练时本来：
 
-\[
+$$
 z=\mu+\sigma\epsilon
-\]
+$$
 
 人为改成：
 
-\[
+$$
 z=0
-\]
+$$
 
 保持所有其他输入不变。
 
@@ -2474,19 +2474,19 @@ z=0
 
 ---
 
-# 87. Latent Mean vs Sample Test
+## 87. Latent Mean vs Sample Test
 
 比较：
 
-\[
+$$
 z=\mu
-\]
+$$
 
 和：
 
-\[
+$$
 z=\mu+\sigma\epsilon
-\]
+$$
 
 如果二者输出差异很小：
 
@@ -2494,19 +2494,19 @@ z=\mu+\sigma\epsilon
 
 但：
 
-\[
+$$
 \mu
-\]
+$$
 
 仍可能携带大量信息。
 
 ---
 
-# 88. 这和 Collapse 不一样
+## 88. 这和 Collapse 不一样
 
 Posterior collapse问的是：
 
-> \(z\) 是否携带/传递 data-specific information。
+> $z$ 是否携带/传递 data-specific information。
 
 而“sampling noise是否重要”问：
 
@@ -2516,35 +2516,35 @@ Posterior collapse问的是：
 
 ---
 
-# 89. Latent Interpolation Test
+## 89. Latent Interpolation Test
 
 固定：
 
-\[
+$$
 O
-\]
+$$
 
 选两个 posterior means：
 
-\[
+$$
 z_A,z_B
-\]
+$$
 
 插值：
 
-\[
+$$
 z(\alpha)
 =
 (1-\alpha)z_A
 +
 \alpha z_B
-\]
+$$
 
 观察：
 
-\[
+$$
 f(O,z(\alpha))
-\]
+$$
 
 动作 trajectory是否：
 
@@ -2552,27 +2552,27 @@ f(O,z(\alpha))
 
 ---
 
-# 90. 但 ACT 中这个实验要小心
+## 90. 但 ACT 中这个实验要小心
 
 如果：
 
-\[
+$$
 z_A,z_B
-\]
+$$
 
 来自不同 observations，
 
 直接固定同一个：
 
-\[
+$$
 O
-\]
+$$
 
 进行 swap/interpolation，
 
 可能产生：
 
-> training distribution外的 \(O,z\) 组合。
+> training distribution外的 $O,z$ 组合。
 
 所以实验是：
 
@@ -2582,7 +2582,7 @@ O
 
 ---
 
-# 91. 更好的 Same-Condition Experiment
+## 91. 更好的 Same-Condition Experiment
 
 如果数据里有：
 
@@ -2590,31 +2590,31 @@ O
 
 可以比较这些样本的：
 
-\[
+$$
 \mu
-\]
+$$
 
 是否系统分离。
 
 这样更接近：
 
-\[
+$$
 \boxed{
 \text{style latent}
 }
-\]
+$$
 
 的原始目的。
 
 ---
 
-# 92. Latent Nearest-Neighbor Analysis
+## 92. Latent Nearest-Neighbor Analysis
 
 取：
 
-\[
+$$
 \mu_i
-\]
+$$
 
 作为 latent embedding。
 
@@ -2631,7 +2631,7 @@ O
 
 ---
 
-# 93. 但这只能做 Exploratory Interpretation
+## 93. 但这只能做 Exploratory Interpretation
 
 不能看见 cluster就直接说：
 
@@ -2649,60 +2649,60 @@ O
 
 ---
 
-# 94. Jacobian Sensitivity 是更数学的诊断
+## 94. Jacobian Sensitivity 是更数学的诊断
 
 对于固定：
 
-\[
+$$
 O
-\]
+$$
 
 计算：
 
-\[
+$$
 \boxed{
 J_z
 =
 \frac{\partial \hat A}{\partial z}
 }
-\]
+$$
 
 shape：
 
-\[
+$$
 [k\times14,\ 32]
-\]
+$$
 
 ---
 
-# 95. 如果 Decoder 完全忽略 z
+## 95. 如果 Decoder 完全忽略 z
 
 那么：
 
-\[
+$$
 \boxed{
 J_z
 \approx0
 }
-\]
+$$
 
 ---
 
-# 96. 可以看 Frobenius Norm
+## 96. 可以看 Frobenius Norm
 
-\[
+$$
 \boxed{
 \|J_z\|_F
 }
-\]
+$$
 
 作为 local sensitivity metric。
 
 如果大量 samples：
 
-\[
+$$
 \|J_z\|_F
-\]
+$$
 
 都非常小，
 
@@ -2712,7 +2712,7 @@ J_z
 
 ---
 
-# 97. 但 Jacobian 很大也不自动等于“Latent 有意义”
+## 97. 但 Jacobian 很大也不自动等于“Latent 有意义”
 
 它只说明：
 
@@ -2729,14 +2729,14 @@ J_z
 
 ---
 
-# 98. Decoder First-Layer Weight 能不能直接看？
+## 98. Decoder First-Layer Weight 能不能直接看？
 
 ACT：
 
-\[
+$$
 z
 \in\mathbb R^{32}
-\]
+$$
 
 经过：
 
@@ -2754,13 +2754,13 @@ latent_out_proj =
 
 ---
 
-# 99. 但 Weight Norm 也不是充分证据
+## 99. 但 Weight Norm 也不是充分证据
 
 即使：
 
-\[
+$$
 \|W_z\|
-\]
+$$
 
 不小，
 
@@ -2776,7 +2776,7 @@ latent_out_proj =
 
 ---
 
-# 100. Posterior Collapse 为什么在 Powerful Decoder 中经典？
+## 100. Posterior Collapse 为什么在 Powerful Decoder 中经典？
 
 Bowman et al. 的 sentence VAE发现：
 
@@ -2790,29 +2790,29 @@ Bowman et al. 的 sentence VAE发现：
 
 ---
 
-# 101. Bowman 的第一个 Remedy：KL Cost Annealing
+## 101. Bowman 的第一个 Remedy：KL Cost Annealing
 
 训练初期：
 
-\[
+$$
 \beta=0
-\]
+$$
 
 所以 objective主要：
 
-\[
+$$
 L\approx L_{\text{recon}}
-\]
+$$
 
 ---
 
-# 102. 这时 Encoder 可以“免费”往 z 塞信息
+## 102. 这时 Encoder 可以“免费”往 z 塞信息
 
 不会立即因为：
 
-\[
+$$
 KL
-\]
+$$
 
 受到惩罚。
 
@@ -2822,13 +2822,13 @@ KL
 
 ---
 
-# 103. 然后逐渐增加 β
+## 103. 然后逐渐增加 β
 
-\[
+$$
 0
 \rightarrow
 1
-\]
+$$
 
 让 posterior逐渐：
 
@@ -2841,11 +2841,11 @@ KL
 
 ---
 
-# 104. KL Annealing 的直觉
+## 104. KL Annealing 的直觉
 
 不要一开始就告诉模型：
 
-> “用 \(z\) 很贵。”
+> “用 $z$ 很贵。”
 
 否则 Decoder可能最早学会：
 
@@ -2853,9 +2853,9 @@ KL
 
 先让：
 
-\[
+$$
 z
-\]
+$$
 
 建立功能价值，
 
@@ -2863,7 +2863,7 @@ z
 
 ---
 
-# 105. 但 KL Annealing 不是保证
+## 105. 但 KL Annealing 不是保证
 
 训练 dynamics复杂。
 
@@ -2877,7 +2877,7 @@ z
 
 ---
 
-# 106. Bowman 的第二个 Remedy：Weaken Decoder
+## 106. Bowman 的第二个 Remedy：Weaken Decoder
 
 在 language model里用：
 
@@ -2887,7 +2887,7 @@ z
 
 ---
 
-# 107. 为什么 Weaken Decoder 有用？
+## 107. 为什么 Weaken Decoder 有用？
 
 原本：
 
@@ -2909,17 +2909,17 @@ z 变得更有价值
 
 Decoder被迫：
 
-> 读取 \(z\)。
+> 读取 $z$。
 
 ---
 
-# 108. 这是非常通用的思想
+## 108. 这是非常通用的思想
 
-\[
+$$
 \boxed{
 \text{If decoder can solve task without latent, latent is easy to ignore.}
 }
-\]
+$$
 
 减少 shortcut information：
 
@@ -2927,13 +2927,13 @@ Decoder被迫：
 
 ---
 
-# 109. 但“削弱 Decoder”也有代价
+## 109. 但“削弱 Decoder”也有代价
 
 你可能为了强迫使用：
 
-\[
+$$
 z
-\]
+$$
 
 故意让 Decoder变差。
 
@@ -2949,7 +2949,7 @@ z
 
 ---
 
-# 110. 这也是 Alemi et al. 的核心提醒之一
+## 110. 这也是 Alemi et al. 的核心提醒之一
 
 **Fixing a Broken ELBO** 强调：
 
@@ -2965,37 +2965,37 @@ z
 
 ---
 
-# 111. Rate–Distortion 不存在唯一“最好点”
+## 111. Rate–Distortion 不存在唯一“最好点”
 
 不同模型可以在：
 
-\[
+$$
 (R,D)
-\]
+$$
 
 平面上取得不同 tradeoff。
 
 例如：
 
-### Model A
+#### Model A
 
-\[
+$$
 R\approx0
-\]
+$$
 
 但 Decoder很强：
 
-\[
+$$
 D\text{ 仍然不错}
-\]
+$$
 
 ---
 
-# 112. Model B
+## 112. Model B
 
-\[
+$$
 R\text{ 较高}
-\]
+$$
 
 latent携带更多信息，
 
@@ -3005,13 +3005,13 @@ reconstruction：
 
 ---
 
-# 113. 两者可能甚至具有类似 ELBO
+## 113. 两者可能甚至具有类似 ELBO
 
 因为：
 
-\[
+$$
 D+R
-\]
+$$
 
 tradeoff不同。
 
@@ -3023,7 +3023,7 @@ tradeoff不同。
 
 ---
 
-# 114. 这对 ACT 特别重要
+## 114. 这对 ACT 特别重要
 
 ACT README甚至提醒：
 
@@ -3043,7 +3043,7 @@ ACT README甚至提醒：
 
 ---
 
-# 115. Free Bits 是什么？
+## 115. Free Bits 是什么？
 
 Kingma et al. 在 IAF 工作中使用一种 modified objective：
 
@@ -3051,7 +3051,7 @@ Kingma et al. 在 IAF 工作中使用一种 modified objective：
 
 概念上：
 
-\[
+$$
 \boxed{
 L
 =
@@ -3063,39 +3063,39 @@ D
 KL_j
 )
 }
-\]
+$$
 
 取决于 sign convention。
 
 ---
 
-# 116. 为什么叫 “Free Bits”？
+## 116. 为什么叫 “Free Bits”？
 
 当：
 
-\[
+$$
 KL_j<\lambda
-\]
+$$
 
 时，
 
 把它进一步从：
 
-\[
+$$
 0.4
-\]
+$$
 
 压到：
 
-\[
+$$
 0.1
-\]
+$$
 
 并不会降低这部分 objective penalty。
 
 ---
 
-# 117. 所以在这个区间里
+## 117. 所以在这个区间里
 
 Encoder可以使用：
 
@@ -3109,11 +3109,11 @@ Encoder可以使用：
 
 ---
 
-# 118. 注意一个常见错误解释
+## 118. 注意一个常见错误解释
 
 Free Bits并不是简单：
 
-> “强制 KL 一定大于 \(\lambda\)”。
+> “强制 KL 一定大于 $\lambda$”。
 
 更精确地说：
 
@@ -3129,11 +3129,11 @@ Free Bits并不是简单：
 
 ---
 
-# 119. β-VAE 又是什么关系？
+## 119. β-VAE 又是什么关系？
 
 β-VAE：
 
-\[
+$$
 \boxed{
 L
 =
@@ -3141,13 +3141,13 @@ D
 +
 \beta R
 }
-\]
+$$
 
 如果：
 
-\[
+$$
 \beta>1
-\]
+$$
 
 通常强化：
 
@@ -3155,13 +3155,13 @@ D
 
 ---
 
-# 120. 所以如果目标只是“防 collapse”
+## 120. 所以如果目标只是“防 collapse”
 
 简单把：
 
-\[
+$$
 \beta
-\]
+$$
 
 调得更大：
 
@@ -3173,7 +3173,7 @@ D
 
 ---
 
-# 121. 但 β-VAE 的原始目标并不是“防 Collapse”
+## 121. 但 β-VAE 的原始目标并不是“防 Collapse”
 
 它主要研究：
 
@@ -3187,15 +3187,15 @@ D
 
 ---
 
-# 122. ACT β=10 也不能直接套 β-VAE Disentanglement 结论
+## 122. ACT β=10 也不能直接套 β-VAE Disentanglement 结论
 
 ACT没有声称：
 
 > 32维 style latent被 disentangle成独立人类因素。
 
-\[
+$$
 \beta=10
-\]
+$$
 
 在 ACT 中首先是：
 
@@ -3203,19 +3203,19 @@ ACT没有声称：
 
 ---
 
-# 123. 什么叫 KL Floor / Minimum Desired Rate？
+## 123. 什么叫 KL Floor / Minimum Desired Rate？
 
 一些方法希望：
 
-\[
+$$
 R
-\]
+$$
 
 不要低于某个：
 
-\[
+$$
 R_{\min}
-\]
+$$
 
 因为：
 
@@ -3225,7 +3225,7 @@ R_{\min}
 
 ---
 
-# 124. 但 Rate 高也不等于 Semantics 好
+## 124. 但 Rate 高也不等于 Semantics 好
 
 一个 Encoder可以：
 
@@ -3235,17 +3235,17 @@ R_{\min}
 
 所以：
 
-\[
+$$
 \boxed{
 \text{information quantity}
 \neq
 \text{information quality}
 }
-\]
+$$
 
 ---
 
-# 125. Posterior Collapse 的原因只有 Powerful Decoder 吗？
+## 125. Posterior Collapse 的原因只有 Powerful Decoder 吗？
 
 不是。
 
@@ -3255,7 +3255,7 @@ R_{\min}
 
 ---
 
-# 126. He et al. 2019：Lagging Inference Networks
+## 126. He et al. 2019：Lagging Inference Networks
 
 他们从：
 
@@ -3265,25 +3265,25 @@ R_{\min}
 
 核心观察：
 
-> early training时 inference network \(q_\phi\) 跟不上不断变化的 true posterior。
+> early training时 inference network $q_\phi$ 跟不上不断变化的 true posterior。
 
 ---
 
-# 127. 什么叫 Inference Network “Lagging”？
+## 127. 什么叫 Inference Network “Lagging”？
 
 Decoder/generative model parameters：
 
-\[
+$$
 \theta
-\]
+$$
 
 一直改变。
 
 所以 true posterior：
 
-\[
+$$
 p_\theta(z|x)
-\]
+$$
 
 也是：
 
@@ -3291,21 +3291,21 @@ p_\theta(z|x)
 
 Encoder：
 
-\[
+$$
 q_\phi(z|x)
-\]
+$$
 
 需要不断追它。
 
 ---
 
-# 128. 如果 Encoder 跟不上
+## 128. 如果 Encoder 跟不上
 
 当前：
 
-\[
+$$
 q_\phi
-\]
+$$
 
 给出的 latent可能：
 
@@ -3317,7 +3317,7 @@ q_\phi
 
 ---
 
-# 129. 然后 Decoder 更倾向不用 z
+## 129. 然后 Decoder 更倾向不用 z
 
 一旦 Decoder逐渐学会：
 
@@ -3325,21 +3325,21 @@ q_\phi
 
 true posterior本身也会趋近：
 
-\[
+$$
 p(z)
-\]
+$$
 
 最终：
 
-\[
+$$
 q(z|x)\approx p(z)
-\]
+$$
 
 collapse。
 
 ---
 
-# 130. 所以后验坍缩可以是 Training Dynamics 的自强化过程
+## 130. 所以后验坍缩可以是 Training Dynamics 的自强化过程
 
 ```text
 inference network lags
@@ -3355,7 +3355,7 @@ q also collapses to prior
 
 ---
 
-# 131. He et al. 的方法
+## 131. He et al. 的方法
 
 他们提出：
 
@@ -3367,23 +3367,23 @@ q also collapses to prior
 
 使：
 
-\[
+$$
 q_\phi
-\]
+$$
 
 更好跟上当前 posterior。
 
 ---
 
-# 132. 这说明一个重要事实
+## 132. 这说明一个重要事实
 
 不能简单说：
 
-\[
+$$
 \boxed{
 \text{posterior collapse = decoder太强}
 }
-\]
+$$
 
 更完整的原因可能包括：
 
@@ -3396,7 +3396,7 @@ q_\phi
 
 ---
 
-# 133. Lucas et al. 等工作进一步说明
+## 133. Lucas et al. 等工作进一步说明
 
 即使非常简单的 latent-variable models，
 
@@ -3414,7 +3414,7 @@ collapse-like behavior也可能和：
 
 ---
 
-# 134. 那怎样判断“ACT 有没有 Collapse”？
+## 134. 那怎样判断“ACT 有没有 Collapse”？
 
 不能只靠：
 
@@ -3424,29 +3424,29 @@ collapse-like behavior也可能和：
 
 至少做：
 
-\[
+$$
 \boxed{
 5\text{ 类诊断}
 }
-\]
+$$
 
 ---
 
-# 135. 诊断 1：Total KL Curve
+## 135. 诊断 1：Total KL Curve
 
 训练时记录：
 
-\[
+$$
 KL_{\text{total}}
-\]
+$$
 
 随 epoch变化。
 
 如果：
 
-\[
+$$
 KL\rightarrow0
-\]
+$$
 
 而长期保持接近0：
 
@@ -3454,7 +3454,7 @@ KL\rightarrow0
 
 ---
 
-# 136. 但 KL 的绝对数值要看 Reduction
+## 136. 但 KL 的绝对数值要看 Reduction
 
 ACT代码：
 
@@ -3462,9 +3462,9 @@ ACT代码：
 
 所以：
 
-\[
+$$
 KL=1
-\]
+$$
 
 是：
 
@@ -3476,7 +3476,7 @@ KL=1
 
 ---
 
-# 137. 诊断 2：Per-Dimension KL
+## 137. 诊断 2：Per-Dimension KL
 
 画：
 
@@ -3494,7 +3494,7 @@ dim31: 0.81
 
 ---
 
-# 138. 一个可能的 Pattern
+## 138. 一个可能的 Pattern
 
 ```text
 32 dims
@@ -3511,13 +3511,13 @@ dim31: 0.81
 
 ---
 
-# 139. 诊断 3：Posterior Mean Distribution
+## 139. 诊断 3：Posterior Mean Distribution
 
 统计：
 
-\[
+$$
 \mu_j
-\]
+$$
 
 在 validation set上的：
 
@@ -3527,9 +3527,9 @@ dim31: 0.81
 
 Full collapse时：
 
-\[
+$$
 \mu_j
-\]
+$$
 
 通常：
 
@@ -3537,125 +3537,125 @@ Full collapse时：
 
 ---
 
-# 140. 同时看 logvar
+## 140. 同时看 logvar
 
 Full collapse：
 
-\[
+$$
 \logvar_j
 \approx0
-\]
+$$
 
 即：
 
-\[
+$$
 \sigma_j^2\approx1
-\]
+$$
 
 ---
 
-# 141. 诊断 4：Decoder Sensitivity to z
+## 141. 诊断 4：Decoder Sensitivity to z
 
 固定：
 
-\[
+$$
 O
-\]
+$$
 
 改变：
 
-\[
+$$
 z
-\]
+$$
 
 看：
 
-\[
+$$
 \hat A
-\]
+$$
 
 是否改变。
 
 可以做：
 
-- \(z=0\)；
-- \(z=\mu\)；
+- $z=0$；
+- $z=\mu$；
 - posterior samples；
 - prior samples；
 - shuffled z。
 
 ---
 
-# 142. 诊断 5：Reconstruction Dependence on z
+## 142. 诊断 5：Reconstruction Dependence on z
 
 比较：
 
-\[
+$$
 L_{\text{post}}
 =
 L_1(
 A,
 f(O,z_{\text{post}})
 )
-\]
+$$
 
 和：
 
-\[
+$$
 L_0
 =
 L_1(
 A,
 f(O,0)
 )
-\]
+$$
 
 以及：
 
-\[
+$$
 L_{\text{shuffle}}
 =
 L_1(
 A,
 f(O,z_{\text{wrong}})
 )
-\]
+$$
 
 ---
 
-# 143. 理想上
+## 143. 理想上
 
 如果 latent有用：
 
-\[
+$$
 \boxed{
 L_{\text{post}}
 <
 L_{\text{shuffle}}
 }
-\]
+$$
 
 通常也希望：
 
-\[
+$$
 L_{\text{post}}
 <
 L_0
-\]
+$$
 
 至少在训练-style reconstruction setting中。
 
 ---
 
-# 144. 如果三者几乎一样
+## 144. 如果三者几乎一样
 
-\[
+$$
 L_{\text{post}}
 \approx
 L_0
 \approx
 L_{\text{shuffle}}
-\]
+$$
 
 说明：
 
@@ -3663,21 +3663,21 @@ L_{\text{shuffle}}
 
 ---
 
-# 145. 诊断 6：Gradient to Latent Path
+## 145. 诊断 6：Gradient to Latent Path
 
 可以 inspect：
 
-\[
+$$
 \left\|
 \frac{\partial L_{L1}}{\partial z}
 \right\|
-\]
+$$
 
 如果 reconstruction loss对：
 
-\[
+$$
 z
-\]
+$$
 
 长期 gradient很小，
 
@@ -3687,7 +3687,7 @@ z
 
 ---
 
-# 146. 但 Gradient 也要谨慎解释
+## 146. 但 Gradient 也要谨慎解释
 
 某个 checkpoint局部 gradient小：
 
@@ -3702,7 +3702,7 @@ z
 
 ---
 
-# 147. 诊断 7：Ablate Latent Input Entirely
+## 147. 诊断 7：Ablate Latent Input Entirely
 
 训练完成后：
 
@@ -3718,15 +3718,15 @@ z
 
 ---
 
-# 148. 但 ACT 原本 Inference 就 z=0
+## 148. 但 ACT 原本 Inference 就 z=0
 
 所以这个实验需要更仔细设计。
 
 ACT test-time：
 
-\[
+$$
 z=0
-\]
+$$
 
 本来就是固定的。
 
@@ -3738,7 +3738,7 @@ z=0
 
 ---
 
-# 149. Training-Time Latent 可能只是 Training Scaffold
+## 149. Training-Time Latent 可能只是 Training Scaffold
 
 ACT 的 Encoder：
 
@@ -3748,17 +3748,17 @@ ACT 的 Encoder：
 
 因此 latent可能发挥：
 
-\[
+$$
 \boxed{
 \text{training-time representation / regularization role}
 }
-\]
+$$
 
 而不需要 test-time随机控制 style。
 
 ---
 
-# 150. 这很像某些 Privileged Information
+## 150. 这很像某些 Privileged Information
 
 训练时模型可以利用：
 
@@ -3766,9 +3766,9 @@ ACT 的 Encoder：
 
 产生：
 
-\[
+$$
 z
-\]
+$$
 
 帮助学习。
 
@@ -3778,13 +3778,13 @@ z
 
 改用 prior center：
 
-\[
+$$
 z=0
-\]
+$$
 
 ---
 
-# 151. 所以 ACT 的问题比普通 Generative VAE 更特殊
+## 151. 所以 ACT 的问题比普通 Generative VAE 更特殊
 
 普通生成模型通常希望：
 
@@ -3792,23 +3792,23 @@ z=0
 
 ACT canonical则故意：
 
-\[
+$$
 \boxed{
 z=0
 }
-\]
+$$
 
 做 deterministic decoding。
 
 ---
 
-# 152. 那 ACT 为什么还怕 Posterior Collapse？
+## 152. 那 ACT 为什么还怕 Posterior Collapse？
 
 因为如果训练阶段：
 
-\[
+$$
 z
-\]
+$$
 
 完全没被 Decoder使用，
 
@@ -3822,13 +3822,13 @@ CVAE objective想解决的人类 demonstration variability：
 
 ---
 
-# 153. 但即使 z test-time固定，Training-Time Usage 仍可重要
+## 153. 但即使 z test-time固定，Training-Time Usage 仍可重要
 
 训练时：
 
-\[
+$$
 z
-\]
+$$
 
 可以帮助 Decoder区分：
 
@@ -3840,35 +3840,35 @@ z
 
 ---
 
-# 154. 一个 Toy Example
+## 154. 一个 Toy Example
 
 同样 observation：
 
-\[
+$$
 O
-\]
+$$
 
 human data有两种 chunk：
 
-\[
+$$
 A^{(1)}
-\]
+$$
 
 和：
 
-\[
+$$
 A^{(2)}
-\]
+$$
 
 ---
 
-# 155. 没有 Latent
+## 155. 没有 Latent
 
 deterministic model：
 
-\[
+$$
 f(O)
-\]
+$$
 
 可能被 L1/MSE迫使：
 
@@ -3876,35 +3876,35 @@ f(O)
 
 ---
 
-# 156. 有 Latent
+## 156. 有 Latent
 
 Encoder：
 
-\[
+$$
 (O,A^{(1)})
 \rightarrow
 z_1
-\]
+$$
 
-\[
+$$
 (O,A^{(2)})
 \rightarrow
 z_2
-\]
+$$
 
 Decoder：
 
-\[
+$$
 f(O,z_1)
 \approx
 A^{(1)}
-\]
+$$
 
-\[
+$$
 f(O,z_2)
 \approx
 A^{(2)}
-\]
+$$
 
 这样可以：
 
@@ -3912,13 +3912,13 @@ A^{(2)}
 
 ---
 
-# 157. Test-Time z=0
+## 157. Test-Time z=0
 
 ACT选择 prior center：
 
-\[
+$$
 z=0
-\]
+$$
 
 输出：
 
@@ -3930,7 +3930,7 @@ z=0
 
 ---
 
-# 158. 这正是为什么“Inference 固定 z=0”不能诊断 Collapse
+## 158. 这正是为什么“Inference 固定 z=0”不能诊断 Collapse
 
 你必须看：
 
@@ -3938,21 +3938,21 @@ z=0
 
 ---
 
-# 159. 如果模型真的 Collapse 呢？
+## 159. 如果模型真的 Collapse 呢？
 
 那么：
 
-\[
+$$
 f(O,z)
 \approx
 f(O)
-\]
+$$
 
 训练时：
 
-\[
+$$
 z_1,z_2
-\]
+$$
 
 也几乎没用。
 
@@ -3962,7 +3962,7 @@ CVAE就退化成：
 
 ---
 
-# 160. Collapse 时 z=0 为什么当然也能 Work？
+## 160. Collapse 时 z=0 为什么当然也能 Work？
 
 因为 Decoder本来：
 
@@ -3970,39 +3970,39 @@ CVAE就退化成：
 
 所以：
 
-\[
+$$
 z=0
-\]
+$$
 
-\[
+$$
 z=random
-\]
+$$
 
-\[
+$$
 z=\mu
-\]
+$$
 
 输出都近似相同。
 
 ---
 
-# 161. 所以一个很有用的诊断
+## 161. 所以一个很有用的诊断
 
 如果：
 
-\[
+$$
 f(O,0)
 \approx
 f(O,z_1)
 \approx
 f(O,z_2)
-\]
+$$
 
 对很多显著不同：
 
-\[
+$$
 z_1,z_2
-\]
+$$
 
 都成立，
 
@@ -4012,7 +4012,7 @@ z_1,z_2
 
 ---
 
-# 162. ACT 的 CVAE Ablation 告诉我们什么？
+## 162. ACT 的 CVAE Ablation 告诉我们什么？
 
 ACT论文 Ablation 中，
 
@@ -4026,7 +4026,7 @@ ACT论文 Ablation 中，
 
 ---
 
-# 163. Scripted Data
+## 163. Scripted Data
 
 因为 scripted demonstrations：
 
@@ -4038,37 +4038,37 @@ ACT论文 Ablation 中，
 
 ---
 
-# 164. Human Data
+## 164. Human Data
 
 论文报告 aggregate success：
 
-\[
+$$
 \boxed{
 35.3\%
 \rightarrow
 2\%
 }
-\]
+$$
 
 当移除 CVAE objective时显著下降。
 
 这说明：
 
-\[
+$$
 \boxed{
 \text{CVAE-style training is crucial for their human demonstration setting.}
 }
-\]
+$$
 
 ---
 
-# 165. 但这能不能证明“32个 z 维度都没 Collapse”？
+## 165. 但这能不能证明“32个 z 维度都没 Collapse”？
 
-\[
+$$
 \boxed{
 不能。
 }
-\]
+$$
 
 Ablation比较的是：
 
@@ -4083,7 +4083,7 @@ Ablation比较的是：
 
 ---
 
-# 166. 能不能证明 z 编码了“睡眠”“力量”“意图”？
+## 166. 能不能证明 z 编码了“睡眠”“力量”“意图”？
 
 当然不能。
 
@@ -4097,15 +4097,15 @@ Success ablation只证明：
 
 ---
 
-# 167. 能不能证明 test-time z=0 是“average style”？
+## 167. 能不能证明 test-time z=0 是“average style”？
 
 也不能。
 
 即使 training latent有用，
 
-\[
+$$
 z=0
-\]
+$$
 
 只是：
 
@@ -4113,43 +4113,43 @@ z=0
 
 Decoder nonlinear：
 
-\[
+$$
 f(E[z])
 \neq
 E[f(z)]
-\]
+$$
 
 一般成立。
 
 ---
 
-# 168. 所以 ACT Ablation 的正确结论
+## 168. 所以 ACT Ablation 的正确结论
 
 可以说：
 
-\[
+$$
 \boxed{
 \text{CVAE objective materially matters for human-data ACT performance.}
 }
-\]
+$$
 
 不能扩大成：
 
-\[
+$$
 \boxed{
 \text{all latent dimensions encode interpretable human styles and zero is the average style.}
 }
-\]
+$$
 
 ---
 
-# 169. ACT 会不会 Partial Collapse？
+## 169. ACT 会不会 Partial Collapse？
 
 完全可能。
 
-\[
+$$
 latent\_dim=32
-\]
+$$
 
 只是：
 
@@ -4157,21 +4157,21 @@ latent\_dim=32
 
 实际可能只有：
 
-\[
+$$
 r<32
-\]
+$$
 
 个 dimensions在使用。
 
 ---
 
-# 170. 这甚至不一定是坏事
+## 170. 这甚至不一定是坏事
 
 如果真实 demonstration variation只需要：
 
-\[
+$$
 4
-\]
+$$
 
 个 latent degrees of freedom，
 
@@ -4185,7 +4185,7 @@ r<32
 
 ---
 
-# 171. 所以“多少 Active Dimensions 才算好”没有统一答案
+## 171. 所以“多少 Active Dimensions 才算好”没有统一答案
 
 要看：
 
@@ -4197,7 +4197,7 @@ r<32
 
 ---
 
-# 172. Full Utilization 不是目标
+## 172. Full Utilization 不是目标
 
 一个32维 latent：
 
@@ -4217,15 +4217,15 @@ Representation应该：
 
 ---
 
-# 173. KL≈0 一定就是灾难吗？
+## 173. KL≈0 一定就是灾难吗？
 
 也要看任务。
 
 如果 data本来 deterministic：
 
-\[
+$$
 A=f(O)
-\]
+$$
 
 根本没有 observation之外的 multimodality，
 
@@ -4233,7 +4233,7 @@ A=f(O)
 
 ---
 
-# 174. ACT Scripted Data 就是很好的例子
+## 174. ACT Scripted Data 就是很好的例子
 
 论文发现：
 
@@ -4241,15 +4241,15 @@ A=f(O)
 
 这说明：
 
-\[
+$$
 \boxed{
 \text{latent usefulness depends on irreducible conditional variation in the data.}
 }
-\]
+$$
 
 ---
 
-# 175. 所以 Collapse 的“坏”与否和 Modeling Goal 有关
+## 175. 所以 Collapse 的“坏”与否和 Modeling Goal 有关
 
 如果你的目标只是：
 
@@ -4267,13 +4267,13 @@ latent unused可能没问题。
 
 ---
 
-# 176. Posterior Collapse 与 Identifiability 也不同
+## 176. Posterior Collapse 与 Identifiability 也不同
 
 假设 latent确实 active：
 
-\[
+$$
 I(A;Z|O)>0
-\]
+$$
 
 也不代表：
 
@@ -4281,15 +4281,15 @@ I(A;Z|O)>0
 
 ---
 
-# 177. Latent Representation 可以发生旋转/重参数化
+## 177. Latent Representation 可以发生旋转/重参数化
 
 例如：
 
-\[
+$$
 z'
 =
 Rz
-\]
+$$
 
 某些 Decoder/Encoder可以相应变换，
 
@@ -4301,15 +4301,15 @@ Rz
 
 ---
 
-# 178. 所以三个问题要分开
+## 178. 所以三个问题要分开
 
-### 1. Is z used?
+#### 1. Is z used?
 
-\[
+$$
 I(A;Z|O)>0?
-\]
+$$
 
-### 2. Is z useful?
+#### 2. Is z useful?
 
 它是否改善：
 
@@ -4317,7 +4317,7 @@ I(A;Z|O)>0?
 - generation；
 - rollout。
 
-### 3. Is z interpretable/identifiable?
+#### 3. Is z interpretable/identifiable?
 
 每维是否对应：
 
@@ -4327,29 +4327,29 @@ I(A;Z|O)>0?
 
 ---
 
-# 179. Posterior Collapse 主要针对第一个
+## 179. Posterior Collapse 主要针对第一个
 
-\[
+$$
 \boxed{
 \text{Is latent being used at all?}
 }
-\]
+$$
 
 ---
 
-# 180. Disentanglement 主要针对第三个
+## 180. Disentanglement 主要针对第三个
 
-\[
+$$
 \boxed{
 \text{What structure does latent information have?}
 }
-\]
+$$
 
 不要混淆。
 
 ---
 
-# 181. Prior Collapse 和 Posterior Collapse 是一个词吗？
+## 181. Prior Collapse 和 Posterior Collapse 是一个词吗？
 
 标准术语：
 
@@ -4357,15 +4357,15 @@ I(A;Z|O)>0?
 
 核心是 approximate posterior：
 
-\[
+$$
 q(z|x)
-\]
+$$
 
 趋近：
 
-\[
+$$
 p(z)
-\]
+$$
 
 有些文献也会说：
 
@@ -4377,28 +4377,28 @@ p(z)
 
 ---
 
-# 182. KL Vanishing
+## 182. KL Vanishing
 
 通常指：
 
-\[
+$$
 KL
 \rightarrow0
-\]
+$$
 
 它是 posterior collapse的重要表现。
 
 但最好不要只凭某一个 batch：
 
-\[
+$$
 KL\text{ 很小}
-\]
+$$
 
 就立即下最终结论。
 
 ---
 
-# 183. 为什么 Total KL 很小可能只是 Scaling 问题？
+## 183. 为什么 Total KL 很小可能只是 Scaling 问题？
 
 如果 latent dimensions少：
 
@@ -4417,45 +4417,45 @@ KL\text{ 很小}
 
 ---
 
-# 184. ACT 中正确记录 KL
+## 184. ACT 中正确记录 KL
 
 建议同时记录：
 
-\[
+$$
 KL_{total}
-\]
+$$
 
-\[
+$$
 KL_{mean-per-dim}
-\]
+$$
 
-\[
+$$
 KL_j,\ j=1...32
-\]
+$$
 
 ---
 
-# 185. 再记录 μ Statistics
+## 185. 再记录 μ Statistics
 
 每维：
 
-\[
+$$
 E[\mu_j]
-\]
+$$
 
-\[
+$$
 Std[\mu_j]
-\]
+$$
 
 以及：
 
-\[
+$$
 E[\logvar_j]
-\]
+$$
 
 ---
 
-# 186. Collapse 典型 Pattern
+## 186. Collapse 典型 Pattern
 
 可能看到：
 
@@ -4473,7 +4473,7 @@ output insensitive to z
 
 ---
 
-# 187. Partial Collapse Pattern
+## 187. Partial Collapse Pattern
 
 ```text
 total KL > 0
@@ -4494,7 +4494,7 @@ other dims:
 
 ---
 
-# 188. Non-Collapsed but Prior-Mismatched Pattern
+## 188. Non-Collapsed but Prior-Mismatched Pattern
 
 ```text
 KL high
@@ -4512,7 +4512,7 @@ but prior z samples produce strange actions
 
 ---
 
-# 189. 这正是 β 太小可能出现的情况
+## 189. 这正是 β 太小可能出现的情况
 
 Train posterior：
 
@@ -4526,15 +4526,15 @@ Test prior：
 
 因为 inference使用：
 
-\[
+$$
 z=0
-\]
+$$
 
 prior center。
 
 ---
 
-# 190. 所以 ACT 需要的是一种特殊平衡
+## 190. 所以 ACT 需要的是一种特殊平衡
 
 训练 posterior：
 
@@ -4542,9 +4542,9 @@ prior center。
 
 同时：
 
-\[
+$$
 z=0
-\]
+$$
 
 附近必须：
 
@@ -4556,7 +4556,7 @@ KL帮助把 posterior：
 
 ---
 
-# 191. 这可能是 β=10 的设计动机之一
+## 191. 这可能是 β=10 的设计动机之一
 
 ACT需要：
 
@@ -4564,27 +4564,27 @@ ACT需要：
 
 如果 posterior means遍布很远：
 
-\[
+$$
 \| \mu \|\gg0
-\]
+$$
 
 那：
 
-\[
+$$
 z=0
-\]
+$$
 
 可能是 Decoder训练时很少见的位置。
 
 ---
 
-# 192. KL 则让 Posterior Distribution 靠近 N(0,I)
+## 192. KL 则让 Posterior Distribution 靠近 N(0,I)
 
 因此：
 
-\[
+$$
 z=0
-\]
+$$
 
 更可能位于：
 
@@ -4592,27 +4592,27 @@ z=0
 
 ---
 
-# 193. 但“靠近 prior”太强又会 Collapse
+## 193. 但“靠近 prior”太强又会 Collapse
 
 所以 ACT 的 latent训练就是：
 
-\[
+$$
 \boxed{
 \text{make }z\text{ informative enough}
 \quad
 \text{but not so unconstrained that }z=0\text{ becomes meaningless}
 }
-\]
+$$
 
 ---
 
-# 194. 这就是真正的 Tradeoff
+## 194. 这就是真正的 Tradeoff
 
 左边极端：
 
-\[
+$$
 \beta\rightarrow0
-\]
+$$
 
 可能：
 
@@ -4620,9 +4620,9 @@ z=0
 
 右边极端：
 
-\[
+$$
 \beta\rightarrow\infty
-\]
+$$
 
 可能：
 
@@ -4634,7 +4634,7 @@ z=0
 
 ---
 
-# 195. 一个示意图
+## 195. 一个示意图
 
 ```text
 β too small
@@ -4663,17 +4663,17 @@ z=0
 
 ---
 
-# 196. 怎样给 ACT 做 β Sweep？
+## 196. 怎样给 ACT 做 β Sweep？
 
 例如训练：
 
-\[
+$$
 \beta
 \in
 \{
 0,\ 0.1,\ 1,\ 10,\ 50
 \}
-\]
+$$
 
 对每个 checkpoint记录：
 
@@ -4688,13 +4688,13 @@ z=0
 
 ---
 
-# 197. 不要只选 Total Validation Loss 最低的 β
+## 197. 不要只选 Total Validation Loss 最低的 β
 
 因为：
 
-\[
+$$
 L=L1+\beta KL
-\]
+$$
 
 不同 β：
 
@@ -4708,14 +4708,14 @@ L=L1+\beta KL
 
 ---
 
-# 198. KL Annealing 能不能直接用于 ACT？
+## 198. KL Annealing 能不能直接用于 ACT？
 
 理论上可以尝试：
 
-\[
+$$
 \beta(t):
 0\rightarrow10
-\]
+$$
 
 让模型先学：
 
@@ -4725,15 +4725,15 @@ L=L1+\beta KL
 
 ---
 
-# 199. 但这是一个新实验，不是 Original ACT Canonical
+## 199. 但这是一个新实验，不是 Original ACT Canonical
 
 Official ACT training：
 
-\[
+$$
 \boxed{
 \beta=10
 }
-\]
+$$
 
 固定使用。
 
@@ -4745,13 +4745,13 @@ Official ACT training：
 
 ---
 
-# 200. Free Bits 能不能用于 ACT？
+## 200. Free Bits 能不能用于 ACT？
 
 理论上也可以。
 
 例如 per-dim：
 
-\[
+$$
 L_{KL}
 =
 \sum_j
@@ -4759,13 +4759,13 @@ L_{KL}
 \lambda,
 KL_j
 )
-\]
+$$
 
 降低把每维压到0的动力。
 
 ---
 
-# 201. 但同样
+## 201. 但同样
 
 这不是：
 
@@ -4777,23 +4777,23 @@ KL_j
 
 知识库必须区分：
 
-\[
+$$
 \boxed{
 \text{ACT Fact}
 }
-\]
+$$
 
 vs：
 
-\[
+$$
 \boxed{
 \text{Possible Extension}
 }
-\]
+$$
 
 ---
 
-# 202. Weakening ACT Decoder 是否合理？
+## 202. Weakening ACT Decoder 是否合理？
 
 理论上：
 
@@ -4813,7 +4813,7 @@ vs：
 
 ---
 
-# 203. 更实际的 ACT Diagnostic-first Strategy
+## 203. 更实际的 ACT Diagnostic-first Strategy
 
 不要一上来改 architecture。
 
@@ -4834,7 +4834,7 @@ vs：
 
 ---
 
-# 204. 一个最小 PyTorch Per-Dim KL
+## 204. 一个最小 PyTorch Per-Dim KL
 
 ```python
 def kl_per_dim(mu, logvar):
@@ -4854,7 +4854,7 @@ def kl_per_dim(mu, logvar):
 
 ---
 
-# 205. Dataset-Level Statistic
+## 205. Dataset-Level Statistic
 
 ```python
 kl =
@@ -4872,15 +4872,15 @@ total_kl =
 
 得到：
 
-\[
+$$
 [32]
-\]
+$$
 
 的 latent-dimension profile。
 
 ---
 
-# 206. Posterior Mean Activity
+## 206. Posterior Mean Activity
 
 ```python
 mu_variance =
@@ -4892,15 +4892,15 @@ mu_variance =
 
 看：
 
-\[
+$$
 Var[\mu_j]
-\]
+$$
 
 哪些维度明显大于0。
 
 ---
 
-# 207. Latent Shuffle Test 伪代码
+## 207. Latent Shuffle Test 伪代码
 
 ```python
 z =
@@ -4943,9 +4943,9 @@ loss_shuffled = L1(
 
 ---
 
-# 208. 定义 Shuffle Gap
+## 208. 定义 Shuffle Gap
 
-\[
+$$
 \boxed{
 \Delta_{\text{shuffle}}
 =
@@ -4953,13 +4953,13 @@ L_{\text{shuffle}}
 -
 L_{\text{correct}}
 }
-\]
+$$
 
 如果：
 
-\[
+$$
 \Delta_{\text{shuffle}}\gg0
-\]
+$$
 
 说明：
 
@@ -4967,7 +4967,7 @@ L_{\text{correct}}
 
 ---
 
-# 209. 如果 Δshuffle ≈ 0
+## 209. 如果 Δshuffle ≈ 0
 
 可能：
 
@@ -4980,9 +4980,9 @@ L_{\text{correct}}
 
 ---
 
-# 210. z=0 Gap
+## 210. z=0 Gap
 
-\[
+$$
 \boxed{
 \Delta_0
 =
@@ -4996,49 +4996,49 @@ A,
 f(O,z_{\text{post}})
 )
 }
-\]
+$$
 
 ---
 
-# 211. Prior-Sample Output Diversity
+## 211. Prior-Sample Output Diversity
 
 固定：
 
-\[
+$$
 O
-\]
+$$
 
 采：
 
-\[
+$$
 z_m\sim N(0,I)
-\]
+$$
 
 测：
 
-\[
+$$
 Var_m[
 f(O,z_m)
 ]
-\]
+$$
 
 ---
 
-# 212. Posterior-Sample Output Diversity
+## 212. Posterior-Sample Output Diversity
 
 固定 example：
 
-\[
+$$
 (O,A)
-\]
+$$
 
 采：
 
-\[
+$$
 z_m
 \sim
 q(z|O,A)
-\]
+$$
 
 测：
 
@@ -5046,33 +5046,33 @@ q(z|O,A)
 
 ---
 
-# 213. Latent Traversal
+## 213. Latent Traversal
 
 选某维：
 
-\[
+$$
 j
-\]
+$$
 
 其他维设0，
 
 让：
 
-\[
+$$
 z_j
 \in
 \{-2,-1,0,1,2\}
-\]
+$$
 
 观察 predicted trajectory。
 
 ---
 
-# 214. 这个实验能看什么？
+## 214. 这个实验能看什么？
 
 如果输出：
 
-> 随 \(z_j\) 平滑系统变化，
+> 随 $z_j$ 平滑系统变化，
 
 说明这一维：
 
@@ -5080,7 +5080,7 @@ z_j
 
 ---
 
-# 215. 但不要立刻给它人类语义
+## 215. 但不要立刻给它人类语义
 
 例如看到：
 
@@ -5098,13 +5098,13 @@ z_j
 
 ---
 
-# 216. Mutual Information 怎么估？
+## 216. Mutual Information 怎么估？
 
 高维连续：
 
-\[
+$$
 I(A;Z|O)
-\]
+$$
 
 精确估计并不容易。
 
@@ -5118,40 +5118,40 @@ I(A;Z|O)
 
 ---
 
-# 217. Expected KL 是 Mutual Information Upper Bound-like Quantity
+## 217. Expected KL 是 Mutual Information Upper Bound-like Quantity
 
 如前面分解：
 
-\[
+$$
 R
 =
 I(A;Z|O)
 +
 KL_{\text{aggregate}}
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 I(A;Z|O)
 \le R
 }
-\]
+$$
 
 ---
 
-# 218. 如果 R≈0
+## 218. 如果 R≈0
 
 MI几乎一定：
 
-\[
+$$
 \approx0
-\]
+$$
 
 ---
 
-# 219. 如果 R 很大
+## 219. 如果 R 很大
 
 MI可能：
 
@@ -5165,13 +5165,13 @@ MI可能：
 
 ---
 
-# 220. 为什么 Strong Conditional Decoder 更容易 Collapse？
+## 220. 为什么 Strong Conditional Decoder 更容易 Collapse？
 
 CVAE里 Decoder已有 condition：
 
-\[
+$$
 O
-\]
+$$
 
 相当于：
 
@@ -5179,9 +5179,9 @@ O
 
 如果：
 
-\[
+$$
 O\rightarrow A
-\]
+$$
 
 mapping本身很强，
 
@@ -5191,7 +5191,7 @@ latent的边际价值：
 
 ---
 
-# 221. 所以 CVAE Posterior Collapse 比普通 VAE 更值得警惕
+## 221. 所以 CVAE Posterior Collapse 比普通 VAE 更值得警惕
 
 尤其 sequence-to-sequence任务：
 
@@ -5207,7 +5207,7 @@ latent非常容易：
 
 ---
 
-# 222. Conditional VAE 研究因此经常直接促进 MI
+## 222. Conditional VAE 研究因此经常直接促进 MI
 
 有工作会在 objective中：
 
@@ -5220,15 +5220,15 @@ latent非常容易：
 
 促进：
 
-\[
+$$
 I(Z;Y)
-\]
+$$
 
 或相应 conditional information。
 
 ---
 
-# 223. ACT 没有这些额外 Anti-Collapse Mechanisms
+## 223. ACT 没有这些额外 Anti-Collapse Mechanisms
 
 Canonical ACT主要：
 
@@ -5247,7 +5247,7 @@ Canonical ACT主要：
 
 ---
 
-# 224. 但 ACT Human Ablation 表明 CVAE Objective 确实重要
+## 224. 但 ACT Human Ablation 表明 CVAE Objective 确实重要
 
 这意味着：
 
@@ -5259,7 +5259,7 @@ CVAE design没有简单等价于：
 
 ---
 
-# 225. 但不能由此知道 Latent 的精细信息结构
+## 225. 但不能由此知道 Latent 的精细信息结构
 
 ACT paper没有系统报告：
 
@@ -5275,7 +5275,7 @@ ACT paper没有系统报告：
 
 ---
 
-# 226. 这甚至可以做成一个很不错的小研究项目
+## 226. 这甚至可以做成一个很不错的小研究项目
 
 例如：
 
@@ -5294,7 +5294,7 @@ ACT paper没有系统报告：
 
 ---
 
-# 227. Scripted vs Human 特别适合做 Control
+## 227. Scripted vs Human 特别适合做 Control
 
 Original ACT已经显示：
 
@@ -5305,35 +5305,35 @@ Original ACT已经显示：
 
 进一步可以问：
 
-\[
+$$
 \boxed{
 \text{Human data是否拥有更高 conditional latent rate？}
 }
-\]
+$$
 
 ---
 
-# 228. 一个可检验假设
+## 228. 一个可检验假设
 
 Human model：
 
-\[
+$$
 KL_{\text{human}}
 >
 KL_{\text{scripted}}
-\]
+$$
 
 或者：
 
-\[
+$$
 \#ActiveUnits_{\text{human}}
 >
 \#ActiveUnits_{\text{scripted}}
-\]
+$$
 
 ---
 
-# 229. 但结果不一定如此
+## 229. 但结果不一定如此
 
 因为：
 
@@ -5352,17 +5352,17 @@ KL_{\text{scripted}}
 
 ---
 
-# 230. 另一个实验：Latent Shuffle 对 Human Data 是否更伤？
+## 230. 另一个实验：Latent Shuffle 对 Human Data 是否更伤？
 
 如果 human variation确实通过 z编码，
 
 预期：
 
-\[
+$$
 \Delta_{\text{shuffle,human}}
 >
 \Delta_{\text{shuffle,scripted}}
-\]
+$$
 
 可能成立。
 
@@ -5372,19 +5372,19 @@ KL_{\text{scripted}}
 
 ---
 
-# 231. 还有一个很重要的问题：ACT 训练后为什么不 Sample z？
+## 231. 还有一个很重要的问题：ACT 训练后为什么不 Sample z？
 
 Canonical inference：
 
-\[
+$$
 z=0
-\]
+$$
 
 不是：
 
-\[
+$$
 z\sim N(0,I)
-\]
+$$
 
 因为机器人控制更需要：
 
@@ -5392,7 +5392,7 @@ z\sim N(0,I)
 
 ---
 
-# 232. 如果 latent表示多种 Human Styles
+## 232. 如果 latent表示多种 Human Styles
 
 随机 sample：
 
@@ -5410,13 +5410,13 @@ z\sim N(0,I)
 
 ---
 
-# 233. 这和 Posterior Collapse 的关系
+## 233. 这和 Posterior Collapse 的关系
 
 两种系统都可能出现：
 
-\[
+$$
 z=0
-\]
+$$
 
 推理，
 
@@ -5424,21 +5424,21 @@ z=0
 
 ---
 
-# 234. Case A：Healthy Latent
+## 234. Case A：Healthy Latent
 
 训练时：
 
-\[
+$$
 z
-\]
+$$
 
 显著帮助解释 demonstration variation。
 
 推理时：
 
-\[
+$$
 z=0
-\]
+$$
 
 人为选择：
 
@@ -5446,19 +5446,19 @@ z=0
 
 ---
 
-# 235. Case B：Collapsed Latent
+## 235. Case B：Collapsed Latent
 
 训练时 Decoder本来就忽略：
 
-\[
+$$
 z
-\]
+$$
 
 推理：
 
-\[
+$$
 z=0
-\]
+$$
 
 只是：
 
@@ -5466,7 +5466,7 @@ z=0
 
 ---
 
-# 236. 两者外表可能完全一样
+## 236. 两者外表可能完全一样
 
 都看到代码：
 
@@ -5485,7 +5485,7 @@ latent_sample =
 
 ---
 
-# 237. 这也是为什么代码阅读不能只看 Inference
+## 237. 这也是为什么代码阅读不能只看 Inference
 
 要同时看：
 
@@ -5496,7 +5496,7 @@ latent_sample =
 
 ---
 
-# 238. Common Misconception 1：有 z 就代表模型一定学了 Latent Information
+## 238. Common Misconception 1：有 z 就代表模型一定学了 Latent Information
 
 **错误。**
 
@@ -5504,31 +5504,31 @@ Decoder可以完全忽略 z。
 
 ---
 
-# 239. Common Misconception 2：Posterior Collapse = σ²→0
+## 239. Common Misconception 2：Posterior Collapse = σ²→0
 
 **错误。**
 
 标准 collapse趋向：
 
-\[
+$$
 q(z|x)=N(0,I)
-\]
+$$
 
 所以：
 
-\[
+$$
 \sigma^2\rightarrow1
-\]
+$$
 
 ---
 
-# 240. Common Misconception 3：μ→0 就一定 Collapse
+## 240. Common Misconception 3：μ→0 就一定 Collapse
 
 单独看：
 
-\[
+$$
 \mu
-\]
+$$
 
 不够。
 
@@ -5536,7 +5536,7 @@ Posterior variance和 decoder usage也重要。
 
 ---
 
-# 241. Common Misconception 4：KL→0 是好事，因为 Regularization 完美
+## 241. Common Misconception 4：KL→0 是好事，因为 Regularization 完美
 
 对于 latent representation目标：
 
@@ -5550,7 +5550,7 @@ KL=0表示 posterior完全匹配 prior，
 
 ---
 
-# 242. Common Misconception 5：KL 越大 Latent 越好
+## 242. Common Misconception 5：KL 越大 Latent 越好
 
 **错误。**
 
@@ -5560,7 +5560,7 @@ KL=0表示 posterior完全匹配 prior，
 
 ---
 
-# 243. Common Misconception 6：Nonzero KL 保证 Decoder 使用 z
+## 243. Common Misconception 6：Nonzero KL 保证 Decoder 使用 z
 
 **错误。**
 
@@ -5568,7 +5568,7 @@ KL=0表示 posterior完全匹配 prior，
 
 ---
 
-# 244. Common Misconception 7：Posterior Collapse 只发生在 Text VAE
+## 244. Common Misconception 7：Posterior Collapse 只发生在 Text VAE
 
 **错误。**
 
@@ -5580,7 +5580,7 @@ KL=0表示 posterior完全匹配 prior，
 
 ---
 
-# 245. Common Misconception 8：强 Decoder 一定 Collapse
+## 245. Common Misconception 8：强 Decoder 一定 Collapse
 
 **错误。**
 
@@ -5590,7 +5590,7 @@ Powerful decoder提高风险，
 
 ---
 
-# 246. Common Misconception 9：Collapse 的唯一原因是 Decoder 太强
+## 246. Common Misconception 9：Collapse 的唯一原因是 Decoder 太强
 
 **过度简化。**
 
@@ -5600,7 +5600,7 @@ Lagging inference等工作说明：
 
 ---
 
-# 247. Common Misconception 10：KL Annealing 能保证不 Collapse
+## 247. Common Misconception 10：KL Annealing 能保证不 Collapse
 
 **不能。**
 
@@ -5608,7 +5608,7 @@ Lagging inference等工作说明：
 
 ---
 
-# 248. Common Misconception 11：Free Bits 强制每一维一定携带 λ bits 的真实 Mutual Information
+## 248. Common Misconception 11：Free Bits 强制每一维一定携带 λ bits 的真实 Mutual Information
 
 **不严格。**
 
@@ -5620,7 +5620,7 @@ KL并不等于纯 MI。
 
 ---
 
-# 249. Common Misconception 12：β 越大越能学好 Latent
+## 249. Common Misconception 12：β 越大越能学好 Latent
 
 如果 β太大：
 
@@ -5628,7 +5628,7 @@ KL并不等于纯 MI。
 
 ---
 
-# 250. Common Misconception 13：β 越小越好
+## 250. Common Misconception 13：β 越小越好
 
 太小可能：
 
@@ -5638,7 +5638,7 @@ KL并不等于纯 MI。
 
 ---
 
-# 251. Common Misconception 14：ACT β=10 意味着 KL 一定比 L1 强10倍
+## 251. Common Misconception 14：ACT β=10 意味着 KL 一定比 L1 强10倍
 
 **错误。**
 
@@ -5648,7 +5648,7 @@ KL并不等于纯 MI。
 
 ---
 
-# 252. Common Misconception 15：ACT 的 L1+βKL 就必须被称为标准 ELBO
+## 252. Common Misconception 15：ACT 的 L1+βKL 就必须被称为标准 ELBO
 
 更准确：
 
@@ -5660,7 +5660,7 @@ L1可对应 fixed-scale Laplace likelihood，
 
 ---
 
-# 253. Common Misconception 16：ACT inference z=0 说明 z 没用
+## 253. Common Misconception 16：ACT inference z=0 说明 z 没用
 
 **错误。**
 
@@ -5670,7 +5670,7 @@ test-time再固定 prior center。
 
 ---
 
-# 254. Common Misconception 17：ACT z=0 能 Work 就证明 Posterior Collapse
+## 254. Common Misconception 17：ACT z=0 能 Work 就证明 Posterior Collapse
 
 **错误。**
 
@@ -5678,7 +5678,7 @@ Healthy latent training也完全可以配 deterministic z=0 inference。
 
 ---
 
-# 255. Common Misconception 18：ACT CVAE Ablation 证明 z 的每个维度都有语义
+## 255. Common Misconception 18：ACT CVAE Ablation 证明 z 的每个维度都有语义
 
 **错误。**
 
@@ -5688,13 +5688,13 @@ Ablation只证明：
 
 ---
 
-# 256. Common Misconception 19：35.3%→2% 证明 z=0 是 Average Human Style
+## 256. Common Misconception 19：35.3%→2% 证明 z=0 是 Average Human Style
 
 **完全不能证明。**
 
 ---
 
-# 257. Common Misconception 20：一个 Latent Dimension KL≈0，整个 Model 就 Collapse
+## 257. Common Misconception 20：一个 Latent Dimension KL≈0，整个 Model 就 Collapse
 
 **错误。**
 
@@ -5704,7 +5704,7 @@ Ablation只证明：
 
 ---
 
-# 258. Common Misconception 21：所有32维都必须 Active
+## 258. Common Misconception 21：所有32维都必须 Active
 
 **错误。**
 
@@ -5712,7 +5712,7 @@ Ablation只证明：
 
 ---
 
-# 259. Common Misconception 22：高 Active Units 一定带来更高 Rollout Success
+## 259. Common Misconception 22：高 Active Units 一定带来更高 Rollout Success
 
 **不保证。**
 
@@ -5720,7 +5720,7 @@ Representation metric与task performance需分开测。
 
 ---
 
-# 260. Common Misconception 23：Latent Traversal 改变动作，就证明 Dimension 是可解释因素
+## 260. Common Misconception 23：Latent Traversal 改变动作，就证明 Dimension 是可解释因素
 
 不够。
 
@@ -5730,7 +5730,7 @@ Representation metric与task performance需分开测。
 
 ---
 
-# 261. Common Misconception 24：Posterior Mean Cluster 就证明 Causal Style
+## 261. Common Misconception 24：Posterior Mean Cluster 就证明 Causal Style
 
 **错误。**
 
@@ -5738,7 +5738,7 @@ Cluster是 correlation evidence。
 
 ---
 
-# 262. Common Misconception 25：Mutual Information 高就等于 Disentangled
+## 262. Common Misconception 25：Mutual Information 高就等于 Disentangled
 
 **错误。**
 
@@ -5750,7 +5750,7 @@ MI高只说明：
 
 ---
 
-# 263. Common Misconception 26：Posterior Collapse 和 Distribution Shift 是同一问题
+## 263. Common Misconception 26：Posterior Collapse 和 Distribution Shift 是同一问题
 
 **不是。**
 
@@ -5764,7 +5764,7 @@ Distribution shift：
 
 ---
 
-# 264. Common Misconception 27：Posterior Collapse 和 Mode Collapse 是同一问题
+## 264. Common Misconception 27：Posterior Collapse 和 Mode Collapse 是同一问题
 
 **不是。**
 
@@ -5778,23 +5778,23 @@ Posterior collapse：
 
 ---
 
-# 265. Common Misconception 28：Posterior Collapse 和 Latent Variance Collapse 是同一个
+## 265. Common Misconception 28：Posterior Collapse 和 Latent Variance Collapse 是同一个
 
 **不是。**
 
 再次记住：
 
-\[
+$$
 posterior\ collapse
 \rightarrow
 \sigma^2\approx1
-\]
+$$
 
 对于 standard-normal prior。
 
 ---
 
-# 266. Common Misconception 29：Decoder Output 对随机 z 变化小就一定 Collapse
+## 266. Common Misconception 29：Decoder Output 对随机 z 变化小就一定 Collapse
 
 还需要确认：
 
@@ -5806,7 +5806,7 @@ Prior samples可能落在 decoder局部不敏感方向，
 
 ---
 
-# 267. Common Misconception 30：只看 Total Training Loss 就能诊断 Posterior Collapse
+## 267. Common Misconception 30：只看 Total Training Loss 就能诊断 Posterior Collapse
 
 **完全不够。**
 
@@ -5819,7 +5819,7 @@ Prior samples可能落在 decoder局部不敏感方向，
 
 ---
 
-# 268. 一张图理解 Healthy VAE
+## 268. 一张图理解 Healthy VAE
 
 ```text
 x
@@ -5842,15 +5842,15 @@ reconstruction
 
 不同：
 
-\[
+$$
 x
-\]
+$$
 
 产生不同：
 
-\[
+$$
 q(z|x)
-\]
+$$
 
 同时整体又大致：
 
@@ -5858,7 +5858,7 @@ q(z|x)
 
 ---
 
-# 269. 一张图理解 Posterior Collapse
+## 269. 一张图理解 Posterior Collapse
 
 ```text
 x₁ ─┐
@@ -5882,7 +5882,7 @@ Decoder solves task without z
 
 ---
 
-# 270. 一张图理解 CVAE Collapse
+## 270. 一张图理解 CVAE Collapse
 
 ```text
 condition c ──────────────┐
@@ -5906,7 +5906,7 @@ z ≈ prior noise
 
 ---
 
-# 271. 一张图理解 ACT
+## 271. 一张图理解 ACT
 
 ```text
 TRAINING
@@ -5940,7 +5940,7 @@ qpos ─────────┤              │
 
 ---
 
-# 272. Healthy ACT Latent
+## 272. Healthy ACT Latent
 
 ```text
 future action variation
@@ -5956,7 +5956,7 @@ better reconstruction of human modes
 
 ---
 
-# 273. Collapsed ACT Latent
+## 273. Collapsed ACT Latent
 
 ```text
 encoder
@@ -5973,21 +5973,21 @@ actions determined almost entirely by observation
 
 ---
 
-# 274. ACT 的一个很有趣的极端
+## 274. ACT 的一个很有趣的极端
 
 如果 human demonstrations其实非常 deterministic：
 
-\[
+$$
 A\approx f(O)
-\]
+$$
 
 那么最合理模型可能本来就是：
 
-\[
+$$
 \boxed{
 z\text{ unused}
 }
-\]
+$$
 
 这时“collapse”从 representation角度存在，
 
@@ -5997,7 +5997,7 @@ z\text{ unused}
 
 ---
 
-# 275. 所以必须问“为什么我们想要 z？”
+## 275. 所以必须问“为什么我们想要 z？”
 
 ACT的答案：
 
@@ -6005,9 +6005,9 @@ ACT的答案：
 
 因此只有在：
 
-\[
+$$
 A|O
-\]
+$$
 
 确实存在 residual variation时，
 
@@ -6015,31 +6015,31 @@ latent才有明确建模价值。
 
 ---
 
-# 276. 一句话真正理解 Posterior Collapse
+## 276. 一句话真正理解 Posterior Collapse
 
-> **Posterior Collapse 不是“latent variance变成0”，而是 approximate posterior \(q_\phi(z|x)\) 或 CVAE 中的 \(q_\phi(z|c,y)\) 被优化得越来越像 prior，使不同样本不再通过 \(z\) 传递足够的样本特定信息；如果 decoder同时有能力依赖其他输入独立完成 reconstruction，它就会逐渐忽略 latent，于是模型虽然形式上仍有 Encoder、\(\mu\)、\(\log\sigma^2\) 和 sampling，功能上却退化成一个几乎不使用 \(z\) 的模型。**
-
----
-
-# 277. 一句话理解 KL 与 Information
-
-> **Expected KL 不只是“让 posterior长得像 prior”的正则项，它还对通过 latent传递的信息量收费：\(\mathbb E KL(q(z|x)\|p(z))=I(X;Z)+KL(q(z)\|p(z))\)，而在 CVAE 中对应地包含 \(I(Y;Z|C)\) 与 conditional aggregated-posterior mismatch，因此把 KL压到0会同时把 latent information压到0，但 nonzero KL本身又不能保证这些信息真的被 decoder有效利用。**
+> **Posterior Collapse 不是“latent variance变成0”，而是 approximate posterior $q_\phi(z|x)$ 或 CVAE 中的 $q_\phi(z|c,y)$ 被优化得越来越像 prior，使不同样本不再通过 $z$ 传递足够的样本特定信息；如果 decoder同时有能力依赖其他输入独立完成 reconstruction，它就会逐渐忽略 latent，于是模型虽然形式上仍有 Encoder、$\mu$、$\log\sigma^2$ 和 sampling，功能上却退化成一个几乎不使用 $z$ 的模型。**
 
 ---
 
-# 278. 一句话理解 ACT 中 β 的作用
+## 277. 一句话理解 KL 与 Information
 
-> **ACT 的 \(L=L_1+\beta KL\) 可以看成一个 information-rate 与 action-reconstruction 的权衡：L1鼓励 posterior latent携带那些当前 observation无法独自解释的 human-action variation，而 KL又要求这些 posteriors不要离 \(\mathcal N(0,I)\) 太远，以便推理时使用 prior center \(z=0\) 仍落在模型熟悉的 latent region；β太强可能让 latent collapse，太弱则可能让 posterior很好用但 prior/zero latent不好用。**
-
----
-
-# 279. 一句话理解 ACT z=0 与 Collapse 的关系
-
-> **ACT 推理时固定 \(z=0\) 并不是 posterior collapse 的证据：一个健康的 ACT-CVAE完全可能在训练时依赖 posterior \(z\) 来区分不同 human demonstration modes，再在推理时人为选择 prior mean作为稳定的 canonical latent；真正的 collapse 是训练时改变、打乱或移除 posterior \(z\) 也几乎不影响 reconstruction，且 \(q(z|O,A)\) 本身趋近 \(\mathcal N(0,I)\)。**
+> **Expected KL 不只是“让 posterior长得像 prior”的正则项，它还对通过 latent传递的信息量收费：$\mathbb E KL(q(z|x)\|p(z))=I(X;Z)+KL(q(z)\|p(z))$，而在 CVAE 中对应地包含 $I(Y;Z|C)$ 与 conditional aggregated-posterior mismatch，因此把 KL压到0会同时把 latent information压到0，但 nonzero KL本身又不能保证这些信息真的被 decoder有效利用。**
 
 ---
 
-# 280. 如果你真的想判断 ACT 有没有使用 z
+## 278. 一句话理解 ACT 中 β 的作用
+
+> **ACT 的 $L=L_1+\beta KL$ 可以看成一个 information-rate 与 action-reconstruction 的权衡：L1鼓励 posterior latent携带那些当前 observation无法独自解释的 human-action variation，而 KL又要求这些 posteriors不要离 $\mathcal N(0,I)$ 太远，以便推理时使用 prior center $z=0$ 仍落在模型熟悉的 latent region；β太强可能让 latent collapse，太弱则可能让 posterior很好用但 prior/zero latent不好用。**
+
+---
+
+## 279. 一句话理解 ACT z=0 与 Collapse 的关系
+
+> **ACT 推理时固定 $z=0$ 并不是 posterior collapse 的证据：一个健康的 ACT-CVAE完全可能在训练时依赖 posterior $z$ 来区分不同 human demonstration modes，再在推理时人为选择 prior mean作为稳定的 canonical latent；真正的 collapse 是训练时改变、打乱或移除 posterior $z$ 也几乎不影响 reconstruction，且 $q(z|O,A)$ 本身趋近 $\mathcal N(0,I)$。**
+
+---
+
+## 280. 如果你真的想判断 ACT 有没有使用 z
 
 不要只看：
 
@@ -6049,55 +6049,55 @@ loss ↓
 
 应该至少同时看：
 
-\[
+$$
 \boxed{
 KL_{\text{total}}
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 KL_1,\ldots,KL_{32}
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 Var[\mu_j]
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 L_{\text{posterior}}
 -
 L_{z=0}
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 L_{\text{shuffled-z}}
 -
 L_{\text{correct-z}}
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 \left\|
 \partial\hat A/\partial z
 \right\|
 }
-\]
+$$
 
 以及最终：
 
-\[
+$$
 \boxed{
 \text{rollout ablations}
 }
-\]
+$$
 
 这才叫真正研究：
 
@@ -6105,7 +6105,7 @@ L_{\text{correct-z}}
 
 ---
 
-# 281. 下一篇建议：ACT Vision Pipeline
+## 281. 下一篇建议：ACT Vision Pipeline
 
 到这里：
 
@@ -6135,28 +6135,28 @@ ACT 仍然有一个值得专门补齐的高级模块：
 - receptive field；
 - feature map一个 cell到底代表什么；
 - channel=512是什么意思；
-- `input_proj` 为什么还要做 \(1\times1\) Conv；
+- `input_proj` 为什么还要做 $1\times1$ Conv；
 - 2D sine positional encoding；
 - row/column positional components；
 - 四个 camera为什么直接沿 width/token axis拼接；
 - camera identity到底在哪里；
 - flatten：
-  \[
+  $$
   [B,512,15,20]
   \rightarrow
   [300,B,512]
-  \]
+  $$
 - 4 cameras：
-  \[
+  $$
   4\times300=1200
-  \]
+  $$
 - 为什么 Transformer不直接吃 raw pixels；
 - ResNet feature token和 ViT patch token的异同；
 - action query最终怎样 cross-attend这些视觉 tokens。
 
 ---
 
-## Primary Source：VAE
+### Primary Source：VAE
 
 Diederik P. Kingma, Max Welling.
 
@@ -6168,7 +6168,7 @@ ICLR 2014 / arXiv 2013.
 
 经典 VAE objective：
 
-\[
+$$
 \mathcal L
 =
 \mathbb E_{q_\phi(z|x)}
@@ -6181,7 +6181,7 @@ q_\phi(z|x)
 \|
 p(z)
 )
-\]
+$$
 
 本文关于：
 
@@ -6194,7 +6194,7 @@ p(z)
 
 ---
 
-## Classic Posterior-Collapse Source：Sentence VAE
+### Classic Posterior-Collapse Source：Sentence VAE
 
 Samuel R. Bowman, Luke Vilnis, Oriol Vinyals, Andrew M. Dai, Rafał Jozefowicz, Samy Bengio.
 
@@ -6213,39 +6213,39 @@ CoNLL 2016.
 
 并提出两种经典 training techniques：
 
-### KL Cost Annealing
+#### KL Cost Annealing
 
 从：
 
-\[
+$$
 \beta=0
-\]
+$$
 
 逐渐增加到：
 
-\[
+$$
 1
-\]
+$$
 
 先允许 Encoder通过 z编码信息，
 
 再逐步施加 prior regularization。
 
-### Word Dropout / Historyless Decoding
+#### Word Dropout / Historyless Decoding
 
 削弱 Decoder直接获得的 local conditioning information，
 
 迫使它更多依赖：
 
-\[
+$$
 z
-\]
+$$
 
 做预测。
 
 ---
 
-## Rate–Distortion / Mutual Information Source
+### Rate–Distortion / Mutual Information Source
 
 Alexander A. Alemi, Ben Poole, Ian Fischer, Joshua V. Dillon, Rif A. Saurous, Kevin Murphy.
 
@@ -6268,19 +6268,19 @@ Alexander A. Alemi, Ben Poole, Ian Fischer, Joshua V. Dillon, Rif A. Saurous, Ke
 
 本文关于：
 
-\[
+$$
 \boxed{
 \text{Rate}
 \leftrightarrow
 \text{Distortion}
 }
-\]
+$$
 
 的解释主要以此为背景。
 
 ---
 
-## Training-Dynamics Source
+### Training-Dynamics Source
 
 Junxian He, Daniel Spokoyny, Graham Neubig, Taylor Berg-Kirkpatrick.
 
@@ -6310,11 +6310,11 @@ ICLR 2019.
 
 这说明：
 
-\[
+$$
 \boxed{
 \text{Powerful Decoder}
 }
-\]
+$$
 
 虽然是经典解释，
 
@@ -6322,7 +6322,7 @@ ICLR 2019.
 
 ---
 
-## Free Bits Source
+### Free Bits Source
 
 Diederik P. Kingma, Tim Salimans, Rafal Jozefowicz, Xi Chen, Ilya Sutskever, Max Welling.
 
@@ -6341,7 +6341,7 @@ Diederik P. Kingma, Tim Salimans, Rafal Jozefowicz, Xi Chen, Ilya Sutskever, Max
 
 ---
 
-## ACT Primary Source
+### ACT Primary Source
 
 Tony Z. Zhao, Vikash Kumar, Sergey Levine, Chelsea Finn.
 
@@ -6359,19 +6359,19 @@ ACT明确将 policy训练为 CVAE：
   - current joints；
   - demonstration action sequence；
 - 输出：
-  \[
+  $$
   \mu,\sigma
-  \]
-  of style latent \(z\)；
+  $$
+  of style latent $z$；
 - Policy读取：
   - images；
   - joints；
-  - \(z\)；
+  - $z$；
 - test-time Encoder被丢弃；
-- \(z\)设为 prior mean：
-  \[
+- $z$设为 prior mean：
+  $$
   0
-  \]
+  $$
 
 论文的人类数据 ablation报告：
 
@@ -6391,7 +6391,7 @@ ACT明确将 policy训练为 CVAE：
 
 ---
 
-## ACT Official Loss
+### ACT Official Loss
 
 Official repository:
 
@@ -6441,15 +6441,15 @@ loss =
 
 canonical：
 
-\[
+$$
 \boxed{
 kl\_weight=10
 }
-\]
+$$
 
 ---
 
-## ACT Official Latent
+### ACT Official Latent
 
 `detr/models/detr_vae.py`:
 
@@ -6473,7 +6473,7 @@ self.latent_out_proj =
 
 training：
 
-\[
+$$
 h_{CLS}
 \rightarrow
 [\mu,\logvar]
@@ -6481,19 +6481,19 @@ h_{CLS}
 z
 \rightarrow
 Linear(32,512)
-\]
+$$
 
 inference则使用：
 
-\[
+$$
 \boxed{
 z=0
 }
-\]
+$$
 
 ---
 
-## Conditional-VAE Posterior Collapse Background
+### Conditional-VAE Posterior Collapse Background
 
 Arya D. McCarthy, Xian Li, Jiatao Gu, Ning Dong.
 
@@ -6519,9 +6519,9 @@ ACL 2020.
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### Generative Modeling
+#### Generative Modeling
 
 - [Latent Variable](./latent-variable.md)
 - [VAE](./vae.md)
@@ -6533,20 +6533,20 @@ ACL 2020.
 - KL Annealing
 - Free Bits
 
-### Information Theory
+#### Information Theory
 
 - [KL Divergence](../mathematics/kl-divergence.md)
 - Entropy
 - Mutual Information
 - Conditional Mutual Information
 
-### Deep Learning
+#### Deep Learning
 
 - [Backpropagation](../deep-learning/backpropagation.md)
 - [Decoder](../deep-learning/transformer-decoder.md)
 - Representation Learning
 
-### ACT
+#### ACT
 
 - [CVAE in ACT](../robot-learning/act/cvae-in-act.md)
 - [为什么 ACT 推理时令 z = 0？](../robot-learning/act/why-z-zero-at-inference.md)
@@ -6554,6 +6554,6 @@ ACL 2020.
 - [ACT Architecture](../robot-learning/act/architecture.md)
 - [ACT Complete Data Flow](../robot-learning/act/complete-data-flow.md)
 
-### 下一步
+#### 下一步
 
 - [ACT Vision Pipeline：4 张 RGB 图像到底怎样变成 1200 个 Transformer Tokens？](../robot-learning/act/vision-pipeline.md)

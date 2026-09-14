@@ -11,9 +11,9 @@ updated: "2026-09-15"
 
 在 [Query / Key / Value](./qkv.md) 中，我们已经知道 Transformer 会计算：
 
-\[
+$$
 q_i^\top k_j
-\]
+$$
 
 来衡量一个 Query 和一个 Key 的：
 
@@ -25,39 +25,39 @@ q_i^\top k_j
 
 点积定义看起来非常朴素：
 
-\[
+$$
 \boxed{
 \mathbf a\cdot\mathbf b
 =
 a_1b_1+a_2b_2+\cdots+a_nb_n
 }
-\]
+$$
 
 例如：
 
-\[
+$$
 \mathbf a=[1,2]
-\]
+$$
 
-\[
+$$
 \mathbf b=[3,4]
-\]
+$$
 
 那么：
 
-\[
+$$
 \mathbf a\cdot\mathbf b
 =
 1\times3+2\times4
 =
 11
-\]
+$$
 
 但为什么：
 
-\[
+$$
 11
-\]
+$$
 
 这个数字有几何意义？
 
@@ -65,15 +65,15 @@ a_1b_1+a_2b_2+\cdots+a_nb_n
 
 为什么正交：
 
-\[
+$$
 \mathbf a\perp\mathbf b
-\]
+$$
 
 时点积恰好：
 
-\[
+$$
 0
-\]
+$$
 
 为什么反方向会变成负数？
 
@@ -83,35 +83,35 @@ a_1b_1+a_2b_2+\cdots+a_nb_n
 
 要回答这些问题，不能只背：
 
-\[
+$$
 \mathbf a\cdot\mathbf b
 =
 \|\mathbf a\|
 \|\mathbf b\|
 \cos\theta
-\]
+$$
 
 而要真正理解这个公式为什么成立，以及它告诉了我们什么。
 
 ---
 
-# 1. 先从最简单的情况开始：一维
+## 1. 先从最简单的情况开始：一维
 
 假设一条数轴上有两个一维向量：
 
-\[
+$$
 a=3
-\]
+$$
 
-\[
+$$
 b=2
-\]
+$$
 
 它们的乘积：
 
-\[
+$$
 ab=6
-\]
+$$
 
 两者都是正数，表示：
 
@@ -119,19 +119,19 @@ ab=6
 
 如果：
 
-\[
+$$
 a=3
-\]
+$$
 
-\[
+$$
 b=-2
-\]
+$$
 
 那么：
 
-\[
+$$
 ab=-6
-\]
+$$
 
 表示：
 
@@ -139,15 +139,15 @@ ab=-6
 
 如果其中一个：
 
-\[
+$$
 b=0
-\]
+$$
 
 那么：
 
-\[
+$$
 ab=0
-\]
+$$
 
 也就没有方向贡献。
 
@@ -160,19 +160,19 @@ ab=0
 
 ---
 
-# 2. 二维后为什么变成“逐维乘积再求和”？
+## 2. 二维后为什么变成“逐维乘积再求和”？
 
 现在：
 
-\[
+$$
 \mathbf a=
 [a_1,a_2]
-\]
+$$
 
-\[
+$$
 \mathbf b=
 [b_1,b_2]
-\]
+$$
 
 两个坐标维度可以分别看成：
 
@@ -181,47 +181,47 @@ ab=0
 
 那么：
 
-\[
+$$
 a_1b_1
-\]
+$$
 
 衡量它们在 x 方向上的一致贡献，
 
 而：
 
-\[
+$$
 a_2b_2
-\]
+$$
 
 衡量它们在 y 方向上的一致贡献。
 
 将两个方向贡献相加：
 
-\[
+$$
 \boxed{
 \mathbf a\cdot\mathbf b
 =
 a_1b_1+a_2b_2
 }
-\]
+$$
 
 就得到整个二维空间中的综合结果。
 
 推广到：
 
-\[
+$$
 n
-\]
+$$
 
 维：
 
-\[
+$$
 \boxed{
 \mathbf a\cdot\mathbf b
 =
 \sum_{i=1}^{n}a_ib_i
 }
-\]
+$$
 
 这就是标准欧氏空间中的 Dot Product，也叫：
 
@@ -229,75 +229,75 @@ n
 
 ---
 
-# 3. 但“逐维相乘再相加”还没有解释几何意义
+## 3. 但“逐维相乘再相加”还没有解释几何意义
 
 现在举三个例子。
 
 ---
 
-## 情况 A：完全同方向
+### 情况 A：完全同方向
 
-\[
+$$
 \mathbf a=[1,0]
-\]
+$$
 
-\[
+$$
 \mathbf b=[2,0]
-\]
+$$
 
 则：
 
-\[
+$$
 \mathbf a\cdot\mathbf b
 =
 1\times2+0\times0
 =
 2
-\]
+$$
 
 正数。
 
 ---
 
-## 情况 B：垂直
+### 情况 B：垂直
 
-\[
+$$
 \mathbf a=[1,0]
-\]
+$$
 
-\[
+$$
 \mathbf b=[0,2]
-\]
+$$
 
 则：
 
-\[
+$$
 \mathbf a\cdot\mathbf b
 =
 1\times0+0\times2
 =
 0
-\]
+$$
 
 ---
 
-## 情况 C：完全反方向
+### 情况 C：完全反方向
 
-\[
+$$
 \mathbf a=[1,0]
-\]
+$$
 
-\[
+$$
 \mathbf b=[-2,0]
-\]
+$$
 
 则：
 
-\[
+$$
 \mathbf a\cdot\mathbf b
 =
 -2
-\]
+$$
 
 我们已经看见：
 
@@ -311,7 +311,7 @@ n
 
 真正原因就在：
 
-\[
+$$
 \boxed{
 \mathbf a\cdot\mathbf b
 =
@@ -319,35 +319,35 @@ n
 \|\mathbf b\|
 \cos\theta
 }
-\]
+$$
 
 ---
 
-# 4. 向量长度是什么？
+## 4. 向量长度是什么？
 
 向量：
 
-\[
+$$
 \mathbf a=[a_1,a_2]
-\]
+$$
 
 可以看成从原点：
 
-\[
+$$
 (0,0)
-\]
+$$
 
 指向：
 
-\[
+$$
 (a_1,a_2)
-\]
+$$
 
 的箭头。
 
 根据勾股定理：
 
-\[
+$$
 \boxed{
 \|\mathbf a\|
 =
@@ -355,11 +355,11 @@ n
 a_1^2+a_2^2
 }
 }
-\]
+$$
 
 更一般地：
 
-\[
+$$
 \boxed{
 \|\mathbf a\|
 =
@@ -367,25 +367,25 @@ a_1^2+a_2^2
 \sum_i a_i^2
 }
 }
-\]
+$$
 
 注意：
 
-\[
+$$
 \mathbf a\cdot\mathbf a
 =
 \sum_i a_i^2
-\]
+$$
 
 因此：
 
-\[
+$$
 \boxed{
 \mathbf a\cdot\mathbf a
 =
 \|\mathbf a\|^2
 }
-\]
+$$
 
 所以一个向量和自己点积：
 
@@ -395,57 +395,57 @@ a_1^2+a_2^2
 
 ---
 
-# 5. 为什么 a·b 和夹角有关？
+## 5. 为什么 a·b 和夹角有关？
 
 我们现在来真正推导：
 
-\[
+$$
 \mathbf a\cdot\mathbf b
 =
 \|\mathbf a\|
 \|\mathbf b\|
 \cos\theta
-\]
+$$
 
 考虑两个向量：
 
-\[
+$$
 \mathbf a
-\]
+$$
 
 和：
 
-\[
+$$
 \mathbf b
-\]
+$$
 
 它们从同一个原点出发，
 
 夹角为：
 
-\[
+$$
 \theta
-\]
+$$
 
 它们的端点之间的向量是：
 
-\[
+$$
 \mathbf a-\mathbf b
-\]
+$$
 
 所以这条边长度：
 
-\[
+$$
 \|\mathbf a-\mathbf b\|
-\]
+$$
 
 ---
 
-# 6. 用余弦定理表达这条边
+## 6. 用余弦定理表达这条边
 
 由余弦定理：
 
-\[
+$$
 \boxed{
 \|\mathbf a-\mathbf b\|^2
 =
@@ -458,27 +458,27 @@ a_1^2+a_2^2
 \|\mathbf b\|
 \cos\theta
 }
-\]
+$$
 
 这是纯几何结果。
 
 ---
 
-# 7. 再用坐标展开同一个长度
+## 7. 再用坐标展开同一个长度
 
 另一方面：
 
-\[
+$$
 \|\mathbf a-\mathbf b\|^2
 =
 (\mathbf a-\mathbf b)
 \cdot
 (\mathbf a-\mathbf b)
-\]
+$$
 
 展开：
 
-\[
+$$
 =
 \mathbf a\cdot\mathbf a
 -
@@ -487,19 +487,19 @@ a_1^2+a_2^2
 \mathbf b\cdot\mathbf a
 +
 \mathbf b\cdot\mathbf b
-\]
+$$
 
 Dot Product 满足交换律：
 
-\[
+$$
 \mathbf a\cdot\mathbf b
 =
 \mathbf b\cdot\mathbf a
-\]
+$$
 
 所以：
 
-\[
+$$
 \|\mathbf a-\mathbf b\|^2
 =
 \|\mathbf a\|^2
@@ -507,15 +507,15 @@ Dot Product 满足交换律：
 \|\mathbf b\|^2
 -
 2\mathbf a\cdot\mathbf b
-\]
+$$
 
 ---
 
-# 8. 两个表达式描述的是同一个量
+## 8. 两个表达式描述的是同一个量
 
 刚才几何余弦定理给：
 
-\[
+$$
 \|\mathbf a-\mathbf b\|^2
 =
 \|\mathbf a\|^2
@@ -523,11 +523,11 @@ Dot Product 满足交换律：
 \|\mathbf b\|^2
 -
 2\|\mathbf a\|\|\mathbf b\|\cos\theta
-\]
+$$
 
 坐标展开给：
 
-\[
+$$
 \|\mathbf a-\mathbf b\|^2
 =
 \|\mathbf a\|^2
@@ -535,21 +535,21 @@ Dot Product 满足交换律：
 \|\mathbf b\|^2
 -
 2\mathbf a\cdot\mathbf b
-\]
+$$
 
 两式相等。
 
 去掉共同项：
 
-\[
+$$
 -2\mathbf a\cdot\mathbf b
 =
 -2\|\mathbf a\|\|\mathbf b\|\cos\theta
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \mathbf a\cdot\mathbf b
 =
@@ -557,31 +557,31 @@ Dot Product 满足交换律：
 \|\mathbf b\|
 \cos\theta
 }
-\]
+$$
 
 这就是 Dot Product 的坐标定义与几何意义之间的桥梁。
 
 ---
 
-# 9. 这个公式真正告诉了我们什么？
+## 9. 这个公式真正告诉了我们什么？
 
-\[
+$$
 \mathbf a\cdot\mathbf b
 =
 \|\mathbf a\|
 \|\mathbf b\|
 \cos\theta
-\]
+$$
 
 说明点积同时受三件事影响：
 
-1. \(\mathbf a\) 的长度；
-2. \(\mathbf b\) 的长度；
+1. $\mathbf a$ 的长度；
+2. $\mathbf b$ 的长度；
 3. 两者夹角。
 
 也就是说：
 
-\[
+$$
 \boxed{
 \text{Dot Product}
 =
@@ -589,42 +589,42 @@ Dot Product 满足交换律：
 \times
 \text{Directional Alignment}
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 \cos\theta
-\]
+$$
 
 负责方向关系。
 
 ---
 
-# 10. 为什么同方向 Dot Product 最大？
+## 10. 为什么同方向 Dot Product 最大？
 
 如果：
 
-\[
+$$
 \theta=0
-\]
+$$
 
 则：
 
-\[
+$$
 \cos0=1
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \mathbf a\cdot\mathbf b
 =
 \|\mathbf a\|
 \|\mathbf b\|
 }
-\]
+$$
 
 在两个向量长度固定的情况下，
 
@@ -636,39 +636,39 @@ Dot Product 满足交换律：
 
 ---
 
-# 11. 为什么垂直时 Dot Product = 0？
+## 11. 为什么垂直时 Dot Product = 0？
 
 如果：
 
-\[
+$$
 \theta=90^\circ
-\]
+$$
 
 则：
 
-\[
+$$
 \cos90^\circ=0
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \mathbf a\cdot\mathbf b=0
 }
-\]
+$$
 
 这就是为什么在欧氏空间中：
 
-\[
+$$
 \mathbf a\perp\mathbf b
-\]
+$$
 
 等价于：
 
-\[
+$$
 \mathbf a\cdot\mathbf b=0
-\]
+$$
 
 对于非零向量成立。
 
@@ -680,29 +680,29 @@ Dot Product 满足交换律：
 
 ---
 
-# 12. 为什么反方向时是负数？
+## 12. 为什么反方向时是负数？
 
 如果：
 
-\[
+$$
 \theta=180^\circ
-\]
+$$
 
 则：
 
-\[
+$$
 \cos180^\circ=-1
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \mathbf a\cdot\mathbf b
 =
 -\|\mathbf a\|\|\mathbf b\|
 }
-\]
+$$
 
 这就是固定长度下最小的点积。
 
@@ -724,21 +724,21 @@ Dot Product 满足交换律：
 
 ---
 
-# 13. 所以 Dot Product 可以衡量“方向一致程度”
+## 13. 所以 Dot Product 可以衡量“方向一致程度”
 
 对于固定长度的两个向量：
 
-\[
+$$
 \|\mathbf a\|,\|\mathbf b\|
-\]
+$$
 
 不变，
 
 点积大小完全由：
 
-\[
+$$
 \cos\theta
-\]
+$$
 
 决定。
 
@@ -748,59 +748,59 @@ Dot Product 满足交换律：
 
 但这里有一个关键限定：
 
-\[
+$$
 \boxed{
 \text{fixed magnitude}
 }
-\]
+$$
 
 因为实际点积还会受到向量长度影响。
 
 ---
 
-# 14. Dot Product 不是纯粹的“角度相似度”
+## 14. Dot Product 不是纯粹的“角度相似度”
 
 例如：
 
-\[
+$$
 \mathbf a=[1,0]
-\]
+$$
 
-\[
+$$
 \mathbf b=[1,0]
-\]
+$$
 
 点积：
 
-\[
+$$
 1
-\]
+$$
 
 但：
 
-\[
+$$
 \mathbf c=[100,0]
-\]
+$$
 
 与：
 
-\[
+$$
 \mathbf b=[1,0]
-\]
+$$
 
 完全同方向，
 
 点积：
 
-\[
+$$
 100
-\]
+$$
 
 两组夹角都是：
 
-\[
+$$
 0^\circ
-\]
+$$
 
 但点积差了 100 倍。
 
@@ -812,21 +812,21 @@ Dot Product 满足交换律：
 
 ---
 
-# 15. Cosine Similarity 是什么？
+## 15. Cosine Similarity 是什么？
 
 从：
 
-\[
+$$
 \mathbf a\cdot\mathbf b
 =
 \|\mathbf a\|
 \|\mathbf b\|
 \cos\theta
-\]
+$$
 
 整理：
 
-\[
+$$
 \boxed{
 \cos\theta
 =
@@ -836,7 +836,7 @@ Dot Product 满足交换律：
 \|\mathbf a\|\|\mathbf b\|
 }
 }
-\]
+$$
 
 这就是：
 
@@ -844,7 +844,7 @@ Dot Product 满足交换律：
 
 对于非零向量：
 
-\[
+$$
 \boxed{
 \operatorname{cos\_sim}(\mathbf a,\mathbf b)
 =
@@ -854,7 +854,7 @@ Dot Product 满足交换律：
 \|\mathbf a\|\|\mathbf b\|
 }
 }
-\]
+$$
 
 它把两个向量先按长度归一化。
 
@@ -864,15 +864,15 @@ Dot Product 满足交换律：
 
 ---
 
-# 16. Dot Product vs Cosine Similarity
+## 16. Dot Product vs Cosine Similarity
 
 可以直接比较。
 
-## Dot Product
+### Dot Product
 
-\[
+$$
 \mathbf a^\top\mathbf b
-\]
+$$
 
 依赖：
 
@@ -881,15 +881,15 @@ Dot Product 满足交换律：
 
 ---
 
-## Cosine Similarity
+### Cosine Similarity
 
-\[
+$$
 \frac{
 \mathbf a^\top\mathbf b
 }{
 \|\mathbf a\|\|\mathbf b\|
 }
-\]
+$$
 
 只看：
 
@@ -897,7 +897,7 @@ Dot Product 满足交换律：
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Dot Product}
 =
@@ -906,61 +906,61 @@ Dot Product 满足交换律：
 \|\mathbf a\|
 \|\mathbf b\|
 }
-\]
+$$
 
 ---
 
-# 17. 一个具体例子
+## 17. 一个具体例子
 
 令：
 
-\[
+$$
 \mathbf q=[1,0]
-\]
+$$
 
 两个 keys：
 
-\[
+$$
 \mathbf k_1=[1,0]
-\]
+$$
 
-\[
+$$
 \mathbf k_2=[10,0]
-\]
+$$
 
 两者都完全和：
 
-\[
+$$
 \mathbf q
-\]
+$$
 
 同方向。
 
 Cosine Similarity：
 
-\[
+$$
 \cos(q,k_1)=1
-\]
+$$
 
-\[
+$$
 \cos(q,k_2)=1
-\]
+$$
 
 但 Dot Product：
 
-\[
+$$
 q^\top k_1=1
-\]
+$$
 
-\[
+$$
 q^\top k_2=10
-\]
+$$
 
 所以 Dot Product 会明显偏向：
 
-\[
+$$
 k_2
-\]
+$$
 
 这说明：
 
@@ -968,7 +968,7 @@ k_2
 
 ---
 
-# 18. 这是不是 Dot Product 的缺点？
+## 18. 这是不是 Dot Product 的缺点？
 
 不一定。
 
@@ -984,15 +984,15 @@ k_2
 
 因为 learned model 可以利用：
 
-\[
+$$
 \|q\|
-\]
+$$
 
 和：
 
-\[
+$$
 \|k\|
-\]
+$$
 
 携带信息。
 
@@ -1004,7 +1004,7 @@ k_2
 
 ---
 
-# 19. 为什么 Transformer 用 Dot Product，而不是 Cosine Similarity？
+## 19. 为什么 Transformer 用 Dot Product，而不是 Cosine Similarity？
 
 《Attention Is All You Need》并没有论证：
 
@@ -1019,11 +1019,11 @@ k_2
 
 所有 queries 和 keys 的 pairwise scores：
 
-\[
+$$
 \boxed{
 QK^\top
 }
-\]
+$$
 
 可以一次 GEMM 完成。
 
@@ -1031,9 +1031,9 @@ QK^\top
 
 再加：
 
-\[
+$$
 1/\sqrt{d_k}
-\]
+$$
 
 控制 score scale。
 
@@ -1045,27 +1045,27 @@ QK^\top
 
 ---
 
-# 20. Dot Product 还有另一种几何理解：Projection
+## 20. Dot Product 还有另一种几何理解：Projection
 
 这是理解 Attention 匹配特别有用的视角。
 
 考虑：
 
-\[
+$$
 \mathbf a
-\]
+$$
 
 在：
 
-\[
+$$
 \mathbf b
-\]
+$$
 
 方向上的标量投影。
 
 单位向量：
 
-\[
+$$
 \hat{\mathbf b}
 =
 \frac{
@@ -1073,32 +1073,32 @@ QK^\top
 }{
 \|\mathbf b\|
 }
-\]
+$$
 
 那么：
 
-\[
+$$
 \mathbf a
-\]
+$$
 
-在 \(\mathbf b\) 方向上的 scalar projection 是：
+在 $\mathbf b$ 方向上的 scalar projection 是：
 
-\[
+$$
 \boxed{
 \mathbf a\cdot\hat{\mathbf b}
 }
-\]
+$$
 
 展开：
 
-\[
+$$
 =
 \|\mathbf a\|\cos\theta
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \mathbf a\cdot\mathbf b
 =
@@ -1106,7 +1106,7 @@ QK^\top
 \times
 \operatorname{comp}_{\mathbf b}(\mathbf a)
 }
-\]
+$$
 
 也就是说：
 
@@ -1114,37 +1114,37 @@ QK^\top
 
 ---
 
-# 21. 为什么 Projection 视角很有用？
+## 21. 为什么 Projection 视角很有用？
 
 假设：
 
-\[
+$$
 \mathbf q
-\]
+$$
 
 是 Query。
 
 某个 Key：
 
-\[
+$$
 \mathbf k
-\]
+$$
 
 如果和 Query 方向高度一致，
 
 那么：
 
-\[
+$$
 q
-\]
+$$
 
-在 \(k\) 方向上的投影就大。
+在 $k$ 方向上的投影就大。
 
 于是：
 
-\[
+$$
 q^\top k
-\]
+$$
 
 也大。
 
@@ -1154,15 +1154,15 @@ q^\top k
 
 ---
 
-# 22. 但 Attention 的 Matching Space 不是物理空间
+## 22. 但 Attention 的 Matching Space 不是物理空间
 
 必须强调。
 
 Q/K 向量中的坐标：
 
-\[
+$$
 q_1,q_2,\ldots,q_{d_k}
-\]
+$$
 
 通常没有：
 
@@ -1180,9 +1180,9 @@ z 轴
 
 所以夹角：
 
-\[
+$$
 \theta
-\]
+$$
 
 也不是物理世界角度。
 
@@ -1192,23 +1192,23 @@ z 轴
 
 ---
 
-# 23. 为什么神经网络能让“该匹配的向量”方向变得合适？
+## 23. 为什么神经网络能让“该匹配的向量”方向变得合适？
 
 因为：
 
-\[
+$$
 q=xW_Q
-\]
+$$
 
-\[
+$$
 k=xW_K
-\]
+$$
 
 其中：
 
-\[
+$$
 W_Q,W_K
-\]
+$$
 
 可训练。
 
@@ -1216,17 +1216,17 @@ W_Q,W_K
 
 但目前：
 
-\[
+$$
 q^\top k
-\]
+$$
 
 太小，
 
 最终 task loss 会通过 gradient 调整：
 
-\[
+$$
 W_Q,W_K
-\]
+$$
 
 从而改变：
 
@@ -1243,25 +1243,25 @@ W_Q,W_K
 
 ---
 
-# 24. 一个简单二维“学习匹配空间”的例子
+## 24. 一个简单二维“学习匹配空间”的例子
 
 假设某个 Query 当前：
 
-\[
+$$
 q=[1,0]
-\]
+$$
 
 应该匹配 Key A：
 
-\[
+$$
 k_A=[0,1]
-\]
+$$
 
 但现在：
 
-\[
+$$
 q^\top k_A=0
-\]
+$$
 
 完全正交。
 
@@ -1269,31 +1269,31 @@ q^\top k_A=0
 
 训练可以改变：
 
-\[
+$$
 W_Q
-\]
+$$
 
 或：
 
-\[
+$$
 W_K
-\]
+$$
 
 让未来表示变成例如：
 
-\[
+$$
 q'=[1,1]
-\]
+$$
 
-\[
+$$
 k_A'=[1,1]
-\]
+$$
 
 于是：
 
-\[
+$$
 q'^\top k_A'=2
-\]
+$$
 
 compatibility 提高。
 
@@ -1303,17 +1303,17 @@ compatibility 提高。
 
 ---
 
-# 25. Dot Product 为什么是双线性的？
+## 25. Dot Product 为什么是双线性的？
 
 点积满足：
 
-\[
+$$
 (\alpha \mathbf a+\beta\mathbf b)\cdot\mathbf c
 =
 \alpha(\mathbf a\cdot\mathbf c)
 +
 \beta(\mathbf b\cdot\mathbf c)
-\]
+$$
 
 同样对第二个变量也线性。
 
@@ -1325,29 +1325,29 @@ compatibility 提高。
 
 因为：
 
-\[
+$$
 Q=XW_Q
-\]
+$$
 
-\[
+$$
 K=XW_K
-\]
+$$
 
 之后：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 整个过程仍然可以高效用矩阵代数表示。
 
 ---
 
-# 26. Dot Product 为什么和矩阵乘法天然连接？
+## 26. Dot Product 为什么和矩阵乘法天然连接？
 
 设：
 
-\[
+$$
 Q=
 \begin{bmatrix}
 q_1^\top\\
@@ -1355,9 +1355,9 @@ q_2^\top\\
 \vdots\\
 q_n^\top
 \end{bmatrix}
-\]
+$$
 
-\[
+$$
 K=
 \begin{bmatrix}
 k_1^\top\\
@@ -1365,41 +1365,41 @@ k_2^\top\\
 \vdots\\
 k_m^\top
 \end{bmatrix}
-\]
+$$
 
 那么：
 
-\[
+$$
 K^\top
-\]
+$$
 
-的第 \(j\) 列正是：
+的第 $j$ 列正是：
 
-\[
+$$
 k_j
-\]
+$$
 
 所以：
 
-\[
+$$
 (QK^\top)_{ij}
 =
 q_i^\top k_j
-\]
+$$
 
 于是一个矩阵乘法：
 
-\[
+$$
 \boxed{
 QK^\top
 }
-\]
+$$
 
 就同时计算所有：
 
-\[
+$$
 n\times m
-\]
+$$
 
 个 Query–Key dot products。
 
@@ -1407,22 +1407,22 @@ n\times m
 
 ---
 
-# 27. Shape Example
+## 27. Shape Example
 
 假设：
 
-\[
+$$
 Q\in\mathbb R^{4\times3}
-\]
+$$
 
 也就是：
 
 - 4 个 queries；
 - 每个 query 3 维。
 
-\[
+$$
 K\in\mathbb R^{6\times3}
-\]
+$$
 
 也就是：
 
@@ -1431,124 +1431,124 @@ K\in\mathbb R^{6\times3}
 
 那么：
 
-\[
+$$
 K^\top
 \in
 \mathbb R^{3\times6}
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 QK^\top
 \in
 \mathbb R^{4\times6}
 }
-\]
+$$
 
 每个：
 
-\[
+$$
 (i,j)
-\]
+$$
 
 元素都是：
 
-\[
+$$
 q_i^\top k_j
-\]
+$$
 
 即：
 
-> 第 \(i\) 个 query 和第 \(j\) 个 key 的 compatibility score。
+> 第 $i$ 个 query 和第 $j$ 个 key 的 compatibility score。
 
 ---
 
-# 28. 为什么 Q 和 K 维度必须一样？
+## 28. 为什么 Q 和 K 维度必须一样？
 
 因为：
 
-\[
+$$
 q^\top k
-\]
+$$
 
 需要逐维配对：
 
-\[
+$$
 q_1k_1+q_2k_2+\cdots
-\]
+$$
 
 所以两者必须存在相同：
 
-\[
+$$
 d_k
-\]
+$$
 
 matching dimension。
 
 这就是为什么 Transformer 原论文说：
 
-> queries 和 keys 的维度是 \(d_k\)。
+> queries 和 keys 的维度是 $d_k$。
 
 Value：
 
-\[
+$$
 v
-\]
+$$
 
 则可以有另一个维度：
 
-\[
+$$
 d_v
-\]
+$$
 
 因为它不参与 QK dot product。
 
 ---
 
-# 29. 为什么 Value 不要求 d_v = d_k？
+## 29. 为什么 Value 不要求 d_v = d_k？
 
 Attention weights：
 
-\[
+$$
 A
 \in\mathbb R^{n_q\times n_k}
-\]
+$$
 
 只需要和：
 
-\[
+$$
 V\in\mathbb R^{n_k\times d_v}
-\]
+$$
 
 相乘。
 
 得到：
 
-\[
+$$
 O\in\mathbb R^{n_q\times d_v}
-\]
+$$
 
 因此：
 
-\[
+$$
 d_v
-\]
+$$
 
 可以和：
 
-\[
+$$
 d_k
-\]
+$$
 
 不同。
 
 原始 Transformer 每个 head 恰好使用：
 
-\[
+$$
 d_k=d_v=64
-\]
+$$
 
 但这是 architecture choice，
 
@@ -1556,13 +1556,13 @@ d_k=d_v=64
 
 ---
 
-# 30. 为什么 Dot Product 可能随 Dimension 变大？
+## 30. 为什么 Dot Product 可能随 Dimension 变大？
 
 假设：
 
-\[
+$$
 q_i,k_i
-\]
+$$
 
 各维：
 
@@ -1572,45 +1572,45 @@ q_i,k_i
 
 点积：
 
-\[
+$$
 q^\top k
 =
 \sum_{r=1}^{d_k}q_rk_r
-\]
+$$
 
 每一项：
 
-\[
+$$
 q_rk_r
-\]
+$$
 
 均值大致：
 
-\[
+$$
 0
-\]
+$$
 
 方差大致：
 
-\[
+$$
 1
-\]
+$$
 
 独立相加后：
 
-\[
+$$
 \operatorname{Var}(q^\top k)
 =
 d_k
-\]
+$$
 
 因此标准差：
 
-\[
+$$
 \boxed{
 \sqrt{d_k}
 }
-\]
+$$
 
 这就是为什么 dimension 越大，
 
@@ -1618,23 +1618,23 @@ raw dot-product logits 典型 magnitude 会越大。
 
 ---
 
-# 31. 为什么 Attention 除以 \(\sqrt{d_k}\) 而不是 \(d_k\)？
+## 31. 为什么 Attention 除以 $\sqrt{d_k}$ 而不是 $d_k$？
 
 如果 raw dot product 的 variance：
 
-\[
+$$
 d_k
-\]
+$$
 
 那么除以：
 
-\[
+$$
 \sqrt{d_k}
-\]
+$$
 
 之后：
 
-\[
+$$
 \operatorname{Var}
 \left(
 \frac{
@@ -1651,7 +1651,7 @@ d_k
 }
 =
 1
-\]
+$$
 
 大致恢复到：
 
@@ -1659,112 +1659,112 @@ d_k
 
 如果直接除：
 
-\[
+$$
 d_k
-\]
+$$
 
 则 variance 会变成：
 
-\[
+$$
 1/d_k
-\]
+$$
 
 可能又压得过小。
 
 所以：
 
-\[
+$$
 \boxed{
 1/\sqrt{d_k}
 }
-\]
+$$
 
 和方差尺度正好匹配。
 
 ---
 
-# 32. 一个具体 Attention Score 例子
+## 32. 一个具体 Attention Score 例子
 
 假设：
 
-\[
+$$
 d_k=4
-\]
+$$
 
 Query：
 
-\[
+$$
 q=[1,1,0,0]
-\]
+$$
 
 三个 Keys：
 
-\[
+$$
 k_1=[1,1,0,0]
-\]
+$$
 
-\[
+$$
 k_2=[1,-1,0,0]
-\]
+$$
 
-\[
+$$
 k_3=[0,0,1,1]
-\]
+$$
 
 则：
 
-\[
+$$
 q^\top k_1=2
-\]
+$$
 
-\[
+$$
 q^\top k_2=0
-\]
+$$
 
-\[
+$$
 q^\top k_3=0
-\]
+$$
 
 说明在这个 matching space 中：
 
-\[
+$$
 k_1
-\]
+$$
 
 最匹配。
 
 Scale：
 
-\[
+$$
 \sqrt{d_k}=2
-\]
+$$
 
 所以 logits：
 
-\[
+$$
 [1,0,0]
-\]
+$$
 
 Softmax：
 
-\[
+$$
 \approx
 [0.576,0.212,0.212]
-\]
+$$
 
 然后这些权重才用于 Values。
 
 ---
 
-# 33. 为什么点积为 0 不代表“两个 Token 完全无关”？
+## 33. 为什么点积为 0 不代表“两个 Token 完全无关”？
 
 非常重要。
 
 在某一个 head、某一个 layer 的 learned Q/K space 中：
 
-\[
+$$
 q^\top k=0
-\]
+$$
 
 只表示：
 
@@ -1785,21 +1785,21 @@ q^\top k=0
 
 ---
 
-# 34. 为什么负 Dot Product 也不等于“敌对语义”？
+## 34. 为什么负 Dot Product 也不等于“敌对语义”？
 
 如果：
 
-\[
+$$
 q^\top k<0
-\]
+$$
 
 只表示它们在当前 matching space 中形成钝角关系。
 
 经过 Softmax：
 
-\[
+$$
 e^{q^\top k}
-\]
+$$
 
 仍然是正数。
 
@@ -1813,69 +1813,69 @@ e^{q^\top k}
 
 ---
 
-# 35. Dot Product 是无界的吗？
+## 35. Dot Product 是无界的吗？
 
 是。
 
 如果把：
 
-\[
+$$
 q
-\]
+$$
 
 放大：
 
-\[
+$$
 q'=100q
-\]
+$$
 
 那么：
 
-\[
+$$
 q'^\top k
 =
 100(q^\top k)
-\]
+$$
 
 所以 Dot Product 没有固定范围。
 
 它可以：
 
-\[
+$$
 -\infty
-\]
+$$
 
 到：
 
-\[
+$$
 +\infty
-\]
+$$
 
 理论上无界。
 
 而 Cosine Similarity：
 
-\[
+$$
 \in[-1,1]
-\]
+$$
 
 这又是二者的重要区别。
 
 ---
 
-# 36. 为什么 Attention 允许无界 Score？
+## 36. 为什么 Attention 允许无界 Score？
 
 因为 raw score 后面还有：
 
-\[
+$$
 \operatorname{softmax}
-\]
+$$
 
 将它们转换成：
 
-\[
+$$
 [0,1]
-\]
+$$
 
 范围内归一化权重。
 
@@ -1887,28 +1887,28 @@ q'^\top k
 
 ---
 
-# 37. Dot Product 和 Euclidean Distance 有什么关系？
+## 37. Dot Product 和 Euclidean Distance 有什么关系？
 
 对两个向量：
 
-\[
+$$
 \|\mathbf a-\mathbf b\|^2
-\]
+$$
 
 展开：
 
-\[
+$$
 =
 \|\mathbf a\|^2
 +
 \|\mathbf b\|^2
 -
 2\mathbf a^\top\mathbf b
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \mathbf a^\top\mathbf b
 =
@@ -1920,7 +1920,7 @@ q'^\top k
 \|\mathbf a-\mathbf b\|^2
 }{2}
 }
-\]
+$$
 
 这说明：
 
@@ -1928,73 +1928,73 @@ q'^\top k
 
 如果：
 
-\[
+$$
 \|\mathbf a\|
-\]
+$$
 
 和：
 
-\[
+$$
 \|\mathbf b\|
-\]
+$$
 
 固定，
 
 那么：
 
-> Dot Product 越大 \(\Leftrightarrow\) Euclidean Distance 越小。
+> Dot Product 越大 $\Leftrightarrow$ Euclidean Distance 越小。
 
 ---
 
-# 38. 但如果 Norm 不固定，这个等价就不存在
+## 38. 但如果 Norm 不固定，这个等价就不存在
 
 例如：
 
-\[
+$$
 a=[1,0]
-\]
+$$
 
-\[
+$$
 b=[1,0]
-\]
+$$
 
 距离：
 
-\[
+$$
 0
-\]
+$$
 
 dot：
 
-\[
+$$
 1
-\]
+$$
 
 而：
 
-\[
+$$
 c=[100,0]
-\]
+$$
 
 和：
 
-\[
+$$
 a
-\]
+$$
 
 方向一致，
 
 dot：
 
-\[
+$$
 100
-\]
+$$
 
 但距离：
 
-\[
+$$
 99
-\]
+$$
 
 非常大。
 
@@ -2006,23 +2006,23 @@ dot：
 
 ---
 
-# 39. 如果向量都归一化成 Unit Vector，会发生什么？
+## 39. 如果向量都归一化成 Unit Vector，会发生什么？
 
 如果：
 
-\[
+$$
 \|\mathbf a\|=\|\mathbf b\|=1
-\]
+$$
 
 那么：
 
-\[
+$$
 \boxed{
 \mathbf a^\top\mathbf b
 =
 \cos\theta
 }
-\]
+$$
 
 此时：
 
@@ -2030,11 +2030,11 @@ dot：
 
 并且：
 
-\[
+$$
 \|\mathbf a-\mathbf b\|^2
 =
 2-2\mathbf a^\top\mathbf b
-\]
+$$
 
 所以在单位球面上：
 
@@ -2046,15 +2046,15 @@ dot：
 
 ---
 
-# 40. Transformer 为什么不先把 Q/K Normalize 成 Unit Vector？
+## 40. Transformer 为什么不先把 Q/K Normalize 成 Unit Vector？
 
 原始 Transformer 没这么做。
 
 它让：
 
-\[
+$$
 q,k
-\]
+$$
 
 的 norm 也可以参与 compatibility。
 
@@ -2069,15 +2069,15 @@ q,k
 
 原始 Scaled Dot-Product Attention 采用：
 
-\[
+$$
 \frac{q^\top k}{\sqrt{d_k}}
-\]
+$$
 
 而不是 cosine similarity。
 
 ---
 
-# 41. Dot Product 的“相似度”解释必须加限定
+## 41. Dot Product 的“相似度”解释必须加限定
 
 所以更严谨的说法不是：
 
@@ -2095,23 +2095,23 @@ q,k
 
 ---
 
-# 42. Dot Product 和 Projection 的关系再推一步
+## 42. Dot Product 和 Projection 的关系再推一步
 
 向量：
 
-\[
+$$
 \mathbf a
-\]
+$$
 
 在：
 
-\[
+$$
 \mathbf b
-\]
+$$
 
 方向上的向量投影：
 
-\[
+$$
 \operatorname{proj}_{\mathbf b}(\mathbf a)
 =
 \frac{
@@ -2120,13 +2120,13 @@ q,k
 \|\mathbf b\|^2
 }
 \mathbf b
-\]
+$$
 
 为什么？
 
 先求 scalar projection：
 
-\[
+$$
 \operatorname{comp}_{\mathbf b}(\mathbf a)
 =
 \frac{
@@ -2134,21 +2134,21 @@ q,k
 }{
 \|\mathbf b\|
 }
-\]
+$$
 
-再乘 \(\mathbf b\) 的 unit vector：
+再乘 $\mathbf b$ 的 unit vector：
 
-\[
+$$
 \frac{
 \mathbf b
 }{
 \|\mathbf b\|
 }
-\]
+$$
 
 得到：
 
-\[
+$$
 \boxed{
 \operatorname{proj}_{\mathbf b}(\mathbf a)
 =
@@ -2159,7 +2159,7 @@ q,k
 }
 \mathbf b
 }
-\]
+$$
 
 所以 Dot Product 直接决定：
 
@@ -2167,35 +2167,35 @@ q,k
 
 ---
 
-# 43. 为什么正交特别重要？
+## 43. 为什么正交特别重要？
 
 如果：
 
-\[
+$$
 \mathbf a\cdot\mathbf b=0
-\]
+$$
 
 那么：
 
-\[
+$$
 \mathbf a
-\]
+$$
 
 在：
 
-\[
+$$
 \mathbf b
-\]
+$$
 
 方向的 projection：
 
-\[
+$$
 0
-\]
+$$
 
 也就是：
 
-> \(\mathbf a\) 在 \(\mathbf b\) 方向上没有任何分量。
+> $\mathbf a$ 在 $\mathbf b$ 方向上没有任何分量。
 
 这就是正交在几何上的真正含义。
 
@@ -2209,44 +2209,44 @@ q,k
 
 ---
 
-# 44. 为什么“逐维乘积再求和”恰好具有这些漂亮性质？
+## 44. 为什么“逐维乘积再求和”恰好具有这些漂亮性质？
 
 在标准笛卡尔坐标系里：
 
-\[
+$$
 \mathbf e_1,\ldots,\mathbf e_n
-\]
+$$
 
 是一组 orthonormal basis。
 
 即：
 
-\[
+$$
 \mathbf e_i\cdot\mathbf e_j
 =
 \begin{cases}
 1,&i=j\\
 0,&i\neq j
 \end{cases}
-\]
+$$
 
 任意：
 
-\[
+$$
 \mathbf a
 =
 \sum_i a_i\mathbf e_i
-\]
+$$
 
-\[
+$$
 \mathbf b
 =
 \sum_j b_j\mathbf e_j
-\]
+$$
 
 利用双线性：
 
-\[
+$$
 \mathbf a\cdot\mathbf b
 =
 \sum_i\sum_j
@@ -2254,23 +2254,23 @@ a_ib_j
 (
 \mathbf e_i\cdot\mathbf e_j
 )
-\]
+$$
 
 因为不同 basis directions 正交：
 
-\[
+$$
 i\neq j
 \Rightarrow
 \mathbf e_i\cdot\mathbf e_j=0
-\]
+$$
 
 只剩：
 
-\[
+$$
 \boxed{
 \sum_i a_ib_i
 }
-\]
+$$
 
 所以“逐维乘积再求和”并不是随便发明的规则。
 
@@ -2280,21 +2280,21 @@ i\neq j
 
 ---
 
-# 45. Dot Product 和 Inner Product 是一回事吗？
+## 45. Dot Product 和 Inner Product 是一回事吗？
 
 在：
 
-\[
+$$
 \mathbb R^n
-\]
+$$
 
 标准坐标中，
 
 我们通常把：
 
-\[
+$$
 \mathbf a^\top\mathbf b
-\]
+$$
 
 叫：
 
@@ -2305,17 +2305,17 @@ i\neq j
 
 例如：
 
-\[
+$$
 \langle a,b\rangle_M
 =
 a^\top M b
-\]
+$$
 
 其中：
 
-\[
+$$
 M
-\]
+$$
 
 满足适当的正定条件。
 
@@ -2325,61 +2325,61 @@ M
 
 这也是为什么数学教材有时使用：
 
-\[
+$$
 \langle a,b\rangle
-\]
+$$
 
 而 AI 代码里更常看到：
 
-\[
+$$
 a^\top b
-\]
+$$
 
 ---
 
-# 46. 为什么 Attention 不直接学习一个 Bilinear Matrix？
+## 46. 为什么 Attention 不直接学习一个 Bilinear Matrix？
 
 其实可以。
 
 例如 compatibility：
 
-\[
+$$
 q^\top Wk
-\]
+$$
 
 就是一种 bilinear score。
 
 但 Transformer 已经先做：
 
-\[
+$$
 q=xW_Q
-\]
+$$
 
-\[
+$$
 k=xW_K
-\]
+$$
 
 所以：
 
-\[
+$$
 q^\top k
-\]
+$$
 
 本身已经包含 learned projection。
 
 展开：
 
-\[
+$$
 (x_iW_Q)(x_jW_K)^\top
-\]
+$$
 
 等价于：
 
-\[
+$$
 x_i
 W_QW_K^\top
 x_j^\top
-\]
+$$
 
 因此 Q/K projection + dot product 已经构成了一种：
 
@@ -2387,7 +2387,7 @@ x_j^\top
 
 ---
 
-# 47. 这一点非常重要
+## 47. 这一点非常重要
 
 有时会觉得：
 
@@ -2395,29 +2395,29 @@ x_j^\top
 
 但实际上 score：
 
-\[
+$$
 q_i^\top k_j
-\]
+$$
 
 里面：
 
-\[
+$$
 q_i=x_iW_Q
-\]
+$$
 
-\[
+$$
 k_j=x_jW_K
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 q_i^\top k_j
 =
 x_iW_QW_K^\top x_j^\top
 }
-\]
+$$
 
 真正 learnable 的并不只是：
 
@@ -2429,38 +2429,38 @@ x_iW_QW_K^\top x_j^\top
 
 ---
 
-# 48. Multi-Head 又进一步增强这种自由度
+## 48. Multi-Head 又进一步增强这种自由度
 
-第 \(h\) 个 head：
+第 $h$ 个 head：
 
-\[
+$$
 q_i^{(h)}
 =
 x_iW_Q^{(h)}
-\]
+$$
 
-\[
+$$
 k_j^{(h)}
 =
 x_jW_K^{(h)}
-\]
+$$
 
 所以：
 
-\[
+$$
 score_{ij}^{(h)}
 =
 x_i
 W_Q^{(h)}
 W_K^{(h)\top}
 x_j^\top
-\]
+$$
 
 不同 heads 有不同：
 
-\[
+$$
 W_Q^{(h)}W_K^{(h)\top}
-\]
+$$
 
 也就是不同 matching geometry。
 
@@ -2468,53 +2468,53 @@ W_Q^{(h)}W_K^{(h)\top}
 
 ---
 
-# 49. 一个 ACT 例子
+## 49. 一个 ACT 例子
 
 ACT policy decoder 中某个 future action query representation：
 
-\[
+$$
 x_{\text{action}}
-\]
+$$
 
 经过：
 
-\[
+$$
 W_Q
-\]
+$$
 
 得到：
 
-\[
+$$
 q
-\]
+$$
 
 observation memory 中一个 wrist-camera token：
 
-\[
+$$
 m_{\text{wrist}}
-\]
+$$
 
 经过：
 
-\[
+$$
 W_K
-\]
+$$
 
 得到：
 
-\[
+$$
 k_{\text{wrist}}
-\]
+$$
 
 score：
 
-\[
+$$
 \frac{
 q^\top k_{\text{wrist}}
 }{
 \sqrt{d_k}
 }
-\]
+$$
 
 如果这个 score 相对其他 memory tokens 高，
 
@@ -2524,11 +2524,11 @@ Softmax 后：
 
 然后真正传入 decoder 的内容来自：
 
-\[
+$$
 v_{\text{wrist}}
 =
 m_{\text{wrist}}W_V
-\]
+$$
 
 所以：
 
@@ -2542,19 +2542,19 @@ Value
 
 ---
 
-# 50. 为什么 ACT 里的 Dot Product 不代表“两个物理向量方向相似”？
+## 50. 为什么 ACT 里的 Dot Product 不代表“两个物理向量方向相似”？
 
 因为：
 
-\[
+$$
 q
-\]
+$$
 
 和：
 
-\[
+$$
 k
-\]
+$$
 
 不是：
 
@@ -2568,9 +2568,9 @@ k
 
 所以：
 
-\[
+$$
 q^\top k
-\]
+$$
 
 是在：
 
@@ -2584,7 +2584,7 @@ q^\top k
 
 ---
 
-# 51. 为什么 Word Embedding 也常用 Dot Product / Cosine？
+## 51. 为什么 Word Embedding 也常用 Dot Product / Cosine？
 
 因为 embedding 训练往往会让：
 
@@ -2592,9 +2592,9 @@ q^\top k
 
 例如：
 
-\[
+$$
 w_1^\top w_2
-\]
+$$
 
 或 cosine similarity 可以作为一种 relation measure。
 
@@ -2604,37 +2604,37 @@ w_1^\top w_2
 
 ---
 
-# 52. 点积可以为 0，但两个向量都不为 0
+## 52. 点积可以为 0，但两个向量都不为 0
 
 例如：
 
-\[
+$$
 a=[1,1]
-\]
+$$
 
-\[
+$$
 b=[1,-1]
-\]
+$$
 
 则：
 
-\[
+$$
 a^\top b
 =
 1-1
 =
 0
-\]
+$$
 
 但：
 
-\[
+$$
 a\neq0
-\]
+$$
 
-\[
+$$
 b\neq0
-\]
+$$
 
 这说明：
 
@@ -2646,43 +2646,43 @@ b\neq0
 
 ---
 
-# 53. 零向量是一个特殊情况
+## 53. 零向量是一个特殊情况
 
 如果：
 
-\[
+$$
 a=0
-\]
+$$
 
 则对任意：
 
-\[
+$$
 b
-\]
+$$
 
 都有：
 
-\[
+$$
 a^\top b=0
-\]
+$$
 
 但零向量没有定义良好的方向，
 
 因为：
 
-\[
+$$
 \|a\|=0
-\]
+$$
 
 所以：
 
-\[
+$$
 \frac{
 a^\top b
 }{
 \|a\|\|b\|
 }
-\]
+$$
 
 无法计算。
 
@@ -2690,24 +2690,24 @@ a^\top b
 
 Dot Product 则仍然定义为：
 
-\[
+$$
 0
-\]
+$$
 
 ---
 
-# 54. Cauchy–Schwarz Inequality
+## 54. Cauchy–Schwarz Inequality
 
 点积满足一个非常重要的不等式：
 
-\[
+$$
 \boxed{
 |\mathbf a\cdot\mathbf b|
 \le
 \|\mathbf a\|
 \|\mathbf b\|
 }
-\]
+$$
 
 这叫：
 
@@ -2715,19 +2715,19 @@ Dot Product 则仍然定义为：
 
 结合：
 
-\[
+$$
 \mathbf a\cdot\mathbf b
 =
 \|\mathbf a\|
 \|\mathbf b\|
 \cos\theta
-\]
+$$
 
 就对应：
 
-\[
+$$
 |\cos\theta|\le1
-\]
+$$
 
 等号成立当且仅当两个非零向量线性相关，也就是：
 
@@ -2735,53 +2735,53 @@ Dot Product 则仍然定义为：
 
 ---
 
-# 55. 为什么这个不等式对 Cosine Similarity 很重要？
+## 55. 为什么这个不等式对 Cosine Similarity 很重要？
 
 因为：
 
-\[
+$$
 \frac{
 \mathbf a\cdot\mathbf b
 }{
 \|\mathbf a\|\|\mathbf b\|
 }
-\]
+$$
 
 由 Cauchy–Schwarz 保证落在：
 
-\[
+$$
 [-1,1]
-\]
+$$
 
 所以 cosine similarity 有清晰固定范围：
 
-\[
+$$
 -1
-\]
+$$
 
 完全反方向，
 
-\[
+$$
 0
-\]
+$$
 
 正交，
 
-\[
+$$
 1
-\]
+$$
 
 完全同方向。
 
 ---
 
-# 56. Attention 为什么不把 Dot Product 直接解释成概率？
+## 56. Attention 为什么不把 Dot Product 直接解释成概率？
 
 因为：
 
-\[
+$$
 q^\top k
-\]
+$$
 
 可以是：
 
@@ -2795,7 +2795,7 @@ q^\top k
 
 然后 Softmax：
 
-\[
+$$
 \boxed{
 \alpha_j
 =
@@ -2805,7 +2805,7 @@ q^\top k
 \sum_r\exp(s_r)
 }
 }
-\]
+$$
 
 才把这些 scores 转成 normalized weights。
 
@@ -2823,7 +2823,7 @@ Softmax
 
 ---
 
-# 57. 为什么 Dot Product 大不等于 Weight 一定大很多？
+## 57. 为什么 Dot Product 大不等于 Weight 一定大很多？
 
 因为 Attention weight 取决于：
 
@@ -2831,33 +2831,33 @@ Softmax
 
 例如：
 
-\[
+$$
 [100,99,98]
-\]
+$$
 
 与：
 
-\[
+$$
 [2,1,0]
-\]
+$$
 
 虽然第一组绝对值大很多，
 
 它们之间的差：
 
-\[
+$$
 [0,-1,-2]
-\]
+$$
 
 是相同的。
 
 由于 Softmax 对统一加常数不变：
 
-\[
+$$
 \operatorname{softmax}([100,99,98])
 =
 \operatorname{softmax}([2,1,0])
-\]
+$$
 
 所以 Attention 最终更关心：
 
@@ -2865,25 +2865,25 @@ Softmax
 
 ---
 
-# 58. 为什么 Scale 会影响 Weight Sharpness？
+## 58. 为什么 Scale 会影响 Weight Sharpness？
 
 如果 scores：
 
-\[
+$$
 [2,1,0]
-\]
+$$
 
 Softmax 大约：
 
-\[
+$$
 [0.665,0.245,0.090]
-\]
+$$
 
 如果全部乘 10：
 
-\[
+$$
 [20,10,0]
-\]
+$$
 
 Softmax 会极度偏向第一个。
 
@@ -2893,35 +2893,35 @@ Softmax 会极度偏向第一个。
 
 这正是：
 
-\[
+$$
 1/\sqrt{d_k}
-\]
+$$
 
 非常重要的原因。
 
 ---
 
-# 59. Dot Product 和 Linear Regression 里的 xᵀw 有关系吗？
+## 59. Dot Product 和 Linear Regression 里的 xᵀw 有关系吗？
 
 有。
 
 线性模型：
 
-\[
+$$
 y=w^\top x+b
-\]
+$$
 
 里面：
 
-\[
+$$
 w^\top x
-\]
+$$
 
 本质也是 Dot Product。
 
 可以理解为：
 
-> 输入 \(x\) 在权重向量 \(w\) 所定义方向上的响应。
+> 输入 $x$ 在权重向量 $w$ 所定义方向上的响应。
 
 所以 Dot Product 并不是 Transformer 特殊发明。
 
@@ -2933,31 +2933,31 @@ Attention 只是把它用于：
 
 ---
 
-# 60. 神经网络里的 Logit 也常是 Dot Product
+## 60. 神经网络里的 Logit 也常是 Dot Product
 
 分类模型最后可能有：
 
-\[
+$$
 z_c=w_c^\top h+b_c
-\]
+$$
 
 每个 class：
 
-\[
+$$
 c
-\]
+$$
 
 有一个 weight vector：
 
-\[
+$$
 w_c
-\]
+$$
 
 hidden representation：
 
-\[
+$$
 h
-\]
+$$
 
 与哪个 class vector 点积更大，
 
@@ -2969,7 +2969,7 @@ h
 
 ---
 
-# 61. 为什么这对理解 AI 很重要？
+## 61. 为什么这对理解 AI 很重要？
 
 现代深度学习中大量“语义”并不是以：
 
@@ -2996,39 +2996,39 @@ if object == cat:
 
 ---
 
-# 62. Dot Product 的五个核心视角
+## 62. Dot Product 的五个核心视角
 
 可以把它从五个角度同时理解。
 
 ---
 
-## 视角 1：坐标计算
+### 视角 1：坐标计算
 
-\[
+$$
 \boxed{
 a^\top b
 =
 \sum_i a_ib_i
 }
-\]
+$$
 
 ---
 
-## 视角 2：长度与夹角
+### 视角 2：长度与夹角
 
-\[
+$$
 \boxed{
 a^\top b
 =
 \|a\|\|b\|\cos\theta
 }
-\]
+$$
 
 ---
 
-## 视角 3：Projection
+### 视角 3：Projection
 
-\[
+$$
 \boxed{
 \operatorname{comp}_b(a)
 =
@@ -3038,63 +3038,63 @@ a^\top b
 \|b\|
 }
 }
-\]
+$$
 
 ---
 
-## 视角 4：Orthogonality
+### 视角 4：Orthogonality
 
-\[
+$$
 \boxed{
 a^\top b=0
 \iff
 a\perp b
 }
-\]
+$$
 
 对非零欧氏向量。
 
 ---
 
-## 视角 5：Learned Compatibility
+### 视角 5：Learned Compatibility
 
 在 Attention：
 
-\[
+$$
 \boxed{
 score(q,k)
 =
 q^\top k
 }
-\]
+$$
 
 Q/K 的 learned projection 让这种几何关系适配最终任务。
 
 ---
 
-# 63. 常见误解一：Dot Product 就是两个向量的长度相乘
+## 63. 常见误解一：Dot Product 就是两个向量的长度相乘
 
 **错误。**
 
 还有：
 
-\[
+$$
 \cos\theta
-\]
+$$
 
 因子。
 
 只有同方向时：
 
-\[
+$$
 a^\top b
 =
 \|a\|\|b\|
-\]
+$$
 
 ---
 
-# 64. 常见误解二：Dot Product 大就表示夹角一定小
+## 64. 常见误解二：Dot Product 大就表示夹角一定小
 
 **不一定。**
 
@@ -3112,33 +3112,33 @@ a^\top b
 
 ---
 
-# 65. 常见误解三：Dot Product = Cosine Similarity
+## 65. 常见误解三：Dot Product = Cosine Similarity
 
 **错误。**
 
 除非：
 
-\[
+$$
 \|a\|=\|b\|=1
-\]
+$$
 
 或者先做 L2 normalization。
 
 ---
 
-# 66. 常见误解四：Dot Product 为 0 说明两个向量之一是 0
+## 66. 常见误解四：Dot Product 为 0 说明两个向量之一是 0
 
 **错误。**
 
 两个非零正交向量也有：
 
-\[
+$$
 a^\top b=0
-\]
+$$
 
 ---
 
-# 67. 常见误解五：负 Dot Product 表示“两个 Token 语义相反”
+## 67. 常见误解五：负 Dot Product 表示“两个 Token 语义相反”
 
 **错误。**
 
@@ -3148,21 +3148,21 @@ a^\top b=0
 
 ---
 
-# 68. 常见误解六：Transformer 用 Dot Product 是因为它天然理解语义
+## 68. 常见误解六：Transformer 用 Dot Product 是因为它天然理解语义
 
 **错误。**
 
 真正的语义 / task relation 是：
 
-\[
+$$
 W_Q,W_K
-\]
+$$
 
 通过训练把 hidden representations 映射到合适 matching geometry 后形成的。
 
 ---
 
-# 69. 常见误解七：除 \(\sqrt{d_k}\) 是为了 Normalize 向量长度到 1
+## 69. 常见误解七：除 $\sqrt{d_k}$ 是为了 Normalize 向量长度到 1
 
 **错误。**
 
@@ -3170,7 +3170,7 @@ W_Q,W_K
 
 它只是整体 scale logits：
 
-\[
+$$
 q^\top k
 \rightarrow
 \frac{
@@ -3178,41 +3178,41 @@ q^\top k
 }{
 \sqrt{d_k}
 }
-\]
+$$
 
 Q/K norm 仍然可以不同。
 
 ---
 
-# 70. 常见误解八：Scale 后就变成 Cosine Similarity
+## 70. 常见误解八：Scale 后就变成 Cosine Similarity
 
 **错误。**
 
 Cosine：
 
-\[
+$$
 \frac{
 q^\top k
 }{
 \|q\|\|k\|
 }
-\]
+$$
 
 Scaled Dot Product：
 
-\[
+$$
 \frac{
 q^\top k
 }{
 \sqrt{d_k}
 }
-\]
+$$
 
 分母完全不同。
 
 ---
 
-# 71. 常见误解九：QKᵀ 每一行就是概率
+## 71. 常见误解九：QKᵀ 每一行就是概率
 
 **错误。**
 
@@ -3220,29 +3220,29 @@ q^\top k
 
 必须经过：
 
-\[
+$$
 Softmax
-\]
+$$
 
 才得到 normalized attention weights。
 
 ---
 
-# 72. 常见误解十：Dot Product 大 = 两个原始 Token 很相似
+## 72. 常见误解十：Dot Product 大 = 两个原始 Token 很相似
 
 **错误。**
 
 Attention 比较的是：
 
-\[
+$$
 q_i=x_iW_Q
-\]
+$$
 
 和：
 
-\[
+$$
 k_j=x_jW_K
-\]
+$$
 
 不是直接比较原始 tokens。
 
@@ -3252,71 +3252,71 @@ k_j=x_jW_K
 
 ---
 
-# 73. 用三个例子记住方向关系
+## 73. 用三个例子记住方向关系
 
 假设：
 
-\[
+$$
 a=[1,0]
-\]
+$$
 
 ---
 
-### 同方向
+#### 同方向
 
-\[
+$$
 b=[2,0]
-\]
+$$
 
-\[
+$$
 a^\top b=2
-\]
+$$
 
 ---
 
-### 正交
+#### 正交
 
-\[
+$$
 b=[0,2]
-\]
+$$
 
-\[
+$$
 a^\top b=0
-\]
+$$
 
 ---
 
-### 反方向
+#### 反方向
 
-\[
+$$
 b=[-2,0]
-\]
+$$
 
-\[
+$$
 a^\top b=-2
-\]
+$$
 
 对应：
 
-\[
+$$
 \cos0^\circ=1
-\]
+$$
 
-\[
+$$
 \cos90^\circ=0
-\]
+$$
 
-\[
+$$
 \cos180^\circ=-1
-\]
+$$
 
 ---
 
-# 74. 用一个公式记住 Dot Product 的真正意义
+## 74. 用一个公式记住 Dot Product 的真正意义
 
 如果最后只记住：
 
-\[
+$$
 \boxed{
 \mathbf a^\top\mathbf b
 =
@@ -3324,13 +3324,13 @@ a^\top b=-2
 \|\mathbf b\|
 \cos\theta
 }
-\]
+$$
 
 那么看到：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 时就应该想到：
 
@@ -3338,9 +3338,9 @@ QK^\top
 
 然后：
 
-\[
+$$
 1/\sqrt{d_k}
-\]
+$$
 
 控制 score 的 dimension-dependent scale。
 
@@ -3350,27 +3350,27 @@ Softmax：
 
 最后：
 
-\[
+$$
 V
-\]
+$$
 
 提供真正被读取的内容。
 
 ---
 
-# 75. 一句话真正理解 Dot Product
+## 75. 一句话真正理解 Dot Product
 
-> **Dot Product 是标准欧氏空间中的内积：坐标上它等于逐维乘积之和，几何上它等于两个向量长度乘以夹角余弦，因此同时反映 magnitude 与 directional alignment；在 Transformer 中，\(W_Q\) 和 \(W_K\) 会把 hidden states 学习性地投影到一个 task-specific matching space，使 \(q^\top k\) 成为高效可训练的 compatibility score，而不是天然存在的“语义相似度”。**
+> **Dot Product 是标准欧氏空间中的内积：坐标上它等于逐维乘积之和，几何上它等于两个向量长度乘以夹角余弦，因此同时反映 magnitude 与 directional alignment；在 Transformer 中，$W_Q$ 和 $W_K$ 会把 hidden states 学习性地投影到一个 task-specific matching space，使 $q^\top k$ 成为高效可训练的 compatibility score，而不是天然存在的“语义相似度”。**
 
 ---
 
-# 76. 下一步：Softmax 为什么能把 Score 变成 Attention Weight？
+## 76. 下一步：Softmax 为什么能把 Score 变成 Attention Weight？
 
 现在我们已经理解：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 产生的是什么：
 
@@ -3382,7 +3382,7 @@ QK^\top
 
 为什么一定要：
 
-\[
+$$
 \operatorname{softmax}
 \left(
 \frac{
@@ -3391,7 +3391,7 @@ QK^\top
 \sqrt{d_k}
 }
 \right)
-\]
+$$
 
 ？
 
@@ -3413,9 +3413,9 @@ QK^\top
 
 ---
 
-## Mathematics Sources
+### Mathematics Sources
 
-### MIT OpenCourseWare
+#### MIT OpenCourseWare
 
 MIT OpenCourseWare 的 Linear Algebra / Dot Products 材料将 Dot Product 作为欧氏向量几何中的基础结构，并用于定义：
 
@@ -3441,23 +3441,23 @@ Gilbert Strang,
 
 本文数学部分采用标准欧氏空间定义：
 
-\[
+$$
 a^\top b
 =
 \sum_i a_ib_i
-\]
+$$
 
 并通过余弦定理推导：
 
-\[
+$$
 a^\top b
 =
 \|a\|\|b\|\cos\theta
-\]
+$$
 
 ---
 
-## AI Primary Source
+### AI Primary Source
 
 Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,  
 Aidan N. Gomez, Łukasz Kaiser, Illia Polosukhin.
@@ -3470,7 +3470,7 @@ NIPS 2017.
 
 Section 3.2.1 定义 Scaled Dot-Product Attention：
 
-\[
+$$
 \boxed{
 \operatorname{Attention}(Q,K,V)
 =
@@ -3483,22 +3483,22 @@ QK^\top
 }
 \right)V
 }
-\]
+$$
 
 原论文明确说明：
 
-- queries 和 keys 的维度为 \(d_k\)；
-- values 维度为 \(d_v\)；
+- queries 和 keys 的维度为 $d_k$；
+- values 维度为 $d_v$；
 - Query 与所有 Keys 做 dot products；
-- 结果除以 \(\sqrt{d_k}\)；
+- 结果除以 $\sqrt{d_k}$；
 - 再经 Softmax 得到 Values 的权重；
-- scaling 用于缓解大 \(d_k\) 时 dot-product magnitude 过大导致 Softmax 进入小梯度区域的问题。
+- scaling 用于缓解大 $d_k$ 时 dot-product magnitude 过大导致 Softmax 进入小梯度区域的问题。
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### 数学前置
+#### 数学前置
 
 - Vector
 - Vector Norm
@@ -3506,7 +3506,7 @@ QK^\top
 - Law of Cosines
 - Angle
 
-### 数学延伸
+#### 数学延伸
 
 - Cosine Similarity
 - Orthogonality
@@ -3515,7 +3515,7 @@ QK^\top
 - Cauchy–Schwarz Inequality
 - Matrix Multiplication
 
-### Deep Learning
+#### Deep Learning
 
 - [Attention](./attention.md)
 - [Query / Key / Value](./qkv.md)
@@ -3524,10 +3524,10 @@ QK^\top
 - [Scaled Dot-Product Attention](./attention.md)
 - [Multi-Head Attention](./multi-head-attention.md)
 
-### Robot Learning
+#### Robot Learning
 
 - [ACT Architecture](../robot-learning/act/architecture.md)
 
-### 下一步
+#### 下一步
 
 - [Softmax](./softmax.md)

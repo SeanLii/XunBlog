@@ -56,6 +56,8 @@ body { letter-spacing: -0.01em; }
 .vp-doc div[class*='language-']::before { font-family: var(--vp-font-family-mono); font-size: 10px; letter-spacing: .08em; }
 .vp-doc blockquote { border-left: 2px solid var(--vp-c-brand-1); background: var(--vp-c-brand-soft); padding: 14px 18px; }
 .vp-doc blockquote > p { color: var(--vp-c-text-1); }
+.vp-doc .katex-display { overflow-x: auto; overflow-y: hidden; padding: 4px 0; }
+.vp-doc .katex-display > .katex { min-width: max-content; }
 .vp-doc .mermaid { margin: 28px 0; padding: 24px; overflow-x: auto; border: 1px solid var(--vp-c-divider); border-radius: 10px; background: var(--vp-c-bg-elv); text-align: center; }
 .vp-doc .mermaid svg { max-width: 100%; height: auto; }
 

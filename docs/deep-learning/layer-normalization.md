@@ -11,26 +11,26 @@ updated: "2026-09-15"
 
 上一篇 [Residual Connection](./residual-connection.md) 里，我们已经知道 Transformer 并不是简单：
 
-\[
+$$
 x\rightarrow F(x)
-\]
+$$
 
 而是先做：
 
-\[
+$$
 x+F(x)
-\]
+$$
 
 但原始 Transformer 真正使用的公式还多了一步：
 
-\[
+$$
 \boxed{
 \operatorname{LayerNorm}
 \left(
 x+F(x)
 \right)
 }
-\]
+$$
 
 也就是说：
 
@@ -46,28 +46,28 @@ x+F(x)
 
 1. 减均值；
 2. 除标准差；
-3. 再乘一个 \(\gamma\)；
-4. 再加一个 \(\beta\)？
+3. 再乘一个 $\gamma$；
+4. 再加一个 $\beta$？
 
 更容易产生困惑的是：
 
 如果 LayerNorm 做完以后：
 
-\[
+$$
 mean\approx0
-\]
+$$
 
-\[
+$$
 variance\approx1
-\]
+$$
 
 那它是不是在强迫 neural representation：
 
 > 服从标准正态分布：
 
-\[
+$$
 \mathcal N(0,1)
-\]
+$$
 
 ？
 
@@ -82,9 +82,9 @@ variance\approx1
 3. 为什么 `nn.LayerNorm(512)` 不会把 1202 个 ACT tokens 混在一起？
 4. 为什么减均值之后还要除标准差？
 5. 均值 0、方差 1 为什么不等于标准正态分布？
-6. \(\epsilon\) 为什么存在？
+6. $\epsilon$ 为什么存在？
 7. 为什么严格来说 normalize 后的 variance 不一定恰好等于 1？
-8. \(\gamma\) 和 \(\beta\) 为什么不会让 normalization“白做”？
+8. $\gamma$ 和 $\beta$ 为什么不会让 normalization“白做”？
 9. LayerNorm 和 BatchNorm 到底差在哪里？
 10. 为什么 LayerNorm 训练和推理用同一套 statistics？
 11. 原始 Transformer 为什么是 Post-LN？
@@ -93,28 +93,28 @@ variance\approx1
 
 ---
 
-# 1. 先从一个 Hidden Vector 开始
+## 1. 先从一个 Hidden Vector 开始
 
 假设 Transformer 中某个 token 的 hidden representation 是：
 
-\[
+$$
 x=
 [
 x_1,x_2,\ldots,x_D
 ]
-\]
+$$
 
 例如：
 
-\[
+$$
 D=512
-\]
+$$
 
 所以：
 
-\[
+$$
 x\in\mathbb R^{512}
-\]
+$$
 
 LayerNorm首先看的是：
 
@@ -128,18 +128,18 @@ LayerNorm首先看的是：
 
 先计算这个 vector 自己的 mean：
 
-\[
+$$
 \boxed{
 \mu
 =
 \frac{1}{D}
 \sum_{j=1}^{D}x_j
 }
-\]
+$$
 
 然后计算 variance：
 
-\[
+$$
 \boxed{
 \sigma^2
 =
@@ -147,11 +147,11 @@ LayerNorm首先看的是：
 \sum_{j=1}^{D}
 (x_j-\mu)^2
 }
-\]
+$$
 
 再标准化：
 
-\[
+$$
 \boxed{
 \hat x_j
 =
@@ -161,23 +161,23 @@ x_j-\mu
 \sqrt{\sigma^2+\epsilon}
 }
 }
-\]
+$$
 
 最后再做 learnable affine transformation：
 
-\[
+$$
 \boxed{
 y_j
 =
 \gamma_j\hat x_j+\beta_j
 }
-\]
+$$
 
 这就是 Transformer 中最常见 LayerNorm 的完整骨架。
 
 ---
 
-# 2. LayerNorm 的四步
+## 2. LayerNorm 的四步
 
 可以把它拆成：
 
@@ -197,7 +197,7 @@ y
 
 数学：
 
-\[
+$$
 \boxed{
 x
 \rightarrow
@@ -205,67 +205,67 @@ x
 \rightarrow
 \gamma\odot\hat x+\beta
 }
-\]
+$$
 
 ---
 
-# 3. 一个 4 维手算例子
+## 3. 一个 4 维手算例子
 
 假设：
 
-\[
+$$
 x=[1,2,3,4]
-\]
+$$
 
 维度：
 
-\[
+$$
 D=4
-\]
+$$
 
 均值：
 
-\[
+$$
 \mu
 =
 \frac{1+2+3+4}{4}
 =
 2.5
-\]
+$$
 
 ---
 
-# 4. 减均值
+## 4. 减均值
 
-\[
+$$
 x-\mu
 =
 [-1.5,-0.5,0.5,1.5]
-\]
+$$
 
 现在 mean：
 
-\[
+$$
 \frac{-1.5-0.5+0.5+1.5}{4}
 =
 0
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \text{减均值负责把中心移到 0}
 }
-\]
+$$
 
 ---
 
-# 5. 计算方差
+## 5. 计算方差
 
 使用 LayerNorm / PyTorch 常见的 population-style estimator：
 
-\[
+$$
 \sigma^2
 =
 \frac{
@@ -274,43 +274,43 @@ x-\mu
 0.5^2+
 1.5^2
 }{4}
-\]
+$$
 
-\[
+$$
 =
 \frac{
 2.25+0.25+0.25+2.25
 }{4}
-\]
+$$
 
-\[
+$$
 =
 1.25
-\]
+$$
 
 所以：
 
-\[
+$$
 \sigma
 =
 \sqrt{1.25}
 \approx
 1.118
-\]
+$$
 
 先暂时忽略很小的：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 ---
 
-# 6. 再除标准差
+## 6. 再除标准差
 
 得到：
 
-\[
+$$
 \hat x
 \approx
 [
@@ -319,131 +319,131 @@ x-\mu
 0.447,
 1.342
 ]
-\]
+$$
 
 它的 mean：
 
-\[
+$$
 0
-\]
+$$
 
 variance：
 
-\[
+$$
 1
-\]
+$$
 
 所以“减均值、除标准差”的作用非常明确：
 
-\[
+$$
 \boxed{
 \text{消除共同平移}
 +
 \text{统一整体尺度}
 }
-\]
+$$
 
 ---
 
-# 7. 为什么减均值之后还必须除标准差？
+## 7. 为什么减均值之后还必须除标准差？
 
 这是非常核心的一步。
 
 假设两个 token：
 
-\[
+$$
 x^{(A)}
 =
 [1,2,3,4]
-\]
+$$
 
 另一个：
 
-\[
+$$
 x^{(B)}
 =
 [100,200,300,400]
-\]
+$$
 
 二者 pattern其实完全相同：
 
-\[
+$$
 x^{(B)}
 =
 100x^{(A)}
-\]
+$$
 
 ---
 
 仅减均值：
 
-\[
+$$
 x^{(A)}-\mu_A
 =
 [-1.5,-0.5,0.5,1.5]
-\]
+$$
 
 但：
 
-\[
+$$
 x^{(B)}-\mu_B
 =
 [-150,-50,50,150]
-\]
+$$
 
 虽然它们现在都：
 
-\[
+$$
 mean=0
-\]
+$$
 
 但尺度仍差：
 
-\[
+$$
 100\times
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \text{减均值只消除中心差异，不消除尺度差异}
 }
-\]
+$$
 
 ---
 
-# 8. 除标准差之后
+## 8. 除标准差之后
 
 A：
 
-\[
+$$
 \frac{x^{(A)}-\mu_A}{\sigma_A}
-\]
+$$
 
 B：
 
-\[
+$$
 \frac{x^{(B)}-\mu_B}{\sigma_B}
-\]
+$$
 
 因为：
 
-\[
+$$
 \sigma_B=100\sigma_A
-\]
+$$
 
 所以两者得到同样 normalized pattern：
 
-\[
+$$
 \boxed{
 \hat x^{(A)}
 =
 \hat x^{(B)}
 }
-\]
+$$
 
-忽略 \(\epsilon\)。
+忽略 $\epsilon$。
 
 这就是除标准差的意义：
 
@@ -451,25 +451,25 @@ B：
 
 ---
 
-# 9. 这和 Z-Score 是不是很像？
+## 9. 这和 Z-Score 是不是很像？
 
 是。
 
 经典 z-score：
 
-\[
+$$
 z
 =
 \frac{x-\mu}{\sigma}
-\]
+$$
 
 LayerNorm 的核心 normalization step：
 
-\[
+$$
 \hat x
 =
 \frac{x-\mu}{\sqrt{\sigma^2+\epsilon}}
-\]
+$$
 
 数学形式本质上就是：
 
@@ -479,9 +479,9 @@ LayerNorm 的核心 normalization step：
 
 LayerNorm 后面还有：
 
-\[
+$$
 \gamma,\beta
-\]
+$$
 
 并且：
 
@@ -491,25 +491,25 @@ LayerNorm 后面还有：
 
 ---
 
-# 10. 最重要的纠错：Mean=0、Variance=1 不等于标准正态分布
+## 10. 最重要的纠错：Mean=0、Variance=1 不等于标准正态分布
 
 标准正态分布的定义是：
 
-\[
+$$
 \boxed{
 X\sim\mathcal N(0,1)
 }
-\]
+$$
 
 它不仅规定：
 
-\[
+$$
 E[X]=0
-\]
+$$
 
-\[
+$$
 Var(X)=1
-\]
+$$
 
 还规定：
 
@@ -521,83 +521,83 @@ Var(X)=1
 
 ---
 
-# 11. 一个最直接的反例
+## 11. 一个最直接的反例
 
 考虑四个数：
 
-\[
+$$
 [-1,-1,1,1]
-\]
+$$
 
 均值：
 
-\[
+$$
 0
-\]
+$$
 
 variance：
 
-\[
+$$
 1
-\]
+$$
 
 但这个经验分布只有：
 
-\[
+$$
 -1
-\]
+$$
 
 和：
 
-\[
+$$
 +1
-\]
+$$
 
 两个值。
 
 它显然不是连续的：
 
-\[
+$$
 \mathcal N(0,1)
-\]
+$$
 
 bell curve。
 
 所以：
 
-\[
+$$
 \boxed{
 mean=0,\ variance=1
 \not\Rightarrow
 Gaussian
 }
-\]
+$$
 
 ---
 
-# 12. 标准化和标准正态化不是同一件事
+## 12. 标准化和标准正态化不是同一件事
 
 严格区分：
 
-### Standardization
+#### Standardization
 
 把数据变成：
 
-\[
+$$
 mean\approx0,\qquad variance\approx1
-\]
+$$
 
 ---
 
-### Standard Normal Distribution
+#### Standard Normal Distribution
 
 要求随机变量分布：
 
-\[
+$$
 \boxed{
 \mathcal N(0,1)
 }
-\]
+$$
 
 LayerNorm做的是：
 
@@ -611,35 +611,35 @@ LayerNorm做的是：
 
 ---
 
-# 13. 为什么很多人会误会？
+## 13. 为什么很多人会误会？
 
 因为：
 
-\[
+$$
 \frac{x-\mu}{\sigma}
-\]
+$$
 
 也出现在把 Gaussian random variable：
 
-\[
+$$
 X\sim\mathcal N(\mu,\sigma^2)
-\]
+$$
 
 标准化成：
 
-\[
+$$
 Z\sim\mathcal N(0,1)
-\]
+$$
 
 的推导中。
 
 但是那个结论成立的前提是：
 
-\[
+$$
 \boxed{
 X\text{ 本来就是 Gaussian}
 }
-\]
+$$
 
 因为 Gaussian 在 affine transformation 下仍然是 Gaussian。
 
@@ -649,71 +649,71 @@ LayerNorm中的 hidden features：
 
 所以不能跳到：
 
-\[
+$$
 \mathcal N(0,1)
-\]
+$$
 
 ---
 
-# 14. 一个非常重要的逻辑顺序
+## 14. 一个非常重要的逻辑顺序
 
 如果：
 
-\[
+$$
 X\sim\mathcal N(\mu,\sigma^2)
-\]
+$$
 
 那么：
 
-\[
+$$
 Z=
 \frac{X-\mu}{\sigma}
-\]
+$$
 
 确实：
 
-\[
+$$
 Z\sim\mathcal N(0,1)
-\]
+$$
 
 但：
 
-\[
+$$
 \boxed{
 \frac{x-\mu}{\sigma}
 \text{ 有 mean 0 / variance 1}
 }
-\]
+$$
 
 不代表：
 
-\[
+$$
 \boxed{
 x\text{ 必须是 Gaussian}
 }
-\]
+$$
 
 这是两个完全不同的命题。
 
 ---
 
-# 15. LayerNorm 到底是对谁求均值？
+## 15. LayerNorm 到底是对谁求均值？
 
 现在进入 Transformer最关键的 shape问题。
 
 假设：
 
-\[
+$$
 X
 \in
 \mathbb R^{B\times N\times D}
-\]
+$$
 
 其中：
 
-- \(B\)：batch size；
-- \(N\)：token count；
-- \(D\)：hidden dimension。
+- $B$：batch size；
+- $N$：token count；
+- $D$：hidden dimension。
 
 使用：
 
@@ -723,61 +723,61 @@ nn.LayerNorm(D)
 
 PyTorch会对：
 
-\[
+$$
 \boxed{
 \text{最后一个维度 }D
 }
-\]
+$$
 
 做 normalization。
 
 所以对每个：
 
-\[
+$$
 (b,n)
-\]
+$$
 
 分别有：
 
-\[
+$$
 \mu_{b,n}
 =
 \frac1D
 \sum_{d=1}^{D}
 X_{b,n,d}
-\]
+$$
 
 ---
 
-# 16. 因此一个 Token 一套 Statistics
+## 16. 因此一个 Token 一套 Statistics
 
 例如：
 
-\[
+$$
 B=2
-\]
+$$
 
-\[
+$$
 N=3
-\]
+$$
 
-\[
+$$
 D=4
-\]
+$$
 
 总共有：
 
-\[
+$$
 2\times3=6
-\]
+$$
 
 个 token vectors。
 
 LayerNorm(4) 会为每一个 vector：
 
-\[
+$$
 X_{b,n,:}
-\]
+$$
 
 单独计算：
 
@@ -790,7 +790,7 @@ X_{b,n,:}
 
 ---
 
-# 17. Shape 图
+## 17. Shape 图
 
 输入：
 
@@ -808,16 +808,16 @@ Batch 1:
 
 所以：
 
-\[
+$$
 \boxed{
 LayerNorm(D)
 \text{ 不跨 token、不跨 batch 统计}
 }
-\]
+$$
 
 ---
 
-# 18. 但说“LayerNorm 不混 Feature”也是错的
+## 18. 但说“LayerNorm 不混 Feature”也是错的
 
 注意一个微妙点。
 
@@ -829,35 +829,35 @@ LayerNorm(D)
 
 因为：
 
-\[
+$$
 \mu
 =
 \frac1D
 \sum_jx_j
-\]
+$$
 
 以及：
 
-\[
+$$
 \sigma^2
 =
 \frac1D
 \sum_j(x_j-\mu)^2
-\]
+$$
 
 都依赖所有：
 
-\[
+$$
 D
-\]
+$$
 
 个 features。
 
 所以某一个：
 
-\[
+$$
 x_j
-\]
+$$
 
 改变，
 
@@ -868,27 +868,27 @@ x_j
 
 进而影响其他：
 
-\[
+$$
 \hat x_i
-\]
+$$
 
 ---
 
-# 19. 因此 LayerNorm 的准确描述
+## 19. 因此 LayerNorm 的准确描述
 
-\[
+$$
 \boxed{
 \text{不跨 Tokens}
 }
-\]
+$$
 
 但：
 
-\[
+$$
 \boxed{
 \text{会在一个 Token 的 Feature Dimensions 内耦合统计量}
 }
-\]
+$$
 
 这比简单说：
 
@@ -898,7 +898,7 @@ x_j
 
 ---
 
-# 20. 为什么叫 Layer Normalization？
+## 20. 为什么叫 Layer Normalization？
 
 原始 LayerNorm论文把 BatchNorm的思想“转置”到单个 training case：
 
@@ -916,15 +916,15 @@ LayerNorm：
 
 一个 token 的：
 
-\[
+$$
 D
-\]
+$$
 
 维 hidden state正好构成自然 normalization group。
 
 ---
 
-# 21. 原始 LayerNorm 论文为什么想摆脱 Batch Statistics？
+## 21. 原始 LayerNorm 论文为什么想摆脱 Batch Statistics？
 
 LayerNorm论文指出 BatchNorm依赖：
 
@@ -944,48 +944,48 @@ LayerNorm则对：
 
 因此：
 
-\[
+$$
 \boxed{
 \text{不依赖其他 batch samples}
 }
-\]
+$$
 
 ---
 
-# 22. BatchNorm 到底怎样算？
+## 22. BatchNorm 到底怎样算？
 
 以一个简单 feature vector模型为例。
 
 假设 batch：
 
-\[
+$$
 x^{(1)},x^{(2)},\ldots,x^{(B)}
-\]
+$$
 
 某个 feature dimension：
 
-\[
+$$
 d
-\]
+$$
 
 BatchNorm主要会沿 batch方向收集：
 
-\[
+$$
 x_d^{(1)},
 x_d^{(2)},\ldots,x_d^{(B)}
-\]
+$$
 
 算：
 
-\[
+$$
 \mu_d
-\]
+$$
 
 和：
 
-\[
+$$
 \sigma_d^2
-\]
+$$
 
 所以一个 sample的 normalization：
 
@@ -993,26 +993,26 @@ x_d^{(2)},\ldots,x_d^{(B)}
 
 ---
 
-# 23. LayerNorm 刚好换了方向
+## 23. LayerNorm 刚好换了方向
 
 对于一个 sample / token：
 
-\[
+$$
 x=
 [x_1,\ldots,x_D]
-\]
+$$
 
 LayerNorm沿：
 
-\[
+$$
 D
-\]
+$$
 
 features算：
 
-\[
+$$
 \mu,\sigma^2
-\]
+$$
 
 所以：
 
@@ -1028,11 +1028,11 @@ LayerNorm:
 
 ---
 
-# 24. 一张二维矩阵理解
+## 24. 一张二维矩阵理解
 
 假设：
 
-\[
+$$
 X
 =
 \begin{bmatrix}
@@ -1040,7 +1040,7 @@ x_{11}&x_{12}&x_{13}\\
 x_{21}&x_{22}&x_{23}\\
 x_{31}&x_{32}&x_{33}
 \end{bmatrix}
-\]
+$$
 
 rows：
 
@@ -1076,7 +1076,7 @@ within one sample across features
 
 ---
 
-# 25. Transformer 为什么更偏爱 LayerNorm？
+## 25. Transformer 为什么更偏爱 LayerNorm？
 
 Transformer sequence具有：
 
@@ -1092,15 +1092,15 @@ LayerNorm不依赖：
 
 因此更自然地作用于：
 
-\[
+$$
 \text{每个 token hidden state}
-\]
+$$
 
 这也是它在 Transformer中成为基础组件的重要原因。
 
 ---
 
-# 26. BatchNorm 训练和推理为什么通常不同？
+## 26. BatchNorm 训练和推理为什么通常不同？
 
 标准 BatchNorm训练时使用：
 
@@ -1116,46 +1116,46 @@ Inference时通常不能依赖：
 
 因此：
 
-\[
+$$
 \boxed{
 BatchNorm:
 train\ computation
 \neq
 eval\ computation
 }
-\]
+$$
 
 典型实现如此。
 
 ---
 
-# 27. LayerNorm 为什么 Train/Eval 一样？
+## 27. LayerNorm 为什么 Train/Eval 一样？
 
 LayerNorm每个输入自己就可以计算：
 
-\[
+$$
 \mu(x)
-\]
+$$
 
 和：
 
-\[
+$$
 \sigma^2(x)
-\]
+$$
 
 不需要 population estimate。
 
 所以训练：
 
-\[
+$$
 LN(x)
-\]
+$$
 
 推理：
 
-\[
+$$
 LN(x)
-\]
+$$
 
 都是使用：
 
@@ -1171,7 +1171,7 @@ PyTorch `LayerNorm` 文档也明确说：
 
 ---
 
-# 28. 所以 LayerNorm 没有 Running Mean / Running Variance
+## 28. 所以 LayerNorm 没有 Running Mean / Running Variance
 
 标准：
 
@@ -1196,7 +1196,7 @@ running_var
 
 ---
 
-# 29. `model.eval()` 对 LayerNorm 什么都不改变吗？
+## 29. `model.eval()` 对 LayerNorm 什么都不改变吗？
 
 就 normalization statistics而言：
 
@@ -1214,20 +1214,20 @@ running_var
 
 只是：
 
-\[
+$$
 \boxed{
 LayerNorm\ itself
 \text{ does not switch to running statistics}
 }
-\]
+$$
 
 ---
 
-# 30. \(\epsilon\) 是什么？
+## 30. $\epsilon$ 是什么？
 
 真实公式：
 
-\[
+$$
 \hat x_j
 =
 \frac{
@@ -1235,83 +1235,83 @@ x_j-\mu
 }{
 \sqrt{\sigma^2+\epsilon}
 }
-\]
+$$
 
 为什么不是：
 
-\[
+$$
 \frac{x_j-\mu}{\sigma}
-\]
+$$
 
 ？
 
 因为如果：
 
-\[
+$$
 \sigma^2=0
-\]
+$$
 
 就会除以：
 
-\[
+$$
 0
-\]
+$$
 
 产生数值问题。
 
 ---
 
-# 31. 什么时候 Variance 会等于 0？
+## 31. 什么时候 Variance 会等于 0？
 
 例如：
 
-\[
+$$
 x=[5,5,5,5]
-\]
+$$
 
 均值：
 
-\[
+$$
 \mu=5
-\]
+$$
 
 每一维：
 
-\[
+$$
 x_j-\mu=0
-\]
+$$
 
 所以：
 
-\[
+$$
 \sigma^2=0
-\]
+$$
 
 如果直接：
 
-\[
+$$
 \frac0{0}
-\]
+$$
 
 未定义。
 
 加入：
 
-\[
+$$
 \epsilon>0
-\]
+$$
 
 后：
 
-\[
+$$
 \sqrt{0+\epsilon}
-\]
+$$
 
 非零。
 
 ---
 
-# 32. PyTorch 默认 ε
+## 32. PyTorch 默认 ε
 
 当前 PyTorch：
 
@@ -1324,11 +1324,11 @@ nn.LayerNorm(
 
 所以默认：
 
-\[
+$$
 \boxed{
 \epsilon=10^{-5}
 }
-\]
+$$
 
 ACT代码：
 
@@ -1340,13 +1340,13 @@ nn.LayerNorm(d_model)
 
 因此在对应 PyTorch默认设置下使用：
 
-\[
+$$
 10^{-5}
-\]
+$$
 
 ---
 
-# 33. ε 只是为了避免除 0 吗？
+## 33. ε 只是为了避免除 0 吗？
 
 主要目的是：
 
@@ -1356,15 +1356,15 @@ nn.LayerNorm(d_model)
 
 如果它非常小：
 
-\[
+$$
 \sigma^2\approx0
-\]
+$$
 
 那么：
 
-\[
+$$
 1/\sqrt{\sigma^2}
-\]
+$$
 
 会非常大，
 
@@ -1372,41 +1372,41 @@ nn.LayerNorm(d_model)
 
 加入：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 给 denominator提供下界。
 
 ---
 
-# 34. 一个经常被忽略的数学细节
+## 34. 一个经常被忽略的数学细节
 
 很多教程说 LayerNorm标准化后：
 
-\[
+$$
 variance=1
-\]
+$$
 
 如果没有：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 确实如此。
 
 但实际：
 
-\[
+$$
 \hat x
 =
 \frac{x-\mu}{\sqrt{\sigma^2+\epsilon}}
-\]
+$$
 
 所以：
 
-\[
+$$
 Var(\hat x)
 =
 \frac{
@@ -1414,57 +1414,57 @@ Var(\hat x)
 }{
 \sigma^2+\epsilon
 }
-\]
+$$
 
 因此：
 
-\[
+$$
 \boxed{
 Var(\hat x)<1
 }
-\]
+$$
 
 只要：
 
-\[
+$$
 \epsilon>0
-\]
+$$
 
 且 variance有限。
 
 ---
 
-# 35. 为什么平时仍说“单位方差”？
+## 35. 为什么平时仍说“单位方差”？
 
 因为如果：
 
-\[
+$$
 \sigma^2\gg\epsilon
-\]
+$$
 
 例如：
 
-\[
+$$
 \sigma^2=1
-\]
+$$
 
-\[
+$$
 \epsilon=10^{-5}
-\]
+$$
 
 那么：
 
-\[
+$$
 \frac1{1.00001}
 \approx
 0.99999
-\]
+$$
 
 几乎就是：
 
-\[
+$$
 1
-\]
+$$
 
 所以教学中说：
 
@@ -1476,7 +1476,7 @@ Var(\hat x)<1
 
 ---
 
-# 36. PyTorch 的 Variance 用 N 还是 N-1？
+## 36. PyTorch 的 Variance 用 N 还是 N-1？
 
 当前 PyTorch `LayerNorm` 文档明确写：
 
@@ -1484,7 +1484,7 @@ Var(\hat x)<1
 
 所以：
 
-\[
+$$
 \boxed{
 \sigma^2
 =
@@ -1492,18 +1492,18 @@ Var(\hat x)<1
 \sum_{j=1}^D
 (x_j-\mu)^2
 }
-\]
+$$
 
 不是统计学 sample variance：
 
-\[
+$$
 \frac1{D-1}
 \sum_j(\cdots)
-\]
+$$
 
 ---
 
-# 37. 为什么这里不追求无偏方差估计？
+## 37. 为什么这里不追求无偏方差估计？
 
 LayerNorm的目的不是：
 
@@ -1515,9 +1515,9 @@ LayerNorm的目的不是：
 
 所以使用：
 
-\[
+$$
 1/D
-\]
+$$
 
 非常自然。
 
@@ -1525,28 +1525,28 @@ PyTorch也明确采用这种定义。
 
 ---
 
-# 38. \(\gamma\) 和 \(\beta\) 是什么？
+## 38. $\gamma$ 和 $\beta$ 是什么？
 
 标准化之后：
 
-\[
+$$
 \hat x
-\]
+$$
 
 再做：
 
-\[
+$$
 \boxed{
 y=
 \gamma\odot\hat x+\beta
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 \gamma
-\]
+$$
 
 叫：
 
@@ -1554,9 +1554,9 @@ y=
 - scale；
 - weight；
 
-\[
+$$
 \beta
-\]
+$$
 
 叫：
 
@@ -1567,67 +1567,67 @@ y=
 
 ---
 
-# 39. `LayerNorm(512)` 有多少 γ 和 β？
+## 39. `LayerNorm(512)` 有多少 γ 和 β？
 
 如果：
 
-\[
+$$
 D=512
-\]
+$$
 
 那么：
 
-\[
+$$
 \gamma\in\mathbb R^{512}
-\]
+$$
 
-\[
+$$
 \beta\in\mathbb R^{512}
-\]
+$$
 
 所以 trainable parameters：
 
-\[
+$$
 512+512
 =
 \boxed{
 1024
 }
-\]
+$$
 
 默认初始化通常：
 
-\[
+$$
 \gamma=1
-\]
+$$
 
-\[
+$$
 \beta=0
-\]
+$$
 
 因此刚开始 LayerNorm基本就是纯标准化。
 
 ---
 
-# 40. 为什么标准化完还要让模型重新 Scale 和 Shift？
+## 40. 为什么标准化完还要让模型重新 Scale 和 Shift？
 
 这看起来很反直觉。
 
 我们刚刚费力把 representation变成：
 
-\[
+$$
 mean\approx0
-\]
+$$
 
-\[
+$$
 variance\approx1
-\]
+$$
 
 然后又：
 
-\[
+$$
 \gamma\hat x+\beta
-\]
+$$
 
 把尺度和中心改掉。
 
@@ -1637,7 +1637,7 @@ variance\approx1
 
 ---
 
-# 41. Normalization 的目标不是“永远强制输出只能均值 0 方差 1”
+## 41. Normalization 的目标不是“永远强制输出只能均值 0 方差 1”
 
 真正目的更接近：
 
@@ -1645,9 +1645,9 @@ variance\approx1
 
 然后：
 
-\[
+$$
 \gamma,\beta
-\]
+$$
 
 允许模型学习：
 
@@ -1655,45 +1655,45 @@ variance\approx1
 
 所以：
 
-\[
+$$
 \boxed{
 \text{normalize first}
 \rightarrow
 \text{learn useful affine calibration}
 }
-\]
+$$
 
 ---
 
-# 42. 如果 γ=σ、β=μ，不就能恢复原数据？
+## 42. 如果 γ=σ、β=μ，不就能恢复原数据？
 
 对于某个固定 sample，
 
 如果：
 
-\[
+$$
 \gamma,\beta
-\]
+$$
 
 能根据当前 sample动态设置成其：
 
-\[
+$$
 \sigma,\mu
-\]
+$$
 
 理论上可以恢复。
 
 但 LayerNorm中的：
 
-\[
+$$
 \gamma,\beta
-\]
+$$
 
 是：
 
 > 全局 learned parameters，
 
-不是每个 sample自己的 \(\mu,\sigma\)。
+不是每个 sample自己的 $\mu,\sigma$。
 
 所以不能简单说：
 
@@ -1703,15 +1703,15 @@ variance\approx1
 
 ---
 
-# 43. γ 和 β 是每个 Token 单独的吗？
+## 43. γ 和 β 是每个 Token 单独的吗？
 
 不是。
 
 同一个 LayerNorm module里的：
 
-\[
+$$
 \gamma_d,\beta_d
-\]
+$$
 
 会共享给：
 
@@ -1726,23 +1726,23 @@ nn.LayerNorm(512)
 
 有一套：
 
-\[
+$$
 512
-\]
+$$
 
 维 gamma/beta。
 
 不是：
 
-\[
+$$
 1202\times512
-\]
+$$
 
 套参数。
 
 ---
 
-# 44. 为什么这和 FFN 的 Position-Wise 参数共享很像？
+## 44. 为什么这和 FFN 的 Position-Wise 参数共享很像？
 
 同样体现：
 
@@ -1754,9 +1754,9 @@ LayerNorm statistics：
 
 但 learned：
 
-\[
+$$
 \gamma,\beta
-\]
+$$
 
 在 positions之间共享。
 
@@ -1772,13 +1772,13 @@ shared across tokens
 
 ---
 
-# 45. 一个非常重要的区别
+## 45. 一个非常重要的区别
 
 LayerNorm中的：
 
-\[
+$$
 \mu,\sigma^2
-\]
+$$
 
 不是 trainable parameters。
 
@@ -1788,9 +1788,9 @@ LayerNorm中的：
 
 而：
 
-\[
+$$
 \gamma,\beta
-\]
+$$
 
 才是：
 
@@ -1800,27 +1800,27 @@ LayerNorm中的：
 
 ---
 
-# 46. Backprop 会经过 Mean 和 Variance 吗？
+## 46. Backprop 会经过 Mean 和 Variance 吗？
 
 会。
 
-\[
+$$
 \mu(x)
-\]
+$$
 
 和：
 
-\[
+$$
 \sigma^2(x)
-\]
+$$
 
 都是 input的 differentiable functions。
 
 所以 gradient不是简单：
 
-\[
+$$
 1/\sigma
-\]
+$$
 
 乘回来。
 
@@ -1833,34 +1833,34 @@ LayerNorm中的：
 
 ---
 
-# 47. LayerNorm 的 Jacobian
+## 47. LayerNorm 的 Jacobian
 
 对一个 token：
 
-\[
+$$
 x\in\mathbb R^D
-\]
+$$
 
 定义：
 
-\[
+$$
 \bar x_i=x_i-\mu
-\]
+$$
 
-\[
+$$
 s=
 \sqrt{
 \sigma^2+\epsilon
 }
-\]
+$$
 
-\[
+$$
 \hat x_i=\frac{\bar x_i}{s}
-\]
+$$
 
 则：
 
-\[
+$$
 \boxed{
 \frac{
 \partial \hat x_i
@@ -1878,44 +1878,44 @@ s=
 D s^3
 }
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 \delta_{ij}
-\]
+$$
 
 是 Kronecker delta。
 
 ---
 
-# 48. 这个公式告诉我们什么？
+## 48. 这个公式告诉我们什么？
 
 即使：
 
-\[
+$$
 i\neq j
-\]
+$$
 
 通常：
 
-\[
+$$
 \frac{
 \partial\hat x_i
 }{
 \partial x_j
 }
 \neq0
-\]
+$$
 
 为什么？
 
 因为：
 
-\[
+$$
 x_j
-\]
+$$
 
 会改变：
 
@@ -1924,30 +1924,30 @@ x_j
 
 于是影响：
 
-\[
+$$
 \hat x_i
-\]
+$$
 
 所以再次强调：
 
-\[
+$$
 \boxed{
 LayerNorm不跨 Token，
 但会耦合一个 Token 内的 Features
 }
-\]
+$$
 
 ---
 
-# 49. 加上 γ 后
+## 49. 加上 γ 后
 
-\[
+$$
 y_i=\gamma_i\hat x_i+\beta_i
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \frac{
 \partial y_i
@@ -1968,7 +1968,7 @@ Ds^3
 }
 \right]
 }
-\]
+$$
 
 这就是为什么在上一篇 Residual文章里说：
 
@@ -1976,109 +1976,109 @@ Ds^3
 
 ---
 
-# 50. LayerNorm 对整体平移有什么性质？
+## 50. LayerNorm 对整体平移有什么性质？
 
 假设对一个 token所有 features都加同一个常数：
 
-\[
+$$
 x'=x+c\mathbf1
-\]
+$$
 
 新的均值：
 
-\[
+$$
 \mu'=\mu+c
-\]
+$$
 
 所以：
 
-\[
+$$
 x'-\mu'
 =
 x+c-(\mu+c)
 =
 x-\mu
-\]
+$$
 
 variance也不变。
 
 因此：
 
-\[
+$$
 \boxed{
 LN\text{ 的标准化部分对共同 feature shift 不敏感}
 }
-\]
+$$
 
 ---
 
-# 51. 一个例子
+## 51. 一个例子
 
-\[
+$$
 x=[1,2,3,4]
-\]
+$$
 
 和：
 
-\[
+$$
 x'=[101,102,103,104]
-\]
+$$
 
 虽然绝对值差：
 
-\[
+$$
 100
-\]
+$$
 
 但减各自 mean之后：
 
-\[
+$$
 [-1.5,-0.5,0.5,1.5]
-\]
+$$
 
 完全相同。
 
 所以标准化结果相同，
 
-忽略后续共享 \(\gamma,\beta\)。
+忽略后续共享 $\gamma,\beta$。
 
 ---
 
-# 52. LayerNorm 对整体 Scale 又怎样？
+## 52. LayerNorm 对整体 Scale 又怎样？
 
 假设：
 
-\[
+$$
 x'=ax
-\]
+$$
 
 均值：
 
-\[
+$$
 \mu'=a\mu
-\]
+$$
 
 variance：
 
-\[
+$$
 \sigma'^2=a^2\sigma^2
-\]
+$$
 
 如果：
 
-\[
+$$
 \epsilon=0
-\]
+$$
 
 且：
 
-\[
+$$
 a>0
-\]
+$$
 
 则：
 
-\[
+$$
 \frac{
 ax-a\mu
 }{
@@ -2086,27 +2086,27 @@ ax-a\mu
 }
 =
 \frac{x-\mu}{\sigma}
-\]
+$$
 
 所以 positive common scale被消除。
 
 ---
 
-# 53. 如果 a<0 呢？
+## 53. 如果 a<0 呢？
 
 则：
 
-\[
+$$
 |a|=-a
-\]
+$$
 
 所以 normalized representation整体翻号：
 
-\[
+$$
 \hat x'
 =
 -\hat x
-\]
+$$
 
 因此不是对 negative scaling完全 invariant。
 
@@ -2116,11 +2116,11 @@ ax-a\mu
 
 ---
 
-# 54. ε 会破坏精确 Scale Invariance
+## 54. ε 会破坏精确 Scale Invariance
 
 实际：
 
-\[
+$$
 \frac{
 a(x-\mu)
 }{
@@ -2128,55 +2128,55 @@ a(x-\mu)
 a^2\sigma^2+\epsilon
 }
 }
-\]
+$$
 
 不能总是严格化成：
 
-\[
+$$
 \frac{x-\mu}{\sqrt{\sigma^2+\epsilon}}
-\]
+$$
 
 因为：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 没有随：
 
-\[
+$$
 a^2
-\]
+$$
 
 缩放。
 
 当：
 
-\[
+$$
 \sigma^2\gg\epsilon
-\]
+$$
 
 时差异很小。
 
 所以严格写：
 
-\[
+$$
 \boxed{
 \text{approximately scale-invariant when }\epsilon\text{ is negligible}
 }
-\]
+$$
 
 ---
 
-# 55. LayerNorm 会丢失信息吗？
+## 55. LayerNorm 会丢失信息吗？
 
 纯 normalization：
 
-\[
+$$
 x
 \rightarrow
 \hat x
-\]
+$$
 
 会丢掉至少一些关于：
 
@@ -2187,21 +2187,21 @@ x
 
 因为很多不同：
 
-\[
+$$
 x
-\]
+$$
 
 可能映射到同一个：
 
-\[
+$$
 \hat x
-\]
+$$
 
 所以 normalization不是一般意义下可逆映射。
 
 ---
 
-# 56. 那为什么网络敢丢这些信息？
+## 56. 那为什么网络敢丢这些信息？
 
 因为 architecture认为：
 
@@ -2210,7 +2210,7 @@ x
 并且：
 
 - residual structure；
-- learned \(\gamma,\beta\)；
+- learned $\gamma,\beta$；
 - surrounding layers；
 
 共同适应这一 normalization。
@@ -2223,7 +2223,7 @@ x
 
 ---
 
-# 57. LayerNorm 为什么能稳定训练？
+## 57. LayerNorm 为什么能稳定训练？
 
 这里需要谨慎。
 
@@ -2243,23 +2243,23 @@ LayerNorm原论文的核心目标是：
 
 更准确是：
 
-\[
+$$
 \boxed{
 \text{它重参数化并控制中间表示的统计尺度，从而改变优化动态}
 }
-\]
+$$
 
 ---
 
-# 58. LayerNorm 会不会保证每层数值绝不爆炸？
+## 58. LayerNorm 会不会保证每层数值绝不爆炸？
 
 不保证。
 
 因为最终还有：
 
-\[
+$$
 \gamma,\beta
-\]
+$$
 
 网络也可能学习大权重。
 
@@ -2279,18 +2279,18 @@ Normalization显著帮助训练稳定，
 
 ---
 
-# 59. 为什么 Transformer 原论文把 LayerNorm 放 Residual 后？
+## 59. 为什么 Transformer 原论文把 LayerNorm 放 Residual 后？
 
 原始 2017 Transformer规定：
 
-\[
+$$
 \boxed{
 LayerNorm(
 x+
 Sublayer(x)
 )
 }
-\]
+$$
 
 即：
 
@@ -2304,15 +2304,15 @@ Decoder每层三次。
 
 ---
 
-# 60. Original Encoder Post-LN
+## 60. Original Encoder Post-LN
 
 第一 sub-layer：
 
-\[
+$$
 A=MHA(x)
-\]
+$$
 
-\[
+$$
 \boxed{
 h=
 LN_1(
@@ -2320,15 +2320,15 @@ x+
 Dropout(A)
 )
 }
-\]
+$$
 
 第二：
 
-\[
+$$
 F=FFN(h)
-\]
+$$
 
-\[
+$$
 \boxed{
 y=
 LN_2(
@@ -2336,7 +2336,7 @@ h+
 Dropout(F)
 )
 }
-\]
+$$
 
 所以每次 residual update后：
 
@@ -2344,11 +2344,11 @@ Dropout(F)
 
 ---
 
-# 61. Original Decoder Post-LN
+## 61. Original Decoder Post-LN
 
 依次：
 
-\[
+$$
 \boxed{
 h_1
 =
@@ -2357,9 +2357,9 @@ x+
 SelfAttention(x)
 )
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 h_2
 =
@@ -2368,9 +2368,9 @@ h_1+
 CrossAttention(h_1,M)
 )
 }
-\]
+$$
 
-\[
+$$
 \boxed{
 h_3
 =
@@ -2379,13 +2379,13 @@ h_2+
 FFN(h_2)
 )
 }
-\]
+$$
 
 省略 dropout。
 
 ---
 
-# 62. 为什么后来出现 Pre-LN？
+## 62. 为什么后来出现 Pre-LN？
 
 后续研究发现 LayerNorm placement：
 
@@ -2393,7 +2393,7 @@ FFN(h_2)
 
 Pre-LN：
 
-\[
+$$
 \boxed{
 y=
 x+
@@ -2401,55 +2401,55 @@ F(
 LN(x)
 )
 }
-\]
+$$
 
 把 normalization移到 sub-layer之前。
 
 ---
 
-# 63. Post-LN 和 Pre-LN 再做一次严格比较
+## 63. Post-LN 和 Pre-LN 再做一次严格比较
 
-### Post-LN
+#### Post-LN
 
-\[
+$$
 \boxed{
 y=LN(x+F(x))
 }
-\]
+$$
 
-### Pre-LN
+#### Pre-LN
 
-\[
+$$
 \boxed{
 y=x+F(LN(x))
 }
-\]
+$$
 
 两者绝不等价。
 
 因为：
 
-\[
+$$
 LN
-\]
+$$
 
 不是固定 linear function。
 
 ---
 
-# 64. Gradient Path 的差异
+## 64. Gradient Path 的差异
 
 Post-LN：
 
 设：
 
-\[
+$$
 z=x+F(x)
-\]
+$$
 
 则：
 
-\[
+$$
 \boxed{
 \frac{\partial y}{\partial x}
 =
@@ -2458,25 +2458,25 @@ J_{LN}(z)
 I+J_F
 )
 }
-\]
+$$
 
 所以 shortcut gradient仍要经过：
 
-\[
+$$
 J_{LN}
-\]
+$$
 
 ---
 
 Pre-LN：
 
-\[
+$$
 y=x+F(LN(x))
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \frac{\partial y}{\partial x}
 =
@@ -2484,19 +2484,19 @@ I+
 J_F
 J_{LN}
 }
-\]
+$$
 
 identity term：
 
-\[
+$$
 I
-\]
+$$
 
 直接位于最外层。
 
 ---
 
-# 65. 为什么这个 Difference 很重要？
+## 65. 为什么这个 Difference 很重要？
 
 Xiong 等 2020 对 LayerNorm placement进行了理论分析。
 
@@ -2512,17 +2512,17 @@ Xiong 等 2020 对 LayerNorm placement进行了理论分析。
 
 这说明：
 
-\[
+$$
 \boxed{
 \text{LayerNorm不只是“数值标准化位置随便放哪里都一样”}
 }
-\]
+$$
 
 它直接改变 optimization path。
 
 ---
 
-# 66. Pre-LN 一定比 Post-LN 更好吗？
+## 66. Pre-LN 一定比 Post-LN 更好吗？
 
 不能这么绝对。
 
@@ -2546,19 +2546,19 @@ Pre-LN在深层 optimization上有很多实践优势，
 
 ---
 
-# 67. 但历史事实必须记住
+## 67. 但历史事实必须记住
 
-\[
+$$
 \boxed{
 \text{Original Transformer = Post-LN}
 }
-\]
+$$
 
 不是：
 
-\[
+$$
 Pre\text{-}LN
-\]
+$$
 
 很多现代代码默认已经不同，
 
@@ -2566,15 +2566,15 @@ Pre\text{-}LN
 
 ---
 
-# 68. LayerNorm 和 RMSNorm 有什么区别？
+## 68. LayerNorm 和 RMSNorm 有什么区别？
 
 LayerNorm：
 
-\[
+$$
 \boxed{
 \frac{x-\mu}{\sqrt{\sigma^2+\epsilon}}
 }
-\]
+$$
 
 既：
 
@@ -2593,22 +2593,22 @@ RMSNorm在现代 LLM里很常见，
 
 但原始 Transformer和 ACT canonical code用的是：
 
-\[
+$$
 \boxed{
 LayerNorm}
-\]
+$$
 
 ---
 
-# 69. 为什么先不把 RMSNorm混进主线？
+## 69. 为什么先不把 RMSNorm混进主线？
 
 因为我们现在建立 canonical Transformer。
 
 先理解：
 
-\[
+$$
 \mu,\sigma^2,\gamma,\beta
-\]
+$$
 
 的 LayerNorm。
 
@@ -2620,13 +2620,13 @@ LayerNorm}
 
 ---
 
-# 70. ACT 中到底有几个 LayerNorm？
+## 70. ACT 中到底有几个 LayerNorm？
 
 Policy Encoder每个 layer：
 
-\[
+$$
 2
-\]
+$$
 
 个：
 
@@ -2637,9 +2637,9 @@ self.norm2
 
 Policy Decoder每个 layer：
 
-\[
+$$
 3
-\]
+$$
 
 个：
 
@@ -2667,7 +2667,7 @@ encoder_norm
 
 ---
 
-# 71. ACT Encoder 的 nn.LayerNorm(512)
+## 71. ACT Encoder 的 nn.LayerNorm(512)
 
 官方：
 
@@ -2681,9 +2681,9 @@ self.norm2 =
 
 其中：
 
-\[
+$$
 d_{\text{model}}=512
-\]
+$$
 
 所以：
 
@@ -2693,21 +2693,21 @@ nn.LayerNorm(512)
 
 ---
 
-# 72. ACT Tensor 常是 [S,B,E]
+## 72. ACT Tensor 常是 [S,B,E]
 
 PyTorch `MultiheadAttention` 默认 convention通常是：
 
-\[
+$$
 [S,B,E]
-\]
+$$
 
 例如 Policy Encoder：
 
-\[
+$$
 \boxed{
 [1202,B,512]
 }
-\]
+$$
 
 这里：
 
@@ -2721,37 +2721,37 @@ PyTorch `MultiheadAttention` 默认 convention通常是：
 
 所以：
 
-\[
+$$
 \boxed{
 \text{对每个 }(sequence\ position,batch\ item)
 \text{ 的 512 features 单独 normalize}
 }
-\]
+$$
 
 ---
 
-# 73. 它绝不会沿 1202 算 Mean
+## 73. 它绝不会沿 1202 算 Mean
 
 这是一个非常重要的 ACT shape理解。
 
 对于：
 
-\[
+$$
 X\in\mathbb R^{1202\times B\times512}
-\]
+$$
 
 LayerNorm不是：
 
-\[
+$$
 \mu
 =
 \frac1{1202}
 \sum_{s}X_s
-\]
+$$
 
 而是：
 
-\[
+$$
 \boxed{
 \mu_{s,b}
 =
@@ -2759,7 +2759,7 @@ LayerNorm不是：
 \sum_{d=1}^{512}
 X_{s,b,d}
 }
-\]
+$$
 
 所以：
 
@@ -2767,7 +2767,7 @@ X_{s,b,d}
 
 ---
 
-# 74. joint token 和 visual token 也不共享 Statistics
+## 74. joint token 和 visual token 也不共享 Statistics
 
 虽然它们在同一个 sequence：
 
@@ -2781,9 +2781,9 @@ visual₁₂₀₀
 
 但 LayerNorm对每一个 token分别计算：
 
-\[
+$$
 \mu,\sigma^2
-\]
+$$
 
 所以：
 
@@ -2793,47 +2793,47 @@ visual₁₂₀₀
 
 它们只共享：
 
-\[
+$$
 \gamma,\beta
-\]
+$$
 
 parameters。
 
 ---
 
-# 75. ACT Decoder 同理
+## 75. ACT Decoder 同理
 
 Decoder hidden：
 
-\[
+$$
 [k,B,512]
-\]
+$$
 
 例如：
 
-\[
+$$
 k=100
-\]
+$$
 
 LayerNorm：
 
-\[
+$$
 \boxed{
 \text{100 个 action slots各自独立对 512 features normalize}
 }
-\]
+$$
 
 不会把 100 个 future action slots混在一起求 mean。
 
 ---
 
-# 76. 这意味着 LayerNorm 不会直接做 Action Smoothing
+## 76. 这意味着 LayerNorm 不会直接做 Action Smoothing
 
 因为它不跨：
 
-\[
+$$
 k
-\]
+$$
 
 这个时间/slot axis。
 
@@ -2845,29 +2845,29 @@ Action slots之间的 interaction发生在：
 
 所以：
 
-\[
+$$
 \boxed{
 LayerNorm
 \neq
 Temporal smoothing
 }
-\]
+$$
 
 ---
 
-# 77. CVAE Encoder 也是同样
+## 77. CVAE Encoder 也是同样
 
 CVAE sequence例如：
 
-\[
+$$
 [CLS],qpos,a_0,\ldots,a_{99}
-\]
+$$
 
 shape内部通常最终整理为：
 
-\[
+$$
 [102,B,512]
-\]
+$$
 
 LayerNorm对：
 
@@ -2879,66 +2879,66 @@ LayerNorm对：
 
 所以 `[CLS]`统计量不会和：
 
-\[
+$$
 a_{37}
-\]
+$$
 
 混起来。
 
 ---
 
-# 78. 为什么不同 Token 可以共享同一 γ、β？
+## 78. 为什么不同 Token 可以共享同一 γ、β？
 
 因为所有 token已经被投影到：
 
-\[
+$$
 512
-\]
+$$
 
 维统一 hidden space。
 
 模型学习：
 
-> feature dimension \(d\) 在这个 hidden space中应该有什么全局 scale / offset。
+> feature dimension $d$ 在这个 hidden space中应该有什么全局 scale / offset。
 
 而每个 token自己的 activation中心和尺度：
 
-> 由它自己的 \(\mu,\sigma^2\) 处理。
+> 由它自己的 $\mu,\sigma^2$ 处理。
 
 ---
 
-# 79. γ/β 会不会破坏 Token Independence？
+## 79. γ/β 会不会破坏 Token Independence？
 
 不会跨 token。
 
-\[
+$$
 y_{s,b,d}
 =
 \gamma_d
 \hat x_{s,b,d}
 +
 \beta_d
-\]
+$$
 
 只用当前：
 
-\[
+$$
 s,b,d
-\]
+$$
 
 normalized value和共享 parameter。
 
 不会读取其他：
 
-\[
+$$
 s'
-\]
+$$
 
 token的 activation。
 
 ---
 
-# 80. ACT 当前默认 Post-LN
+## 80. ACT 当前默认 Post-LN
 
 官方 `TransformerEncoderLayer.forward(...)`：
 
@@ -2957,15 +2957,15 @@ normalize_before=False
 
 因此 canonical released default：
 
-\[
+$$
 \boxed{
 Post\text{-}LN
 }
-\]
+$$
 
 ---
 
-# 81. ACT Encoder Post-LN Code
+## 81. ACT Encoder Post-LN Code
 
 核心：
 
@@ -3003,60 +3003,60 @@ src =
 
 完全对应：
 
-\[
+$$
 \boxed{
 LN(
 x+
 Sublayer(x)
 )
 }
-\]
+$$
 
 ---
 
-# 82. ACT Decoder Post-LN Code
+## 82. ACT Decoder Post-LN Code
 
 Self-Attention：
 
-\[
+$$
 tgt
 \rightarrow
 tgt+self\_attn
 \rightarrow
 norm1
-\]
+$$
 
 Cross-Attention：
 
-\[
+$$
 tgt
 \rightarrow
 tgt+cross\_attn
 \rightarrow
 norm2
-\]
+$$
 
 FFN：
 
-\[
+$$
 tgt
 \rightarrow
 tgt+ffn
 \rightarrow
 norm3
-\]
+$$
 
 所以一个 Decoder layer对每个 action slot做：
 
-\[
+$$
 3
-\]
+$$
 
 次 LayerNorm。
 
 ---
 
-# 83. Pre-LN Code 又是什么？
+## 83. Pre-LN Code 又是什么？
 
 Encoder：
 
@@ -3088,7 +3088,7 @@ src =
 
 所以：
 
-\[
+$$
 \boxed{
 LN
 \rightarrow
@@ -3096,11 +3096,11 @@ Sublayer
 \rightarrow
 Residual Add
 }
-\]
+$$
 
 ---
 
-# 84. ACT 默认 LayerNorm ε 是多少？
+## 84. ACT 默认 LayerNorm ε 是多少？
 
 ACT调用：
 
@@ -3116,31 +3116,31 @@ eps
 
 PyTorch当前默认：
 
-\[
+$$
 \boxed{
 eps=10^{-5}
 }
-\]
+$$
 
 因此一个 ACT token：
 
-\[
+$$
 x\in\mathbb R^{512}
-\]
+$$
 
 实际标准化分母：
 
-\[
+$$
 \boxed{
 \sqrt{
 \sigma^2+10^{-5}
 }
 }
-\]
+$$
 
 ---
 
-# 85. ACT LayerNorm 的 Variance Estimator
+## 85. ACT LayerNorm 的 Variance Estimator
 
 PyTorch文档：
 
@@ -3148,7 +3148,7 @@ PyTorch文档：
 
 所以对 512 features：
 
-\[
+$$
 \boxed{
 \sigma^2
 =
@@ -3156,17 +3156,17 @@ PyTorch文档：
 \sum_{d=1}^{512}
 (x_d-\mu)^2
 }
-\]
+$$
 
 不是：
 
-\[
+$$
 1/511
-\]
+$$
 
 ---
 
-# 86. 这和训练数据统计量完全不同
+## 86. 这和训练数据统计量完全不同
 
 ACT还会对 qpos/actions做 dataset normalization。
 
@@ -3189,9 +3189,9 @@ LayerNorm则作用于：
 
 ---
 
-# 87. Dataset Normalization vs LayerNorm
+## 87. Dataset Normalization vs LayerNorm
 
-### Dataset Normalization
+#### Dataset Normalization
 
 统计量可能来自：
 
@@ -3199,43 +3199,43 @@ LayerNorm则作用于：
 
 例如：
 
-\[
+$$
 q_{norm}
 =
 \frac{q-\mu_{dataset}}{\sigma_{dataset}}
-\]
+$$
 
 ---
 
-### LayerNorm
+#### LayerNorm
 
 每次 forward，
 
 对当前 token：
 
-\[
+$$
 x_{s,b,:}
-\]
+$$
 
 自己实时算：
 
-\[
+$$
 \mu_{s,b},\sigma^2_{s,b}
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \text{data preprocessing normalization}
 \neq
 \text{neural LayerNorm}
 }
-\]
+$$
 
 ---
 
-# 88. 两种标准化为什么可以同时存在？
+## 88. 两种标准化为什么可以同时存在？
 
 因为它们稳定的是不同层级。
 
@@ -3257,13 +3257,13 @@ LayerNorm：
 
 ---
 
-# 89. ImageNet Normalize 又是第三件事
+## 89. ImageNet Normalize 又是第三件事
 
 ACT image输入还会做类似：
 
-\[
+$$
 (image-\mu_{RGB})/\sigma_{RGB}
-\]
+$$
 
 那是为了：
 
@@ -3279,7 +3279,7 @@ ACT image输入还会做类似：
 
 ---
 
-# 90. 为什么这三个都叫 Normalization 很烦？
+## 90. 为什么这三个都叫 Normalization 很烦？
 
 因为“normalization”在机器学习里是一个宽泛词，
 
@@ -3298,31 +3298,31 @@ ACT image输入还会做类似：
 
 一定问：
 
-\[
+$$
 \boxed{
 \text{对谁？沿哪个轴？统计量从哪里来？什么时候计算？}
 }
-\]
+$$
 
 比背名字更可靠。
 
 ---
 
-# 91. LayerNorm 的四个必问问题
+## 91. LayerNorm 的四个必问问题
 
 以后看到任意 LayerNorm实现，问：
 
-### 1. Normalized shape 是什么？
+#### 1. Normalized shape 是什么？
 
 例如：
 
-\[
+$$
 512
-\]
+$$
 
 ---
 
-### 2. Statistics 沿哪些 axis 算？
+#### 2. Statistics 沿哪些 axis 算？
 
 PyTorch：
 
@@ -3330,7 +3330,7 @@ PyTorch：
 
 ---
 
-### 3. γ/β 是否 learned？
+#### 3. γ/β 是否 learned？
 
 PyTorch默认：
 
@@ -3338,7 +3338,7 @@ PyTorch默认：
 
 ---
 
-### 4. Norm 在 Residual 前还是后？
+#### 4. Norm 在 Residual 前还是后？
 
 决定：
 
@@ -3346,7 +3346,7 @@ PyTorch默认：
 
 ---
 
-# 92. 为什么 LayerNorm 对 Batch Size=1 也能正常工作？
+## 92. 为什么 LayerNorm 对 Batch Size=1 也能正常工作？
 
 因为 statistics不依赖：
 
@@ -3354,21 +3354,21 @@ PyTorch默认：
 
 即使：
 
-\[
+$$
 B=1
-\]
+$$
 
 每个 token仍然有：
 
-\[
+$$
 512
-\]
+$$
 
 个 features可以算：
 
-\[
+$$
 \mu,\sigma^2
-\]
+$$
 
 所以 LayerNorm天然适合：
 
@@ -3378,13 +3378,13 @@ B=1
 
 ---
 
-# 93. 这对 Robotics 很自然
+## 93. 这对 Robotics 很自然
 
 机器人 inference时通常可能一次处理：
 
-\[
+$$
 B=1
-\]
+$$
 
 当前 observation。
 
@@ -3398,21 +3398,21 @@ LayerNorm完全不需要这种 batch context。
 
 因此 ACT推理时：
 
-\[
+$$
 B=1
-\]
+$$
 
 也没有问题。
 
 ---
 
-# 94. LayerNorm 对 Sequence Length 变化敏感吗？
+## 94. LayerNorm 对 Sequence Length 变化敏感吗？
 
 `LayerNorm(512)`不关心：
 
-\[
+$$
 N
-\]
+$$
 
 是多少。
 
@@ -3422,17 +3422,17 @@ N
 
 所以理论上：
 
-\[
+$$
 N=10
-\]
+$$
 
-\[
+$$
 N=100
-\]
+$$
 
-\[
+$$
 N=1202
-\]
+$$
 
 同一个 LayerNorm module都可以处理。
 
@@ -3440,7 +3440,7 @@ N=1202
 
 ---
 
-# 95. 为什么 LayerNorm 不需要知道哪个 Token 是 Padding？
+## 95. 为什么 LayerNorm 不需要知道哪个 Token 是 Padding？
 
 因为它对每个 token自己算。
 
@@ -3454,17 +3454,17 @@ PAD token可以被 normalize，
 
 所以：
 
-\[
+$$
 \boxed{
 PaddingMask
 \neq
 LayerNorm
 }
-\]
+$$
 
 ---
 
-# 96. 如果 PAD Token经过 LayerNorm变成非零，会有问题吗？
+## 96. 如果 PAD Token经过 LayerNorm变成非零，会有问题吗？
 
 只要 Attention / loss正确 mask，
 
@@ -3480,23 +3480,23 @@ LayerNorm会处理它自己，
 
 ---
 
-# 97. LayerNorm 会不会改变 Attention Scores？
+## 97. LayerNorm 会不会改变 Attention Scores？
 
 会，间接取决于 architecture。
 
 Pre-LN中：
 
-\[
+$$
 LN(x)
-\]
+$$
 
 直接作为 Attention输入，
 
 因此直接影响：
 
-\[
+$$
 Q,K,V
-\]
+$$
 
 Post-LN中：
 
@@ -3510,13 +3510,13 @@ LayerNorm都会影响 subsequent Q/K/V geometry。
 
 ---
 
-# 98. 为什么 Scale 对 Dot Product Attention 很重要？
+## 98. 为什么 Scale 对 Dot Product Attention 很重要？
 
 Attention score：
 
-\[
+$$
 q^\top k
-\]
+$$
 
 会受：
 
@@ -3541,19 +3541,19 @@ Linear projections和 learned gamma会改变它们。
 
 ---
 
-# 99. LayerNorm 与 Attention 的 \(\sqrt{d_k}\) Scaling 是同一件事吗？
+## 99. LayerNorm 与 Attention 的 $\sqrt{d_k}$ Scaling 是同一件事吗？
 
 不是。
 
-\[
+$$
 1/\sqrt{d_k}
-\]
+$$
 
 是 Scaled Dot-Product Attention中对：
 
-\[
+$$
 q^\top k
-\]
+$$
 
 logit magnitude的维度缩放。
 
@@ -3567,71 +3567,71 @@ LayerNorm：
 
 ---
 
-# 100. LayerNorm 会不会让所有 Token 的 Norm 一样？
+## 100. LayerNorm 会不会让所有 Token 的 Norm 一样？
 
 在纯标准化阶段，
 
 如果：
 
-\[
+$$
 \epsilon=0
-\]
+$$
 
 且 variance按：
 
-\[
+$$
 1/D
-\]
+$$
 
 计算，
 
 则：
 
-\[
+$$
 \frac1D
 \sum_d
 \hat x_d^2
 =
 1
-\]
+$$
 
 且 mean 0，
 
 所以：
 
-\[
+$$
 \|\hat x\|_2^2=D
-\]
+$$
 
 也就是 norm：
 
-\[
+$$
 \sqrt D
-\]
+$$
 
 相同。
 
 ---
 
-# 101. 但真实 LayerNorm 最终不保证相同 Norm
+## 101. 但真实 LayerNorm 最终不保证相同 Norm
 
 因为：
 
-1. \(\epsilon>0\)；
+1. $\epsilon>0$；
 2. 每维有不同：
-   \[
+   $$
    \gamma_d
-   \]
+   $$
 3. 加：
-   \[
+   $$
    \beta_d
-   \]
+   $$
 
 所以最终：
 
-\[
+$$
 y
-\]
+$$
 
 的 Euclidean norm可以随 token变化。
 
@@ -3641,26 +3641,26 @@ y
 
 ---
 
-# 102. LayerNorm 的 Standardized Vector 有什么约束？
+## 102. LayerNorm 的 Standardized Vector 有什么约束？
 
-忽略 \(\epsilon\)：
+忽略 $\epsilon$：
 
-\[
+$$
 \sum_d\hat x_d=0
-\]
+$$
 
 并且：
 
-\[
+$$
 \frac1D
 \sum_d\hat x_d^2=1
-\]
+$$
 
 所以：
 
-\[
+$$
 \sum_d\hat x_d^2=D
-\]
+$$
 
 即 standardized vector位于：
 
@@ -3673,35 +3673,35 @@ y
 
 ---
 
-# 103. 为什么 Mean=0 意味着和 Ones Vector 正交？
+## 103. 为什么 Mean=0 意味着和 Ones Vector 正交？
 
 定义：
 
-\[
+$$
 \mathbf1=[1,\ldots,1]
-\]
+$$
 
 则：
 
-\[
+$$
 \hat x^\top\mathbf1
 =
 \sum_d\hat x_d
-\]
+$$
 
 mean 0意味着：
 
-\[
+$$
 \sum_d\hat x_d=0
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \hat x\perp\mathbf1
 }
-\]
+$$
 
 LayerNorm的 centering实际上去掉了：
 
@@ -3709,19 +3709,19 @@ LayerNorm的 centering实际上去掉了：
 
 ---
 
-# 104. 除标准差的几何作用
+## 104. 除标准差的几何作用
 
 center后 vector：
 
-\[
+$$
 x-\mu\mathbf1
-\]
+$$
 
 除：
 
-\[
+$$
 \sigma
-\]
+$$
 
 把它缩放到一个固定 RMS尺度。
 
@@ -3735,15 +3735,15 @@ x-\mu\mathbf1
 
 然后：
 
-\[
+$$
 \gamma,\beta
-\]
+$$
 
 再做 learnable coordinate-wise affine transform。
 
 ---
 
-# 105. 这种几何解释为什么有用？
+## 105. 这种几何解释为什么有用？
 
 它帮助我们理解：
 
@@ -3753,9 +3753,9 @@ LayerNorm不是：
 
 而是对整个：
 
-\[
+$$
 D
-\]
+$$
 
 维 vector做一个耦合变换。
 
@@ -3763,7 +3763,7 @@ D
 
 ---
 
-# 106. LayerNorm 会把 Feature Correlation 消掉吗？
+## 106. LayerNorm 会把 Feature Correlation 消掉吗？
 
 不会。
 
@@ -3778,23 +3778,23 @@ D
 
 所以：
 
-\[
+$$
 \boxed{
 LayerNorm
 \neq
 Whitening
 }
-\]
+$$
 
 ---
 
-# 107. Whitening 是什么？
+## 107. Whitening 是什么？
 
 Whitening通常希望：
 
-\[
+$$
 Cov(z)=I
-\]
+$$
 
 除了每维 variance外，
 
@@ -3802,9 +3802,9 @@ Cov(z)=I
 
 LayerNorm没有计算完整：
 
-\[
+$$
 D\times D
-\]
+$$
 
 covariance matrix。
 
@@ -3812,7 +3812,7 @@ covariance matrix。
 
 ---
 
-# 108. LayerNorm 会把每个 Feature 单独 Variance 变 1 吗？
+## 108. LayerNorm 会把每个 Feature 单独 Variance 变 1 吗？
 
 不是这个意思。
 
@@ -3820,21 +3820,21 @@ covariance matrix。
 
 它沿 512 features计算一个共享：
 
-\[
+$$
 \sigma^2
-\]
+$$
 
 然后所有 features一起除同一个：
 
-\[
+$$
 \sqrt{\sigma^2+\epsilon}
-\]
+$$
 
 不是为每一个 feature：
 
-\[
+$$
 d
-\]
+$$
 
 单独算一个自己的 variance。
 
@@ -3842,13 +3842,13 @@ d
 
 ---
 
-# 109. 那 γ 为什么是每维一个？
+## 109. 那 γ 为什么是每维一个？
 
 Normalization statistics共享：
 
-\[
+$$
 \mu,\sigma
-\]
+$$
 
 但最终模型允许：
 
@@ -3856,9 +3856,9 @@ Normalization statistics共享：
 
 所以：
 
-\[
+$$
 \gamma_d,\beta_d
-\]
+$$
 
 是 per-feature。
 
@@ -3870,42 +3870,42 @@ Normalization statistics共享：
 
 ---
 
-# 110. 一个 3-D γ/β 例子
+## 110. 一个 3-D γ/β 例子
 
 假设 normalize后：
 
-\[
+$$
 \hat x=
 [-1,0,1]
-\]
+$$
 
 learned：
 
-\[
+$$
 \gamma=
 [2,0.5,3]
-\]
+$$
 
-\[
+$$
 \beta=
 [1,-1,0]
-\]
+$$
 
 则：
 
-\[
+$$
 y=
 [
 2(-1)+1,
 0.5(0)-1,
 3(1)+0
 ]
-\]
+$$
 
-\[
+$$
 =
 [-1,-1,3]
-\]
+$$
 
 显然：
 
@@ -3915,21 +3915,21 @@ variance也不再 1。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{LayerNorm output}
 \neq
 \text{necessarily zero-mean/unit-variance}
 }
-\]
+$$
 
 真正 standardized的是：
 
-> affine前的 \(\hat x\)。
+> affine前的 $\hat x$。
 
 ---
 
-# 111. 那为什么名字还叫 Normalization Layer？
+## 111. 那为什么名字还叫 Normalization Layer？
 
 因为它的核心内部操作确实执行 normalization，
 
@@ -3937,9 +3937,9 @@ variance也不再 1。
 
 BatchNorm也有类似：
 
-\[
+$$
 \gamma,\beta
-\]
+$$
 
 设计。
 
@@ -3949,19 +3949,19 @@ BatchNorm也有类似：
 
 ---
 
-# 112. γ=0 会怎样？
+## 112. γ=0 会怎样？
 
 如果某个 dimension：
 
-\[
+$$
 \gamma_d=0
-\]
+$$
 
 则：
 
-\[
+$$
 y_d=\beta_d
-\]
+$$
 
 该 dimension对当前 normalized input不再敏感。
 
@@ -3971,7 +3971,7 @@ y_d=\beta_d
 
 ---
 
-# 113. γ 可以是负数吗？
+## 113. γ 可以是负数吗？
 
 可以。
 
@@ -3979,13 +3979,13 @@ y_d=\beta_d
 
 如果：
 
-\[
+$$
 \gamma_d<0
-\]
+$$
 
 该 feature方向会翻转。
 
-所以 \(\gamma\) 不只是“放大倍数”。
+所以 $\gamma$ 不只是“放大倍数”。
 
 它可以：
 
@@ -3996,11 +3996,11 @@ y_d=\beta_d
 
 ---
 
-# 114. β 的作用是什么？
+## 114. β 的作用是什么？
 
-\[
+$$
 \beta_d
-\]
+$$
 
 提供 learned offset。
 
@@ -4016,27 +4016,27 @@ normalized representation始终围绕某种 zero-centered基准。
 
 ---
 
-# 115. LayerNorm 的参数量为什么这么少？
+## 115. LayerNorm 的参数量为什么这么少？
 
 对于：
 
-\[
+$$
 D=512
-\]
+$$
 
 只有：
 
-\[
+$$
 1024
-\]
+$$
 
 trainable parameters。
 
 相比 ACT FFN约：
 
-\[
+$$
 3.28M
-\]
+$$
 
 参数，
 
@@ -4046,17 +4046,17 @@ LayerNorm参数量极小。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{parameter count}
 \neq
 \text{architectural importance}
 }
-\]
+$$
 
 ---
 
-# 116. LayerNorm 的计算量也不大
+## 116. LayerNorm 的计算量也不大
 
 每个 token：
 
@@ -4067,9 +4067,9 @@ LayerNorm参数量极小。
 
 复杂度大约：
 
-\[
+$$
 O(D)
-\]
+$$
 
 比：
 
@@ -4082,7 +4082,7 @@ O(D)
 
 ---
 
-# 117. 为什么 LayerNorm 在 Mixed Precision 时也要小心？
+## 117. 为什么 LayerNorm 在 Mixed Precision 时也要小心？
 
 mean/variance涉及 reduction。
 
@@ -4098,7 +4098,7 @@ mean/variance涉及 reduction。
 
 ---
 
-# 118. 常见误解一：LayerNorm 把 Hidden State 变成标准正态分布
+## 118. 常见误解一：LayerNorm 把 Hidden State 变成标准正态分布
 
 **错误。**
 
@@ -4108,19 +4108,19 @@ mean/variance涉及 reduction。
 
 ---
 
-# 119. 常见误解二：Mean=0、Variance=1 就等于 N(0,1)
+## 119. 常见误解二：Mean=0、Variance=1 就等于 N(0,1)
 
 **错误。**
 
 很多非 Gaussian分布也有：
 
-\[
+$$
 mean=0,\ variance=1
-\]
+$$
 
 ---
 
-# 120. 常见误解三：LayerNorm 对整个 Batch 求 Mean
+## 120. 常见误解三：LayerNorm 对整个 Batch 求 Mean
 
 **错误。**
 
@@ -4128,35 +4128,35 @@ mean=0,\ variance=1
 
 ---
 
-# 121. 常见误解四：ACT 的 1202 Tokens 一起算一个 Mean
+## 121. 常见误解四：ACT 的 1202 Tokens 一起算一个 Mean
 
 **错误。**
 
 每个：
 
-\[
+$$
 [s,b,:]
-\]
+$$
 
 512-D vector单独算。
 
 ---
 
-# 122. 常见误解五：LayerNorm 完全逐 Feature 独立
+## 122. 常见误解五：LayerNorm 完全逐 Feature 独立
 
 **错误。**
 
 features通过共享的：
 
-\[
+$$
 \mu,\sigma^2
-\]
+$$
 
 相互耦合。
 
 ---
 
-# 123. 常见误解六：LayerNorm 会让 Token 互相交流
+## 123. 常见误解六：LayerNorm 会让 Token 互相交流
 
 **错误。**
 
@@ -4166,7 +4166,7 @@ token communication主要由 Attention负责。
 
 ---
 
-# 124. 常见误解七：除标准差只是为了防止除 0
+## 124. 常见误解七：除标准差只是为了防止除 0
 
 **错误。**
 
@@ -4174,29 +4174,29 @@ token communication主要由 Attention负责。
 
 > 统一尺度。
 
-\(\epsilon\) 才主要负责数值稳定。
+$\epsilon$ 才主要负责数值稳定。
 
 ---
 
-# 125. 常见误解八：ε 越大越好，因为更稳定
+## 125. 常见误解八：ε 越大越好，因为更稳定
 
 **错误。**
 
 过大的：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 会显著改变 normalization尺度，
 
 使：
 
-\[
+$$
 Var(\hat x)
 =
 \sigma^2/(\sigma^2+\epsilon)
-\]
+$$
 
 偏离 1。
 
@@ -4204,39 +4204,39 @@ Var(\hat x)
 
 ---
 
-# 126. 常见误解九：Normalize 后 Variance 永远精确为 1
+## 126. 常见误解九：Normalize 后 Variance 永远精确为 1
 
 真实实现有：
 
-\[
+$$
 \epsilon
-\]
+$$
 
 所以严格不是。
 
 ---
 
-# 127. 常见误解十：PyTorch LayerNorm 用 D-1 无偏方差
+## 127. 常见误解十：PyTorch LayerNorm 用 D-1 无偏方差
 
 **错误。**
 
 当前 PyTorch文档明确：
 
-\[
+$$
 \boxed{
 correction=0
 }
-\]
+$$
 
 即 denominator为：
 
-\[
+$$
 D
-\]
+$$
 
 ---
 
-# 128. 常见误解十一：γ 和 β 把 normalization完全取消了
+## 128. 常见误解十一：γ 和 β 把 normalization完全取消了
 
 **错误。**
 
@@ -4246,7 +4246,7 @@ D
 
 ---
 
-# 129. 常见误解十二：γ/β 是当前 Token 动态算出来的
+## 129. 常见误解十二：γ/β 是当前 Token 动态算出来的
 
 **错误。**
 
@@ -4254,13 +4254,13 @@ D
 
 动态计算的是：
 
-\[
+$$
 \mu,\sigma^2
-\]
+$$
 
 ---
 
-# 130. 常见误解十三：LayerNorm 推理时用 Running Mean
+## 130. 常见误解十三：LayerNorm 推理时用 Running Mean
 
 **错误。**
 
@@ -4268,7 +4268,7 @@ D
 
 ---
 
-# 131. 常见误解十四：`model.eval()` 会冻结 LayerNorm 到训练统计量
+## 131. 常见误解十四：`model.eval()` 会冻结 LayerNorm 到训练统计量
 
 **错误。**
 
@@ -4276,7 +4276,7 @@ D
 
 ---
 
-# 132. 常见误解十五：LayerNorm 和 BatchNorm 只是名字不同
+## 132. 常见误解十五：LayerNorm 和 BatchNorm 只是名字不同
 
 **错误。**
 
@@ -4284,7 +4284,7 @@ D
 
 ---
 
-# 133. 常见误解十六：LayerNorm 和 Dataset Z-Score 是同一套 Statistics
+## 133. 常见误解十六：LayerNorm 和 Dataset Z-Score 是同一套 Statistics
 
 **错误。**
 
@@ -4294,7 +4294,7 @@ LayerNorm每个 hidden token实时算 statistics。
 
 ---
 
-# 134. 常见误解十七：ImageNet Normalize 就是 LayerNorm
+## 134. 常见误解十七：ImageNet Normalize 就是 LayerNorm
 
 **错误。**
 
@@ -4302,7 +4302,7 @@ RGB channel preprocessing和 Transformer hidden-state normalization不是同一�
 
 ---
 
-# 135. 常见误解十八：LayerNorm 会 Whitening
+## 135. 常见误解十八：LayerNorm 会 Whitening
 
 **错误。**
 
@@ -4310,7 +4310,7 @@ RGB channel preprocessing和 Transformer hidden-state normalization不是同一�
 
 ---
 
-# 136. 常见误解十九：Post-LN 和 Pre-LN 只是写法不同
+## 136. 常见误解十九：Post-LN 和 Pre-LN 只是写法不同
 
 **错误。**
 
@@ -4318,39 +4318,39 @@ RGB channel preprocessing和 Transformer hidden-state normalization不是同一�
 
 ---
 
-# 137. 常见误解二十：Original Transformer 是 Pre-LN
+## 137. 常见误解二十：Original Transformer 是 Pre-LN
 
 **错误。**
 
 原始 2017：
 
-\[
+$$
 \boxed{
 Post\text{-}LN
 }
-\]
+$$
 
 ---
 
-# 138. 常见误解二十一：ACT 默认是 Pre-LN
+## 138. 常见误解二十一：ACT 默认是 Pre-LN
 
 当前官方默认：
 
-\[
+$$
 normalize\_before=False
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 Post\text{-}LN
 }
-\]
+$$
 
 ---
 
-# 139. 常见误解二十二：LayerNorm 的作用就是防梯度爆炸
+## 139. 常见误解二十二：LayerNorm 的作用就是防梯度爆炸
 
 **过度简化。**
 
@@ -4360,7 +4360,7 @@ Post\text{-}LN
 
 ---
 
-# 140. 常见误解二十三：LayerNorm 是可逆的
+## 140. 常见误解二十三：LayerNorm 是可逆的
 
 纯 normalization会移除 sample-specific shift / scale信息，
 
@@ -4368,7 +4368,7 @@ Post\text{-}LN
 
 ---
 
-# 141. 常见误解二十四：LayerNorm 会让不同 Modality 变成同一种语义
+## 141. 常见误解二十四：LayerNorm 会让不同 Modality 变成同一种语义
 
 **错误。**
 
@@ -4380,7 +4380,7 @@ visual、joint、latent tokens仍有不同 representations。
 
 ---
 
-# 142. 常见误解二十五：LayerNorm 能代替 Residual
+## 142. 常见误解二十五：LayerNorm 能代替 Residual
 
 **错误。**
 
@@ -4390,7 +4390,7 @@ Transformer把它们组合使用。
 
 ---
 
-# 143. LayerNorm vs BatchNorm 总结表
+## 143. LayerNorm vs BatchNorm 总结表
 
 | 问题 | LayerNorm | BatchNorm |
 |---|---|---|
@@ -4404,7 +4404,7 @@ Transformer把它们组合使用。
 
 ---
 
-# 144. Transformer 中一张最重要的图
+## 144. Transformer 中一张最重要的图
 
 ```text
 Token x ∈ R^512
@@ -4442,15 +4442,15 @@ Sublayer(x)                                 │
 
 ---
 
-# 145. ACT Policy Encoder 的真实 Axis
+## 145. ACT Policy Encoder 的真实 Axis
 
 输入内部 convention：
 
-\[
+$$
 \boxed{
 [1202,B,512]
 }
-\]
+$$
 
 于是：
 
@@ -4475,76 +4475,76 @@ X[s, b, :]
 
 单独执行：
 
-\[
+$$
 \mu_{s,b}
-\]
+$$
 
-\[
+$$
 \sigma^2_{s,b}
-\]
+$$
 
 ---
 
-# 146. ACT Decoder 的真实 Axis
+## 146. ACT Decoder 的真实 Axis
 
-\[
+$$
 \boxed{
 [k,B,512]
 }
-\]
+$$
 
 例如：
 
-\[
+$$
 [100,B,512]
-\]
+$$
 
 每个 action slot：
 
-\[
+$$
 X[i,b,:]
-\]
+$$
 
 自己 normalize。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{LayerNorm不会把未来 100 个动作 Slot 平均到一起}
 }
-\]
+$$
 
 ---
 
-# 147. 一个 ACT Token 的完整公式
+## 147. 一个 ACT Token 的完整公式
 
 假设某个 Policy Encoder token在某一层 residual addition之后：
 
-\[
+$$
 r\in\mathbb R^{512}
-\]
+$$
 
 计算：
 
-\[
+$$
 \mu
 =
 \frac1{512}
 \sum_{d=1}^{512}r_d
-\]
+$$
 
-\[
+$$
 \sigma^2
 =
 \frac1{512}
 \sum_{d=1}^{512}
 (r_d-\mu)^2
-\]
+$$
 
 然后：
 
-\[
+$$
 \hat r_d
 =
 \frac{
@@ -4554,28 +4554,28 @@ r_d-\mu
 \sigma^2+10^{-5}
 }
 }
-\]
+$$
 
 最后：
 
-\[
+$$
 \boxed{
 y_d=
 \gamma_d\hat r_d+\beta_d
 }
-\]
+$$
 
 其中：
 
-\[
+$$
 \gamma,\beta\in\mathbb R^{512}
-\]
+$$
 
 这就是 `nn.LayerNorm(512)` 对这个 token真正做的事。
 
 ---
 
-# 148. 为什么它适合 ACT 的多模态 Hidden Space？
+## 148. 为什么它适合 ACT 的多模态 Hidden Space？
 
 ACT把：
 
@@ -4585,9 +4585,9 @@ ACT把：
 
 都投影到：
 
-\[
+$$
 512
-\]
+$$
 
 维 Transformer space。
 
@@ -4605,15 +4605,15 @@ LayerNorm提供统一的 per-token normalization规则，
 
 ---
 
-# 149. 为什么 joint token 不会被 image tokens 的大数值“拖着一起归一化”？
+## 149. 为什么 joint token 不会被 image tokens 的大数值“拖着一起归一化”？
 
 因为 statistics不跨 token。
 
 joint token自己：
 
-\[
+$$
 512
-\]
+$$
 
 维算自己的 mean/std。
 
@@ -4627,12 +4627,12 @@ visual token自己算自己的。
 
 ---
 
-# 150. 为什么 LayerNorm 后 Attention 仍然能区分 Token 强弱？
+## 150. 为什么 LayerNorm 后 Attention 仍然能区分 Token 强弱？
 
 因为：
 
 1. normalized pattern仍然不同；
-2. learned \(\gamma,\beta\)重新标定 features；
+2. learned $\gamma,\beta$重新标定 features；
 3. Q/K/V projections重新构造 magnitudes；
 4. positional information存在；
 5. residual/context深度不同。
@@ -4643,7 +4643,7 @@ visual token自己算自己的。
 
 ---
 
-# 151. 一个重要的“尺度信息”细节
+## 151. 一个重要的“尺度信息”细节
 
 LayerNorm会弱化：
 
@@ -4665,7 +4665,7 @@ LayerNorm会弱化：
 
 ---
 
-# 152. 为什么现代研究会对 Normalization 设计很敏感？
+## 152. 为什么现代研究会对 Normalization 设计很敏感？
 
 因为 normalization不是一个纯辅助数值 trick。
 
@@ -4686,15 +4686,15 @@ LayerNorm会弱化：
 
 ---
 
-# 153. LayerNorm 会不会改变方向？
+## 153. LayerNorm 会不会改变方向？
 
 会。
 
 减均值：
 
-\[
+$$
 x-\mu\mathbf1
-\]
+$$
 
 本身就可能改变原 vector相对于原点的方向。
 
@@ -4702,9 +4702,9 @@ x-\mu\mathbf1
 
 但 gamma如果 per-coordinate不同：
 
-\[
+$$
 \gamma\odot\hat x
-\]
+$$
 
 又会改变方向。
 
@@ -4714,15 +4714,15 @@ x-\mu\mathbf1
 
 ---
 
-# 154. 它和 L2 Normalization 完全不同
+## 154. 它和 L2 Normalization 完全不同
 
 L2 normalization：
 
-\[
+$$
 \boxed{
 \frac{x}{\|x\|_2}
 }
-\]
+$$
 
 主要把 vector norm变成 1。
 
@@ -4730,11 +4730,11 @@ L2 normalization：
 
 LayerNorm：
 
-\[
+$$
 \boxed{
 \frac{x-\mu}{\sqrt{\sigma^2+\epsilon}}
 }
-\]
+$$
 
 先 center，
 
@@ -4742,17 +4742,17 @@ LayerNorm：
 
 所以：
 
-\[
+$$
 \boxed{
 LayerNorm
 \neq
 L2Norm
 }
-\]
+$$
 
 ---
 
-# 155. 为什么两者都可能让 Norm 受控，却不是一个东西？
+## 155. 为什么两者都可能让 Norm 受控，却不是一个东西？
 
 L2Norm保留：
 
@@ -4766,14 +4766,14 @@ LayerNorm先去掉：
 
 ---
 
-# 156. LayerNorm 和 Softmax 也不要混
+## 156. LayerNorm 和 Softmax 也不要混
 
 Softmax：
 
-\[
+$$
 p_i=
 \frac{e^{z_i}}{\sum_je^{z_j}}
-\]
+$$
 
 输出：
 
@@ -4791,7 +4791,7 @@ LayerNorm：
 
 ---
 
-# 157. “Normalization”这个词必须问目的
+## 157. “Normalization”这个词必须问目的
 
 Softmax normalization：
 
@@ -4817,13 +4817,13 @@ Vector normalization：
 
 ---
 
-# 158. LayerNorm 与我们之前的标准正态分布知识怎么连接？
+## 158. LayerNorm 与我们之前的标准正态分布知识怎么连接？
 
 最核心的桥：
 
-\[
+$$
 z=\frac{x-\mu}{\sigma}
-\]
+$$
 
 是一种：
 
@@ -4837,29 +4837,29 @@ z=\frac{x-\mu}{\sigma}
 
 这个 affine transformation才把 distribution变成：
 
-\[
+$$
 \mathcal N(0,1)
-\]
+$$
 
 LayerNorm没有这个 Gaussian前提。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{LayerNorm借用了标准化数学}
 \neq
 \text{LayerNorm假设 Hidden State是正态分布}
 }
-\]
+$$
 
 ---
 
-# 159. 如果只记住一件事
+## 159. 如果只记住一件事
 
 请记：
 
-\[
+$$
 \boxed{
 \operatorname{LayerNorm}(x)
 =
@@ -4873,19 +4873,19 @@ x-\operatorname{mean}(x)
 }
 +\beta
 }
-\]
+$$
 
 在 Transformer `LayerNorm(D)` 中，
 
 这个：
 
-\[
+$$
 mean,\ variance
-\]
+$$
 
 通常是：
 
-> **每一个 token自己沿 hidden feature dimension \(D\) 计算。**
+> **每一个 token自己沿 hidden feature dimension $D$ 计算。**
 
 它不跨：
 
@@ -4894,27 +4894,27 @@ mean,\ variance
 
 ---
 
-# 160. 第二件必须记住的事
+## 160. 第二件必须记住的事
 
-\[
+$$
 \boxed{
 \text{Zero mean + unit variance}
 \neq
 \text{standard normal distribution}
 }
-\]
+$$
 
 LayerNorm不是 Gaussianizer。
 
 ---
 
-# 161. 第三件必须记住的事
+## 161. 第三件必须记住的事
 
-\[
+$$
 \boxed{
 \gamma,\beta
 }
-\]
+$$
 
 意味着最终 LayerNorm output：
 
@@ -4924,11 +4924,11 @@ LayerNorm不是 Gaussianizer。
 
 ---
 
-# 162. 第四件必须记住的事
+## 162. 第四件必须记住的事
 
 Original Transformer：
 
-\[
+$$
 \boxed{
 Post\text{-}LN:
 \quad
@@ -4936,35 +4936,35 @@ LN(
 x+F(x)
 )
 }
-\]
+$$
 
 现代许多模型：
 
-\[
+$$
 \boxed{
 Pre\text{-}LN:
 \quad
 x+F(LN(x))
 }
-\]
+$$
 
 这两个 gradient structure不同。
 
 ---
 
-# 163. 第五件必须记住的事：ACT
+## 163. 第五件必须记住的事：ACT
 
 对于：
 
-\[
+$$
 [1202,B,512]
-\]
+$$
 
 或：
 
-\[
+$$
 [k,B,512]
-\]
+$$
 
 ACT的：
 
@@ -4974,43 +4974,43 @@ nn.LayerNorm(512)
 
 永远看最后的：
 
-\[
+$$
 512
-\]
+$$
 
 hidden features。
 
 因此：
 
-\[
+$$
 \boxed{
 \text{每个 observation token / action slot 独立 normalize}
 }
-\]
+$$
 
 而不是把所有 tokens混在一起。
 
 ---
 
-# 164. 一句话真正理解 Layer Normalization
+## 164. 一句话真正理解 Layer Normalization
 
-> **Layer Normalization 是一种针对单个 hidden representation 的动态标准化：它用这个 representation 自己的一组 feature values 计算均值和方差，去掉共同偏移并规范整体 feature scale，再用共享的可学习 \(\gamma,\beta\) 恢复模型所需的逐维尺度与偏移；因此它不依赖 mini-batch，也不会把 representation 强迫成 Gaussian，而是在保持 token 独立的同时重塑每个 token 内部的 feature geometry 与优化尺度。**
+> **Layer Normalization 是一种针对单个 hidden representation 的动态标准化：它用这个 representation 自己的一组 feature values 计算均值和方差，去掉共同偏移并规范整体 feature scale，再用共享的可学习 $\gamma,\beta$ 恢复模型所需的逐维尺度与偏移；因此它不依赖 mini-batch，也不会把 representation 强迫成 Gaussian，而是在保持 token 独立的同时重塑每个 token 内部的 feature geometry 与优化尺度。**
 
 ---
 
-# 165. 一句话真正理解 Transformer 中的 LayerNorm
+## 165. 一句话真正理解 Transformer 中的 LayerNorm
 
 > **Transformer 中 LayerNorm 的作用不是“把每一层变成标准正态分布”，而是让每个 token 的 hidden features 在进入后续 Attention / FFN computation 时处于受控、可学习的统计尺度；而它放在 residual 前还是后，会直接改变 residual stream与 gradient的传播方式，因此 Post-LN / Pre-LN 是真正的 architecture区别，而不是代码风格差异。**
 
 ---
 
-# 166. 一句话连接 ACT
+## 166. 一句话连接 ACT
 
-> **ACT 对每一个 512-D visual、joint、latent memory token以及每一个 512-D action-query hidden slot分别执行 LayerNorm；`nn.LayerNorm(512)` 不会沿 1202-token observation sequence或 \(k\)-step action sequence求统计量，而只对每个 token自身的 512 个 hidden features实时计算 mean/variance，因此它既适合多模态 Transformer，也适合 batch size 1 的机器人在线推理。**
+> **ACT 对每一个 512-D visual、joint、latent memory token以及每一个 512-D action-query hidden slot分别执行 LayerNorm；`nn.LayerNorm(512)` 不会沿 1202-token observation sequence或 $k$-step action sequence求统计量，而只对每个 token自身的 512 个 hidden features实时计算 mean/variance，因此它既适合多模态 Transformer，也适合 batch size 1 的机器人在线推理。**
 
 ---
 
-# 167. 下一篇：Dropout
+## 167. 下一篇：Dropout
 
 现在 Transformer Layer中：
 
@@ -5036,7 +5036,7 @@ Dropout
 - Bernoulli mask到底是什么；
 - 为什么训练时随机设 0 是 regularization；
 - 为什么 PyTorch 使用 inverted dropout；
-- 为什么训练时保留值要除以 \(1-p\)；
+- 为什么训练时保留值要除以 $1-p$；
 - 为什么这样可以让 train / eval 的 expectation对齐；
 - Dropout为什么不是“永久删除 neuron”；
 - Attention dropout、FFN dropout、Residual dropout有什么区别；
@@ -5046,7 +5046,7 @@ Dropout
 
 ---
 
-## Primary Source：Layer Normalization
+### Primary Source：Layer Normalization
 
 Jimmy Lei Ba, Jamie Ryan Kiros, Geoffrey E. Hinton.
 
@@ -5067,7 +5067,7 @@ Jimmy Lei Ba, Jamie Ryan Kiros, Geoffrey E. Hinton.
 
 ---
 
-## Background：Batch Normalization
+### Background：Batch Normalization
 
 Sergey Ioffe, Christian Szegedy.
 
@@ -5089,7 +5089,7 @@ BatchNorm的核心区别是：
 
 ---
 
-## Transformer Primary Source
+### Transformer Primary Source
 
 Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,  
 Aidan N. Gomez, Łukasz Kaiser, Illia Polosukhin.
@@ -5102,14 +5102,14 @@ NeurIPS 2017.
 
 Section 3.1 明确规定：
 
-\[
+$$
 \boxed{
 LayerNorm(
 x+
 Sublayer(x)
 )
 }
-\]
+$$
 
 即：
 
@@ -5128,7 +5128,7 @@ Decoder每层：
 
 ---
 
-## Pre-LN / Post-LN Background
+### Pre-LN / Post-LN Background
 
 Ruibin Xiong et al.
 
@@ -5139,27 +5139,27 @@ ICML 2020.
 
 该工作分析：
 
-### Post-LN
+#### Post-LN
 
-\[
+$$
 \boxed{
 LN(
 x+F(x)
 )
 }
-\]
+$$
 
 与：
 
-### Pre-LN
+#### Pre-LN
 
-\[
+$$
 \boxed{
 x+F(
 LN(x)
 )
 }
-\]
+$$
 
 在 initialization gradient behavior上的差异。
 
@@ -5167,7 +5167,7 @@ LN(x)
 
 ---
 
-## PyTorch Implementation Reference
+### PyTorch Implementation Reference
 
 PyTorch `torch.nn.LayerNorm`:
 
@@ -5188,19 +5188,19 @@ PyTorch文档明确：
 - mean/std在 `normalized_shape` 对应的最后若干 dimensions上计算；
 - `LayerNorm(512)` 因而 normalize最后一个 512-D feature dimension；
 - variance使用 biased estimator：
-  \[
+  $$
   correction=0
-  \]
+  $$
 - 默认：
-  \[
+  $$
   \epsilon=10^{-5}
-  \]
-- \(\gamma,\beta\) 默认可学习；
+  $$
+- $\gamma,\beta$ 默认可学习；
 - train / eval均使用当前 input statistics。
 
 ---
 
-## ACT Official Implementation
+### ACT Official Implementation
 
 Official repository:
 
@@ -5233,9 +5233,9 @@ self.norm3 =
 
 在 ACT canonical hidden dimension：
 
-\[
+$$
 d_{\text{model}}=512
-\]
+$$
 
 因此等价：
 
@@ -5245,7 +5245,7 @@ nn.LayerNorm(512)
 
 ---
 
-### ACT Post-LN Default
+#### ACT Post-LN Default
 
 官方实现：
 
@@ -5264,11 +5264,11 @@ normalize_before=False
 
 所以 released default是：
 
-\[
+$$
 \boxed{
 Post\text{-}LN
 }
-\]
+$$
 
 Post-LN Encoder：
 
@@ -5283,71 +5283,71 @@ src =
 
 即：
 
-\[
+$$
 \boxed{
 LN(
 x+
 Sublayer(x)
 )
 }
-\]
+$$
 
 ---
 
-### ACT Shape Meaning
+#### ACT Shape Meaning
 
 当 Policy Encoder representation为：
 
-\[
+$$
 [1202,B,512]
-\]
+$$
 
 `LayerNorm(512)` 对每一个：
 
-\[
+$$
 X[s,b,:]
-\]
+$$
 
 独立计算：
 
-\[
+$$
 \mu_{s,b}
 =
 \frac1{512}
 \sum_dX_{s,b,d}
-\]
+$$
 
 与：
 
-\[
+$$
 \sigma^2_{s,b}
 =
 \frac1{512}
 \sum_d
 (X_{s,b,d}-\mu_{s,b})^2
-\]
+$$
 
 Decoder：
 
-\[
+$$
 [k,B,512]
-\]
+$$
 
 同理。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{LayerNorm never averages ACT's 1202 observation tokens or }k\text{ action slots together}
 }
-\]
+$$
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### 数学前置
+#### 数学前置
 
 - Mean
 - Variance
@@ -5358,26 +5358,26 @@ Decoder：
 - Jacobian
 - Kronecker Delta
 
-### Deep Learning
+#### Deep Learning
 
 - Batch Normalization
 - RMSNorm
 - [Residual Connection](./residual-connection.md)
 - [Dropout](./dropout.md)
 
-### Transformer
+#### Transformer
 
 - [Transformer Encoder](./transformer-encoder.md)
 - [Transformer Decoder](./transformer-decoder.md)
 - [Feed-Forward Network](./feed-forward-network.md)
 - Pre-LN vs Post-LN
 
-### Robot Learning
+#### Robot Learning
 
 - [ACT Architecture](../robot-learning/act/architecture.md)
 - [ACT Training](../robot-learning/act/training.md)
 - [ACT Complete Data Flow](../robot-learning/act/complete-data-flow.md)
 
-### 下一步
+#### 下一步
 
 - [Dropout](./dropout.md)

@@ -7,22 +7,22 @@ canonical: /robot-learning/act/architecture
 updated: "2026-09-15"
 ---
 
-# ACT Architecture：从 4 张图像到 \(k\times14\) 个动作
+# ACT Architecture：从 4 张图像到 $k\times14$ 个动作
 
 前面我们已经理解了 ACT 的几个核心思想：
 
 - [Action Chunking](./action-chunking.md)：为什么一次预测一段动作；
 - [Temporal Ensemble](./temporal-ensemble.md)：为什么同一个 timestep 会有多个预测；
-- [CVAE in ACT](./cvae-in-act.md)：训练时 latent \(z\) 怎样得到；
-- [为什么 ACT 推理时令 \(z=0\)](./why-z-zero-at-inference.md)。
+- [CVAE in ACT](./cvae-in-act.md)：训练时 latent $z$ 怎样得到；
+- [为什么 ACT 推理时令 $z=0$](./why-z-zero-at-inference.md)。
 
 现在终于可以回答一个更工程化的问题：
 
-> **ACT 真正拿到 4 张相机图像、当前机器人关节状态和 latent \(z\) 后，到底怎样一步一步输出未来 \(k\) 个动作？**
+> **ACT 真正拿到 4 张相机图像、当前机器人关节状态和 latent $z$ 后，到底怎样一步一步输出未来 $k$ 个动作？**
 
 ACT 原论文给出的 policy 可以高层写成：
 
-\[
+$$
 \boxed{
 \pi_\theta
 \left(
@@ -31,11 +31,11 @@ ACT 原论文给出的 policy 可以高层写成：
 o_t,z
 \right)
 }
-\]
+$$
 
 其中 observation：
 
-\[
+$$
 o_t
 =
 (
@@ -45,7 +45,7 @@ I_t^{(3)},
 I_t^{(4)},
 q_t
 )
-\]
+$$
 
 包含：
 
@@ -54,13 +54,13 @@ q_t
 
 最终输出：
 
-\[
+$$
 \hat A_t
 \in
 \mathbb R^{k\times14}
-\]
+$$
 
-也就是未来 \(k\) 个 timestep 的双臂 target joint positions。
+也就是未来 $k$ 个 timestep 的双臂 target joint positions。
 
 这一篇会严格沿着 tensor 流动顺序来拆：
 
@@ -93,77 +93,77 @@ k × 14 Actions
 
 ---
 
-# 1. 先把整个 ACT Policy 看成一个函数
+## 1. 先把整个 ACT Policy 看成一个函数
 
 暂时忽略 CVAE training encoder。
 
 真正执行动作的 policy / CVAE decoder 可以写成：
 
-\[
+$$
 f_\theta(
 I_1,I_2,I_3,I_4,q,z
 )
 =
 \hat A
-\]
+$$
 
 输入：
 
-### 四张图片
+#### 四张图片
 
-\[
+$$
 I_i
 \in
 \mathbb R^{3\times480\times640}
-\]
+$$
 
-### 当前 Joint State
+#### 当前 Joint State
 
 ALOHA 两条机械臂各 7 个 joint dimensions：
 
-\[
+$$
 q
 \in
 \mathbb R^{14}
-\]
+$$
 
-### Latent Style Variable
+#### Latent Style Variable
 
 官方实现：
 
-\[
+$$
 z
 \in
 \mathbb R^{32}
-\]
+$$
 
 输出：
 
-\[
+$$
 \hat A
 \in
 \mathbb R^{k\times14}
-\]
+$$
 
 如果原论文默认：
 
-\[
+$$
 k=100
-\]
+$$
 
 那么一次 policy forward 的 action output 就是：
 
-\[
+$$
 \boxed{
 100\times14
 }
-\]
+$$
 
 也就是 100 个未来双臂 target joint vectors。
 
 ---
 
-# 2. 为什么需要 Transformer？
+## 2. 为什么需要 Transformer？
 
 ACT 输入并不是一种单一数据。
 
@@ -186,16 +186,16 @@ a_t
 
 而是一整段：
 
-\[
+$$
 a_t,
 a_{t+1},
 \ldots,
 a_{t+k-1}
-\]
+$$
 
 所以 ACT 同时面临两个问题：
 
-## 输入侧
+### 输入侧
 
 如何融合：
 
@@ -205,11 +205,11 @@ a_{t+k-1}
 
 这些异构信息？
 
-## 输出侧
+### 输出侧
 
 如何一次生成：
 
-> 具有时间结构的 \(k\) 个 actions？
+> 具有时间结构的 $k$ 个 actions？
 
 ACT 的设计是：
 
@@ -235,7 +235,7 @@ Decoder
 
 ---
 
-# 3. 第一部分：4 张 RGB 图像
+## 3. 第一部分：4 张 RGB 图像
 
 ACT 原论文使用四个 camera viewpoints：
 
@@ -246,69 +246,69 @@ ACT 原论文使用四个 camera viewpoints：
 
 每一张原始图像分辨率：
 
-\[
+$$
 480\times640
-\]
+$$
 
 RGB channel：
 
-\[
+$$
 3
-\]
+$$
 
 因此单张图片可以表示为：
 
-\[
+$$
 \boxed{
 I
 \in
 \mathbb R^{3\times480\times640}
 }
-\]
+$$
 
 如果加 batch dimension：
 
-\[
+$$
 I
 \in
 \mathbb R^{B\times3\times480\times640}
-\]
+$$
 
 四路 camera：
 
-\[
+$$
 \boxed{
 I_{\mathrm{all}}
 \in
 \mathbb R^{B\times4\times3\times480\times640}
 }
-\]
+$$
 
 ---
 
-# 4. 为什么不能直接把原始 Pixels 扔给 Transformer？
+## 4. 为什么不能直接把原始 Pixels 扔给 Transformer？
 
 一张：
 
-\[
+$$
 480\times640
-\]
+$$
 
 图片包含：
 
-\[
+$$
 480\times640
 =
 307200
-\]
+$$
 
 个 pixel locations。
 
 四张就是：
 
-\[
+$$
 1,228,800
-\]
+$$
 
 个 pixel locations。
 
@@ -318,15 +318,15 @@ I_{\mathrm{all}}
 
 Self-attention 的标准计算量近似：
 
-\[
+$$
 O(N^2)
-\]
+$$
 
 其中：
 
-\[
+$$
 N
-\]
+$$
 
 是 sequence length。
 
@@ -338,79 +338,79 @@ N
 
 ---
 
-# 5. ResNet18 在这里做什么？
+## 5. ResNet18 在这里做什么？
 
 对于每张：
 
-\[
+$$
 480\times640\times3
-\]
+$$
 
 RGB image，
 
 论文写明经过 ResNet18 后得到：
 
-\[
+$$
 \boxed{
 15\times20\times512
 }
-\]
+$$
 
 feature map。
 
 用 channel-first tensor 表示：
 
-\[
+$$
 \boxed{
 [512,15,20]
 }
-\]
+$$
 
 加 batch：
 
-\[
+$$
 [B,512,15,20]
-\]
+$$
 
 这意味着：
 
-> 原来 \(480\times640\) 的细密 pixel grid，被 ResNet 压缩成 \(15\times20\) 个 spatial locations。
+> 原来 $480\times640$ 的细密 pixel grid，被 ResNet 压缩成 $15\times20$ 个 spatial locations。
 
 每一个 spatial location 不再只有 RGB 三个数。
 
 而是一个：
 
-\[
+$$
 512
-\]
+$$
 
 维 feature vector。
 
 ---
 
-# 6. 一个 Spatial Location 可以怎样理解？
+## 6. 一个 Spatial Location 可以怎样理解？
 
 假设 feature map：
 
-\[
+$$
 F
 \in
 \mathbb R^{15\times20\times512}
-\]
+$$
 
 其中：
 
-\[
+$$
 F_{i,j}
 \in
 \mathbb R^{512}
-\]
+$$
 
 可以把：
 
-\[
+$$
 F_{i,j}
-\]
+$$
 
 理解为：
 
@@ -434,31 +434,31 @@ F_{i,j}
 
 ---
 
-# 7. 为什么是 15 × 20？
+## 7. 为什么是 15 × 20？
 
 因为 ResNet18 会逐层下采样。
 
 原始：
 
-\[
+$$
 480\times640
-\]
+$$
 
 空间尺寸最终缩小约 32 倍：
 
-\[
+$$
 480/32=15
-\]
+$$
 
-\[
+$$
 640/32=20
-\]
+$$
 
 所以得到：
 
-\[
+$$
 15\times20
-\]
+$$
 
 spatial grid。
 
@@ -466,41 +466,41 @@ spatial grid。
 
 ---
 
-# 8. 从 Feature Map 变成 Token Sequence
+## 8. 从 Feature Map 变成 Token Sequence
 
 Transformer 习惯处理 sequence：
 
-\[
+$$
 [\text{token}_1,\text{token}_2,\ldots]
-\]
+$$
 
 而 ResNet 输出是二维 spatial grid：
 
-\[
+$$
 15\times20
-\]
+$$
 
 所以 ACT 把空间维度 flatten：
 
-\[
+$$
 15\times20
 =
 300
-\]
+$$
 
 于是单张图片：
 
-\[
+$$
 15\times20\times512
-\]
+$$
 
 变成：
 
-\[
+$$
 \boxed{
 300\times512
 }
-\]
+$$
 
 也就是说：
 
@@ -508,51 +508,51 @@ Transformer 习惯处理 sequence：
 
 每个 token：
 
-\[
+$$
 \in\mathbb R^{512}
-\]
+$$
 
 ---
 
-# 9. 四路 Camera 一共多少 Visual Tokens？
+## 9. 四路 Camera 一共多少 Visual Tokens？
 
 每个 camera：
 
-\[
+$$
 300
-\]
+$$
 
 个 token。
 
 四个 camera：
 
-\[
+$$
 4\times300
 =
 1200
-\]
+$$
 
 因此所有视觉信息合起来：
 
-\[
+$$
 \boxed{
 1200\times512
 }
-\]
+$$
 
 如果加 batch：
 
-\[
+$$
 \boxed{
 [B,1200,512]
 }
-\]
+$$
 
 这就是 ACT Transformer policy 中最大的一部分 input sequence。
 
 ---
 
-# 10. 官方代码实际上怎样拼 4 个 Camera？
+## 10. 官方代码实际上怎样拼 4 个 Camera？
 
 论文可以理解成：
 
@@ -596,35 +596,35 @@ src = torch.cat(
 
 原来单个 camera：
 
-\[
+$$
 [B,512,15,20]
-\]
+$$
 
 四个拼起来：
 
-\[
+$$
 [B,512,15,80]
-\]
+$$
 
 因为：
 
-\[
+$$
 20\times4=80
-\]
+$$
 
 然后 Transformer 内部 flatten：
 
-\[
+$$
 15\times80
 =
 1200
-\]
+$$
 
 得到同样的：
 
-\[
+$$
 1200
-\]
+$$
 
 visual sequence positions。
 
@@ -632,13 +632,13 @@ visual sequence positions。
 
 ---
 
-# 11. 只有 Visual Feature 还不够：位置在哪里？
+## 11. 只有 Visual Feature 还不够：位置在哪里？
 
 如果只给 Transformer 一组：
 
-\[
+$$
 1200
-\]
+$$
 
 个 feature vectors，
 
@@ -662,25 +662,25 @@ Transformer 自身并不知道：
 
 ---
 
-# 12. 为什么是 2D Position Encoding？
+## 12. 为什么是 2D Position Encoding？
 
 文本 Transformer 的 token 通常排列在一条一维序列：
 
-\[
+$$
 1,2,3,\ldots
-\]
+$$
 
 图像 feature map 却有两个坐标：
 
-\[
+$$
 (row,column)
-\]
+$$
 
 所以 visual position 更自然写成：
 
-\[
+$$
 (i,j)
-\]
+$$
 
 2D positional encoding 就是给 Transformer 提供：
 
@@ -690,17 +690,17 @@ Transformer 自身并不知道：
 
 因此：
 
-\[
+$$
 \text{visual token}
 +
 \text{2D position embedding}
-\]
+$$
 
 共同进入 attention。
 
 ---
 
-# 13. ResNet Feature Channel 和 Transformer Hidden Dimension 为什么恰好都是 512？
+## 13. ResNet Feature Channel 和 Transformer Hidden Dimension 为什么恰好都是 512？
 
 论文中：
 
@@ -719,27 +719,27 @@ self.input_proj = nn.Conv2d(
 
 它是一个：
 
-> \(1\times1\) convolution projection。
+> $1\times1$ convolution projection。
 
 作用是把 backbone feature channels 映射到 Transformer 的：
 
-\[
+$$
 d_{\mathrm{model}}
-\]
+$$
 
 维度。
 
 即使当前：
 
-\[
+$$
 512\rightarrow512
-\]
+$$
 
 这个 projection 仍然提供一层可学习映射，并让代码对其他 backbone channel dimensions 更通用。
 
 ---
 
-# 14. 第二类输入：Current Joint Positions
+## 14. 第二类输入：Current Joint Positions
 
 图像只告诉模型：
 
@@ -751,27 +751,27 @@ d_{\mathrm{model}}
 
 ALOHA 双臂 joint positions：
 
-\[
+$$
 q_t
 \in
 \mathbb R^{14}
-\]
+$$
 
 分别来自：
 
-\[
+$$
 7+7
-\]
+$$
 
 个 joint dimensions。
 
 ACT 使用一个 Linear layer：
 
-\[
+$$
 \mathbb R^{14}
 \rightarrow
 \mathbb R^{512}
-\]
+$$
 
 官方代码：
 
@@ -782,13 +782,13 @@ self.input_proj_robot_state =
 
 所以得到：
 
-\[
+$$
 \boxed{
 e_q
 \in
 \mathbb R^{512}
 }
-\]
+$$
 
 可以把它视为：
 
@@ -796,7 +796,7 @@ e_q
 
 ---
 
-# 15. 为什么 Joint State 只变成一个 Token？
+## 15. 为什么 Joint State 只变成一个 Token？
 
 一种可能设计是：
 
@@ -806,23 +806,23 @@ e_q
 
 它直接把整个：
 
-\[
+$$
 14
-\]
+$$
 
 维 joint vector 输入一个 Linear layer：
 
-\[
+$$
 q_t
 \rightarrow
 e_q
-\]
+$$
 
 因此整个 robot state 被表示成：
 
-\[
+$$
 1\times512
-\]
+$$
 
 一个 token。
 
@@ -832,37 +832,37 @@ e_q
 
 ---
 
-# 16. 第三类输入：Latent z
+## 16. 第三类输入：Latent z
 
 ACT 官方 latent dimension：
 
-\[
+$$
 z\in\mathbb R^{32}
-\]
+$$
 
 训练时：
 
-\[
+$$
 z
 =
 \mu+\sigma\odot\epsilon
-\]
+$$
 
 推理时：
 
-\[
+$$
 z=0
-\]
+$$
 
 不管来源怎样，
 
 进入 policy 前都要经过：
 
-\[
+$$
 \mathbb R^{32}
 \rightarrow
 \mathbb R^{512}
-\]
+$$
 
 Linear projection。
 
@@ -878,13 +878,13 @@ self.latent_out_proj =
 
 得到：
 
-\[
+$$
 \boxed{
 e_z
 \in
 \mathbb R^{512}
 }
-\]
+$$
 
 可以把它看成：
 
@@ -892,57 +892,57 @@ e_z
 
 ---
 
-# 17. 所以 Transformer Encoder 最终到底收到多少 Token？
+## 17. 所以 Transformer Encoder 最终到底收到多少 Token？
 
 现在有：
 
-### Visual Tokens
+#### Visual Tokens
 
-\[
+$$
 1200\times512
-\]
+$$
 
-### Latent Token
+#### Latent Token
 
-\[
+$$
 1\times512
-\]
+$$
 
-### Proprioception Token
+#### Proprioception Token
 
-\[
+$$
 1\times512
-\]
+$$
 
 总共：
 
-\[
+$$
 1200+1+1
 =
 1202
-\]
+$$
 
 所以论文明确写：
 
-\[
+$$
 \boxed{
 1202\times512
 }
-\]
+$$
 
 如果加 batch：
 
-\[
+$$
 \boxed{
 [1202,B,512]
 }
-\]
+$$
 
 在 PyTorch `MultiheadAttention` 的 sequence-first 表示中。
 
 ---
 
-# 18. 官方代码里的顺序是什么？
+## 18. 官方代码里的顺序是什么？
 
 Transformer 代码中：
 
@@ -973,7 +973,7 @@ visual features
 
 即：
 
-\[
+$$
 [
 e_z,
 e_q,
@@ -982,13 +982,13 @@ v_2,
 \ldots,
 v_{1200}
 ]
-\]
+$$
 
 论文主要强调内容，而不是这个顺序本身的语义。
 
 ---
 
-# 19. Joint Token 和 z Token 也有 Position Embedding 吗？
+## 19. Joint Token 和 z Token 也有 Position Embedding 吗？
 
 有。
 
@@ -1034,15 +1034,15 @@ pos_embed = torch.cat(
 
 ---
 
-# 20. Transformer Encoder 在 ACT 中真正做什么？
+## 20. Transformer Encoder 在 ACT 中真正做什么？
 
 现在 sequence：
 
-\[
+$$
 X
 \in
 \mathbb R^{1202\times512}
-\]
+$$
 
 进入 Transformer Encoder。
 
@@ -1057,7 +1057,7 @@ X
 
 例如：
 
-### 一个 Left Wrist Visual Token
+#### 一个 Left Wrist Visual Token
 
 可以 attend：
 
@@ -1068,7 +1068,7 @@ X
 - joint token；
 - latent token。
 
-### Joint Token
+#### Joint Token
 
 也可以与所有 image tokens 交互。
 
@@ -1080,7 +1080,7 @@ X
 
 ---
 
-# 21. 为什么多视角图像适合 Self-Attention？
+## 21. 为什么多视角图像适合 Self-Attention？
 
 考虑一个精细操作：
 
@@ -1106,7 +1106,7 @@ front camera 又可能提供：
 
 Transformer self-attention 提供一个全局的信息融合机制：
 
-\[
+$$
 \text{view}_1
 \leftrightarrow
 \text{view}_2
@@ -1114,7 +1114,7 @@ Transformer self-attention 提供一个全局的信息融合机制：
 \text{state}
 \leftrightarrow
 z
-\]
+$$
 
 注意：
 
@@ -1124,31 +1124,31 @@ z
 
 ---
 
-# 22. Encoder 输出什么？
+## 22. Encoder 输出什么？
 
 输入：
 
-\[
+$$
 1202\times512
-\]
+$$
 
 经过 Transformer encoder 后，
 
 shape 不变：
 
-\[
+$$
 \boxed{
 M
 \in
 \mathbb R^{1202\times512}
 }
-\]
+$$
 
 这个：
 
-\[
+$$
 M
-\]
+$$
 
 通常叫：
 
@@ -1162,7 +1162,7 @@ M
 
 ---
 
-# 23. 为什么叫 Memory？
+## 23. 为什么叫 Memory？
 
 因为 Transformer Decoder 后面不会直接再看原始：
 
@@ -1172,9 +1172,9 @@ M
 
 它只通过 cross-attention 访问：
 
-\[
+$$
 M
-\]
+$$
 
 也就是说：
 
@@ -1194,21 +1194,21 @@ Decoder 把 encoder memory 当成：
 
 ---
 
-# 24. 现在进入最容易困惑的部分：Transformer Decoder 输入是什么？
+## 24. 现在进入最容易困惑的部分：Transformer Decoder 输入是什么？
 
 ACT 要输出：
 
-\[
+$$
 k
-\]
+$$
 
 个 actions。
 
 于是它需要：
 
-\[
+$$
 k
-\]
+$$
 
 个 output slots。
 
@@ -1234,41 +1234,41 @@ ACT 使用：
 
 > **action query embeddings**
 
-来表示这 \(k\) 个 output positions。
+来表示这 $k$ 个 output positions。
 
 ---
 
-# 25. Query 在这里到底是什么意思？
+## 25. Query 在这里到底是什么意思？
 
 先不要把它和自然语言问题混在一起。
 
 这里的 query 本质是：
 
-\[
+$$
 q_i
 \in
 \mathbb R^{512}
-\]
+$$
 
 一个 embedding vector。
 
-第 \(i\) 个 query 可以直觉理解为：
+第 $i$ 个 query 可以直觉理解为：
 
-> **“我要生成 action chunk 中第 \(i\) 个位置的动作，请从 encoder memory 中取出对这个输出位置有用的信息。”**
+> **“我要生成 action chunk 中第 $i$ 个位置的动作，请从 encoder memory 中取出对这个输出位置有用的信息。”**
 
 例如：
 
-\[
+$$
 q_0
-\]
+$$
 
 对应：
 
 > 第一个 action slot。
 
-\[
+$$
 q_{20}
-\]
+$$
 
 对应：
 
@@ -1284,7 +1284,7 @@ q_{20}
 
 ---
 
-# 26. 为什么不能只用一个 Query，然后一次输出 k × 14？
+## 26. 为什么不能只用一个 Query，然后一次输出 k × 14？
 
 理论上可以设计别的网络。
 
@@ -1296,37 +1296,37 @@ q_{20}
 
 于是：
 
-\[
+$$
 k
-\]
+$$
 
 个 query：
 
-\[
+$$
 Q
 \in
 \mathbb R^{k\times512}
-\]
+$$
 
 经过 decoder 后得到：
 
-\[
+$$
 H
 \in
 \mathbb R^{k\times512}
-\]
+$$
 
 再逐位置投影为：
 
-\[
+$$
 k\times14
-\]
+$$
 
 这样每个未来 timestep 都拥有自己的 hidden representation。
 
 ---
 
-# 27. Decoder 一开始的 Content 是什么？
+## 27. Decoder 一开始的 Content 是什么？
 
 官方 Transformer 代码：
 
@@ -1336,17 +1336,17 @@ tgt = torch.zeros_like(query_embed)
 
 也就是说 decoder 初始 content：
 
-\[
+$$
 T_0
 =
 0
-\]
+$$
 
 shape：
 
-\[
+$$
 k\times512
-\]
+$$
 
 真正区分这些 output slots 的，是：
 
@@ -1374,19 +1374,19 @@ query_pos = query_embed
 
 ---
 
-# 28. Decoder 中先有 Self-Attention
+## 28. Decoder 中先有 Self-Attention
 
 Transformer decoder layer 里首先：
 
-\[
+$$
 Q=K=T+\text{query\_pos}
-\]
+$$
 
 Value：
 
-\[
+$$
 V=T
-\]
+$$
 
 进行 self-attention。
 
@@ -1404,7 +1404,7 @@ future action 3
 ...
 ```
 
-它不是 \(k\) 个完全独立的 regressor。
+它不是 $k$ 个完全独立的 regressor。
 
 这正是论文所说：
 
@@ -1414,23 +1414,23 @@ future action 3
 
 ---
 
-# 29. 这里为什么没有 Causal Mask？
+## 29. 这里为什么没有 Causal Mask？
 
 这是理解 ACT 和语言 Transformer 差异的关键。
 
 语言生成通常：
 
-> token \(t\) 不允许看到未来 token。
+> token $t$ 不允许看到未来 token。
 
 因为 inference 时要 autoregressive：
 
-\[
+$$
 y_1
 \rightarrow
 y_2
 \rightarrow
 y_3
-\]
+$$
 
 所以需要 causal mask。
 
@@ -1438,9 +1438,9 @@ ACT 不是这样。
 
 它一次性预测完整：
 
-\[
+$$
 k
-\]
+$$
 
 个 action positions。
 
@@ -1452,27 +1452,27 @@ k
 
 也就是说：
 
-\[
+$$
 h_i
-\]
+$$
 
 可以与：
 
-\[
+$$
 h_j
-\]
+$$
 
 交互，无论：
 
-\[
+$$
 i<j
-\]
+$$
 
 还是：
 
-\[
+$$
 i>j
-\]
+$$
 
 所以 ACT decoder：
 
@@ -1480,7 +1480,7 @@ i>j
 
 ---
 
-# 30. 这点非常重要：ACT 一次并行输出整个 Chunk
+## 30. 这点非常重要：ACT 一次并行输出整个 Chunk
 
 ACT 不做：
 
@@ -1509,17 +1509,17 @@ Transformer decoder
 
 因此：
 
-\[
+$$
 \boxed{
 \text{ACT action generation is parallel, not autoregressive}
 }
-\]
+$$
 
 这也使 action chunk inference 更快。
 
 ---
 
-# 31. Cross-Attention：ACT 架构最核心的一步
+## 31. Cross-Attention：ACT 架构最核心的一步
 
 Decoder self-attention 让 action positions 彼此交流。
 
@@ -1537,37 +1537,37 @@ Decoder self-attention 让 action positions 彼此交流。
 
 这里：
 
-### Query
+#### Query
 
 来自 decoder action slots。
 
-### Key
+#### Key
 
 来自 encoder memory。
 
-### Value
+#### Value
 
 也来自 encoder memory。
 
 也就是：
 
-\[
+$$
 Q
 =
 \text{decoder action representation}
-\]
+$$
 
-\[
+$$
 K
 =
 M+\text{encoder position}
-\]
+$$
 
-\[
+$$
 V
 =
 M
-\]
+$$
 
 官方代码直接写：
 
@@ -1589,11 +1589,11 @@ tgt2 = self.multihead_attn(
 
 ---
 
-# 32. 用一句人话理解 Cross-Attention
+## 32. 用一句人话理解 Cross-Attention
 
-第 \(i\) 个 action query 在问：
+第 $i$ 个 action query 在问：
 
-> **“为了预测 future slot \(i\) 的动作，我应该从当前 observation memory 的哪些部分读取信息？”**
+> **“为了预测 future slot $i$ 的动作，我应该从当前 observation memory 的哪些部分读取信息？”**
 
 它可以 attend：
 
@@ -1605,15 +1605,15 @@ tgt2 = self.multihead_attn(
 
 然后把这些信息组合成：
 
-\[
+$$
 h_i
-\]
+$$
 
-最终用于预测第 \(i\) 个 action。
+最终用于预测第 $i$ 个 action。
 
 ---
 
-# 33. 一个例子
+## 33. 一个例子
 
 假设 chunk 中前半段是：
 
@@ -1645,25 +1645,25 @@ Transformer decoder 允许每个 output slot：
 
 ---
 
-# 34. Q、K、V 在 ACT Cross-Attention 里到底分别是什么？
+## 34. Q、K、V 在 ACT Cross-Attention 里到底分别是什么？
 
 这是非常适合直接记住的一张表。
 
 | Cross-Attention 部分 | ACT 中来自哪里 |
 |---|---|
-| Query \(Q\) | Transformer decoder 的 action query / current decoder state |
-| Key \(K\) | Transformer encoder memory + position embedding |
-| Value \(V\) | Transformer encoder memory |
+| Query $Q$ | Transformer decoder 的 action query / current decoder state |
+| Key $K$ | Transformer encoder memory + position embedding |
+| Value $V$ | Transformer encoder memory |
 
 所以：
 
-\[
+$$
 \boxed{
 \text{Action Queries}
 \;\xrightarrow{\text{search}}\;
 \text{Observation Memory}
 }
-\]
+$$
 
 如果不熟悉为什么 attention 要分 Q/K/V：
 
@@ -1671,17 +1671,17 @@ Transformer decoder 允许每个 output slot：
 
 ---
 
-# 35. Encoder Self-Attention 的 QKV 又来自哪里？
+## 35. Encoder Self-Attention 的 QKV 又来自哪里？
 
 在 policy encoder 中：
 
-\[
+$$
 Q=K=\text{src}+\text{position}
-\]
+$$
 
-\[
+$$
 V=\text{src}
-\]
+$$
 
 其中 src 包含：
 
@@ -1705,35 +1705,35 @@ joint token
 
 ---
 
-# 36. Decoder 最后得到什么？
+## 36. Decoder 最后得到什么？
 
 经过 Transformer decoder 后：
 
-\[
+$$
 H_{\mathrm{dec}}
 \in
 \mathbb R^{k\times512}
-\]
+$$
 
 每一个：
 
-\[
+$$
 h_i
 \in
 \mathbb R^{512}
-\]
+$$
 
 对应一个未来 action position。
 
 然后使用 action head：
 
-\[
+$$
 \boxed{
 \mathbb R^{512}
 \rightarrow
 \mathbb R^{14}
 }
-\]
+$$
 
 官方代码：
 
@@ -1747,53 +1747,53 @@ self.action_head =
 
 其中：
 
-\[
+$$
 hidden\_dim=512
-\]
+$$
 
-\[
+$$
 state\_dim=14
-\]
+$$
 
 所以：
 
-\[
+$$
 a_i
 =
 W_ah_i+b_a
-\]
+$$
 
 最终：
 
-\[
+$$
 \boxed{
 \hat A
 \in
 \mathbb R^{k\times14}
 }
-\]
+$$
 
 ---
 
-# 37. 为什么 Action 是 14 维？
+## 37. 为什么 Action 是 14 维？
 
 ALOHA 使用两条机械臂。
 
 每条：
 
-\[
+$$
 7
-\]
+$$
 
 个 joint dimensions。
 
 因此：
 
-\[
+$$
 7+7
 =
 14
-\]
+$$
 
 论文的 action 定义是：
 
@@ -1801,42 +1801,42 @@ ALOHA 使用两条机械臂。
 
 所以：
 
-\[
+$$
 a_t
 =
 [
 q_{L,1},\ldots,q_{L,7},
 q_{R,1},\ldots,q_{R,7}
 ]
-\]
+$$
 
 shape：
 
-\[
+$$
 \mathbb R^{14}
-\]
+$$
 
 ---
 
-# 38. ACT 输出的不是 Joint Delta
+## 38. ACT 输出的不是 Joint Delta
 
 这是论文明确强调的一个设计。
 
 ACT 使用：
 
-\[
+$$
 \boxed{
 \text{absolute target joint positions}
 }
-\]
+$$
 
 而不是：
 
-\[
+$$
 \Delta q_t
 =
 q_{t+1}-q_t
-\]
+$$
 
 论文说他们实验观察到：
 
@@ -1852,15 +1852,15 @@ q_{t+1}-q_t
 
 ---
 
-# 39. ACT 输出的也不是 Motor Torque
+## 39. ACT 输出的也不是 Motor Torque
 
 ACT policy 不是低层 torque controller。
 
 输出：
 
-\[
+$$
 14\text{-D target joint positions}
-\]
+$$
 
 之后由 Dynamixel motors 内部的：
 
@@ -1888,197 +1888,197 @@ motor command / physical motion
 
 ---
 
-# 40. 把完整 Tensor Shape 串起来
+## 40. 把完整 Tensor Shape 串起来
 
 现在用一个 batch size：
 
-\[
+$$
 B
-\]
+$$
 
 完整走一遍。
 
 ---
 
-## RGB Images
+### RGB Images
 
-\[
+$$
 [B,4,3,480,640]
-\]
+$$
 
 拆每个 camera：
 
-\[
+$$
 [B,3,480,640]
-\]
+$$
 
 ---
 
-## ResNet18
+### ResNet18
 
 每路：
 
-\[
+$$
 [B,512,15,20]
-\]
+$$
 
 ---
 
-## Four Cameras Concatenated
+### Four Cameras Concatenated
 
 官方实现沿 width：
 
-\[
+$$
 [B,512,15,80]
-\]
+$$
 
 ---
 
-## Flatten for Transformer
+### Flatten for Transformer
 
-\[
+$$
 15\times80=1200
-\]
+$$
 
 得到：
 
-\[
+$$
 [1200,B,512]
-\]
+$$
 
 ---
 
-## Joint State
+### Joint State
 
 原始：
 
-\[
+$$
 [B,14]
-\]
+$$
 
 Linear：
 
-\[
+$$
 [B,512]
-\]
+$$
 
 变成 1 token：
 
-\[
+$$
 [1,B,512]
-\]
+$$
 
 ---
 
-## Latent z
+### Latent z
 
 原始：
 
-\[
+$$
 [B,32]
-\]
+$$
 
 Linear：
 
-\[
+$$
 [B,512]
-\]
+$$
 
 变成：
 
-\[
+$$
 [1,B,512]
-\]
+$$
 
 ---
 
-## Transformer Encoder Input
+### Transformer Encoder Input
 
-\[
+$$
 \boxed{
 [1202,B,512]
 }
-\]
+$$
 
 ---
 
-## Transformer Encoder Memory
+### Transformer Encoder Memory
 
-\[
+$$
 \boxed{
 [1202,B,512]
 }
-\]
+$$
 
 ---
 
-## Action Queries
+### Action Queries
 
-\[
+$$
 \boxed{
 [k,B,512]
 }
-\]
+$$
 
 ---
 
-## Transformer Decoder Output
+### Transformer Decoder Output
 
-\[
+$$
 \boxed{
 [k,B,512]
 }
-\]
+$$
 
 ---
 
-## Action Head
+### Action Head
 
-\[
+$$
 512\rightarrow14
-\]
+$$
 
 得到：
 
-\[
+$$
 \boxed{
 [B,k,14]
 }
-\]
+$$
 
 这就是一次 ACT policy forward。
 
 ---
 
-# 41. 如果 k = 100，会是什么规模？
+## 41. 如果 k = 100，会是什么规模？
 
 论文默认：
 
-\[
+$$
 k=100
-\]
+$$
 
 那么 decoder 有：
 
-\[
+$$
 100
-\]
+$$
 
 个 action slots。
 
 输出：
 
-\[
+$$
 [B,100,14]
-\]
+$$
 
 对单个 sample：
 
-\[
+$$
 100\times14
 =
 1400
-\]
+$$
 
 个连续 action values。
 
@@ -2092,7 +2092,7 @@ Transformer decoder 让不同 future positions 之间能够交互，
 
 ---
 
-# 42. 为什么固定 Query 能输出不同动作？
+## 42. 为什么固定 Query 能输出不同动作？
 
 很容易疑惑：
 
@@ -2100,9 +2100,9 @@ Transformer decoder 让不同 future positions 之间能够交互，
 
 因为：
 
-\[
+$$
 q_0,q_1,\ldots,q_{k-1}
-\]
+$$
 
 不是同一个 vector。
 
@@ -2110,25 +2110,25 @@ q_0,q_1,\ldots,q_{k-1}
 
 训练时：
 
-\[
+$$
 q_i
-\]
+$$
 
 对应的 decoder output 始终被监督为：
 
-\[
+$$
 a_{t+i}
-\]
+$$
 
 所以 optimization 会逐渐让：
 
-\[
+$$
 q_i
-\]
+$$
 
 承担：
 
-> chunk 第 \(i\) 个 action slot
+> chunk 第 $i$ 个 action slot
 
 的角色。
 
@@ -2144,7 +2144,7 @@ q_i
 
 ---
 
-# 43. Query 本身包含当前图像信息吗？
+## 43. Query 本身包含当前图像信息吗？
 
 一开始：
 
@@ -2154,9 +2154,9 @@ query embedding 本身只是 output-slot representation。
 
 当前 observation information 来自：
 
-\[
+$$
 \text{encoder memory}
-\]
+$$
 
 通过 cross-attention 注入。
 
@@ -2177,15 +2177,15 @@ Cross-Attention:
 
 ---
 
-# 44. 为什么 Query 不直接是 Future Timestep 数字？
+## 44. 为什么 Query 不直接是 Future Timestep 数字？
 
 理论上也可以编码成显式 timestep scalar。
 
 ACT / DETR-style architecture 使用：
 
-\[
+$$
 512
-\]
+$$
 
 维 positional/query representation，
 
@@ -2203,7 +2203,7 @@ ACT / DETR-style architecture 使用：
 
 ---
 
-# 45. Action Queries 会互相交流吗？
+## 45. Action Queries 会互相交流吗？
 
 会。
 
@@ -2211,15 +2211,15 @@ ACT / DETR-style architecture 使用：
 
 所以：
 
-\[
+$$
 q_i
-\]
+$$
 
 对应的 decoder state 可以读取：
 
-\[
+$$
 q_j
-\]
+$$
 
 对应的 decoder state。
 
@@ -2246,7 +2246,7 @@ q_j
 
 ---
 
-# 46. 这和 Action Chunking 为什么天然匹配？
+## 46. 这和 Action Chunking 为什么天然匹配？
 
 Action Chunking 的核心目标就是：
 
@@ -2254,9 +2254,9 @@ Action Chunking 的核心目标就是：
 
 Transformer decoder 正好允许：
 
-\[
+$$
 a_t,\ldots,a_{t+k-1}
-\]
+$$
 
 对应的 hidden states 相互交互。
 
@@ -2272,7 +2272,7 @@ a_t,\ldots,a_{t+k-1}
 
 ---
 
-# 47. ACT Decoder 是不是像 GPT 一样一个 Action 一个 Action 地生成？
+## 47. ACT Decoder 是不是像 GPT 一样一个 Action 一个 Action 地生成？
 
 **不是。**
 
@@ -2301,15 +2301,15 @@ k action queries
 
 没有通过：
 
-\[
+$$
 a_t
-\]
+$$
 
 作为 decoder input 再预测：
 
-\[
+$$
 a_{t+1}
-\]
+$$
 
 所以不要把所有 Transformer decoder 都理解成：
 
@@ -2325,7 +2325,7 @@ Transformer decoder 是一种架构。
 
 ---
 
-# 48. ACT 为什么还需要 Decoder Self-Attention？
+## 48. ACT 为什么还需要 Decoder Self-Attention？
 
 如果每个 query 只独立 cross-attend observation memory，
 
@@ -2333,15 +2333,15 @@ Transformer decoder 是一种架构。
 
 但 action trajectory 本身具有强时间关联：
 
-\[
+$$
 a_{t+1}
-\]
+$$
 
 通常不会和：
 
-\[
+$$
 a_t
-\]
+$$
 
 完全无关。
 
@@ -2359,13 +2359,13 @@ Decoder self-attention 允许 output positions 共享信息，
 
 ---
 
-# 49. 双臂协调在哪里体现？
+## 49. 双臂协调在哪里体现？
 
 每个 action vector 已经是：
 
-\[
+$$
 14
-\]
+$$
 
 维。
 
@@ -2382,9 +2382,9 @@ Decoder self-attention 允许 output positions 共享信息，
 
 所以：
 
-\[
+$$
 a_i\in\mathbb R^{14}
-\]
+$$
 
 本身就允许模型表示：
 
@@ -2400,11 +2400,11 @@ a_i\in\mathbb R^{14}
 
 ---
 
-# 50. Position Encoding 在整个 ACT 里一共有几类？
+## 50. Position Encoding 在整个 ACT 里一共有几类？
 
 ACT 中至少可以区分三类 positional / role information。
 
-## 1. CVAE Encoder Sequence Position
+### 1. CVAE Encoder Sequence Position
 
 训练时：
 
@@ -2420,7 +2420,7 @@ action 1
 
 ---
 
-## 2. Visual 2D Position
+### 2. Visual 2D Position
 
 告诉 policy encoder：
 
@@ -2428,13 +2428,13 @@ action 1
 
 ---
 
-## 3. Policy Decoder Action Query Position
+### 3. Policy Decoder Action Query Position
 
 区分：
 
-\[
+$$
 0,\ldots,k-1
-\]
+$$
 
 不同 future action slots。
 
@@ -2446,7 +2446,7 @@ action 1
 
 ---
 
-# 51. Camera Identity 怎么表示？
+## 51. Camera Identity 怎么表示？
 
 这个问题很有意思。
 
@@ -2454,9 +2454,9 @@ action 1
 
 官方实现把它们沿 width 拼成：
 
-\[
+$$
 15\times80
-\]
+$$
 
 再用对应 positional embeddings 一起拼接。
 
@@ -2484,7 +2484,7 @@ camera_type_embedding
 
 ---
 
-# 52. ACT 的 ResNet18 是四个独立 Backbone 吗？
+## 52. ACT 的 ResNet18 是四个独立 Backbone 吗？
 
 从论文表述：
 
@@ -2503,9 +2503,9 @@ features, pos =
 
 对不同 camera 都调用：
 
-\[
+$$
 \text{backbones}[0]
-\]
+$$
 
 也就是说：
 
@@ -2517,7 +2517,7 @@ features, pos =
 
 ---
 
-# 53. 为什么共享 Backbone 合理？
+## 53. 为什么共享 Backbone 合理？
 
 因为四路输入都是：
 
@@ -2538,30 +2538,30 @@ features, pos =
 
 ---
 
-# 54. Encoder Memory 的 Key 和 Value 为什么来自同一个东西？
+## 54. Encoder Memory 的 Key 和 Value 为什么来自同一个东西？
 
 标准 cross-attention：
 
-\[
+$$
 \operatorname{Attention}(Q,K,V)
 =
 \operatorname{softmax}
 \left(
 \frac{QK^\top}{\sqrt{d_k}}
 \right)V
-\]
+$$
 
 在 ACT decoder：
 
-\[
+$$
 K
 =
 M+\text{position}
-\]
+$$
 
-\[
+$$
 V=M
-\]
+$$
 
 也就是说：
 
@@ -2577,7 +2577,7 @@ V=M
 
 ---
 
-# 55. 为什么 Key 加 Position，而 Value 不一定加？
+## 55. 为什么 Key 加 Position，而 Value 不一定加？
 
 官方 Transformer 代码：
 
@@ -2607,7 +2607,7 @@ Value 负责：
 
 ---
 
-# 56. Query Embedding 是固定的还是 Learned 的？
+## 56. Query Embedding 是固定的还是 Learned 的？
 
 这里存在一个值得明确记录的：
 
@@ -2661,7 +2661,7 @@ query_embed
 
 ---
 
-# 57. 这个差异该怎么理解？
+## 57. 这个差异该怎么理解？
 
 在讲：
 
@@ -2689,7 +2689,7 @@ query_embed
 
 两者共同点仍然是：
 
-> 有 \(k\) 个 distinct query positions，对应 \(k\) 个 future action slots。
+> 有 $k$ 个 distinct query positions，对应 $k$ 个 future action slots。
 
 它们究竟是：
 
@@ -2700,15 +2700,15 @@ query_embed
 
 ---
 
-# 58. 另一个更重要的实现差异：7 Decoder Layers
+## 58. 另一个更重要的实现差异：7 Decoder Layers
 
 论文 Table III 给出：
 
-\[
+$$
 \boxed{
 \#\text{ decoder layers}=7
 }
-\]
+$$
 
 官方训练配置同样设置：
 
@@ -2722,7 +2722,7 @@ dec_layers = 7
 
 ---
 
-# 59. 但当前官方代码存在一个值得警惕的输出索引行为
+## 59. 但当前官方代码存在一个值得警惕的输出索引行为
 
 `TransformerDecoder` 在：
 
@@ -2732,15 +2732,15 @@ return_intermediate=True
 
 时，会返回所有 decoder layers 的 outputs：
 
-\[
+$$
 [L,B,k,d]
-\]
+$$
 
 其中：
 
-\[
+$$
 L=7
-\]
+$$
 
 但 `detr_vae.py` 当前写：
 
@@ -2768,13 +2768,13 @@ hs = self.transformer(...)[0]
 
 ---
 
-# 60. 这是论文设计的一部分吗？
+## 60. 这是论文设计的一部分吗？
 
 论文明确写的是：
 
-\[
+$$
 7
-\]
+$$
 
 个 decoder layers。
 
@@ -2806,7 +2806,7 @@ LeRobot 当前 ACT implementation 甚至明确注释：
 
 ---
 
-# 61. 为什么这类“论文 vs Code”差异值得记录？
+## 61. 为什么这类“论文 vs Code”差异值得记录？
 
 因为如果只读论文：
 
@@ -2848,7 +2848,7 @@ Ablation / Reproduction
 
 ---
 
-# 62. ACT Architecture 和 DETR 有什么关系？
+## 62. ACT Architecture 和 DETR 有什么关系？
 
 官方源码文件甚至叫：
 
@@ -2904,7 +2904,7 @@ ACT 的 target structure、loss、CVAE 和 temporal semantics 都不同。
 
 ---
 
-# 63. 为什么 Action Query 数量等于 Chunk Size？
+## 63. 为什么 Action Query 数量等于 Chunk Size？
 
 官方：
 
@@ -2914,29 +2914,29 @@ num_queries = chunk_size
 
 如果：
 
-\[
+$$
 k=100
-\]
+$$
 
 就创建：
 
-\[
+$$
 100
-\]
+$$
 
 个 query embeddings。
 
 因为每一个 query 最终对应：
 
-\[
+$$
 1
-\]
+$$
 
 个 action vector。
 
 所以：
 
-\[
+$$
 \boxed{
 \#query
 =
@@ -2944,79 +2944,79 @@ k=100
 =
 k
 }
-\]
+$$
 
 这是 architecture 与 Action Chunking 最直接的连接点。
 
 ---
 
-# 64. 如果改变 k，网络哪部分会变化？
+## 64. 如果改变 k，网络哪部分会变化？
 
 假设：
 
-\[
+$$
 k=100
 \rightarrow
 k=50
-\]
+$$
 
 那么至少：
 
-### Action Query Count
+#### Action Query Count
 
 从：
 
-\[
+$$
 100
-\]
+$$
 
 变为：
 
-\[
+$$
 50
-\]
+$$
 
-### Decoder Output
+#### Decoder Output
 
 从：
 
-\[
+$$
 100\times512
-\]
+$$
 
 变为：
 
-\[
+$$
 50\times512
-\]
+$$
 
-### Action Output
+#### Action Output
 
 从：
 
-\[
+$$
 100\times14
-\]
+$$
 
 变为：
 
-\[
+$$
 50\times14
-\]
+$$
 
-### CVAE Encoder Sequence Length
+#### CVAE Encoder Sequence Length
 
 训练时：
 
-\[
+$$
 [CLS]+q+\text{actions}
-\]
+$$
 
 也从：
 
-\[
+$$
 k+2
-\]
+$$
 
 改变。
 
@@ -3028,45 +3028,45 @@ k+2
 
 ---
 
-# 65. 为什么 Encoder Sequence Length 1202 与 k 无关？
+## 65. 为什么 Encoder Sequence Length 1202 与 k 无关？
 
 注意这里有两个不同 encoder。
 
-## CVAE Training Encoder
+### CVAE Training Encoder
 
 sequence length：
 
-\[
+$$
 k+2
-\]
+$$
 
 取决于 action chunk size。
 
 ---
 
-## Policy Transformer Encoder
+### Policy Transformer Encoder
 
 sequence length：
 
-\[
+$$
 1202
-\]
+$$
 
 来自：
 
-\[
+$$
 1200\text{ visual}
 +
 1\text{ joint}
 +
 1\text{ z}
-\]
+$$
 
 与：
 
-\[
+$$
 k
-\]
+$$
 
 无关。
 
@@ -3076,9 +3076,9 @@ k
 
 sequence length：
 
-\[
+$$
 k
-\]
+$$
 
 所以 ACT 有三个不同 sequence lengths：
 
@@ -3097,25 +3097,25 @@ k
 
 ---
 
-# 66. 三个 Sequence 分别在建模什么？
+## 66. 三个 Sequence 分别在建模什么？
 
-## CVAE Encoder Sequence
+### CVAE Encoder Sequence
 
-\[
+$$
 [CLS],q,a_t,\ldots,a_{t+k-1}
-\]
+$$
 
 目标：
 
-> infer latent style \(z\)。
+> infer latent style $z$。
 
 ---
 
-## Policy Encoder Sequence
+### Policy Encoder Sequence
 
-\[
+$$
 z,q,\text{visual tokens}
-\]
+$$
 
 目标：
 
@@ -3123,11 +3123,11 @@ z,q,\text{visual tokens}
 
 ---
 
-## Policy Decoder Sequence
+### Policy Decoder Sequence
 
-\[
+$$
 k\text{ action query slots}
-\]
+$$
 
 目标：
 
@@ -3139,25 +3139,25 @@ k\text{ action query slots}
 
 ---
 
-# 67. 为什么不能把三个 Transformer 混成“ACT 有个 Transformer”？
+## 67. 为什么不能把三个 Transformer 混成“ACT 有个 Transformer”？
 
 因为它们的角色完全不同。
 
 ACT 至少有：
 
-### CVAE Transformer Encoder
+#### CVAE Transformer Encoder
 
 training only。
 
 ---
 
-### Policy Transformer Encoder
+#### Policy Transformer Encoder
 
 training + inference。
 
 ---
 
-### Policy Transformer Decoder
+#### Policy Transformer Decoder
 
 training + inference。
 
@@ -3186,7 +3186,7 @@ Transformer #3
 
 ---
 
-# 68. 一张完整 Architecture 图
+## 68. 一张完整 Architecture 图
 
 ```text
                          CURRENT OBSERVATION
@@ -3263,7 +3263,7 @@ Transformer #3
 
 ---
 
-# 69. Training 时图里还多一条 CVAE Encoder Branch
+## 69. Training 时图里还多一条 CVAE Encoder Branch
 
 ```text
 Ground-truth Action Chunk [k,14]
@@ -3300,71 +3300,71 @@ Joint q ────────┤
 
 直接：
 
-\[
+$$
 z=0
-\]
+$$
 
 进入 policy。
 
 ---
 
-# 70. ACT Architecture 最核心的三个“压缩 / 展开”
+## 70. ACT Architecture 最核心的三个“压缩 / 展开”
 
 可以从信息结构角度重新看。
 
-## 视觉压缩
+### 视觉压缩
 
-\[
+$$
 4\times480\times640\times3
-\]
+$$
 
 经过 ResNet：
 
-\[
+$$
 \rightarrow
 1200\times512
-\]
+$$
 
 ---
 
-## Context Fusion
+### Context Fusion
 
-\[
+$$
 1200\text{ visual}
 +
 q
 +
 z
-\]
+$$
 
 经过 Transformer encoder：
 
-\[
+$$
 \rightarrow
 1202\text{ contextual memory tokens}
-\]
+$$
 
 ---
 
-## Future Expansion
+### Future Expansion
 
-\[
+$$
 k\text{ action queries}
-\]
+$$
 
 通过 cross-attention 读取 memory：
 
-\[
+$$
 \rightarrow
 k\text{ action representations}
-\]
+$$
 
 最后：
 
-\[
+$$
 \rightarrow
 k\times14
-\]
+$$
 
 future actions。
 
@@ -3372,7 +3372,7 @@ future actions。
 
 ---
 
-# 71. 常见误解一：ResNet 直接预测动作
+## 71. 常见误解一：ResNet 直接预测动作
 
 **错误。**
 
@@ -3382,7 +3382,7 @@ ResNet 只负责：
 
 完整流程：
 
-\[
+$$
 Image
 \rightarrow
 ResNet
@@ -3392,11 +3392,11 @@ Visual Tokens
 Transformer
 \rightarrow
 Actions
-\]
+$$
 
 ---
 
-# 72. 常见误解二：四个 Camera 各有一套完全独立 Transformer
+## 72. 常见误解二：四个 Camera 各有一套完全独立 Transformer
 
 **错误。**
 
@@ -3410,31 +3410,31 @@ Actions
 
 ---
 
-# 73. 常见误解三：Joint Positions 直接和 Image Tensor 做 Concatenate
+## 73. 常见误解三：Joint Positions 直接和 Image Tensor 做 Concatenate
 
 不是在 raw pixel level。
 
 joint state：
 
-\[
+$$
 14
-\]
+$$
 
 维，
 
 先：
 
-\[
+$$
 14\rightarrow512
-\]
+$$
 
 变成 token。
 
 images 也先经过：
 
-\[
+$$
 ResNet
-\]
+$$
 
 变成 512-D visual tokens。
 
@@ -3444,15 +3444,15 @@ ResNet
 
 ---
 
-# 74. 常见误解四：z 直接控制某个 Joint
+## 74. 常见误解四：z 直接控制某个 Joint
 
 **错误。**
 
-\(z\) 被：
+$z$ 被：
 
-\[
+$$
 32\rightarrow512
-\]
+$$
 
 project 成一个 token，
 
@@ -3469,15 +3469,15 @@ z₂ → joint 2
 
 ---
 
-# 75. 常见误解五：Transformer Encoder 输出一个向量
+## 75. 常见误解五：Transformer Encoder 输出一个向量
 
 ACT policy encoder 不只输出一个 vector。
 
 它保持整段 sequence：
 
-\[
+$$
 1202\times512
-\]
+$$
 
 作为 memory。
 
@@ -3485,7 +3485,7 @@ Decoder 可以对不同 memory positions 做 cross-attention。
 
 ---
 
-# 76. 常见误解六：Decoder Query 就是 QKV 中最终的 Q Matrix
+## 76. 常见误解六：Decoder Query 就是 QKV 中最终的 Q Matrix
 
 不完全一样。
 
@@ -3496,13 +3496,13 @@ Decoder 可以对不同 memory positions 做 cross-attention。
 在 attention layer 内部，它还会经过：
 
 - addition with current decoder state；
-- learned \(W_Q\) projection；
+- learned $W_Q$ projection；
 
 才得到真正 attention 公式里的：
 
-\[
+$$
 Q
-\]
+$$
 
 matrix。
 
@@ -3526,7 +3526,7 @@ attention Q after projection
 
 ---
 
-# 77. 常见误解七：Decoder 是 Autoregressive 的
+## 77. 常见误解七：Decoder 是 Autoregressive 的
 
 **错误。**
 
@@ -3538,7 +3538,7 @@ ACT 没有 causal mask，
 
 ---
 
-# 78. 常见误解八：k 个 Actions 是 k 个独立 Linear Heads
+## 78. 常见误解八：k 个 Actions 是 k 个独立 Linear Heads
 
 **错误。**
 
@@ -3550,25 +3550,25 @@ ACT 没有 causal mask，
 
 最后共享 action projection：
 
-\[
+$$
 512\rightarrow14
-\]
+$$
 
 得到动作。
 
 ---
 
-# 79. 常见误解九：Transformer Decoder 直接读取原图
+## 79. 常见误解九：Transformer Decoder 直接读取原图
 
 **错误。**
 
 Decoder cross-attend 的是：
 
-\[
+$$
 \boxed{
 \text{Transformer Encoder Memory}
 }
-\]
+$$
 
 原图已经经过：
 
@@ -3582,7 +3582,7 @@ policy encoder
 
 ---
 
-# 80. 常见误解十：ACT 只有一个 Encoder
+## 80. 常见误解十：ACT 只有一个 Encoder
 
 **错误。**
 
@@ -3595,13 +3595,13 @@ policy encoder
 
 ---
 
-# 81. 常见误解十一：论文和官方代码细节完全一致
+## 81. 常见误解十一：论文和官方代码细节完全一致
 
 并不总是。
 
 至少目前值得注意：
 
-### Query Representation
+#### Query Representation
 
 论文文字：
 
@@ -3611,13 +3611,13 @@ policy encoder
 
 > learnable `nn.Embedding`.
 
-### Decoder Layers
+#### Decoder Layers
 
 论文：
 
-\[
+$$
 7
-\]
+$$
 
 layers。
 
@@ -3635,33 +3635,33 @@ layers。
 
 ---
 
-# 82. 常见误解十二：1202 是固定属于所有 ACT 的数字
+## 82. 常见误解十二：1202 是固定属于所有 ACT 的数字
 
 不是。
 
 它来自原论文 ALOHA 设置：
 
-\[
+$$
 4
-\]
+$$
 
 路 cameras，
 
 每路：
 
-\[
+$$
 15\times20=300
-\]
+$$
 
 tokens。
 
 所以：
 
-\[
+$$
 4\times300+2
 =
 1202
-\]
+$$
 
 如果你改变：
 
@@ -3673,7 +3673,7 @@ visual token 数都会改变。
 
 真正一般形式：
 
-\[
+$$
 \boxed{
 N_{\text{encoder}}
 =
@@ -3685,7 +3685,7 @@ W_f
 +
 2
 }
-\]
+$$
 
 其中 +2 是：
 
@@ -3694,7 +3694,7 @@ W_f
 
 ---
 
-# 83. 为什么原始 ACT 能在约 0.01 秒推理？
+## 83. 为什么原始 ACT 能在约 0.01 秒推理？
 
 论文报告：
 
@@ -3702,9 +3702,9 @@ W_f
 
 虽然 sequence length：
 
-\[
+$$
 1202
-\]
+$$
 
 并不算小，
 
@@ -3725,15 +3725,15 @@ W_f
 
 ---
 
-# 84. Architecture 和 Temporal Ensemble 不要混
+## 84. Architecture 和 Temporal Ensemble 不要混
 
 ACT Policy Architecture 负责：
 
-\[
+$$
 o_t
 \rightarrow
 \hat a_{t:t+k}
-\]
+$$
 
 即：
 
@@ -3764,7 +3764,7 @@ Temporal Ensemble
 
 ---
 
-# 85. Architecture 和 CVAE 也不要混
+## 85. Architecture 和 CVAE 也不要混
 
 Training 时：
 
@@ -3786,9 +3786,9 @@ Transformer Decoder
 
 所以：
 
-\[
+$$
 \text{CVAE}
-\]
+$$
 
 不是 policy Transformer 内部的某一个 layer。
 
@@ -3809,77 +3809,77 @@ ACT CVAE
 
 ---
 
-# 86. 用一句话理解每个模块
+## 86. 用一句话理解每个模块
 
-## ResNet18
+### ResNet18
 
 > 把高分辨率图片变成紧凑 spatial visual features。
 
-## 2D Positional Encoding
+### 2D Positional Encoding
 
 > 告诉 Transformer visual features 在哪里。
 
-## Joint Projection
+### Joint Projection
 
 > 把当前机器人姿态变成 Transformer token。
 
-## Latent Projection
+### Latent Projection
 
 > 把 style variable 变成 Transformer token。
 
-## Transformer Encoder
+### Transformer Encoder
 
 > 融合多视角视觉、robot state 和 latent condition。
 
-## Action Queries
+### Action Queries
 
-> 定义 \(k\) 个未来动作输出位置。
+> 定义 $k$ 个未来动作输出位置。
 
-## Transformer Decoder Self-Attention
+### Transformer Decoder Self-Attention
 
 > 让未来 action positions 相互协调。
 
-## Cross-Attention
+### Cross-Attention
 
 > 让每个 action slot 从当前 observation memory 中读取所需信息。
 
-## Action Head
+### Action Head
 
 > 把每个 512-D action representation 转成 14-D joint target。
 
 ---
 
-# 87. 用三条 Shape 记住整个 Policy
+## 87. 用三条 Shape 记住整个 Policy
 
 如果最后只记住三个 shape：
 
-## Observation Memory
+### Observation Memory
 
-\[
+$$
 \boxed{
 1202\times512
 }
-\]
+$$
 
-## Action Decoder Features
+### Action Decoder Features
 
-\[
+$$
 \boxed{
 k\times512
 }
-\]
+$$
 
-## Final Action Chunk
+### Final Action Chunk
 
-\[
+$$
 \boxed{
 k\times14
 }
-\]
+$$
 
 整个 ACT policy 可以压缩成：
 
-\[
+$$
 \boxed{
 1202\times512
 \;\xrightarrow[\text{k queries}]{\text{Transformer Decoder}}\;
@@ -3887,31 +3887,31 @@ k\times512
 \;\xrightarrow{\text{Action Head}}\;
 k\times14
 }
-\]
+$$
 
 ---
 
-# 88. 一句话重新理解 ACT Architecture
+## 88. 一句话重新理解 ACT Architecture
 
-> **ACT 先用 ResNet18 把 4 路视觉压缩成 1200 个 512 维 visual tokens，再把当前 14 维 joint state 和 32 维 latent \(z\) 各自投影成一个 512 维 token；这 1202 个 tokens 经过 Transformer encoder 融合成 observation memory。随后 \(k\) 个 action-query slots 通过 Transformer decoder 的 self-attention 建模未来动作之间的关系，并通过 cross-attention 从 observation memory 中读取信息，最后每个 512 维 decoder output 被投影成一个 14 维双臂 target joint vector，从而一次并行输出 \(k\times14\) 的 action chunk。**
+> **ACT 先用 ResNet18 把 4 路视觉压缩成 1200 个 512 维 visual tokens，再把当前 14 维 joint state 和 32 维 latent $z$ 各自投影成一个 512 维 token；这 1202 个 tokens 经过 Transformer encoder 融合成 observation memory。随后 $k$ 个 action-query slots 通过 Transformer decoder 的 self-attention 建模未来动作之间的关系，并通过 cross-attention 从 observation memory 中读取信息，最后每个 512 维 decoder output 被投影成一个 14 维双臂 target joint vector，从而一次并行输出 $k\times14$ 的 action chunk。**
 
 这就是 ACT 从：
 
-\[
+$$
 \text{Pixels}
-\]
+$$
 
 到：
 
-\[
+$$
 \text{Robot Actions}
-\]
+$$
 
 的完整架构主线。
 
 ---
 
-# 89. 下一步
+## 89. 下一步
 
 现在我们已经知道：
 
@@ -3927,7 +3927,7 @@ k\times14
 
 完全分开。
 
-## 下一篇之一：ACT Training
+### 下一篇之一：ACT Training
 
 会回答：
 
@@ -3937,7 +3937,7 @@ k\times14
 - CVAE encoder 和 policy 怎样联合优化；
 - L1 reconstruction 怎样计算；
 - KL 怎样计算；
-- \(\beta=10\) 怎样进入 loss；
+- $\beta=10$ 怎样进入 loss；
 - optimizer 实际更新哪些参数。
 
 见：
@@ -3946,13 +3946,13 @@ k\times14
 
 ---
 
-## 下一篇之二：ACT Inference
+### 下一篇之二：ACT Inference
 
 会回答：
 
 - test observation 怎样进入网络；
-- 为什么 \(z=0\)；
-- 一次 forward 怎样得到 \(k\) actions；
+- 为什么 $z=0$；
+- 一次 forward 怎样得到 $k$ actions；
 - 为什么每 timestep 都重新 query；
 - overlapping chunks 怎样进入 Temporal Ensemble；
 - 最终只执行哪个 action；
@@ -3964,7 +3964,7 @@ k\times14
 
 ---
 
-## Primary Source
+### Primary Source
 
 Tony Z. Zhao, Vikash Kumar, Sergey Levine, Chelsea Finn.  
 **Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware.**  
@@ -3984,41 +3984,41 @@ Robotics: Science and Systems (RSS), 2023.
 
 论文给出的核心 shape：
 
-\[
+$$
 480\times640\times3
 \rightarrow
 15\times20\times512
 \rightarrow
 300\times512
-\]
+$$
 
 4 cameras：
 
-\[
+$$
 1200\times512
-\]
+$$
 
-加入 joint state 和 latent \(z\)：
+加入 joint state 和 latent $z$：
 
-\[
+$$
 1202\times512
-\]
+$$
 
 decoder：
 
-\[
+$$
 k\times512
-\]
+$$
 
 最终：
 
-\[
+$$
 k\times14
-\]
+$$
 
 ---
 
-## Official Implementation
+### Official Implementation
 
 ACT official repository:
 
@@ -4047,9 +4047,9 @@ imitate_episodes.py
 
 ---
 
-## Paper / Code Implementation Notes
+### Paper / Code Implementation Notes
 
-### Action Query Embedding
+#### Action Query Embedding
 
 论文文字描述：
 
@@ -4069,13 +4069,13 @@ self.query_embed =
 
 ---
 
-### Decoder Layer Output
+#### Decoder Layer Output
 
 论文 Table III：
 
-\[
+$$
 7
-\]
+$$
 
 decoder layers。
 
@@ -4095,9 +4095,9 @@ Hugging Face LeRobot 的 ACT 配置目前明确记录了这一点，并使用 1 
 
 ---
 
-## 本文知识连接
+### 本文知识连接
 
-### ACT 主线
+#### ACT 主线
 
 - [ACT 到底解决了什么问题？](./act-what-problem-does-it-solve.md)
 - [Action Chunking](./action-chunking.md)
@@ -4107,7 +4107,7 @@ Hugging Face LeRobot 的 ACT 配置目前明确记录了这一点，并使用 1 
 - [CVAE in ACT](./cvae-in-act.md)
 - [为什么 ACT 推理时令 z = 0？](./why-z-zero-at-inference.md)
 
-### Transformer
+#### Transformer
 
 - [Transformer](../../deep-learning/transformer.md)
 - [Attention](../../deep-learning/attention.md)
@@ -4119,22 +4119,22 @@ Hugging Face LeRobot 的 ACT 配置目前明确记录了这一点，并使用 1 
 - [Transformer Decoder](../../deep-learning/transformer-decoder.md)
 - [Positional Encoding](../../deep-learning/positional-encoding.md)
 
-### Generative Models
+#### Generative Models
 
 - [CVAE](../../generative-models/cvae.md)
 - [Latent Variable](../../generative-models/latent-variable.md)
 
-### Vision
+#### Vision
 
 - CNN
 - ResNet
 
-### Robot Learning
+#### Robot Learning
 
 - Joint Position
 - PID Controller
 
-### 下一步
+#### 下一步
 
 - [ACT Training](./training.md)
 - [ACT Inference](./inference.md)

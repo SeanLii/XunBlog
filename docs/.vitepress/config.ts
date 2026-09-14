@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitepress'
 import { withMermaid } from 'vitepress-plugin-mermaid'
+import { useKatexMath } from './markdown/katex.mjs'
 
 const base = process.env.BASE_PATH || '/'
 
@@ -15,7 +16,9 @@ export default withMermaid(defineConfig({
     ['link', { rel: 'icon', href: `${base}logo.svg`, type: 'image/svg+xml' }]
   ],
   markdown: {
-    math: true,
+    config(markdown) {
+      useKatexMath(markdown)
+    },
     lineNumbers: true,
     image: { lazyLoading: true },
     theme: {

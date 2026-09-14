@@ -2,6 +2,7 @@ import DefaultTheme from 'vitepress/theme'
 import type { Theme } from 'vitepress'
 import HomePage from './components/HomePage.vue'
 import NoteMeta from './components/NoteMeta.vue'
+import 'katex/dist/katex.min.css'
 import './styles.css'
 
 export default {
@@ -11,4 +12,3 @@ export default {
     app.component('NoteMeta', NoteMeta)
   }
 } satisfies Theme
-
