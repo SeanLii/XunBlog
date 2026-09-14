@@ -1,31 +1,25 @@
 ---
-title: Robot Learning
-description: 让机器人从示范、反馈与交互中学习动作。
+title: "Robot Learning"
+description: "Imitation Learning、Behavior Cloning 与 ACT 知识体系。"
 ---
 
 # Robot Learning
 
-<NoteMeta status="Learning" difficulty="Current Focus" updated="2026-09" />
+## Foundations
 
-Robot Learning 研究如何让机器人从数据和交互中获得策略，而不只是依赖手写控制规则。
+- [Imitation Learning](/robot-learning/imitation-learning/)
+- [Behavior Cloning](/robot-learning/behavior-cloning/)
 
-## 学习地图
+## ACT
 
-```mermaid
-flowchart TD
-  A[Imitation Learning] --> B[Behavior Cloning]
-  B --> C[ACT]
-  D[Transformer] --> C
-  E[CVAE] --> C
-```
-
-## 当前专题
-
-### [ACT · Action Chunking with Transformers](/robot-learning/act/)
-
-为什么一次预测一段动作能够缓解机器人模仿学习中的误差累积？Transformer、CVAE 和 temporal ensemble 在这里分别解决什么问题？
-
-## 下一步
-
-- [Imitation Learning](/robot-learning/imitation-learning)
-- [Behavior Cloning & Distribution Shift](/robot-learning/imitation-learning/behavior-cloning-distribution-shift)
+- [ACT](/robot-learning/act/)
+  - [Action Chunking](/robot-learning/act/action-chunking/)
+  - [Temporal Ensemble](/robot-learning/act/temporal-ensemble/)
+  - [Architecture](/robot-learning/act/architecture/)
+  - [CVAE in ACT](/robot-learning/act/cvae-in-act/)
+  - [Vision Pipeline](/robot-learning/act/vision-pipeline/)
+  - [Training](/robot-learning/act/training/)
+  - [Inference](/robot-learning/act/inference/)
+  - [Complete Data Flow](/robot-learning/act/complete-data-flow/)
+  - [为什么 ACT 推理时令 z = 0？](/robot-learning/act/why-z-zero-at-inference/)
+  - [Paper and Released Implementation](/robot-learning/act/paper-and-released-implementation/)

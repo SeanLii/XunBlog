@@ -61,9 +61,14 @@ body { letter-spacing: -0.01em; }
 .vp-doc .mermaid { margin: 28px 0; padding: 24px; overflow-x: auto; border: 1px solid var(--vp-c-divider); border-radius: 10px; background: var(--vp-c-bg-elv); text-align: center; }
 .vp-doc .mermaid svg { max-width: 100%; height: auto; }
 
-.note-meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 36px; }
+.knowledge-context { margin: 0 0 34px; padding-bottom: 20px; border-bottom: 1px solid var(--vp-c-divider); }
+.note-meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
 .note-meta span { display: inline-flex; gap: 8px; align-items: center; padding: 6px 10px; border: 1px solid var(--vp-c-divider); border-radius: 99px; color: var(--vp-c-text-2); font: 11px var(--vp-font-family-mono); text-transform: uppercase; letter-spacing: .05em; }
 .note-meta b { color: var(--vp-c-text-1); font-weight: 500; }
+.knowledge-links { display: grid; gap: 9px; margin-top: 14px; }
+.knowledge-links > div { display: flex; flex-wrap: wrap; gap: 7px 12px; align-items: baseline; }
+.knowledge-links b { min-width: 92px; color: var(--vp-c-text-3); font: 500 10px var(--vp-font-family-mono); letter-spacing: .08em; text-transform: uppercase; }
+.knowledge-links a { color: var(--vp-c-brand-1); font-size: 12px; font-weight: 550; }
 
 .home-page { overflow: hidden; }
 .home-hero, .home-section { width: min(1180px, calc(100% - 48px)); margin: 0 auto; }

@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { createMarkdownRenderer } from 'vitepress'
 import { useKatexMath } from '../docs/.vitepress/markdown/katex.mjs'
+import { navigationGraph } from '../docs/.vitepress/knowledge-graph.mjs'
 
 const docsRoot = path.resolve('docs')
 const markdown = await createMarkdownRenderer(docsRoot, {
@@ -52,13 +53,18 @@ const errors = []
 let checkedLinks = 0
 let checkedAnchors = 0
 const outgoingLinks = new Map()
+const canonicalOwners = new Map()
+let canonicalPages = 0
 
 for (const file of files) {
   const source = fs.readFileSync(file, 'utf8')
   const lines = source.split('\n')
+  const sourceName = path.relative(docsRoot, file).split(path.sep).join('/')
   let inFence = false
   let h1Count = 0
   let displayDelimiterCount = 0
+  let bracketOpenCount = 0
+  let bracketCloseCount = 0
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index]
@@ -70,8 +76,13 @@ for (const file of files) {
     if (inFence) continue
 
     if (/^#\s+/.test(line)) h1Count += 1
-    if (/\\\[|\\\]|\\\(|\\\)/.test(line)) {
-      errors.push(`${path.relative(process.cwd(), file)}:${index + 1} uses an unsupported escaped math delimiter`)
+    if (trimmed === '\\[') bracketOpenCount += 1
+    if (trimmed === '\\]') bracketCloseCount += 1
+    if (/\\\(|\\\)/.test(line)) {
+      errors.push(`${path.relative(process.cwd(), file)}:${index + 1} uses an unsupported inline escaped math delimiter`)
+    }
+    if ((/\\\[|\\\]/.test(line)) && trimmed !== '\\[' && trimmed !== '\\]') {
+      errors.push(`${path.relative(process.cwd(), file)}:${index + 1} must place a bracket math delimiter on its own line`)
     }
     displayDelimiterCount += (line.match(/\$\$/g) ?? []).length
 
@@ -90,7 +101,6 @@ for (const file of files) {
         continue
       }
 
-      const sourceName = path.relative(docsRoot, file).split(path.sep).join('/')
       const targetName = path.relative(docsRoot, target).split(path.sep).join('/')
       if (!outgoingLinks.has(sourceName)) outgoingLinks.set(sourceName, new Set())
       outgoingLinks.get(sourceName).add(targetName)
@@ -104,6 +114,23 @@ for (const file of files) {
     }
   }
 
+  const frontmatterEnd = source.startsWith('---\n') ? source.indexOf('\n---', 4) : -1
+  if (frontmatterEnd >= 0) {
+    const frontmatter = source.slice(4, frontmatterEnd)
+    for (const match of frontmatter.matchAll(/^\s*-\s*["'](\/[^"']+)["']\s*$/gm)) {
+      const rawTarget = match[1]
+      const target = resolveTarget(file, rawTarget)
+      checkedLinks += 1
+      if (!target) {
+        errors.push(`${sourceName} frontmatter missing ${rawTarget}`)
+        continue
+      }
+      const targetName = path.relative(docsRoot, target).split(path.sep).join('/')
+      if (!outgoingLinks.has(sourceName)) outgoingLinks.set(sourceName, new Set())
+      outgoingLinks.get(sourceName).add(targetName)
+    }
+  }
+
   if (inFence) errors.push(`${path.relative(process.cwd(), file)} has an unclosed code fence`)
   const expectedH1Count = source.includes('<HomePage />') ? 0 : 1
   if (h1Count !== expectedH1Count) {
@@ -112,118 +139,43 @@ for (const file of files) {
   if (displayDelimiterCount % 2 !== 0) {
     errors.push(`${path.relative(process.cwd(), file)} has an unbalanced display-math delimiter`)
   }
-}
-
-const requiredKnowledgeLinks = {
-  'robot-learning/act/act-what-problem-does-it-solve.md': [
-    'robot-learning/imitation-learning/behavior-cloning-distribution-shift.md',
-    'robot-learning/act/action-chunking.md',
-    'robot-learning/act/temporal-ensemble.md',
-    'generative-models/cvae.md',
-    'robot-learning/act/cvae-in-act.md',
-    'deep-learning/transformer.md',
-    'robot-learning/act/architecture.md',
-    'robot-learning/act/training.md',
-    'robot-learning/act/inference.md'
-  ],
-  'robot-learning/act/architecture.md': [
-    'robot-learning/act/vision-pipeline.md',
-    'robot-learning/act/detr-to-act.md',
-    'deep-learning/transformer.md',
-    'deep-learning/transformer-encoder.md',
-    'deep-learning/transformer-decoder.md',
-    'deep-learning/cross-attention.md',
-    'deep-learning/multi-head-attention.md',
-    'deep-learning/positional-encoding.md',
-    'generative-models/cvae.md',
-    'robot-learning/act/cvae-in-act.md',
-    'generative-models/latent-variable.md',
-    'robot-learning/act/action-chunking.md'
-  ],
-  'robot-learning/act/complete-data-flow.md': [
-    'robot-learning/act/action-chunking.md',
-    'robot-learning/act/temporal-ensemble.md',
-    'robot-learning/act/cvae-in-act.md',
-    'deep-learning/transformer-encoder.md',
-    'deep-learning/transformer-decoder.md',
-    'robot-learning/act/vision-pipeline.md',
-    'robot-learning/act/training.md',
-    'robot-learning/act/inference.md',
-    'robot-learning/act/why-z-zero-at-inference.md'
-  ],
-  'deep-learning/transformer.md': [
-    'deep-learning/attention.md',
-    'deep-learning/self-attention.md',
-    'deep-learning/cross-attention.md',
-    'deep-learning/qkv.md',
-    'deep-learning/dot-product.md',
-    'deep-learning/softmax.md',
-    'deep-learning/multi-head-attention.md',
-    'deep-learning/positional-encoding.md',
-    'deep-learning/causal-mask.md',
-    'deep-learning/transformer-encoder.md',
-    'deep-learning/transformer-decoder.md',
-    'deep-learning/feed-forward-network.md',
-    'deep-learning/residual-connection.md',
-    'deep-learning/layer-normalization.md',
-    'deep-learning/dropout.md'
-  ],
-  'robot-learning/act/cvae-in-act.md': [
-    'generative-models/cvae.md',
-    'generative-models/vae.md',
-    'generative-models/latent-variable.md',
-    'generative-models/reparameterization-trick.md',
-    'generative-models/posterior-collapse.md',
-    'robot-learning/act/why-z-zero-at-inference.md'
-  ],
-  'robot-learning/act/why-z-zero-at-inference.md': [
-    'robot-learning/act/cvae-in-act.md',
-    'generative-models/cvae.md',
-    'generative-models/latent-variable.md',
-    'generative-models/posterior-collapse.md'
-  ],
-  'robot-learning/act/detr-to-act.md': [
-    'deep-learning/transformer-decoder.md',
-    'deep-learning/cross-attention.md',
-    'deep-learning/self-attention.md',
-    'deep-learning/qkv.md',
-    'deep-learning/positional-encoding.md',
-    'deep-learning/causal-mask.md',
-    'robot-learning/act/architecture.md'
-  ],
-  'robot-learning/act/vision-pipeline.md': [
-    'robot-learning/act/architecture.md',
-    'deep-learning/transformer.md',
-    'deep-learning/self-attention.md',
-    'deep-learning/cross-attention.md',
-    'deep-learning/positional-encoding.md',
-    'deep-learning/residual-connection.md'
-  ],
-  'robot-learning/act/training.md': [
-    'robot-learning/act/cvae-in-act.md',
-    'generative-models/reparameterization-trick.md',
-    'deep-learning/backpropagation.md',
-    'robot-learning/act/action-chunking.md',
-    'generative-models/posterior-collapse.md'
-  ],
-  'robot-learning/act/inference.md': [
-    'robot-learning/act/temporal-ensemble.md',
-    'robot-learning/act/why-z-zero-at-inference.md',
-    'robot-learning/act/architecture.md',
-    'robot-learning/act/complete-data-flow.md'
-  ]
-}
-
-for (const [source, targets] of Object.entries(requiredKnowledgeLinks)) {
-  const actual = outgoingLinks.get(source) ?? new Set()
-  for (const target of targets) {
-    if (!actual.has(target)) errors.push(`${source} missing required knowledge link to ${target}`)
+  if (bracketOpenCount !== bracketCloseCount) {
+    errors.push(`${path.relative(process.cwd(), file)} has unbalanced bracket math delimiters`)
   }
+
+  const canonicalMatch = source.match(/^canonical:\s*["']([^"']+)["']\s*$/m)
+  if (canonicalMatch) {
+    canonicalPages += 1
+    const canonical = canonicalMatch[1]
+    const relativeFile = path.relative(docsRoot, file).split(path.sep).join('/')
+    const expectedCanonical = relativeFile.endsWith('/index.md')
+      ? `/${relativeFile.slice(0, -'index.md'.length)}`
+      : `/${relativeFile.slice(0, -'.md'.length)}/`
+    if (canonical !== expectedCanonical) {
+      errors.push(`${relativeFile} declares ${canonical}; expected ${expectedCanonical}`)
+    }
+    if (canonicalOwners.has(canonical)) {
+      errors.push(`${relativeFile} duplicates canonical URL owned by ${canonicalOwners.get(canonical)}`)
+    } else {
+      canonicalOwners.set(canonical, relativeFile)
+    }
+  }
+}
+
+for (const [source, targets] of Object.entries(navigationGraph)) {
+  if (!canonicalOwners.has(source)) errors.push(`knowledge graph source does not exist: ${source}`)
+  for (const target of targets) {
+    if (!canonicalOwners.has(target)) errors.push(`knowledge graph target does not exist: ${target}`)
+  }
+}
+
+if (canonicalPages !== 53) {
+  errors.push(`found ${canonicalPages} canonical knowledge pages; expected 53`)
 }
 
 if (errors.length) {
   console.error(errors.join('\n'))
   process.exitCode = 1
 } else {
-  console.log(`Checked ${checkedLinks} internal links across ${files.length} Markdown files (${checkedAnchors} anchored links); no broken targets or required knowledge-graph edges.`)
+  console.log(`Checked ${canonicalPages} canonical pages and ${checkedLinks} internal links across ${files.length} Markdown files (${checkedAnchors} anchored links); no structural, target, or knowledge-graph errors.`)
 }

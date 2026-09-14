@@ -7,7 +7,7 @@ const base = process.env.BASE_PATH || '/'
 export default withMermaid(defineConfig({
   lang: 'zh-CN',
   title: 'AI Learning Notes',
-  description: '从直觉到数学，从数学到实现的个人 AI 知识库。',
+  description: '围绕 ACT 与必要前置知识建立的结构化 AI 知识库。',
   base,
   cleanUrls: true,
   lastUpdated: true,
@@ -44,65 +44,96 @@ export default withMermaid(defineConfig({
     nav: [
       { text: '首页', link: '/' },
       {
-        text: '学习笔记',
+        text: '知识树',
         items: [
           { text: 'Mathematics', link: '/mathematics/' },
           { text: 'Deep Learning', link: '/deep-learning/' },
           { text: 'Generative Models', link: '/generative-models/' },
-          { text: 'LLM', link: '/llm/' },
-          { text: 'Robot Learning', link: '/robot-learning/' },
-          { text: 'Embodied AI', link: '/embodied-ai/' }
+          { text: 'Robot Learning', link: '/robot-learning/' }
         ]
       },
-      { text: 'Projects', link: '/projects/' },
-      { text: 'About', link: '/about' }
+      { text: 'ACT', link: '/robot-learning/act/' }
     ],
     sidebar: {
       '/mathematics/': [
         {
           text: 'Mathematics',
+          items: [{ text: '知识地图', link: '/mathematics/' }]
+        },
+        {
+          text: 'Linear Algebra',
           items: [
-            { text: '概览', link: '/mathematics/' },
-            { text: 'Normal Distribution', link: '/mathematics/normal-distribution' },
-            { text: 'KL Divergence', link: '/mathematics/kl-divergence' }
+            { text: 'Vector', link: '/mathematics/linear-algebra/vector/' },
+            { text: 'Matrix', link: '/mathematics/linear-algebra/matrix/' },
+            { text: 'Dot Product', link: '/mathematics/linear-algebra/dot-product/' }
+          ]
+        },
+        {
+          text: 'Probability',
+          items: [
+            { text: 'Random Variable', link: '/mathematics/probability/random-variable/' },
+            { text: 'Probability Distribution', link: '/mathematics/probability/probability-distribution/' },
+            { text: 'Conditional Probability', link: '/mathematics/probability/conditional-probability/' },
+            { text: 'Expectation', link: '/mathematics/probability/expectation/' },
+            { text: 'Variance', link: '/mathematics/probability/variance/' },
+            { text: 'Normal Distribution', link: '/mathematics/probability/normal-distribution/' },
+            { text: 'Multivariate Normal Distribution', link: '/mathematics/probability/multivariate-normal-distribution/' }
+          ]
+        },
+        {
+          text: 'Information Theory',
+          items: [
+            { text: 'KL Divergence', link: '/mathematics/information-theory/kl-divergence/' }
           ]
         }
       ],
       '/deep-learning/': [
         {
-          text: 'Neural Network Foundations',
-          items: [
-            { text: '概览', link: '/deep-learning/' },
-            { text: 'Linear Layer', link: '/deep-learning/linear-layer' },
-            { text: 'ReLU', link: '/deep-learning/relu' },
-            { text: 'MLP', link: '/deep-learning/mlp' },
-            { text: 'Backpropagation', link: '/deep-learning/backpropagation' }
-          ]
+          text: 'Deep Learning',
+          items: [{ text: '知识地图', link: '/deep-learning/' }]
         },
         {
-          text: 'Attention',
+          text: 'Core',
           items: [
-            { text: 'Dot Product', link: '/deep-learning/dot-product' },
-            { text: 'Softmax', link: '/deep-learning/softmax' },
-            { text: 'Attention', link: '/deep-learning/attention' },
-            { text: 'Query / Key / Value', link: '/deep-learning/qkv' },
-            { text: 'Self-Attention', link: '/deep-learning/self-attention' },
-            { text: 'Cross-Attention', link: '/deep-learning/cross-attention' },
-            { text: 'Multi-Head Attention', link: '/deep-learning/multi-head-attention' }
+            { text: 'Linear Layer', link: '/deep-learning/core/linear-layer/' },
+            { text: 'Softmax', link: '/deep-learning/core/softmax/' },
+            { text: 'Embedding', link: '/deep-learning/core/embedding/' },
+            { text: 'Residual Connection', link: '/deep-learning/core/residual-connection/' },
+            { text: 'Layer Normalization', link: '/deep-learning/core/layer-normalization/' }
           ]
         },
         {
           text: 'Transformer',
+          collapsed: false,
           items: [
-            { text: 'Transformer', link: '/deep-learning/transformer' },
-            { text: 'Positional Encoding', link: '/deep-learning/positional-encoding' },
-            { text: 'Causal Mask', link: '/deep-learning/causal-mask' },
-            { text: 'Transformer Encoder', link: '/deep-learning/transformer-encoder' },
-            { text: 'Transformer Decoder', link: '/deep-learning/transformer-decoder' },
-            { text: 'Feed-Forward Network', link: '/deep-learning/feed-forward-network' },
-            { text: 'Residual Connection', link: '/deep-learning/residual-connection' },
-            { text: 'Layer Normalization', link: '/deep-learning/layer-normalization' },
-            { text: 'Dropout', link: '/deep-learning/dropout' }
+            { text: 'Transformer', link: '/deep-learning/transformer/' },
+            {
+              text: 'Attention',
+              collapsed: true,
+              items: [
+                { text: 'Attention', link: '/deep-learning/transformer/attention/' },
+                { text: 'Query / Key / Value', link: '/deep-learning/transformer/attention/qkv/' },
+                { text: 'Scaled Dot-Product Attention', link: '/deep-learning/transformer/attention/scaled-dot-product-attention/' },
+                { text: 'Self-Attention', link: '/deep-learning/transformer/attention/self-attention/' },
+                { text: 'Cross-Attention', link: '/deep-learning/transformer/attention/cross-attention/' },
+                { text: 'Multi-Head Attention', link: '/deep-learning/transformer/attention/multi-head-attention/' }
+              ]
+            },
+            { text: 'Positional Encoding', link: '/deep-learning/transformer/positional-encoding/' },
+            { text: 'Transformer Encoder', link: '/deep-learning/transformer/transformer-encoder/' },
+            { text: 'Transformer Decoder', link: '/deep-learning/transformer/transformer-decoder/' },
+            { text: 'Feed-Forward Network', link: '/deep-learning/transformer/feed-forward-network/' },
+            { text: 'Causal Mask', link: '/deep-learning/transformer/causal-mask/' },
+            { text: 'CLS Token', link: '/deep-learning/transformer/cls-token/' },
+            { text: 'Learnable Query Embedding', link: '/deep-learning/transformer/learnable-query-embedding/' }
+          ]
+        },
+        {
+          text: 'Convolutional Neural Networks',
+          items: [
+            { text: 'Convolution', link: '/deep-learning/cnn/convolution/' },
+            { text: 'Convolutional Neural Network', link: '/deep-learning/cnn/convolutional-neural-network/' },
+            { text: 'ResNet', link: '/deep-learning/cnn/resnet/' }
           ]
         }
       ],
@@ -110,59 +141,42 @@ export default withMermaid(defineConfig({
         {
           text: 'Generative Models',
           items: [
-            { text: '概览', link: '/generative-models/' },
-            { text: 'Latent Variable', link: '/generative-models/latent-variable' },
-            { text: 'VAE', link: '/generative-models/vae' },
-            { text: 'Reparameterization Trick', link: '/generative-models/reparameterization-trick' },
-            { text: 'CVAE', link: '/generative-models/cvae' },
-            { text: 'Posterior Collapse', link: '/generative-models/posterior-collapse' }
+            { text: '知识地图', link: '/generative-models/' },
+            { text: 'Latent Variable', link: '/generative-models/latent-variable/' },
+            { text: 'Variational Inference', link: '/generative-models/variational-inference/' },
+            { text: 'Evidence Lower Bound', link: '/generative-models/evidence-lower-bound/' },
+            { text: 'Variational Autoencoder', link: '/generative-models/variational-autoencoder/' },
+            { text: 'Reparameterization Trick', link: '/generative-models/reparameterization-trick/' },
+            { text: 'Conditional Variational Autoencoder', link: '/generative-models/conditional-variational-autoencoder/' },
+            { text: 'Posterior Collapse', link: '/generative-models/posterior-collapse/' }
           ]
-        }
-      ],
-      '/llm/': [
-        {
-          text: 'Large Language Models',
-          items: [{ text: '概览', link: '/llm/' }]
         }
       ],
       '/robot-learning/': [
         {
           text: 'Robot Learning',
           items: [
-            { text: '学习地图', link: '/robot-learning/' },
-            { text: 'Imitation Learning', link: '/robot-learning/imitation-learning' },
-            { text: 'Behavior Cloning & Distribution Shift', link: '/robot-learning/imitation-learning/behavior-cloning-distribution-shift' }
+            { text: '知识地图', link: '/robot-learning/' },
+            { text: 'Imitation Learning', link: '/robot-learning/imitation-learning/' },
+            { text: 'Behavior Cloning', link: '/robot-learning/behavior-cloning/' }
           ]
         },
         {
-          text: 'ACT · Action Chunking',
+          text: 'ACT',
           collapsed: false,
           items: [
-            { text: '专题概览', link: '/robot-learning/act/' },
-            { text: '01 · ACT 解决什么问题？', link: '/robot-learning/act/act-what-problem-does-it-solve' },
-            { text: '02 · Action Chunking', link: '/robot-learning/act/action-chunking' },
-            { text: '03 · Temporal Ensemble', link: '/robot-learning/act/temporal-ensemble' },
-            { text: '04 · Architecture', link: '/robot-learning/act/architecture' },
-            { text: '05 · Vision Pipeline', link: '/robot-learning/act/vision-pipeline' },
-            { text: '06 · 从 DETR 到 ACT', link: '/robot-learning/act/detr-to-act' },
-            { text: '07 · CVAE in ACT', link: '/robot-learning/act/cvae-in-act' },
-            { text: '08 · 为什么推理时 z = 0？', link: '/robot-learning/act/why-z-zero-at-inference' },
-            { text: '09 · Training', link: '/robot-learning/act/training' },
-            { text: '10 · Inference', link: '/robot-learning/act/inference' },
-            { text: '11 · Complete Data Flow', link: '/robot-learning/act/complete-data-flow' }
+            { text: 'ACT', link: '/robot-learning/act/' },
+            { text: 'Action Chunking', link: '/robot-learning/act/action-chunking/' },
+            { text: 'Temporal Ensemble', link: '/robot-learning/act/temporal-ensemble/' },
+            { text: 'Architecture', link: '/robot-learning/act/architecture/' },
+            { text: 'CVAE in ACT', link: '/robot-learning/act/cvae-in-act/' },
+            { text: 'Vision Pipeline', link: '/robot-learning/act/vision-pipeline/' },
+            { text: 'Training', link: '/robot-learning/act/training/' },
+            { text: 'Inference', link: '/robot-learning/act/inference/' },
+            { text: 'Complete Data Flow', link: '/robot-learning/act/complete-data-flow/' },
+            { text: '为什么推理时令 z = 0？', link: '/robot-learning/act/why-z-zero-at-inference/' },
+            { text: 'Paper and Released Implementation', link: '/robot-learning/act/paper-and-released-implementation/' }
           ]
-        }
-      ],
-      '/embodied-ai/': [
-        {
-          text: 'Embodied AI',
-          items: [{ text: '概览', link: '/embodied-ai/' }]
-        }
-      ],
-      '/projects/': [
-        {
-          text: 'Projects',
-          items: [{ text: '项目索引', link: '/projects/' }]
         }
       ]
     },

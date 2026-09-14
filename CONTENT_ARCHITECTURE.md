@@ -1,134 +1,72 @@
 # XunBlog Knowledge Content Architecture
 
-这份文件定义 XunBlog 的内容边界与长期维护规则。它服务于作者和审阅者，不作为面向读者的教程页面。
+这份文件记录当前站点的内容边界与工程规则，不作为公开知识正文。
 
-## 1. 当前工程基线
+## Scope
 
-- 内容由 `docs/` 下的 Markdown 文件维护，VitePress 配置位于 `docs/.vitepress/config.ts`。
-- 导航和侧边栏目前手工配置；在内容规模较小的阶段继续沿用，避免引入生成器。
-- 站点启用 `cleanUrls`，部署时由 `BASE_PATH` 注入 GitHub Pages 的 `/XunBlog/` 前缀。
-- Markdown 正文内部链接使用指向真实源码的相对 `.md` 路径，由 VitePress 在构建时结合 `base` 转换；配置文件中的 nav/sidebar 继续使用站内绝对路径，且不手写 `/XunBlog/` 前缀。
-- `NoteMeta` 已可优先读取显式 props，并在未传 props 时读取当前页面 frontmatter。
-- 现有未标为 `reviewed` 或 `stable` 的页面均视为工作笔记，不作为后续文章的事实来源。
-
-## 2. 页面类型与 canonical 规则
-
-每个重要概念只有一个 canonical page。创建页面前必须先按标题、同义词和 slug 搜索仓库。
-
-| `pageType` | 回答的问题 | 示例 |
-| --- | --- | --- |
-| `concept` | 这个知识本身是什么？ | `/deep-learning/transformer` |
-| `paper` | 一篇论文提出了什么问题与方法？ | `/robot-learning/act/act-what-problem-does-it-solve` |
-| `application` | 某概念在特定模型中如何使用？ | `/robot-learning/act/architecture` |
-| `topic-index` | 一个专题应按什么顺序阅读？ | `/robot-learning/act/` |
-| `domain-index` | 一个知识域包含哪些主题？ | `/robot-learning/` |
-
-规则：
-
-1. canonical page 的 `canonical` 指向自身稳定路径。
-2. application page 不重复教授完整基础理论，而是链接 canonical page 后只解释论文中的具体用法。
-3. 同义词通过术语说明或未来的 redirect 处理，不创建重复页面。
-4. 文件名使用小写 kebab-case；只有专题和知识域入口使用 `index.md`。
-5. 已发布 slug 原则上不改。必须改名时，同时配置 redirect 并验证旧链接。
-
-## 3. 目录策略
-
-目录按“知识归属”而非按某一篇文章临时需要来划分：
+当前内容严格限制为 ACT 以及理解 ACT 所需的前置知识，共 53 个 canonical knowledge pages：
 
 ```text
-docs/
-├── mathematics/          # 数学定义与推导
-├── deep-learning/        # 通用网络结构与训练概念
-├── generative-models/    # 需要首个正式页面时再创建
-├── robot-learning/       # 模仿学习、策略学习与控制概念
-│   └── act/              # ACT 论文与 ACT-specific application pages
-├── embodied-ai/
-├── llm/
-└── projects/
+Mathematics
+├── Linear Algebra
+├── Probability
+└── Information Theory
+
+Deep Learning
+├── Core
+├── Transformer
+│   └── Attention
+└── Convolutional Neural Networks
+
+Generative Models
+└── Latent-variable and variational models
+
+Robot Learning
+├── Imitation Learning
+├── Behavior Cloning
+└── ACT
 ```
 
-“未来可能有内容”不是创建空目录或占位页面的理由。新知识域在首篇经过审阅的内容出现时再接入导航。
+不在当前 corpus 中的 LLM、Embodied AI、Projects、VLA 等栏目不创建占位页面。
 
-## 4. Frontmatter 最小契约
+## Knowledge ownership
 
-正式页面采用下面的最小、可机器读取的字段。数组只记录真实存在或已明确规划的关系，不为了完整而填充。
+- Knowledge Tree 决定知识归属；Navigation Graph 只建立跨树导航。
+- 每个独立概念只有一个 canonical page。
+- canonical page 的标题使用概念名称；问题型标题只用于 ACT-specific 的具体问题。
+- ACT 页面只拥有 ACT-specific 内容，不复制 Transformer、CVAE、Gaussian、KL、Behavior Cloning 或 ResNet 的通用理论。
+
+## URL and frontmatter contract
+
+知识页面使用与目录结构一致、带末尾 `/` 的 canonical URL：
 
 ```yaml
 ---
-title: ACT：它到底解决什么问题？
-description: ...
-status: reviewed
-pageType: paper
-canonical: /robot-learning/act/act-what-problem-does-it-solve
-updated: "2026-09-14"
+title: "Query / Key / Value"
+kind: "canonical"
+domain: "Deep Learning / Transformer / Attention"
+parent: "Attention"
+canonical: "/deep-learning/transformer/attention/qkv/"
 prerequisites:
-  - /robot-learning/imitation-learning
+  - "/mathematics/linear-algebra/dot-product/"
 related:
-  - /deep-learning/transformer
-primarySources:
-  - title: Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware
-    authors: Tony Z. Zhao, Vikash Kumar, Sergey Levine, Chelsea Finn
-    venue: "Robotics: Science and Systems 2023"
-    url: https://www.roboticsproceedings.org/rss19/p016.pdf
+  - "/deep-learning/transformer/attention/self-attention/"
 ---
 ```
 
-字段约定：
+VitePress 页面放在 canonical 目录的 `index.md` 中。`prerequisites` 与 `related` 会自动显示在页面顶部；补充的跨树关系由 `docs/.vitepress/knowledge-graph.mjs` 提供。
 
-- `status`: `seed`、`learning`、`draft`、`reviewed`、`stable`。
-- `pageType`: 使用上一节的五种类型。
-- `canonical`: 无末尾 `/` 的页面路径；index 页面保留末尾 `/`。
-- `prerequisites`: 不理解就会阻碍当前页面的最小前置集合。
-- `related`: 有帮助但不阻碍当前阅读的横向关系。
-- `primarySources`: 模型或算法结论的最高等级来源。数学页改用权威教材或标准定义。
+## Source boundary
 
-`usedBy` 暂不手工维护，避免双向关系漂移；需要时由反向链接索引自动生成。
+- 模型与算法结论以原论文为主要依据。
+- released implementation 的具体行为以官方代码为主要依据。
+- README、issue 或二手材料只补充实现语境，不能覆盖原论文或官方实现。
+- 当 paper 与 code 不一致时，两边均保留，不静默合并为单一版本。
 
-## 5. 内部链接与前置知识
+## Engineering rules
 
-链接优先级：
-
-1. 当前论证不可缺少的 prerequisite；
-2. 文中实际使用、且已有 canonical page 的概念；
-3. 文章末尾一到三个自然的 next steps。
-
-不为普通术语加链接，不链接尚不存在的页面，也不把“深入理解实现时才需要”的概念伪装成 overview 的必修前置。
-
-ACT overview 的最小 prerequisite 只有模仿学习与 Behavior Cloning 的基本问题。Transformer、CVAE、KL Divergence 等属于理解实现细节的分支，不是理解“ACT 为什么出现”的前提。
-
-## 6. 来源与事实追踪
-
-- 模型/算法页：先读原始论文，再建立 claim ledger，最后写正文。
-- 数学页：以标准定义、权威教材或经典资料为主。
-- 正文明确区分“论文事实”“数学推论”“直觉”；解释可以原创，事实必须可追溯。
-- 每篇正式模型页末尾展示 `Primary Source`。二手资料不能与原论文处于同一证据等级。
-- 论文图优先自行重绘数据流；若直接引用，必须标明来源并单独核对使用许可。
-- 研究记录放在 `research/<topic>/`，记录 section、equation、figure、table、appendix；原论文 PDF 不提交到仓库。
-
-## 7. 写作与审阅流程
-
-```text
-确定 canonical topic
-→ 获取并阅读 primary source
-→ 建立 claim ledger
-→ 裁剪真实 prerequisites
-→ 设计认知阶梯
-→ 写作并标明事实层级
-→ 添加内部链接与来源
-→ 检查数学和 terminology
-→ VitePress build（含 dead-link 检查）
-→ desktop / mobile / dark mode 预览
-→ 更新成熟度
-```
-
-`reviewed` 表示已经逐项对照来源并通过本地构建；`stable` 还要求独立复核或复现实验支持。正式文章也可以继续修正，状态不是“永不更改”的承诺。
-
-## 8. 当前 ACT 内容边界
-
-- `docs/deep-learning/`：神经网络基础、Attention 与 Transformer 的通用 canonical pages。
-- `docs/generative-models/`：Latent Variable、VAE、CVAE、Reparameterization Trick 与 Posterior Collapse 的通用 canonical pages。
-- `/robot-learning/imitation-learning/behavior-cloning-distribution-shift`：Behavior Cloning、distribution shift 与 compounding error 的 canonical page。
-- `/robot-learning/act/`：ACT 专题的导航入口；11 篇正文只解释 ACT 的问题、架构和具体实现。
-- `/robot-learning/act/act-what-problem-does-it-solve`：ACT 问题定义与设计动机的 paper page。
-- `/robot-learning/act/architecture`：ACT 架构 hub；Transformer 通用理论仍归属 `/deep-learning/transformer`。
-- `/robot-learning/act/cvae-in-act`：ACT 对 CVAE 的具体实例化；CVAE 通用理论仍归属 `/generative-models/cvae`。
+- 站内 Markdown 链接使用 canonical absolute path，不手写部署 base path。
+- `BASE_PATH` 在构建时注入，GitHub Pages 当前使用 `/XunBlog/`。
+- `\[ ... \]` 与 `$ ... $` 由本地 KaTeX 插件进行服务端渲染。
+- `npm run docs:audit` 必须验证 53 个 canonical 页面、内部链接、frontmatter 关系和 Navigation Graph。
+- `npm run docs:audit:math`、`npm run docs:build` 与 `npm run docs:audit:render` 必须全部通过后才能部署。

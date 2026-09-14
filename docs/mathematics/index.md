@@ -1,26 +1,26 @@
 ---
-title: Mathematics
-description: 理解 AI 模型所需的数学基础。
+title: "Mathematics"
+description: "ACT 知识体系所需的线性代数、概率与信息论基础。"
 ---
 
 # Mathematics
 
-<NoteMeta status="Learning" difficulty="Foundation" updated="2026-09" />
+## Linear Algebra
 
-数学不是需要先“学完”才能进入模型的前置关卡。这里从真实模型里遇到的问题出发，再回到概率、分布、距离与优化。
+- [Vector](/mathematics/linear-algebra/vector/)
+- [Matrix](/mathematics/linear-algebra/matrix/)
+- [Dot Product](/mathematics/linear-algebra/dot-product/)
 
-## 当前主题
+## Probability
 
-- [Normal Distribution](/mathematics/normal-distribution)
-- [KL Divergence](/mathematics/kl-divergence)
+- [Random Variable](/mathematics/probability/random-variable/)
+- [Probability Distribution](/mathematics/probability/probability-distribution/)
+- [Conditional Probability](/mathematics/probability/conditional-probability/)
+- [Expectation](/mathematics/probability/expectation/)
+- [Variance](/mathematics/probability/variance/)
+- [Normal Distribution](/mathematics/probability/normal-distribution/)
+- [Multivariate Normal Distribution](/mathematics/probability/multivariate-normal-distribution/)
 
-## 与 ACT 的连接
+## Information Theory
 
-```mermaid
-flowchart LR
-  A[Normal Distribution] --> B[Latent Variable]
-  B --> C[CVAE]
-  D[KL Divergence] --> C
-  C --> E[ACT]
-```
-
+- [KL Divergence](/mathematics/information-theory/kl-divergence/)

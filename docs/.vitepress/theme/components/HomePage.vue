@@ -1,18 +1,17 @@
 <script setup lang="ts">
 import { withBase } from 'vitepress'
 const areas = [
-  { index: '01', title: 'Mathematics', text: '概率、分布与优化：为模型理解打牢数学地基。', link: '/mathematics/', state: 'Foundations' },
-  { index: '02', title: 'Deep Learning', text: '从神经网络出发，理解 Attention 与 Transformer。', link: '/deep-learning/', state: 'Core models' },
-  { index: '03', title: 'Robot Learning', text: 'Imitation Learning、ACT、VLA 与具身决策。', link: '/robot-learning/', state: 'Current focus' },
-  { index: '04', title: 'Embodied AI', text: '连接感知、推理与行动的智能系统。', link: '/embodied-ai/', state: 'Exploring' }
+  { index: '01', title: 'Mathematics', text: '线性代数、概率与信息论：理解 ACT 所需的数学基础。', link: '/mathematics/', state: 'Foundations' },
+  { index: '02', title: 'Deep Learning', text: '核心神经网络、Transformer、Attention 与卷积网络。', link: '/deep-learning/', state: 'Core models' },
+  { index: '03', title: 'Generative Models', text: '从潜变量与变分推断，到 VAE、CVAE 与 posterior collapse。', link: '/generative-models/', state: 'Latent models' },
+  { index: '04', title: 'Robot Learning', text: 'Imitation Learning、Behavior Cloning 与 ACT 完整知识树。', link: '/robot-learning/', state: 'Current focus' }
 ]
 
 const path = [
-  { label: 'Probability', state: 'foundation' },
+  { label: 'Behavior Cloning', state: 'foundation' },
   { label: 'Transformer', state: 'foundation' },
-  { label: 'CVAE', state: 'learning' },
+  { label: 'Conditional VAE', state: 'learning' },
   { label: 'ACT', state: 'focus' },
-  { label: 'VLA', state: 'next' }
 ]
 </script>
 
@@ -21,16 +20,16 @@ const path = [
     <section class="home-hero">
       <div class="hero-signal" aria-hidden="true">
         <span></span><span></span><span></span>
-        <small>LEARNING LOG · 2026—</small>
+        <small>ACT KNOWLEDGE CORPUS · 2026—</small>
       </div>
       <p class="hero-kicker">Personal AI Knowledge Base</p>
       <h1>理解智能，<br><em>从直觉到实现。</em></h1>
       <p class="hero-intro">
-        一套持续生长的 AI 学习笔记：把问题拆成直觉、数学、模型、代码与实验，记录理解发生的过程。
+        一套围绕 ACT 与必要前置知识建立的结构化知识库：每个概念独立归属，并通过链接递归连接。
       </p>
       <div class="hero-actions">
         <a class="primary-action" :href="withBase('/robot-learning/act/')">进入 ACT 专题 <span>↗</span></a>
-        <a class="quiet-action" :href="withBase('/robot-learning/')">查看学习地图 <span>→</span></a>
+        <a class="quiet-action" :href="withBase('/robot-learning/')">查看知识树 <span>→</span></a>
       </div>
       <div class="hero-footnote">
         <span><i></i> Current focus</span>
@@ -62,7 +61,7 @@ const path = [
         <div class="path-copy">
           <p class="eyebrow">CURRENT THREAD</p>
           <h3>从分布，到潜变量，<br>再到机器人动作。</h3>
-          <p>ACT 不是一个孤立模型。它把概率建模、Transformer、CVAE 和机器人控制连接成一条完整的学习路径。</p>
+          <p>ACT 不是一个孤立模型。它把 Behavior Cloning、Transformer、CVAE 和机器人控制连接成一条完整路径。</p>
           <a :href="withBase('/robot-learning/act/')">打开专题笔记 <span>→</span></a>
         </div>
         <ol class="path-map" aria-label="ACT 学习路径">
@@ -80,11 +79,11 @@ const path = [
         <div><span>03</span><p>Start Here</p></div>
         <h2>从一个真实问题开始。</h2>
       </header>
-      <a class="featured-note" :href="withBase('/robot-learning/act/act-what-problem-does-it-solve')">
+      <a class="featured-note" :href="withBase('/robot-learning/act/')">
         <div>
-          <span class="note-label">FEATURED NOTE · ACT 01</span>
-          <h3>为什么机器人需要 Action Chunking？</h3>
-          <p>单步预测如何积累误差？一次预测一段动作，为什么能让策略更连贯、更稳定？</p>
+          <span class="note-label">FEATURED KNOWLEDGE · ACT</span>
+          <h3>Action Chunking with Transformers</h3>
+          <p>从当前视觉与关节状态出发，一次预测未来一段连续动作，并通过 temporal ensemble 与 CVAE 完成稳定控制。</p>
         </div>
         <span class="featured-arrow">↗</span>
       </a>

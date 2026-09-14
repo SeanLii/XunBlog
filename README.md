@@ -1,6 +1,15 @@
 # AI Learning Notes
 
-A personal AI knowledge base built around understanding: from intuition, to mathematics, to implementation.
+围绕 ACT（Action Chunking with Transformers）以及理解 ACT 所需前置知识构建的结构化知识库。
+
+## 内容范围
+
+- Mathematics：Linear Algebra、Probability、Information Theory
+- Deep Learning：Core、Transformer、Attention、Convolutional Neural Networks
+- Generative Models：Latent Variable、Variational Inference、ELBO、VAE、CVAE
+- Robot Learning：Imitation Learning、Behavior Cloning、ACT
+
+当前站点由 53 个独立 canonical knowledge pages 构成。知识归属由目录树决定，跨页面链接只负责导航。
 
 ## Local development
 
@@ -9,35 +18,29 @@ npm install
 npm run docs:dev
 ```
 
-VitePress turns the Markdown files in `docs/` into a static website. The npm scripts above are defined in `package.json`.
-
-## Useful commands
+## Verification
 
 ```bash
-npm run docs:dev      # start the local writing server
-npm run docs:audit    # verify local Markdown links and anchors
-npm run docs:build    # build the production site
-npm run docs:preview  # preview the production build
+npm run docs:audit         # canonical URL、内部链接与知识图
+npm run docs:audit:math    # 全量公式解析
+npm run docs:build         # 生产构建
+npm run docs:audit:render  # 构建产物中的公式、图表与样式
 ```
 
 ## Repository structure
 
 ```text
 docs/
-├── mathematics/       # mathematical foundations
-├── deep-learning/     # neural networks and architectures
-├── generative-models/ # latent variables, VAE and CVAE
-├── llm/               # language-model notes
-├── robot-learning/    # imitation learning, ACT, VLA
-├── embodied-ai/       # embodied intelligence
-├── projects/          # implementations and experiments
-└── .vitepress/        # navigation, theme and site configuration
+├── mathematics/
+├── deep-learning/
+├── generative-models/
+├── robot-learning/
+│   └── act/
+└── .vitepress/
 ```
 
-The GitHub repository is the source of truth. Notes, code and experiments should be changed here first; other platforms are distribution channels.
+每个知识页面的目录路径与 frontmatter 中的 canonical URL 一致。VitePress 配置、知识图和视觉主题位于 `docs/.vitepress/`。
 
 ## Deployment
 
-`.github/workflows/deploy.yml` builds and deploys the site with GitHub Pages on every push to `main`. In the repository settings, choose **GitHub Actions** as the Pages source.
-
-The workflow automatically uses `/<repository-name>/` for a project Pages site. A custom domain can use `/` by setting the `BASE_PATH` environment variable to `/` in the workflow.
+`.github/workflows/deploy.yml` 在每次推送到 `main` 后构建并发布 GitHub Pages。项目站点的 `/XunBlog/` base path 由工作流自动注入。

@@ -1,7 +1,7 @@
 ---
 layout: page
 title: AI Learning Notes
-description: 从直觉到数学，从数学到实现的个人 AI 知识库。
+description: 围绕 ACT 与必要前置知识建立的结构化 AI 知识库。
 sidebar: false
 aside: false
 navbar: true
@@ -10,4 +10,3 @@ pageClass: custom-home
 ---
 
 <HomePage />
-

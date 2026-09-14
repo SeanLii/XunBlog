@@ -104,6 +104,35 @@ function mathBlock(state, startLine, endLine, silent) {
   return true
 }
 
+function bracketMathBlock(state, startLine, endLine, silent) {
+  const startPosition = state.bMarks[startLine] + state.tShift[startLine]
+  const startMaximum = state.eMarks[startLine]
+  if (state.src.slice(startPosition, startMaximum).trim() !== '\\[') return false
+  if (silent) return true
+
+  let nextLine = startLine + 1
+  let found = false
+  while (nextLine < endLine) {
+    const position = state.bMarks[nextLine] + state.tShift[nextLine]
+    const maximum = state.eMarks[nextLine]
+    if (state.src.slice(position, maximum).trim() === '\\]') {
+      found = true
+      break
+    }
+    nextLine += 1
+  }
+
+  if (!found) return false
+
+  state.line = nextLine + 1
+  const token = state.push('math_block', 'math', 0)
+  token.block = true
+  token.content = state.getLines(startLine + 1, nextLine, state.tShift[startLine], true)
+  token.map = [startLine, state.line]
+  token.markup = '\\[\\]'
+  return true
+}
+
 function render(content, displayMode) {
   return katex.renderToString(content.trim(), {
     displayMode,
@@ -128,6 +157,9 @@ export function useKatexMath(markdown, options = {}) {
   }
 
   markdown.inline.ruler.after('escape', 'math_inline', mathInline)
+  markdown.block.ruler.before('fence', 'math_block_bracket', bracketMathBlock, {
+    alt: ['paragraph', 'reference', 'blockquote', 'list']
+  })
   markdown.block.ruler.after('blockquote', 'math_block', mathBlock, {
     alt: ['paragraph', 'reference', 'blockquote', 'list']
   })
