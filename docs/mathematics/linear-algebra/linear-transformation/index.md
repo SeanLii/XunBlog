@@ -15,128 +15,221 @@ related:
 
 Linear Transformation 是保持 vector addition 与 scalar multiplication 的映射。
 
-设
+设：
 
 \[
-T:\mathbb R^n\rightarrow\mathbb R^m.
+T:V\rightarrow W,
 \]
 
-如果对任意 vectors $x,y$ 和 scalars $a,b$ 都有：
+若对任意 $u,v\in V$ 和 scalar $\alpha,\beta$ 都有：
 
 \[
-T(ax+by)=aT(x)+bT(y),
+T(\alpha u+\beta v)
+=
+\alpha T(u)+\beta T(v),
 \]
 
-那么 $T$ 是 linear transformation。
+则 $T$ 是 linear transformation。
 
-这一定义意味着：linear transformation 不会破坏空间中的线性组合关系。
-
-## Matrix 是 Linear Transformation 的坐标表示
-
-在有限维实向量空间并选定 basis 后，每个 linear transformation 都可以写成：
+等价地，它同时满足：
 
 \[
-T(x)=Ax,
+T(u+v)=T(u)+T(v),
 \]
-
-其中
 
 \[
-A\in\mathbb R^{m\times n}.
+T(\alpha u)=\alpha T(u).
 \]
 
-因此 matrix 与 linear transformation 紧密相连，但两个概念并不完全相同：
+## Immediate Consequences
 
-- transformation 是映射本身；
-- matrix 是这个映射在某组 basis 下的表示。
-
-换 basis 后 matrix 可以改变，而底层 transformation 可以保持不变。
-
-## 一列一列理解 Matrix
-
-若
-
-\[
-A=[a_1\ a_2\ \cdots\ a_n],
-\]
-
-其中 $a_i$ 是第 $i$ 列，那么对
-
-\[
-x=[x_1,\ldots,x_n]^\top
-\]
-
-有：
-
-\[
-Ax=x_1a_1+x_2a_2+\cdots+x_na_n.
-\]
-
-所以 matrix-vector multiplication 可以理解为：用输入坐标 $x_i$ 对 matrix 的 columns 做线性组合。
-
-这比“按照公式做乘法”更直接地说明了 transformation 在做什么。
-
-## 几何上可以做什么
-
-二维或三维 linear transformation 可以实现：
-
-- rotation；
-- scaling；
-- reflection；
-- shear；
-- projection（某些 projection）；
-- 多种操作的组合。
-
-但纯 linear transformation 必须把原点映射到原点：
+Linear transformation 必须满足：
 
 \[
 T(0)=0.
 \]
 
-如果加入一个 bias：
+并且对任意 finite linear combination：
 
 \[
-f(x)=Ax+b,
+T\left(\sum_i\alpha_iv_i\right)
+=
+\sum_i\alpha_iT(v_i).
 \]
 
-得到的是 affine transformation，而严格来说不再是 linear transformation。
+因此只要知道 transformation 对一组 basis vectors 的作用，就可以确定它对整个 space 的作用。
 
-这也是为什么神经网络里的 `Linear` layer 通常从数学上更准确地说是 affine layer：它通常包含 bias。
+## Matrix Representation
+
+设：
+
+\[
+T:\mathbb R^n\rightarrow\mathbb R^m.
+\]
+
+在 standard bases 下，存在唯一 matrix：
+
+\[
+A\in\mathbb R^{m\times n}
+\]
+
+使：
+
+\[
+T(x)=Ax.
+\]
+
+Matrix 的第 $j$ 列就是：
+
+\[
+T(e_j),
+\]
+
+即第 $j$ 个 basis vector 经过 transformation 后的 coordinates。
+
+## Basis Dependence
+
+Abstract transformation $T$ 不依赖某个固定 coordinate system，但 matrix representation 依赖 input 与 output bases。
+
+若更换 basis，同一个 $T$ 会由不同 matrix 表示。
+
+因此：
+
+> linear transformation 是映射；matrix 是该映射在选定 basis 下的 representation。
+
+## Kernel
+
+Kernel 定义为：
+
+\[
+\ker T
+=
+\{x\in V:T(x)=0\}.
+\]
+
+它包含所有被 transformation 映射到 zero vector 的 directions。
+
+若：
+
+\[
+\ker T=\{0\},
+\]
+
+则 $T$ injective。
+
+## Image
+
+Image（或 range）定义为：
+
+\[
+\operatorname{Im}T
+=
+\{T(x):x\in V\}.
+\]
+
+它表示 transformation 能够产生的所有 outputs。
+
+若 $T(x)=Ax$，则：
+
+\[
+\operatorname{Im}T
+=
+\operatorname{Col}(A).
+\]
+
+其 dimension 就是 matrix rank。
+
+## Rank-Nullity Theorem
+
+对有限维 $V$：
+
+\[
+\dim(V)
+=
+\dim(\ker T)
++
+\dim(\operatorname{Im}T).
+\]
+
+写成 matrix language：
+
+\[
+n
+=
+\operatorname{nullity}(A)
++
+\operatorname{rank}(A).
+\]
+
+它把 information lost directions 与 preserved output dimensions 联系起来。
+
+## Injective, Surjective, Invertible
+
+- **injective**：不同 inputs 不会被映射成同一个 output；
+- **surjective**：output space 中每个元素都有 preimage；
+- **bijective**：同时 injective 与 surjective。
+
+若 $T:V\to V$ bijective，则存在 inverse linear transformation：
+
+\[
+T^{-1}.
+\]
+
+在 matrix representation 中对应 invertible matrix。
 
 ## Composition
 
-如果先做：
+若：
 
 \[
-y=Bx,
+T_1:U\rightarrow V,
+\qquad
+T_2:V\rightarrow W,
 \]
 
-再做：
+则 composition：
 
 \[
-z=Ay,
+T_2\circ T_1
 \]
 
-则：
+仍是 linear transformation。
+
+若 matrix representations 为 $A$ 和 $B$，则 composition 对应：
 
 \[
-z=A(Bx)=(AB)x.
+BA.
 \]
 
-Matrix multiplication 因此对应 transformation composition。
+这解释了 matrix multiplication 与多层 linear mappings 的关系。
 
-这解释了为什么多个**没有非线性激活**的 linear layers 仍然可以合并成一个线性/仿射 mapping。神经网络需要 [Activation Function](/deep-learning/core/activation-function/) 打破这种可合并性，才能表示更复杂的 nonlinear functions。
+## Affine Transformation
 
-## 与神经网络的关系
-
-[Linear Layer](/deep-learning/core/linear-layer/) 直接建立在这个概念上。
-
-神经网络里常见：
+Neural network 中常见：
 
 \[
-y=xW+b.
+y=Wx+b.
 \]
 
-它把表示从一个 feature space 映射到另一个 feature space。Q/K/V projections、MLP layers、classification heads 都会使用这种结构。
+当 $b\neq0$ 时，这不是严格意义上的 linear transformation，因为：
 
-这些是 linear transformation 的应用；linear transformation 本身是独立的线性代数对象。
+\[
+T(0)=b\neq0.
+\]
+
+它属于 affine transformation。
+
+Deep-learning frameworks 常把这种 layer 命名为 `Linear`，见 [Linear Layer](/deep-learning/core/linear-layer/)。
+
+## Examples
+
+典型 linear transformations 包括：
+
+- rotation；
+- reflection；
+- scaling；
+- projection；
+- dimensionality reduction 到 subspace；
+- coordinate transformations（在适当表示下）。
+
+它们虽然几何效果不同，但都保持 linear combinations。

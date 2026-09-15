@@ -13,98 +13,235 @@ related:
 
 # Entropy
 
-Entropy 描述一个 probability distribution 的不确定性。直觉上，如果结果几乎已经确定，entropy 很低；如果许多结果都差不多可能，entropy 更高。
+Entropy 衡量 probability distribution 的平均 information content 或 uncertainty。
 
-对于 discrete distribution $p(x)$，Shannon entropy 定义为：
-
-\[
-H(p)
-=-\sum_x p(x)\log p(x).
-\]
-
-也常写作：
+对 discrete random variable $X\sim p$，定义：
 
 \[
-H(X)=-\mathbb E[\log p(X)].
+H(X)
+=
+-\sum_x p(x)\log p(x).
 \]
 
-## 从 Information Content 开始
+也可以写成 expectation：
 
-单个事件 $x$ 的 self-information 定义为：
+\[
+H(X)
+=
+\mathbb E_{X\sim p}
+[-\log p(X)].
+\]
+
+## Self-Information
+
+单个 event $x$ 的 self-information 定义为：
 
 \[
 I(x)=-\log p(x).
 \]
 
-一个非常可能发生的事件，$p(x)$ 大，因此 $-\log p(x)$ 小；一个罕见事件带来更多“意外信息”，所以 information content 更大。
+Probability 越小，$I(x)$ 越大；probability 越大，information content 越小。
 
-Entropy 就是对所有可能事件的 information content 取 expectation：
+Entropy 就是 self-information 的 expectation。
+
+## Log Base 与 Units
+
+如果使用：
 
 \[
-H(X)=\mathbb E[I(X)].
+\log_2,
 \]
 
-所以 entropy 可以理解为：
+entropy 单位是 bits。
 
-> **从这个 distribution 采样一次，平均会带来多少不确定信息。**
+如果使用 natural logarithm：
 
-## 一个 Bernoulli 例子
+\[
+\ln,
+\]
 
-若硬币正面概率为 $p$，则：
+单位是 nats。
+
+改变 log base 只改变一个 constant scale factor。
+
+## Basic Properties
+
+Discrete entropy 满足：
+
+\[
+H(X)\ge0.
+\]
+
+如果 $X$ 是 deterministic：
+
+\[
+P(X=x_0)=1,
+\]
+
+则：
+
+\[
+H(X)=0.
+\]
+
+对于具有 $K$ 个可能 outcomes 的 discrete variable：
+
+\[
+H(X)\le\log K,
+\]
+
+等号在 uniform distribution：
+
+\[
+p(x)=\frac1K
+\]
+
+时成立。
+
+## Joint Entropy
+
+对 joint distribution：
+
+\[
+p(x,y),
+\]
+
+joint entropy 为：
+
+\[
+H(X,Y)
+=
+-\sum_{x,y}p(x,y)\log p(x,y).
+\]
+
+它描述 pair $(X,Y)$ 的总 uncertainty。
+
+## Conditional Entropy
+
+Conditional entropy：
+
+\[
+H(X\mid Y)
+=
+-\sum_{x,y}
+p(x,y)
+\log p(x\mid y).
+\]
+
+等价地：
+
+\[
+H(X\mid Y)
+=
+\mathbb E_Y[H(X\mid Y=y)].
+\]
+
+它表示在已经知道 $Y$ 后，$X$ 还剩多少平均 uncertainty。
+
+## Chain Rule
+
+Entropy 满足：
+
+\[
+H(X,Y)
+=
+H(Y)+H(X\mid Y)
+\]
+
+也等于：
+
+\[
+H(X)+H(Y\mid X).
+\]
+
+对 sequence：
+
+\[
+H(X_1,\ldots,X_n)
+=
+\sum_{i=1}^{n}
+H(X_i\mid X_1,\ldots,X_{i-1}).
+\]
+
+它与 probability chain rule：
+
+\[
+p(x_{1:n})
+=
+\prod_i p(x_i\mid x_{<i})
+\]
+
+直接对应。
+
+## Independence
+
+若 $X,Y$ independent，则：
+
+\[
+H(X,Y)=H(X)+H(Y).
+\]
+
+并且：
+
+\[
+H(X\mid Y)=H(X).
+\]
+
+知道 $Y$ 不减少对 $X$ 的 uncertainty。
+
+## Coding Interpretation
+
+Shannon source coding theorem 将 entropy 与 lossless coding 联系起来。
+
+对于来自 distribution $p$ 的长 i.i.d. sequence，最佳 prefix coding / block coding 的 average code length 不能系统性低于 entropy，并可以在适当 coding scheme 下逼近 entropy。
+
+因此：
 
 \[
 H(p)
-=-p\log p-(1-p)\log(1-p).
 \]
 
-当 $p=0$ 或 $1$ 时，结果完全确定：
+它给出该 information source 在无损编码条件下的理论平均码长下界。
+
+## Differential Entropy
+
+对 continuous random variable，定义 differential entropy：
 
 \[
-H=0.
+h(X)
+=
+-\int f(x)\log f(x)\,dx.
 \]
 
-当 $p=0.5$ 时，两种结果同样可能，entropy 最大。
+它与 discrete entropy 有重要区别：
 
-因此 entropy 不是“值越随机越好”，而是对 probability mass 分散程度的一种严格度量。
+- differential entropy 可以为负；
+- 它依赖 coordinate scale；
+- 不应直接解释为离散 code length。
 
-## Log Base 决定单位
+KL divergence、mutual information 等 quantities 在连续情况下通常具有更稳定的 invariant interpretation。
 
-若使用 $\log_2$，单位是 bits；使用 natural logarithm $\ln$，单位常称 nats。
+## Cross-Entropy 与 KL Divergence
 
-改变 log base 只会按常数比例缩放 entropy，不改变 distribution 之间的比较关系。
-
-## Maximum Entropy
-
-对具有 $K$ 个可能结果的 categorical distribution，entropy 在 uniform distribution 时最大：
+对 true distribution $p$ 与 model $q$：
 
 \[
-p(x)=\frac1K.
+H(p,q)
+=
+-\mathbb E_{x\sim p}\log q(x).
 \]
 
-此时：
+它与 entropy、KL divergence 满足：
 
 \[
-H=\log K.
+H(p,q)
+=
+H(p)+D_{KL}(p\|q).
 \]
 
-因为在没有偏好的情况下，每个结果同样可能，不确定性最高。
+因此当 $p$ 固定时，minimize cross-entropy 等价于 minimize forward KL divergence。
 
-## Entropy 与编码长度
+## Connections
 
-Information theory 中，$-\log p(x)$ 与理想编码长度直接相关。
-
-更可能的 symbol 可以分配更短 code，更罕见的 symbol 需要更长 code。Entropy 给出在理想条件下平均编码长度的基本极限。
-
-这也是为什么 entropy 不只是“概率曲线的一个统计量”，而是信息量与压缩之间的桥梁。
-
-## 从 Entropy 到 Cross-Entropy
-
-Entropy 使用真实 distribution $p$ 自己来评估平均信息量。
-
-如果我们改用另一个 distribution $q$ 给来自 $p$ 的数据编码，就得到 [Cross-Entropy](/mathematics/information-theory/cross-entropy/)：
-
-\[
-H(p,q)=-\mathbb E_{x\sim p}[\log q(x)].
-\]
-
-这会进一步连接到 [KL Divergence](/mathematics/information-theory/kl-divergence/)。
+- [Cross-Entropy](/mathematics/information-theory/cross-entropy/)：用另一个 distribution 的 log-probability 衡量编码/预测代价。
+- [KL Divergence](/mathematics/information-theory/kl-divergence/)：两个 distributions 之间的 relative-information quantity。

@@ -13,19 +13,21 @@ related:
 
 # Linear Layer
 
-Linear Layer 是神经网络里最基本的可学习映射之一。它接收一个 feature vector，把它映射到另一个 feature space。
+Linear Layer 是神经网络中最基本的可学习 affine mapping。对输入
 
-常见形式：
+\[
+x\in\mathbb R^{d_{in}},
+\]
+
+常见定义为
 
 \[
 y=Wx+b,
 \]
 
-其中：
+其中
 
 \[
-x\in\mathbb R^{d_{in}},
-\qquad
 W\in\mathbb R^{d_{out}\times d_{in}},
 \qquad
 b\in\mathbb R^{d_{out}},
@@ -33,126 +35,132 @@ b\in\mathbb R^{d_{out}},
 y\in\mathbb R^{d_{out}}.
 \]
 
-很多深度学习框架把它叫 `Linear`，但只要 $b\neq0$，从严格数学定义看它其实是 affine transformation，而不是纯 [Linear Transformation](/mathematics/linear-algebra/linear-transformation/)。
+深度学习框架通常把这一层命名为 `Linear`，但当 $b\neq0$ 时，从严格数学定义看它是 affine transformation，而不是纯 [Linear Transformation](/mathematics/linear-algebra/linear-transformation/)。
 
-## 一层到底学了什么
+## Coordinate Form
 
-展开第 $j$ 个输出：
+第 $j$ 个输出分量为
 
 \[
-y_j=
-\sum_{i=1}^{d_{in}}W_{ji}x_i+b_j.
+y_j=\sum_{i=1}^{d_{in}}W_{ji}x_i+b_j.
 \]
 
-所以每个 output feature 都是所有 input features 的一个 learned weighted sum，再加 bias。
+因此 $W$ 的第 $j$ 行定义了第 $j$ 个输出坐标如何组合全部输入 features；$b_j$ 则允许该坐标整体平移。
 
-可以把 $W$ 的第 $j$ 行理解为：第 $j$ 个输出 feature“怎样读取输入空间”。
+训练过程通过任务 loss 调整这些 parameters，而不是预先规定每个 row 对应某个人工语义。
 
-训练的过程就是调整这些 weights 与 biases，使映射更适合任务目标。
+## Input and Output Spaces
 
-## Shape 表达输入空间与输出空间
-
-如果：
+Linear Layer 可以改变 representation dimension。例如
 
 \[
 d_{in}=4,
-\qquad d_{out}=3,
+\qquad
+d_{out}=3
 \]
 
-那么：
+时，
 
 \[
 W\in\mathbb R^{3\times4}.
 \]
 
-输入一个 4-dimensional vector，得到 3-dimensional vector。
+它把 $\mathbb R^4$ 中的表示映射到 $\mathbb R^3$。因此 projection、dimension expansion、dimension reduction 与 output head 都可以由同一数学结构实现。
 
-Linear Layer 因此经常承担 projection 的角色：
+## Parameter Count
 
-```text
-old representation space
-        ↓
-   Linear Layer
-        ↓
-new representation space
-```
+标准 Linear Layer 的参数量为
 
-它不要求输入输出拥有相同 dimension。
+\[
+d_{out}d_{in}+d_{out},
+\]
 
-## Batch 与 Sequence
+其中第一项来自 weight matrix，第二项来自 bias。若关闭 bias，则只剩
 
-实际模型通常不是一次只处理一个 vector。
+\[
+d_{out}d_{in}.
+\]
 
-如果：
+当输入和输出维度很大时，Linear Layers 往往占据模型参数量的重要部分。
+
+## Batch and Sequence Inputs
+
+对 batch
 
 \[
 X\in\mathbb R^{B\times d_{in}},
 \]
 
-则对 batch 中每个 row 使用同一组 parameters：
+可以写成
 
 \[
-Y=XW^\top+b.
+Y=XW^\top+b,
 \]
 
-得到：
+得到
 
 \[
 Y\in\mathbb R^{B\times d_{out}}.
 \]
 
-对于 sequence：
+对 sequence tensor
 
 \[
 X\in\mathbb R^{B\times N\times d_{in}},
 \]
 
-Linear Layer 通常只作用在最后一个 feature dimension，每个 token 共享同一组 $W,b$：
+Linear Layer 通常独立作用于最后一个 feature dimension，并在所有 batch items 与 sequence positions 共享同一组 $W,b$：
 
 \[
 Y\in\mathbb R^{B\times N\times d_{out}}.
 \]
 
-因此它不会自动在 tokens 之间交换信息；它对每个位置执行同一个 feature transformation。
+因此 Linear Layer 本身不会在不同 sequence positions 之间交换信息。
 
-## 多层 Linear Mapping 与 Nonlinearity
+## Rank and Information
 
-假设连续两层都没有 nonlinear activation：
+若忽略 bias，$W$ 的 rank 决定线性映射最多能保留多少独立方向。
+
+当
+
+\[
+d_{out}<d_{in},
+\]
+
+或 $W$ 本身 rank-deficient 时，映射可能丢失输入空间中的部分信息。反过来，把维度扩展到更高空间也不会凭空增加输入所包含的信息，只是提供新的坐标表示供后续 nonlinear layers 使用。
+
+## Composition of Linear Layers
+
+连续两层若没有 nonlinear activation：
 
 \[
 y=W_1x+b_1,
 \]
 
 \[
-z=W_2y+b_2.
+z=W_2y+b_2,
 \]
 
-代入：
+则
 
 \[
-z=W_2W_1x+(W_2b_1+b_2).
+z=W_2W_1x+(W_2b_1+b_2),
 \]
 
-仍然只是一个 affine transformation。
+仍然只是一个 affine transformation。因此增加纯 Linear Layers 并不会形成一般 nonlinear function。
 
-所以无论叠多少个纯 Linear Layers，都可以折叠成一层。
+[Activation Function](/deep-learning/core/activation-function/) 使多层网络不再能折叠为单个 affine mapping。
 
-神经网络真正获得 nonlinear function approximation ability，需要在 layers 之间加入 [Activation Function](/deep-learning/core/activation-function/)：
+## Common Roles
 
-\[
-y=\phi(Wx+b).
-\]
-
-## 常见角色
-
-Linear Layer 可以承担很多不同角色：
+同一个 Linear Layer 结构可以承担不同 architecture roles：
 
 - feature projection；
 - dimensionality change；
-- classifier output head；
-- regression head；
-- Transformer Q/K/V projections；
-- MLP / FFN 中的 learned transformation；
-- multimodal feature alignment。
+- classifier / regression head；
+- Attention 的 Q/K/V projections；
+- MLP / FFN 中的 affine transformations；
+- multimodal feature alignment；
+- latent parameter prediction。
 
-这些用途共享的是同一个基本机制：learned affine mapping。Linear Layer 不是 Transformer 专属组件，它是现代 neural network 的基础 building block。
+这些用途的差别来自上游表示与下游 objective，而不是 Linear Layer 的数学定义发生变化。

@@ -13,104 +13,122 @@ related:
 
 # Random Variable
 
-Random Variable 不是“一个会自己随机变化的普通变量”。它是把随机实验的结果映射成数值的函数。
+Random Variable 是把随机实验的 outcome 映射为数值的函数。
 
-设随机实验的 sample space 为 $\Omega$。Random variable $X$ 是一个 mapping：
+给定 sample space $\Omega$，实值 random variable 定义为：
 
 \[
 X:\Omega\rightarrow\mathbb R.
 \]
 
-例如掷一枚硬币两次，sample space 可以写成：
+对一次具体 outcome $\omega\in\Omega$，random variable 给出数值：
+
+\[
+X(\omega).
+\]
+
+随机性来自实验 outcome $\omega$ 的不确定性；函数 $X$ 本身是确定的映射。
+
+## Sample Space 与 Numerical Quantity
+
+Sample space 描述原始结果，而 random variable 提取其中关心的数值。
+
+例如两次抛硬币：
 
 \[
 \Omega=\{HH,HT,TH,TT\}.
 \]
 
-定义 $X$ 为“正面出现的次数”，那么：
+定义 $X$ 为正面次数：
 
 \[
 X(HH)=2,
 \quad
-X(HT)=1,
-\quad
-X(TH)=1,
+X(HT)=X(TH)=1,
 \quad
 X(TT)=0.
 \]
 
-随机性来自实验结果 $\omega\in\Omega$，而 $X$ 把这些结果转成我们关心的数值。
-
-## Random Variable 与一次观测值
-
-要区分：
-
-\[
-X
-\]
-
-和
-
-\[
-x.
-\]
-
-通常大写 $X$ 表示 random variable，小写 $x$ 表示它某次可能取得的具体值。
-
-写：
-
-\[
-P(X=x)
-\]
-
-表示 random variable $X$ 取值为 $x$ 的概率。
-
-这个区分在 probabilistic model 中非常重要：模型定义的是 random variables 之间的 distribution，而数据集给我们的是这些 variables 的具体 observations。
+于是复杂 outcome 被映射为一个 numerical variable。
 
 ## Discrete Random Variable
 
-如果 $X$ 只取有限或可数多个值，它是 discrete random variable。
+如果 $X$ 的取值集合 finite 或 countable，则称为 discrete random variable。
 
-例如骰子：
-
-\[
-X\in\{1,2,3,4,5,6\}.
-\]
-
-它的概率由 probability mass function 描述：
+其 distribution 可由 probability mass function 描述：
 
 \[
 p_X(x)=P(X=x).
 \]
 
-并满足：
+满足：
 
 \[
+p_X(x)\ge0,
+\qquad
 \sum_x p_X(x)=1.
 \]
 
 ## Continuous Random Variable
 
-如果 $X$ 可以在连续范围取值，通常用 probability density function：
+Continuous random variable 常通过 probability density function：
 
 \[
-p_X(x).
+f_X(x)
 \]
 
-此时单点概率通常为：
+描述。
 
-\[
-P(X=x)=0.
-\]
-
-真正有意义的是区间概率：
+区间概率为：
 
 \[
 P(a\le X\le b)
-=\int_a^b p_X(x)\,dx.
+=
+\int_a^b f_X(x)\,dx.
 \]
 
-因此 density 的数值本身不是“这个点的概率”。
+对于连续分布，单点通常满足：
+
+\[
+P(X=x)=0,
+\]
+
+即使 $f_X(x)$ 本身可以大于 0。Density 不是 point probability。
+
+## Cumulative Distribution Function
+
+任意 real-valued random variable 都可以定义 CDF：
+
+\[
+F_X(x)=P(X\le x).
+\]
+
+CDF 具有：
+
+- non-decreasing；
+- right-continuous；
+- $\lim_{x\to-\infty}F_X(x)=0$；
+- $\lim_{x\to\infty}F_X(x)=1$。
+
+它同时适用于 discrete、continuous 与 mixed distributions。
+
+## Transformation of a Random Variable
+
+给定 deterministic function $g$，可以定义新的 random variable：
+
+\[
+Y=g(X).
+\]
+
+例如：
+
+\[
+Y=X^2.
+\]
+
+虽然 $g$ 是确定性的，但由于 input $X$ 随机，$Y$ 仍然随机。
+
+Distribution transformation 需要根据 $g$ 与 $X$ 的 distribution 推导 $Y$ 的 distribution。
 
 ## Random Vector
 
@@ -118,33 +136,64 @@ P(a\le X\le b)
 
 \[
 X=
-\begin{bmatrix}
-X_1\\
-\vdots\\
-X_d
-\end{bmatrix}.
+(X_1,\ldots,X_d)^\top.
 \]
 
-它的取值是 $\mathbb R^d$ 中的 vector。
-
-这正是 multivariate distributions、latent variables、robot states 等概率建模的基础。
-
-## Distribution 描述随机性的规律
-
-Random variable 定义“我们从随机结果中读取什么数”；[Probability Distribution](/mathematics/probability/probability-distribution/) 则描述这些数值出现的规律。
-
-例如同样是实值 random variable：
+其 distribution 是 joint distribution：
 
 \[
-X\sim \mathcal N(0,1)
+p(x_1,\ldots,x_d).
 \]
 
-和
+Random vector 可以具有 mean vector 与 covariance matrix，是 multivariate statistics、Gaussian models 与 latent-variable models 的基本对象。
+
+## Random Variable 与 Observation
+
+Random variable $X$ 描述数据生成过程中的不确定 quantity；具体观测值常记为小写：
 
 \[
-Y\sim \mathcal N(10,0.1^2)
+x.
 \]
 
-都取实数，但其 distribution 完全不同。
+例如：
 
-后续的 [Expectation](/mathematics/probability/expectation/)、[Variance](/mathematics/probability/variance/) 都是对 random variable distribution 的整体性质进行总结。
+\[
+X\sim\mathcal N(0,1),
+\]
+
+表示 random variable 的 distribution；
+
+\[
+x=0.73
+\]
+
+表示某次 observation。
+
+区分 random variable 与 realized value 对理解 expectation、likelihood 与 probabilistic models 很重要。
+
+## Functions of Multiple Random Variables
+
+若：
+
+\[
+Z=g(X,Y),
+\]
+
+则 $Z$ 也是 random variable。
+
+例如：
+
+\[
+Z=X+Y.
+\]
+
+其 distribution 取决于 $X,Y$ 的 joint distribution，而不只取决于各自 marginal distribution。
+
+这也是 independence、covariance 与 convolution 等概念的重要背景。
+
+## Connections
+
+- [Probability Distribution](/mathematics/probability/probability-distribution/)：描述 random variable 取值的概率规律。
+- [Expectation](/mathematics/probability/expectation/)：random variable 的概率加权平均。
+- [Variance](/mathematics/probability/variance/)：衡量 random variable 相对 mean 的波动。
+- [Latent Variable](/mathematics/probability/latent-variable/)：未被直接观测的 random variable。

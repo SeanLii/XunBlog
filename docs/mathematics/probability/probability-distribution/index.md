@@ -13,127 +13,257 @@ related:
 
 # Probability Distribution
 
-Probability Distribution 描述一个 [Random Variable](/mathematics/probability/random-variable/) 或一组 random variables 的随机规律。
+Probability Distribution 描述 random variable 或 random vector 的概率质量如何分配在可能取值上。
 
-它回答的不是“这次观测是多少”，而是：
+若：
 
-> **在所有可能结果中，不同值出现的概率怎样分配。**
+\[
+X\sim p,
+\]
 
-如果我们知道一个 random variable 的完整 distribution，就原则上知道了它的全部概率信息。
+表示 $X$ 的 distribution 为 $p$。Distribution 决定了关于 $X$ 的概率陈述，例如事件概率、expectation、variance 与 quantiles。
 
 ## Discrete Distribution
 
-对于 discrete random variable $X$，用 probability mass function：
+对 discrete random variable，使用 probability mass function：
 
 \[
-p(x)=P(X=x).
+p_X(x)=P(X=x).
 \]
 
 满足：
 
 \[
-p(x)\ge0,
+p_X(x)\ge0,
 \qquad
-\sum_x p(x)=1.
+\sum_x p_X(x)=1.
 \]
 
-例如公平骰子：
+例如 Bernoulli random variable：
 
 \[
-p(x)=\frac16,
+P(X=1)=p,
 \qquad
-x\in\{1,2,3,4,5,6\}.
+P(X=0)=1-p.
 \]
 
 ## Continuous Distribution
 
-对于 continuous random variable，用 probability density function：
+对 continuous random variable，通常使用 probability density function：
 
 \[
-p(x)\ge0,
-\qquad
-\int_{-\infty}^{\infty}p(x)\,dx=1.
+f_X(x)\ge0,
 \]
 
-区间概率由面积给出：
+且：
+
+\[
+\int_{-\infty}^{\infty}f_X(x)\,dx=1.
+\]
+
+区间 probability：
 
 \[
 P(a\le X\le b)
-=\int_a^b p(x)\,dx.
+=
+\int_a^b f_X(x)\,dx.
 \]
 
-因此 density 可以大于 1；要求等于 1 的是整个空间下的积分，而不是每个点的函数值。
+Density value 本身不是 probability；它可以大于 1，只要积分仍为 1。
 
-## CDF
+## Cumulative Distribution Function
 
-另一种统一描述 distribution 的方式是 cumulative distribution function：
+CDF 定义为：
 
 \[
 F_X(x)=P(X\le x).
 \]
 
-CDF 对 discrete 和 continuous random variables 都适用，并且从 0 单调增长到 1。
+对 absolutely continuous distribution：
+
+\[
+F_X(x)
+=
+\int_{-\infty}^{x}f_X(t)\,dt,
+\]
+
+若可微，则：
+
+\[
+f_X(x)=F_X'(x).
+\]
+
+CDF 是对所有 real-valued distributions 都统一适用的表示。
+
+## Support
+
+Distribution 的 support 描述可能出现概率质量的区域。
+
+例如：
+
+- Bernoulli：$\{0,1\}$；
+- Exponential：$[0,\infty)$；
+- Normal：$\mathbb R$。
+
+Support 是 distribution definition 的一部分。若 model 给一个 support 外的 observation 分配非零 likelihood，或反过来，可能产生建模错误。
 
 ## Parametric Distribution
 
-许多 distribution 可以用少量 parameters 描述。
-
-例如 [Normal Distribution](/mathematics/probability/normal-distribution/)：
+Parametric family 用有限参数表示 distribution：
 
 \[
-X\sim\mathcal N(\mu,\sigma^2).
+p(x;\theta).
 \]
 
-$\mu$ 和 $\sigma^2$ 决定整个 density 的位置与尺度。
+例如 Normal distribution：
 
-学习这些 parameters，和学习一个具体 sample，不是同一件事。模型经常输出 distribution parameters，然后再从 distribution 取样或计算 likelihood。
+\[
+\theta=(\mu,\sigma^2).
+\]
+
+Learning 常转化为估计 $\theta$。
 
 ## Joint Distribution
 
-如果同时研究两个 random variables $X,Y$，需要 joint distribution：
+多个 random variables 的联合行为由 joint distribution 描述：
 
 \[
 p(x,y).
 \]
 
-它描述两者一起取某组值的概率规律。
+它包含比单独 marginals：
 
-从 joint distribution 可以得到 marginal distribution，例如离散情形：
+\[
+p(x),\qquad p(y)
+\]
+
+更多的信息，因为还描述 $X$ 与 $Y$ 的 dependency。
+
+## Marginal Distribution
+
+从 joint distribution 中消去其他 variables：
+
+离散情况：
 
 \[
 p(x)=\sum_y p(x,y).
 \]
 
-连续情形对应积分：
+连续情况：
 
 \[
 p(x)=\int p(x,y)\,dy.
 \]
 
-这个过程叫 marginalization。
+这个操作称为 marginalization。
 
 ## Conditional Distribution
 
-在已经知道 $X=x$ 的条件下，$Y$ 的 distribution 为：
+若 $p(y)>0$，conditional distribution 为：
 
 \[
-p(y\mid x).
+p(x\mid y)
+=
+\frac{p(x,y)}{p(y)}.
 \]
 
-它不是另一个无关的 distribution，而是 joint distribution 在给定条件后的重新归一化：
+于是 joint distribution 可以 factorize：
 
 \[
-p(y\mid x)
-=\frac{p(x,y)}{p(x)},
-\qquad p(x)>0.
+p(x,y)=p(x\mid y)p(y).
 \]
 
-完整机制见 [Conditional Probability](/mathematics/probability/conditional-probability/)。
+不同 factorization 是 probabilistic graphical models 与 generative modeling 的基础。
 
-## Distribution 与 Dataset Histogram
+## Independence
 
-Dataset histogram 是有限样本得到的 empirical summary；theoretical probability distribution 是产生数据的概率模型。
+若：
 
-样本数增加时，empirical distribution 可以越来越接近 underlying distribution，但两者不能直接画等号。
+\[
+p(x,y)=p(x)p(y),
+\]
 
-这一区分在机器学习中很重要：训练数据是有限 observations，而模型试图学习关于数据生成规律的 distribution 或 conditional mapping。
+则 $X$ 与 $Y$ independent。
+
+此时：
+
+\[
+p(x\mid y)=p(x)
+\]
+
+（在条件概率有定义的地方）。
+
+## Transformation of Distributions
+
+若：
+
+\[
+Y=g(X),
+\]
+
+则 $Y$ 的 distribution 由 $X$ 的 distribution 与 transformation $g$ 决定。
+
+在一维、可逆且可微时：
+
+\[
+f_Y(y)
+=
+f_X(g^{-1}(y))
+\left|
+\frac{d}{dy}g^{-1}(y)
+\right|.
+\]
+
+多维情况需要 Jacobian determinant。
+
+## Population Distribution 与 Empirical Distribution
+
+理论中的 $p(x)$ 通常表示 population / data-generating distribution。
+
+有限 dataset：
+
+\[
+\{x_1,\ldots,x_N\}
+\]
+
+定义 empirical distribution：
+
+\[
+\hat p_N(x)
+=
+\frac1N\sum_{i=1}^{N}\delta_{x_i}(x).
+\]
+
+Machine learning 使用有限 samples 推断或逼近更广泛的数据 distribution。
+
+## Likelihood
+
+给定 parametric model $p_\theta(x)$ 与 observed dataset：
+
+\[
+D=\{x_i\}_{i=1}^{N},
+\]
+
+likelihood 为：
+
+\[
+L(\theta;D)
+=
+\prod_{i=1}^{N}p_\theta(x_i)
+\]
+
+（在 i.i.d. 假设下）。
+
+Maximum likelihood 通过：
+
+\[
+\max_\theta\sum_i\log p_\theta(x_i)
+\]
+
+让 model distribution 对 observations 分配更高概率或 density。
+
+## Connections
+
+- [Random Variable](/mathematics/probability/random-variable/)：distribution 描述的对象。
+- [Conditional Probability](/mathematics/probability/conditional-probability/)：conditional distributions 的基础。
+- [Normal Distribution](/mathematics/probability/normal-distribution/)：常用 parametric distribution family。

@@ -12,192 +12,207 @@ related:
 
 # Reparameterization Trick
 
-Reparameterization Trick 把“从一个依赖 parameters 的 distribution 中随机采样”改写成“从固定 noise distribution 采样，再做 deterministic transformation”。
+Reparameterization Trick 把 parameter-dependent random sampling 写成“parameter-free noise + differentiable deterministic transformation”，从而使 Monte Carlo expectation 可以使用 pathwise gradients。
 
-以 Gaussian 为例，原本：
+设：
 
 \[
-z\sim\mathcal N(\mu,\sigma^2).
+z\sim q_\phi(z).
 \]
 
-改写为：
+若可以表示为：
 
 \[
-\epsilon\sim\mathcal N(0,1),
-\]
-
-\[
-\boxed{z=\mu+\sigma\epsilon}.
-\]
-
-得到的 $z$ distribution 完全相同：
-
-\[
-z\sim\mathcal N(\mu,\sigma^2).
-\]
-
-变化的不是 probability model，而是 computation graph 中随机性的放置位置。
-
-## 在 Variational Inference 中的位置
-
-今天深度学习里常说的 Reparameterization Trick，通常指 **pathwise gradient estimator** 在 stochastic variational inference 中的使用：把 parameter-dependent random variable 表示成 parameter-free noise 与 deterministic transformation 的组合。
-
-这项思想并不属于 VAE 本身。Pathwise gradient / infinitesimal perturbation 一类方法在更早的 stochastic simulation 与 gradient estimation 中已经存在；Kingma & Welling 和 Rezende 等工作把它带入了现代 deep variational inference，并使 VAE 可以用 ordinary backpropagation 高效训练。
-
-因此它更适合作为 **Variational Inference 中的一般梯度估计技术** 来理解；VAE 是它最重要、也最广为人知的使用场景之一。
-
-## 原问题：Random Node 依赖 Parameters
-
-假设 objective：
-
-\[
-L(\mu,\sigma)
-=
-\mathbb E_{z\sim q_{\mu,\sigma}(z)}[f(z)].
-\]
-
-如果直接在 graph 中写：
-
-```text
-μ, σ
- ↓
-random sample z ~ N(μ, σ²)
- ↓
-f(z)
-```
-
-普通 pathwise backprop 不容易把 gradient 穿过 sampling operation 回到 $\mu,\sigma$。
-
-## 把 Randomness 移出去
-
-Reparameterization 后：
-
-```text
-ε ~ N(0,1)      μ, σ
-      \          /
-       deterministic
-       z = μ + σε
-            ↓
-           f(z)
-```
-
-随机变量 $\epsilon$ 与 model parameters 无关。
-
-给定某次 sampled $\epsilon$，$z$ 对 $\mu,\sigma$ 是 deterministic differentiable function。
-
-例如：
-
-\[
-\frac{\partial z}{\partial\mu}=1,
+\epsilon\sim p(\epsilon),
 \qquad
-\frac{\partial z}{\partial\sigma}=\epsilon.
+z=g_\phi(\epsilon),
 \]
 
-所以 gradient 可以沿普通 computation path 回传。
+其中 base noise distribution $p(\epsilon)$ 不依赖 $\phi$，则：
 
-## Distribution Preservation
+\[
+\mathbb E_{z\sim q_\phi}[f(z)]
+=
+\mathbb E_{\epsilon\sim p(\epsilon)}
+[f(g_\phi(\epsilon))].
+\]
 
-若：
+随机性因此移到 $\epsilon$，而 $\phi$ 只出现在 differentiable computation graph 中。
+
+## Gaussian Reparameterization
+
+最经典情况：
+
+\[
+z\sim\mathcal N(\mu,\sigma^2).
+\]
+
+可以写成：
 
 \[
 \epsilon\sim\mathcal N(0,1),
 \]
 
-那么 affine transformation：
-
 \[
-z=\mu+\sigma\epsilon
+z=\mu+\sigma\epsilon.
 \]
 
-满足：
+多维 diagonal Gaussian：
 
 \[
-\mathbb E[z]=\mu,
-\]
-
-\[
-\operatorname{Var}(z)=\sigma^2.
-\]
-
-并且 Gaussian 在 affine transformation 下仍为 Gaussian，因此 distribution 正好是：
-
-\[
-\mathcal N(\mu,\sigma^2).
-\]
-
-## Multivariate Diagonal Gaussian
-
-VAE 中常见：
-
-\[
-q(z\mid x)
+q_\phi(z\mid x)
 =
 \mathcal N(
-\mu,
-\operatorname{diag}(\sigma^2)
-).
+\mu_\phi(x),
+\operatorname{diag}(\sigma_\phi^2(x))
+),
 \]
 
-使用：
+则：
 
 \[
 \epsilon\sim\mathcal N(0,I),
 \]
 
 \[
-z=\mu+\sigma\odot\epsilon.
+z
+=
+\mu_\phi(x)
++
+\sigma_\phi(x)\odot\epsilon.
 \]
 
-这里 $\odot$ 表示 element-wise multiplication。
+## Pathwise Gradient
+
+考虑 objective：
+
+\[
+J(\phi)
+=
+\mathbb E_{z\sim q_\phi}[f(z)].
+\]
+
+reparameterize 后：
+
+\[
+J(\phi)
+=
+\mathbb E_{\epsilon\sim p(\epsilon)}
+[f(g_\phi(\epsilon))].
+\]
+
+于是：
+
+\[
+\nabla_\phi J
+=
+\mathbb E_\epsilon
+\left[
+\nabla_z f(z)
+\frac{\partial g_\phi(\epsilon)}{\partial\phi}
+\right].
+\]
+
+这允许 gradient 直接沿 deterministic path 从 $f$ 回传到 distribution parameters。
+
+## Why Direct Sampling Is Awkward
+
+若 computation graph 只有：
+
+```text
+φ → distribution qφ → random sample z → f(z)
+```
+
+普通 automatic differentiation 不能把 discrete “sample operation” 当成普通 deterministic function 对 $\phi$ 求 pathwise derivative。
+
+Reparameterization 把它改成：
+
+```text
+ε ~ fixed noise
+φ ───────────┐
+             ↓
+        z = gφ(ε)
+             ↓
+            f(z)
+```
+
+这样对固定 sample $\epsilon$，整个后半部分是 differentiable computation。
 
 ## Log-Variance Parameterization
 
-神经网络可以输出任意 real number，但 standard deviation 必须：
+Neural implementations 常预测：
 
 \[
-\sigma>0.
+\log\sigma^2
 \]
 
-常让 network 输出：
+而不是直接预测 $\sigma$。
 
-\[
-\log\sigma^2.
-\]
-
-再计算：
+可以恢复：
 
 \[
 \sigma
 =
-\exp\left(\frac12\log\sigma^2\right).
+\exp\left(
+\frac12\log\sigma^2
+\right).
 \]
 
-这样 positivity 自动满足，也更适合数值计算。
+这样 $\sigma>0$ 自动成立，并提高数值稳定性。
 
-## Pathwise Gradient 的意义
+## Score-Function Estimator
 
-Reparameterization estimator 的核心优势是：同一份 sampled noise 下，output 会随 parameters 平滑变化，因此 gradient 能利用 function $f(z)$ 的局部 derivative information。
-
-这通常比纯 score-function estimator 具有更低 variance，但它要求 distribution 可以写成合适的 differentiable transformation。
-
-## 不只是 Gaussian
-
-一般形式：
+另一类 gradient estimator 是：
 
 \[
-\epsilon\sim p(\epsilon),
+\nabla_\phi
+\mathbb E_{q_\phi(z)}[f(z)]
+=
+\mathbb E_{q_\phi(z)}
+[
+f(z)\nabla_\phi\log q_\phi(z)
+].
 \]
+
+它不要求 reparameterizable distribution，因此适用范围更广，但 variance 往往较高。
+
+Pathwise gradient 与 score-function estimator 是两种不同 stochastic-gradient strategies。
+
+## Beyond Diagonal Gaussian
+
+Reparameterization 不只适用于 diagonal Gaussian。
+
+例如 full-covariance Gaussian：
 
 \[
-z=g_\phi(\epsilon),
+z=\mu+L\epsilon,
+\qquad
+LL^\top=\Sigma,
 \]
 
-只要 base noise 与 $\phi$ 无关，且 $g_\phi$ differentiable，就可以形成 reparameterized path。
+其中 $L$ 可以取 Cholesky factor。
 
-因此它是 stochastic gradient estimation 的一般技术，不是 VAE 专属 trick。
+其他 continuous distributions 也可能通过 inverse CDF、location-scale transformation 或 implicit reparameterization 构造 pathwise gradient。
 
-## Sources
+Discrete random variables 则通常不能直接使用普通 pathwise reparameterization，需要 relaxations 或其他 gradient estimators。
 
-- Kingma & Welling. *Auto-Encoding Variational Bayes*. 2013/2014. https://arxiv.org/abs/1312.6114
-- Rezende, Mohamed & Wierstra. *Stochastic Backpropagation and Approximate Inference in Deep Generative Models*. 2014. https://proceedings.mlr.press/v32/rezende14.html
-- Jankowiak & Obermeyer. *Pathwise Derivatives Beyond the Reparameterization Trick*. 2018. https://proceedings.mlr.press/v80/jankowiak18a.html
+## Role in Variational Inference
+
+Neural VI / VAE 中，ELBO 含有：
+
+\[
+\mathbb E_{q_\phi(z\mid x)}
+[
+\log p_\theta(x\mid z)
+].
+\]
+
+Reparameterization 使这项可以对 encoder parameters $\phi$ 使用低方差 Monte Carlo pathwise gradient。
+
+因此它是 stochastic variational inference 的 gradient-estimation technique，而不是 VAE 的专属理论。
+
+## Connections
+
+- [Variational Inference](/mathematics/probability/variational-inference/)：reparameterization 解决 stochastic expectation 的 gradient problem。
+- [Multivariate Normal Distribution](/mathematics/probability/multivariate-normal-distribution/)：Gaussian sampling transformation。
+- [Variational Autoencoder](/generative-models/variational-autoencoder/)：使用 amortized Gaussian posterior 与 reparameterized training。

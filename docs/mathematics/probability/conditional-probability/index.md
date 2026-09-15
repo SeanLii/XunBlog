@@ -12,116 +12,217 @@ related:
 
 # Conditional Probability
 
-Conditional Probability 描述：**在已经知道某件事发生的前提下，另一件事的概率应该怎样更新。**
+Conditional Probability 描述在已知事件 $B$ 发生的条件下，事件 $A$ 的概率。
 
-对 events $A,B$，若 $P(B)>0$：
+若：
+
+\[
+P(B)>0,
+\]
+
+定义：
 
 \[
 P(A\mid B)
-=\frac{P(A\cap B)}{P(B)}.
+=
+\frac{P(A\cap B)}{P(B)}.
 \]
 
-这里的 $B$ 不是“额外乘一个条件”，而是在告诉我们：原来的 sample space 已经缩小到 $B$ 发生的部分，需要在这个新范围内重新归一化概率。
-
-## 从 sample space 缩小来理解
-
-假设一副标准扑克牌中随机抽一张。
-
-令：
-
-- $A$：抽到 Ace；
-- $B$：抽到 Spade。
-
-原本：
-
-\[
-P(A)=\frac4{52}.
-\]
-
-但如果已经知道这张牌是 Spade，那么可能结果只剩 13 张 Spades，其中只有一张 Ace：
-
-\[
-P(A\mid B)=\frac1{13}.
-\]
-
-条件信息改变了我们计算概率的参考范围。
+它改变的是计算 probability 时所采用的 reference population：原 sample space 被限制到 $B$ 中。
 
 ## Product Rule
 
 由定义直接得到：
 
 \[
-P(A\cap B)=P(A\mid B)P(B).
+P(A\cap B)
+=
+P(A\mid B)P(B).
 \]
 
-也可以反过来：
+也可写成：
 
 \[
-P(A\cap B)=P(B\mid A)P(A).
+P(A\cap B)
+=
+P(B\mid A)P(A).
 \]
 
-因此：
+这两个表达式是 Bayes' theorem 的基础。
+
+## Chain Rule
+
+对多个 events / variables：
 
 \[
-P(A\mid B)P(B)
-=P(B\mid A)P(A).
+p(x_1,\ldots,x_n)
+=
+\prod_{i=1}^{n}
+p(x_i\mid x_1,\ldots,x_{i-1}).
 \]
 
-这正是 [Bayes’ Theorem](/mathematics/probability/bayes-theorem/) 的起点。
-
-## Random Variables 的 conditional distribution
-
-对于 discrete random variables：
+例如：
 
 \[
-p(y\mid x)
-=\frac{p(x,y)}{p(x)}.
+p(x,y,z)
+=
+p(x)p(y\mid x)p(z\mid x,y).
 \]
 
-对于 continuous variables，形式仍然类似，只是用 density：
+Chain rule 不需要 independence assumption；它是 joint probability 的一般 factorization。
+
+## Conditional Distribution
+
+对 discrete random variables：
 
 \[
-p(y\mid x)
-=\frac{p(x,y)}{p(x)}.
+p(x\mid y)
+=
+\frac{p(x,y)}{p(y)}.
 \]
 
-这里的 $p(x)$ 是对 $y$ marginalize 后得到：
+对 continuous variables 使用 conditional density：
 
 \[
-p(x)=\int p(x,y)\,dy.
+f_{X\mid Y}(x\mid y)
+=
+\frac{f_{X,Y}(x,y)}{f_Y(y)},
 \]
+
+在 denominator 有定义时成立。
+
+对固定 $y$，conditional distribution 关于 $x$ 必须归一化。
+
+## Law of Total Probability
+
+若 $B_1,\ldots,B_k$ 构成 sample space 的 partition，则：
+
+\[
+P(A)
+=
+\sum_{i=1}^{k}P(A\mid B_i)P(B_i).
+\]
+
+连续 latent variable 时，对应形式为：
+
+\[
+p(x)
+=
+\int p(x\mid z)p(z)\,dz.
+\]
+
+这就是 latent-variable model 中的 marginalization。
 
 ## Independence
 
-如果 $A$ 与 $B$ independent：
+若 events $A,B$ independent：
+
+\[
+P(A\cap B)=P(A)P(B),
+\]
+
+则：
 
 \[
 P(A\mid B)=P(A).
 \]
 
-等价地：
+对于 random variables：
 
 \[
-P(A\cap B)=P(A)P(B).
+p(x,y)=p(x)p(y).
 \]
 
-意思是知道 $B$ 没有改变我们对 $A$ 的概率判断。
+Independence 表示知道一个 variable 不改变另一个 variable 的 distribution。
 
-对于 random variables，也可以通过 joint distribution 是否 factorize 来定义 independence。
+## Conditional Independence
 
-## Conditional Probability 在建模中的意义
+Variables $X,Y$ 在给定 $Z$ 后 conditionally independent，记作：
 
-大量机器学习任务本质上都在学习 conditional distribution：
+\[
+X\perp Y\mid Z,
+\]
+
+若：
+
+\[
+p(x,y\mid z)
+=
+p(x\mid z)p(y\mid z).
+\]
+
+Conditional independence 不等于 marginal independence。两个 variables 可能 marginally dependent，但在 conditioning on a common cause 后变得 independent。
+
+这类结构是 probabilistic graphical models 中 factorization 的核心。
+
+## Bayes' Theorem
+
+由 product rule 的两种写法：
+
+\[
+p(x,y)=p(x\mid y)p(y)=p(y\mid x)p(x),
+\]
+
+得到：
+
+\[
+p(x\mid y)
+=
+\frac{p(y\mid x)p(x)}{p(y)}.
+\]
+
+完整含义见 [Bayes' Theorem](/mathematics/probability/bayes-theorem/)。
+
+## Conditional Expectation
+
+给定 $Y=y$，可以对 $X$ 的 conditional distribution 求 expectation：
+
+\[
+\mathbb E[X\mid Y=y].
+\]
+
+Random-variable form：
+
+\[
+\mathbb E[X\mid Y]
+\]
+
+本身也是一个关于 $Y$ 的 random variable。
+
+它满足 tower property：
+
+\[
+\mathbb E[
+\mathbb E[X\mid Y]
+]
+=
+\mathbb E[X].
+\]
+
+## Conditional Modeling in Machine Learning
+
+Supervised learning 常建模：
 
 \[
 p(y\mid x).
 \]
 
-例如：
+Conditional generative models 则可能建模：
 
-- 给定图像 $x$，类别 $y$ 的概率；
-- 给定文本上下文 $x$，下一个 token $y$ 的概率；
-- 给定 observation $x$，机器人 action $a$ 的分布；
-- 给定输入 $x$，生成模型输出 $y$ 的分布。
+\[
+p(y\mid x,z)
+\]
 
-因此 conditional probability 是概率建模本身的基本语言，而不是 VAE 或某个模型专属的背景公式。
+或：
+
+\[
+p(a\mid o).
+\]
+
+这里 conditional probability 提供了统一概率语言，而具体 neural architecture 只是这些 distributions 的 parameterization。
+
+## Connections
+
+- [Bayes' Theorem](/mathematics/probability/bayes-theorem/)：交换 conditioning 方向。
+- [Latent Variable](/mathematics/probability/latent-variable/)：通过 conditional distribution 描述生成过程。
+- [Conditional Variational Autoencoder](/generative-models/conditional-variational-autoencoder/)：学习 conditional latent-variable distribution。

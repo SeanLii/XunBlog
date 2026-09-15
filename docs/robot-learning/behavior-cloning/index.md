@@ -13,178 +13,259 @@ related:
 
 # Behavior Cloning
 
-Behavior Cloning（BC）把 imitation learning 直接转成 supervised learning：给定 expert demonstrations，训练 policy 在 expert observations 上预测 expert actions。
+Behavior Cloning（BC）是把 expert demonstrations 直接转化为 supervised policy-learning problem 的 imitation-learning 方法。
 
-Dataset：
-
-\[
-\mathcal D=
-\{(o_i,a_i^*)\}_{i=1}^{N}.
-\]
-
-Policy：
+给定 demonstration dataset：
 
 \[
-\pi_\theta(a\mid o).
+\mathcal D
+=
+\{(o_i,a_i^*)\}_{i=1}^{N},
 \]
 
-训练目标通常可以写成 negative log-likelihood：
+学习 policy：
+
+\[
+\pi_\theta(a\mid o),
+\]
+
+使其在 expert observations 上对 expert actions 分配较高概率。
+
+最一般的 maximum-likelihood objective 为：
 
 \[
 \theta^*
 =
 \arg\min_\theta
 \mathbb E_{(o,a^*)\sim\mathcal D}
-[-\log\pi_\theta(a^*\mid o)].
+[-\log \pi_\theta(a^*\mid o)].
 \]
 
-如果 policy 是 deterministic Gaussian mean / regression head，这可能进一步表现为 MSE 或 L1 等 supervised losses。
+BC 的核心不是某一种 network 或 loss，而是直接从 expert observation-action supervision 学习 policy，不在训练目标中显式求解环境 reward 或 transition dynamics。
 
-## Training Mental Model
+## Deterministic 与 Stochastic Policies
 
-```text
-expert observation o_t
-        ↓
-     policy πθ
-        ↓
- predicted action a_hat_t
-        ↓
-compare with expert action a*_t
-        ↓
- supervised loss
-```
-
-训练阶段不需要 policy 自己真正执行 action 才能计算每个 demonstration sample 的 loss。
-
-这也是 BC 易于扩展的原因：一旦 demonstrations 收集好，可以完全 offline training。
-
-## Closed-Loop Deployment 改变了问题
-
-训练时 sample：
+若 policy 是 deterministic regression：
 
 \[
-o_t\sim d_{\pi^*}
+\hat a=f_\theta(o),
 \]
 
-来自 expert trajectories。
-
-部署时：
+可以使用：
 
 \[
-o_t\sim d_{\pi_\theta}
+\mathcal L_{\text{MSE}}
+=
+\|a^*-\hat a\|_2^2
 \]
 
-来自 learned policy 自己的 rollout。
-
-而 environment transition：
+或：
 
 \[
-o_{t+1}\sim P(\cdot\mid o_t,a_t)
+\mathcal L_{\text{L1}}
+=
+\|a^*-\hat a\|_1.
 \]
 
-意味着当前 action 会改变未来 input。
+若 policy 显式定义 action distribution：
 
-所以即使 supervised validation error 很低，也不保证 closed-loop rollout 一定稳定。
+\[
+\pi_\theta(a\mid o),
+\]
+
+则可以直接优化 negative log-likelihood。
+
+因此 Behavior Cloning 不等于 MSE regression。BC 描述监督来源与学习范式，而不是固定的 output distribution。
+
+## Training Distribution
+
+demonstrations 来自 expert-induced distribution：
+
+\[
+(o,a^*)\sim d_{\pi^*}.
+\]
+
+训练时，模型只需读取已有 dataset，就可以计算 supervised loss，不必在环境中执行自己的预测。这使 BC 适合大规模 offline training，但也意味着 loss 主要约束 expert visited states 上的 behavior。
+
+## Closed-Loop Deployment
+
+部署时 learner 自己决定 action：
+
+\[
+a_t\sim\pi_\theta(\cdot\mid o_t),
+\]
+
+环境随后产生新的 state：
+
+\[
+s_{t+1}\sim P(\cdot\mid s_t,a_t).
+\]
+
+observation distribution 因而变为：
+
+\[
+d_{\pi_\theta},
+\]
+
+而不再是 training distribution $d_{\pi^*}$。这构成 BC 中最重要的 train-test mismatch。
 
 ## Covariate Shift
 
-如果 learned policy 发生一个小动作误差，robot state 可能偏离 expert trajectory。
-
-新 observation：
+若 learner 在某个 expert state 上产生小误差：
 
 \[
-\tilde o_t
+a_t\neq a_t^*,
 \]
 
-可能在 training data 中很少出现。
+系统可能进入 demonstrations 中很少出现的 state：
 
-policy 在这种 out-of-distribution state 上更容易犯错，于是进一步偏离。
+\[
+\tilde s_{t+1}.
+\]
 
-这个 mechanism 就是 BC 最经典的 failure mode。
+此时 policy 需要在缺少监督的数据区域做 extrapolation。后续错误又会继续改变 trajectory，形成 sequential distribution shift。
 
 ## Compounding Error
 
-设每一步在 expert distribution 上发生 error 的概率约 $\epsilon$。
-
-如果 sequence horizon 为 $T$，naive supervised intuition 可能认为总损失只线性增长。
-
-但在 sequential rollout 中，一个 early error 会改变后续 states，使后面多个 timesteps 都进入 unfamiliar region。
-
-经典分析显示，在 worst-case assumptions 下 vanilla imitation / BC 的 expected cost gap 可出现 $O(T^2\epsilon)$ 级别增长，而 interactive methods 可以改善这种 horizon dependence。
-
-重要的是理解 mechanism，而不是死记一个 bound：
-
-> **错误会改变未来输入，所以错误影响可以沿时间传播。**
-
-## Deterministic Regression 与 Multimodality
-
-假设同一 observation 下 expert dataset 有两种 actions：
+在经典 sequential imitation analysis 中，若单步分类错误率约为 $\epsilon$，vanilla supervised imitation 的 worst-case performance degradation 可能出现与：
 
 \[
-a_A,
-\qquad a_B.
+T^2\epsilon
 \]
 
-如果用 MSE 回归单一 mean：
+同阶的 horizon dependence。
+
+其机制是：
 
 \[
-\hat a\approx\frac{a_A+a_B}{2}.
+\text{action error}
+\rightarrow
+\text{future state changes}
+\rightarrow
+\text{future input distribution changes}.
 \]
 
-这个平均 action 可能并不是 expert 真正执行过的合理模式。
+[DAgger](/robot-learning/dagger/) 通过直接收集 learner-induced states 上的 expert labels 来处理这一问题。
 
-因此 BC 并不等于“必须用 MSE 预测一个动作”。BC 只规定 supervision 来自 expert behavior；policy distribution 可以很丰富。
+## Multimodal Actions
 
-## Sequence Prediction 仍然可以是 Behavior Cloning
-
-如果 policy 一次输出 action chunk：
+BC dataset 中同一 observation 可能对应多个合理 expert behaviors。若：
 
 \[
-\hat A_t=
-(\hat a_t,\ldots,\hat a_{t+k-1}),
+p(a\mid o)
 \]
 
-然后用 expert future chunk：
+是 multimodal，而 model 只输出单一 conditional mean，则 regression loss 可能得到不同 modes 之间的平均值。
+
+因此更表达性的 BC policy 可以使用：
+
+- mixture density；
+- latent-variable model；
+- autoregressive policy；
+- diffusion / flow policy；
+- sequence-level prediction。
+
+这些方法仍然属于 Behavior Cloning，只要监督目标直接来自 expert demonstrations。
+
+## One-Step 与 Sequence-Level Behavior Cloning
+
+BC 不要求输出必须是单个 action。
+
+单步 policy：
+
+\[
+\pi_\theta(a_t\mid o_t)
+\]
+
+可以扩展为 sequence policy：
+
+\[
+\pi_\theta(a_{t:t+k-1}\mid o_t).
+\]
+
+训练 target 从一个 expert action 变成 expert action chunk：
 
 \[
 A_t^*
+=
+(a_t^*,\ldots,a_{t+k-1}^*).
 \]
 
-做 supervised imitation，它仍然属于 Behavior Cloning。
+[ACT](/robot-learning/act/) 使用的 action-chunk prediction 仍属于 Behavior Cloning；变化的是 policy output representation 与 architecture。
 
-ACT 就是这个思路的重要例子。
+## Partial Observability
 
-因此 Action Chunking 没有把 ACT 变成“不是 BC”；它改变的是 policy output granularity 和 architecture。
+若 observation 缺失决策需要的信息，即使 dataset 很大，也可能出现：
 
-## Dataset Coverage
+\[
+p(a\mid o)
+\]
 
-BC 的能力上限很大程度取决于 dataset：
+本身具有不可消除的不确定性。
 
-```text
-what states are demonstrated
-+
-what actions are labeled there
-+
-how diverse expert behavior is
-```
+常见处理是让 policy 条件化于 observation history、recurrent state、multi-view images、proprioception 或 task/language condition。
 
-如果 recovery states 从未出现，policy 很难凭 supervised objective 自动知道如何恢复。
+## Dataset Quality 与 Coverage
 
-这推动了 [DAgger](/robot-learning/dagger/) 等 interactive data aggregation methods。
+对 BC 来说，dataset 不只是训练样本数量，还需要考虑：
 
-## BC 的优势
+- expert quality；
+- state-space coverage；
+- task balance；
+- action noise；
+- recovery examples；
+- sensor synchronization；
+- label consistency；
+- temporal frequency。
 
-即使有 distribution shift，BC 仍然非常重要，因为它：
+某些 rare-but-critical states 即使只占很小比例，也可能决定 closed-loop policy 是否稳定。
+
+## Regularization 与 Generalization
+
+BC 仍然是 supervised learning，因此 weight decay、augmentation、dropout、early stopping、balanced sampling 等常见 regularization 都可以使用。
+
+但普通 supervised regularization 不能从根本上消除 policy-induced distribution shift，因为后者来自 sequential interaction structure。
+
+## Evaluation
+
+BC 应同时评估两类指标。
+
+### Supervised metrics
+
+例如 action error、negative log-likelihood 与 validation loss。
+
+### Closed-loop metrics
+
+例如 task success、completion rate、time-to-failure、recovery rate 与 trajectory quality。
+
+对于 control policy，closed-loop metrics 通常更接近最终目标。
+
+## Strengths and Limitations
+
+Behavior Cloning 的主要优势包括：
 
 - objective 简单；
-- 可以纯 offline；
-- 不需要 reward engineering；
-- 可以利用大规模 teleoperation data；
-- 能与大型 neural architectures 和 generative policies 结合。
+- 可完全 offline；
+- 易于利用大规模 demonstration data；
+- 可以与多种 architecture / output distribution 组合；
+- 不需要显式设计 reward。
 
-现代 robot learning 中很多强模型仍以 BC / maximum-likelihood-style imitation 为训练基础，只是在 architecture、action representation 与 data scale 上更复杂。
+主要限制包括：
+
+- learner-induced distribution shift；
+- dataset coverage dependence；
+- multimodal action averaging；
+- partial observability；
+- expert errors / inconsistency；
+- rare failure-state supervision 不足。
+
+## Connections
+
+- [Imitation Learning](/robot-learning/imitation-learning/)：BC 所属的更广泛学习范式。
+- [DAgger](/robot-learning/dagger/)：通过 interactive data aggregation 缓解 distribution shift。
+- [ACT](/robot-learning/act/)：sequence-level Behavior Cloning 的代表性 robot policy。
 
 ## Sources
 
-- Pomerleau. *ALVINN*. 1989.
-- Ross, Gordon, Bagnell. *A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning*. 2011.（distribution shift / compounding-error 理论背景）
+- Pomerleau. *ALVINN: An Autonomous Land Vehicle in a Neural Network*. 1989.
+- Ross, Gordon, Bagnell. *A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning*. AISTATS, 2011.

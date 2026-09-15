@@ -13,114 +13,242 @@ related:
 
 # Ordinary Differential Equation
 
-Ordinary Differential Equation（ODE）不是直接告诉我们一个状态“在哪里”，而是规定这个状态**怎样随一个连续变量变化**。
+Ordinary Differential Equation（ODE）描述未知函数与其一个或多个 derivatives 之间的关系。
 
-最常见的形式：
-
-\[
-\frac{dx(t)}{dt}=f(t,x(t)).
-\]
-
-这里：
-
-- $t$：独立变量，常被理解为 time；
-- $x(t)$：随 $t$ 变化的 state；
-- $f(t,x)$：给出当前 state 的变化率。
-
-如果 $x$ 是位置，那么 $dx/dt$ 可以理解为速度；如果 $x$ 是一个高维 vector，那么 $f$ 给出 vector space 中的瞬时运动方向。
-
-## ODE 描述的是 local rule
-
-ODE 给的是局部变化：
+一阶 ODE 的一般形式可以写成：
 
 \[
-\frac{dx}{dt}=f(t,x).
+\frac{dx}{dt}
+=f(t,x(t)).
 \]
 
-但我们真正想知道的通常是完整 trajectory：
+其中：
 
-\[
-x(t_0),x(t_1),\ldots
-\]
-
-因此需要从一个 initial state 开始，把局部变化累积起来。
+- $t$ 是 independent variable；
+- $x(t)$ 是未知 trajectory；
+- $f$ 给出每个时刻与状态下的 instantaneous rate of change。
 
 ## Initial Value Problem
 
-只有 differential equation 通常还不足以确定唯一 trajectory。
-
-还需要 initial condition：
+仅有 differential equation 通常不足以确定唯一 solution。还需要 initial condition：
 
 \[
 x(t_0)=x_0.
 \]
 
-于是得到 initial value problem：
+于是形成 initial value problem：
 
 \[
 \begin{cases}
-\dfrac{dx}{dt}=f(t,x),\\
+\dot x(t)=f(t,x(t)),\\
 x(t_0)=x_0.
 \end{cases}
 \]
 
-在满足适当 regularity 条件时，这可以确定一条唯一 solution trajectory。
+其解是一条满足 equation 与 initial condition 的 function $x(t)$。
 
-## 一个简单解析例子
+## Autonomous ODE
 
-考虑：
-
-\[
-\frac{dx}{dt}=kx.
-\]
-
-解为：
+若 vector field 不显式依赖时间：
 
 \[
-x(t)=x_0e^{k(t-t_0)}.
+\dot x=f(x),
 \]
 
-这里每个时刻的变化率都与当前值成比例。
+则称为 autonomous system。
 
-但大多数实际 ODE 不会有这么简单的 closed-form solution。
+此时 dynamics 只由当前 state 决定。
 
-## 高维 ODE
+若：
 
-如果：
+\[
+\dot x=f(t,x),
+\]
+
+则称为 non-autonomous system。
+
+## Vector-Valued ODE
+
+对于：
 
 \[
 x(t)\in\mathbb R^d,
 \]
 
-则：
+可以写成：
 
 \[
-\frac{dx(t)}{dt}=v_t(x(t))
+\frac{d x}{dt}
+=f(t,x),
+\qquad
+f:\mathbb R\times\mathbb R^d\to\mathbb R^d.
 \]
 
-中的 $v_t$ 是 vector field：对 space 中每个位置与时间，指定一个 velocity vector。
+此时 $f$ 是 vector field，为 state space 中每个位置指定局部 velocity。
 
-可以把它想成一个高维“流场”：一个 particle 放在任意位置，都能查到它此刻应该往哪里移动。
+这类形式是 dynamical systems、control 与 flow-based generative models 的基础。
 
-## 解析解与数值解
+## Higher-Order ODE
 
-如果找不到 closed-form solution，就需要 numerical integration。
-
-最简单的方法之一是 [Euler Method](/mathematics/numerical-methods/euler-method/)：
+例如二阶 equation：
 
 \[
-x_{k+1}
-=x_k+h f(t_k,x_k).
+\frac{d^2x}{dt^2}
+=g(t,x,\dot x)
 \]
 
-它用当前瞬时 slope 近似未来一小段时间内的运动。
+可以通过引入 state：
 
-更高阶方法如 Runge–Kutta 会更精确地估计一步中的变化。
+\[
+y_1=x,
+\qquad
+y_2=\dot x
+\]
 
-## ODE 与 Flow
+转为一阶 system：
 
-如果每个 initial point 都沿 vector field 随时间移动，整个 space 会产生一个 continuous flow。
+\[
+\dot y_1=y_2,
+\qquad
+\dot y_2=g(t,y_1,y_2).
+\]
 
-这正是 Continuous Normalizing Flow 和 [Flow Matching](/generative-models/flow-matching/) 使用 ODE 的原因：模型学习一个 vector field，把 samples 从一个 distribution 连续运输到另一个 distribution。
+因此很多理论与 numerical solvers 只需处理 first-order systems。
 
-Flow Matching 是 ODE 的应用；ODE 本身则是描述连续动态系统的基础数学语言。
+## Integral Form
+
+若 $x$ 是 solution，则：
+
+\[
+x(t)
+=
+x(t_0)
++
+\int_{t_0}^{t}
+f(s,x(s))\,ds.
+\]
+
+这一 integral equation 与对应 ODE 在满足相应 regularity conditions 时描述同一 initial-value dynamics。
+
+Numerical methods 通过离散化近似这一 accumulated integral。
+
+## Analytical Example
+
+Consider：
+
+\[
+\dot x=ax,
+\qquad
+x(0)=x_0.
+\]
+
+其 solution：
+
+\[
+x(t)=x_0e^{at}.
+\]
+
+若 $a<0$，state 指数衰减；若 $a>0$，指数增长。
+
+这展示 local derivative rule 如何确定整条 trajectory。
+
+## Existence and Uniqueness
+
+并不是任意 $f$ 都保证 initial value problem 有唯一 solution。
+
+Picard–Lindelöf theorem 的常见 sufficient condition 是：$f$ 对 $x$ 局部 Lipschitz，并对 $t$ 具有适当连续性。
+
+Lipschitz condition 形式为：
+
+\[
+\|f(t,x)-f(t,y)\|
+\le
+L\|x-y\|.
+\]
+
+它限制 nearby states 的 velocities 变化过快，从而支持 local uniqueness。
+
+## Equilibrium and Stability
+
+Autonomous system：
+
+\[
+\dot x=f(x)
+\]
+
+的 equilibrium $x^*$ 满足：
+
+\[
+f(x^*)=0.
+\]
+
+若 nearby trajectories 随时间保持接近或收敛到 $x^*$，可以进一步讨论 Lyapunov stability、asymptotic stability 等性质。
+
+## Linear ODE
+
+Linear system：
+
+\[
+\dot x=Ax
+\]
+
+的 solution：
+
+\[
+x(t)=e^{At}x(0),
+\]
+
+其中：
+
+\[
+e^{At}
+=
+\sum_{k=0}^{\infty}
+\frac{(At)^k}{k!}
+\]
+
+是 matrix exponential。
+
+Eigenvalues of $A$ 与 system stability 密切相关。
+
+## Numerical Solution
+
+很多 ODE 没有可用 closed-form solution，需要 numerical integration。
+
+最基本方法是 [Euler Method](/mathematics/numerical-methods/euler-method/)：
+
+\[
+x_{n+1}
+=
+x_n+h f(t_n,x_n).
+\]
+
+更高精度方法包括 Runge–Kutta families、adaptive-step solvers 与 implicit methods。
+
+## Stiffness
+
+某些 ODE 同时含有差异很大的 time scales。显式 solver 为保持 stability 可能需要极小 step size，这类 system 称为 stiff。
+
+Stiff ODE 常使用 implicit solvers 或专门 numerical methods。
+
+Stiffness 是 numerical property，与 equation 是否“看起来复杂”没有直接对应关系。
+
+## ODE in Generative Modeling
+
+Continuous Normalizing Flow / Flow Matching 使用：
+
+\[
+\frac{dx_t}{dt}
+=v_\theta(t,x_t)
+\]
+
+定义 probability samples 的 continuous transport。
+
+已学习的 vector field $v_\theta$ 规定从 base distribution 到 data distribution 的 trajectory，而 numerical solver 负责实际积分。
+
+这只是 ODE 的一个应用；ODE 本身属于更广泛的 dynamical-systems 数学框架。
+
+## Connections
+
+- [Euler Method](/mathematics/numerical-methods/euler-method/)：一阶显式 ODE solver。
+- [Flow Matching](/generative-models/flow-matching/)：用 ODE vector field 定义生成过程。

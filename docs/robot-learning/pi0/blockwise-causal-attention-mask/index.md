@@ -16,117 +16,64 @@ related:
 
 # Blockwise Causal Attention Mask in π0
 
-π0 不让所有 token 无限制地互相 attention。它把输入分成三个 block，并规定每个 block 可以读取哪些信息：
+π0 partitions the input sequence into three functional blocks and uses a blockwise mask to control information flow:
 
 ```text
 Block 1              Block 2       Block 3
 images + language | robot state | noisy actions
 ```
 
-核心规则可以画成：
+The intended visibility is
 
 ```text
-                    Can attend to
+                    visible source
                B1       B2       B3
 B1 image/lang   ✓        ✗        ✗
 B2 state        ✓        ✓        ✗
 B3 actions      ✓        ✓        ✓
 ```
 
-同时，每个 block 内部是 full bidirectional attention。
+Within each block, tokens use full bidirectional attention. The causal structure applies between blocks rather than forcing token-by-token autoregressive action generation.
 
-## 这是 π0 的具体 Attention Layout
+## Relation to Causal Masking
 
-Causal masking 作为一般概念早于 π0，见 [Causal Mask](/deep-learning/sequence-modeling/causal-mask/)。
+General causal masking is defined separately in [Causal Mask](/deep-learning/sequence-modeling/causal-mask/). π0's contribution is the specific grouping and visibility pattern for VLM prefix, robot state and noisy actions.
 
-π0 论文自己的设计，是把 VLM inputs、robot state、noisy actions 分成三个 blocks，并规定：
+This mask serves both representation structure and inference efficiency.
 
-- block 内 full bidirectional attention；
-- 后面的 block 可以读取前面的 block；
-- 前面的 block 不能读取后面的 block。
+## VLM Prefix
 
-因此这个页面的 ownership 属于 π0。它不是在定义所有模型都必须使用的“通用 blockwise mask”，而是在解释 π0 为什么选择这三个 block，以及这个选择如何支持 VLM distribution preservation 与 KV caching。
+Image and language tokens form the first block. They do not attend to later robot-state or action tokens.
 
-## 它不是普通逐 token causal mask
+This preserves a prefix computation compatible with the pretrained vision-language pathway: semantic representations are formed without depending on flow-step-specific action noise.
 
-语言模型常见 causal mask 是：第 $i$ 个 token 只能看自己和左边 token。
+## Robot-State Block
 
-π0 的规则不同。它按**功能 block**控制信息：
+Robot state can attend to the VLM prefix and itself, but not to action tokens.
 
-- image + language block 内部可以双向交互；
-- state block 可以看前面的 image/language；
-- action block 可以看所有 observation，并且所有 action positions 彼此双向读取。
+Since robot state remains fixed during the internal flow integration of one policy call, preventing dependence on changing action tokens allows its attention representation to remain cacheable together with the preceding prefix.
 
-因此 action chunk 的第 30 个位置可以直接读取第 5 个 action position，而不是必须按时间顺序 autoregressive 生成。
+## Action Block
 
-## VLM Prefix 的单向依赖
-
-Block 1 对应 PaliGemma VLM pre-training 中已经存在的 modalities：images 与 language。
-
-论文刻意阻止这部分 token 读取后面新增的 robot state / action tokens，目的之一是尽量减少相对 VLM pre-training 分布的结构变化。
-
-可以理解成：
-
-```text
-原来的 VLM 世界
-images ↔ language
-
-π0 新增机器人信息后
-仍保持 image/language 的原有读取模式
-```
-
-而后面的 robotics-specific tokens 可以读取 VLM representations。
-
-## State Block 与缓存边界
-
-Robot state $q_t$ 在一次 flow matching inference 中是不变的。
-
-真正反复变化的是 noisy action chunk：
+Action tokens can read image/language, robot state and other action tokens. Within the action block the interaction is bidirectional:
 
 \[
-A_t^{\tau_0},
-A_t^{\tau_1},
-\ldots
+a_t^\tau
+\leftrightarrow
+\cdots
+\leftrightarrow
+a_{t+H-1}^\tau.
 \]
 
-如果 state token 读取 action tokens，那么每次 action 改变以后，state 的 attention output 也需要重新计算。
+π0 therefore models the action chunk jointly rather than autoregressively. A later action position can interact directly with an earlier action position during the same flow step.
 
-π0 阻止 state 读取 action，因此 image/language/state 相关的 keys / values 可以缓存，重复 integration 时只更新 action suffix。
+## KV-Cache Consequence
 
-所以这个 mask 不只是“语义上的因果关系”，也是 inference efficiency 设计。
+For a fixed observation, the image/language/state prefix does not depend on the changing noisy action suffix. Its keys and values can be computed once and stored in a [KV Cache](/deep-learning/transformer/kv-cache/).
 
-## Action Block 的双向 Attention
-
-π0 一次生成整个 action chunk：
-
-\[
-A_t=[a_t,\ldots,a_{t+H-1}].
-\]
-
-它不是逐 action autoregressive decoding。
-
-因此 action block 内部可以使用 full bidirectional attention：
-
-```text
-a_t     ↔ a_t+1 ↔ a_t+2 ↔ ... ↔ a_t+H-1
-```
-
-这样整个未来动作片段可以共同决定一致的轨迹结构。
-
-这与 [Action Chunking](/robot-learning/act/action-chunking/) 的思想非常契合：chunk 本身就是一个整体预测对象。
-
-## 对 inference 的直接影响
-
-一次 π0 inference 可以分为：
-
-1. 先对 observation prefix 做一次 forward；
-2. 保存它的 KV cache；
-3. 每个 flow step 只重新计算新的 action suffix；
-4. action suffix 使用缓存的 prefix keys / values。
-
-因此 mask 与 KV caching 是同一套结构设计的两个方面。
+Each subsequent flow step only needs to update the action-side computation against the cached prefix. This is important because action generation uses multiple integration steps.
 
 ## Sources
 
-- Black et al., **π0: A Vision-Language-Action Flow Model for General Robot Control**, Appendix B. https://arxiv.org/abs/2410.24164
-- Official openpi `pi0.py`. https://github.com/Physical-Intelligence/openpi
+- Black et al. *π0: A Vision-Language-Action Flow Model for General Robot Control*. 2024, Appendix B. https://arxiv.org/abs/2410.24164
+- Official openpi attention-mask implementation. https://github.com/Physical-Intelligence/openpi/blob/main/src/openpi/models/pi0.py

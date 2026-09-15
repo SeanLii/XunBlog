@@ -71,7 +71,7 @@ W_i^Q,W_i^K,W_i^V.
 
 一个 head 可以学习对某类 relation 敏感，另一个 head 可以形成不同 matching pattern。
 
-但不要把每个 head 固定解释成某个人类可命名语义；具体 head 行为是训练出来的，也可能存在 redundancy。
+具体 head 的行为由训练决定，并不保证每个 head 都对应可被人类稳定命名的单一语义；不同 heads 之间也可能存在 redundancy。
 
 ## Multiple Heads 与 One Wider Head
 
@@ -115,7 +115,7 @@ A
 O\in\mathbb R^{B\times N_q\times d_{model}}.
 \]
 
-工程上理解这些 shape 比只记住公式更重要。
+这些 tensor shapes 决定了实际实现中的 reshape、transpose 与 batched matrix multiplication。
 
 ## Multi-Head 不等于多个 Outputs
 

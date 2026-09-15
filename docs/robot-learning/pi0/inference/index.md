@@ -15,115 +15,83 @@ related:
 
 # Inference
 
-π0 的 inference 不是一次 forward 直接得到动作。
-
-真正流程是：
+π0 inference generates an action chunk by numerically integrating a learned conditional vector field from Gaussian noise toward the action-data distribution. A single robot policy call therefore contains multiple internal flow steps.
 
 ```text
-当前 observation
-      │
+current observation
       ↓
-先编码一次并缓存
-      │
-random action noise
-      │
+encode and cache fixed prefix
       ↓
-Flow step 1
+Gaussian action noise
       ↓
-Flow step 2
+vector-field prediction
       ↓
-...
+Euler update
       ↓
-Flow step 10
+repeat for multiple flow steps
       ↓
 final action chunk
-      ↓
-执行其中一部分动作
-      ↓
-重新观察并再次 inference
 ```
 
-理解 π0 inference，要把“robot timestep”和“flow timestep”分开。
+## Robot Time and Flow Time
 
-## 两种时间同时存在
+Two distinct time variables are involved.
 
-### Robot timestep
+**Robot timestep** $t$ indexes the physical control process:
 
-$t$ 表示真实机器人世界中的控制时间：
+\[
+t,t+1,t+2,\ldots
+\]
 
-```text
-t, t+1, t+2, ...
-```
+**Flow timestep** $\tau$ indexes the internal generative trajectory used to produce one action chunk.
 
-### Flow timestep
+The observation remains fixed during the internal flow integration of one policy call. Only the current noisy action sample and flow time change across integration steps.
 
-$\tau$ 表示一次 action generation 内部，从 noise 走向 data 的生成进度：
+## Observation Encoding
 
-```text
-τ=0 → 0.1 → ... → 1
-```
-
-论文中，一次 robot inference 会内部完成 10 个 flow steps，然后才得到一个未来 action chunk。
-
-这两个“时间”不能混为一谈。
-
-## Step 1：固定当前 observation
-
-当前时刻 observation：
+At robot timestep $t$, observation is
 
 \[
 o_t=[I_t^1,\ldots,I_t^n,\ell_t,q_t].
 \]
 
-images 与 language 不会在这 10 个 flow steps 中变化，robot state 也固定为当前 $q_t$。
+Image and language tokens form the semantic prefix; state provides the current robot condition. These inputs are fixed while the model generates $A_t$.
 
-因此 π0 先计算 observation-side representations。
+## KV Cache
 
-## Step 2：建立 KV Cache
+Because π0's blockwise attention mask prevents prefix representations from depending on later action tokens, observation-side keys and values can be computed once and stored in a [KV Cache](/deep-learning/transformer/kv-cache/).
 
-由于 [Blockwise Causal Attention Mask](/robot-learning/pi0/blockwise-causal-attention-mask/) 保证 prefix 不依赖后面的 action block，observation 的 keys / values 可以缓存。这个机制本身见 [KV Cache](/deep-learning/transformer/kv-cache/)。
+Later flow steps reuse this cache while recomputing the action suffix for updated noisy actions. Current openpi's PyTorch implementation explicitly performs a prefix forward with caching before the iterative denoising loop.
 
-```text
-images + language + state
-          │
-          ↓
-      prefix forward
-          │
-          ↓
-        KV cache
-```
+## Initial Action Noise
 
-后面 10 次 flow step 不需要重复完整计算这些固定 token。
-
-## Step 3：从 Gaussian noise 开始
-
-论文 convention：
+Under the paper convention,
 
 \[
 A_t^0\sim\mathcal N(0,I).
 \]
 
-这个 tensor 已经有最终 action chunk 的 shape：
+The tensor already has final action-chunk shape
 
 \[
-H\times d_a.
+H\times d_a,
 \]
 
-只是数值目前完全是随机 noise。
+but its values are sampled from the base Gaussian distribution.
 
-## Step 4：预测当前 vector field
+## Vector-Field Evaluation
 
-把当前 noisy actions、flow timestep 和缓存 observation 一起送入模型：
+At flow time $\tau$, the model evaluates
 
 \[
 v_\theta(A_t^\tau,o_t).
 \]
 
-模型输出一个同 shape 的 velocity field。
+This output has the same action-chunk shape and specifies the local velocity of the ODE trajectory.
 
-## Step 5：Euler update
+## Euler Integration
 
-论文使用 forward Euler：
+The paper uses forward Euler integration:
 
 \[
 A_t^{\tau+\delta}
@@ -132,108 +100,82 @@ A_t^\tau+
 \delta v_\theta(A_t^\tau,o_t).
 \]
 
-实验中：
+With
 
 \[
 \delta=0.1,
 \]
 
-因此共执行 10 次。
+inference performs 10 steps from the noise end to the data end.
 
-直观看：
+Each new vector-field evaluation conditions on the updated action chunk; the ten steps are therefore sequential rather than ten independent predictions that can simply be averaged.
 
-```text
-random action
-  + small predicted correction
-      ↓
-less random action
-  + next correction
-      ↓
-...
-      ↓
-executable action chunk
-```
+## Final Action Chunk
 
-每一步都重新根据**更新后的 action chunk**计算新的 velocity。
-
-## Step 6：得到 H-step action chunk
-
-最终生成：
+After integration, π0 obtains
 
 \[
-A_t=[a_t,\ldots,a_{t+H-1}].
+A_t=[a_t,\ldots,a_{t+H-1}],
+\qquad H=50.
 \]
 
-论文使用 $H=50$。
+Generating 50 future actions does not imply that all 50 must be executed before new perception. The controller can execute a prefix of the chunk and then replan from a new observation.
 
-但生成 50 步不代表一定连续执行完 50 步才重新观察。
+## Chunk Execution and Replanning
 
-## π0 最终没有使用 Temporal Ensemble
+The π0 paper reports that ACT-style Temporal Ensemble was tested but reduced performance. The final evaluation therefore uses open-loop execution of part of each generated chunk before querying the policy again.
 
-这一点与 ACT 很不一样。
+Reported settings include approximately:
 
-π0 论文 Appendix D 明确说明：他们早期尝试过 [Temporal Ensemble](/robot-learning/act/temporal-ensemble/)，但发现它降低 policy performance，因此最终没有融合不同 inference call 对同一时刻的预测，而是 open-loop 执行 action chunk 的一部分。
+- 16 actions at 20 Hz for UR5e / Franka setups；
+- 25 actions at 50 Hz for other robots。
 
-论文中的执行设置是：
-
-- 20 Hz 的 UR5e / Franka：每执行 16 个动作，大约 0.8 秒，重新 inference；
-- 其他 50 Hz robots：每执行 25 个动作，大约 0.5 秒，重新 inference。
-
-因此 π0 的 closed-loop 节奏更像：
+The resulting control loop is
 
 ```text
 observe
   ↓
 generate 50-action chunk
   ↓
-execute first N actions open-loop
+execute configured prefix
   ↓
 observe again
   ↓
-regenerate
+generate new chunk
 ```
 
-而不是 ACT 那种每个 timestep 都重新预测并用 Temporal Ensemble 融合。
+This differs from ACT's every-timestep query + temporal aggregation strategy.
 
-## 当前 openpi 的 time convention
+## Released openpi Convention
 
-官方 openpi 当前 implementation 使用相反方向：
+Current openpi uses the opposite time direction:
 
 ```text
-t=1 : noise
-      ↓
-      ↓ dt < 0
-      ↓
-t=0 : action
+t = 1 : noise
+t = 0 : data
 ```
 
-代码默认：
+with default
 
-```text
-num_steps = 10
-dt = -1 / num_steps
-```
+\[
+dt=-\frac{1}{10}.
+\]
 
-然后更新：
+The update is
 
 \[
 x_{t+dt}=x_t+dt\,v_t.
 \]
 
-所以阅读 paper 与 code 时必须先确认当前采用哪一种 flow-time convention。
+This is the same flow path with reversed parameterization. Paper and code formulas must be compared after accounting for the sign convention.
 
-## Action Expert 主导重复推理成本
+## Inference Cost
 
-论文报告的 3-camera、RTX 4090 timing 中：
+Flow generation requires repeated action-side network evaluation. Prefix caching reduces redundant observation computation, and the smaller Action Expert reduces the cost of the changing suffix.
 
-- image encoders：约 14 ms；
-- observation forward：约 32 ms；
-- 10 次 action flow forward：合计约 27 ms；
-- on-board total：约 73 ms。
-
-这里最重要的结构原因是 prefix KV caching：VLM observation 不必每个 flow step 全部重跑。
+The π0 paper reports an example 3-camera RTX 4090 timing breakdown in which image encoding, observation forward and ten action-flow forwards contribute separate portions of total policy latency. Exact latency depends on hardware and implementation, so these numbers are experimental measurements rather than architecture constants.
 
 ## Sources
 
-- Black et al., **π0: A Vision-Language-Action Flow Model for General Robot Control**, Appendix D. https://arxiv.org/abs/2410.24164
+- Black et al. *π0: A Vision-Language-Action Flow Model for General Robot Control*. 2024, Appendix D. https://arxiv.org/abs/2410.24164
 - Official openpi `Pi0.sample_actions`. https://github.com/Physical-Intelligence/openpi/blob/main/src/openpi/models/pi0.py

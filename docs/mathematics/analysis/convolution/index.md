@@ -12,15 +12,11 @@ related:
 
 # Convolution
 
-Convolution 是把一个函数或离散序列与另一个函数进行“滑动、乘积、累加”的运算。
+Convolution 是把两个 functions / sequences 按相对位移进行乘积累积的运算。它在 signal processing、probability、differential equations 与 convolutional neural networks 中都有独立意义。
 
-它远早于 CNN，也广泛出现在 signal processing、probability、differential equations 与 machine learning 中。
+## Continuous Convolution
 
-因此卷积本身属于数学 / 信号处理基础，而 CNN 只是它后来最重要的应用之一。
-
-## 连续形式
-
-对两个函数 $f$ 与 $g$：
+对 functions $f,g$：
 
 \[
 (f*g)(t)
@@ -29,17 +25,11 @@ Convolution 是把一个函数或离散序列与另一个函数进行“滑动�
 f(\tau)g(t-\tau)\,d\tau.
 \]
 
-理解这个公式可以分成三步：
+对固定 $t$，把一个 function 翻转并平移后，与另一个 function 做 pointwise product，再对整个 domain 积分。
 
-1. 固定一个输出位置 $t$；
-2. 让 $g(t-\tau)$ 相对 $f(\tau)$ 滑动；
-3. 把所有位置的乘积积分起来。
+## Discrete Convolution
 
-输出仍然是关于 $t$ 的新函数。
-
-## 离散形式
-
-对离散序列：
+对 discrete sequences：
 
 \[
 (f*g)[n]
@@ -48,134 +38,156 @@ f(\tau)g(t-\tau)\,d\tau.
 f[k]g[n-k].
 \]
 
-有限序列中，只对实际重叠的位置求和。
+Finite sequences / kernels 时，sum 只在有效 overlap 区域计算。
 
-直觉仍然相同：
+## Kernel Reversal
 
-```text
-一个序列固定
-另一个序列翻转并滑动
-每个位置：
-逐元素相乘
-↓
-求和
-↓
-得到一个输出值
-```
-
-## Kernel Flipping
-
-标准 convolution 中出现：
+严格 convolution 中出现：
 
 \[
 g[n-k]
 \]
 
-而不是：
+而不是 $g[n+k]$。这包含 kernel reversal。
+
+Deep-learning libraries 中名为 convolution 的操作通常实际实现 cross-correlation：
 
 \[
-g[n+k].
-\]
-
-这个索引结构等价于先翻转 kernel，再做滑动 inner product。
-
-因此数学意义上的 convolution 与 cross-correlation 不完全相同。
-
-## Cross-Correlation
-
-离散 cross-correlation 常写成：
-
-\[
-(f\star g)[n]
+y[n]
 =
-\sum_k f[k]g[n+k].
+\sum_k f[n+k]g[k].
 \]
 
-它没有对 kernel 做相同意义上的翻转。
+由于 CNN kernel parameters 是学习得到的，这个 reversal 差异通常不会改变 model capacity，但数学定义上二者不同。
 
-现代 deep-learning framework 中所谓 `Conv2d` 通常实际实现 cross-correlation，但由于 kernel weights 本身是学习出来的，这个差别不会妨碍 CNN 学习；领域里仍沿用“convolution”这个名称。
+## Algebraic Properties
 
-## 二维 Convolution
+在适当条件下，convolution 满足：
 
-对二维输入：
-
-\[
-X\in\mathbb R^{H\times W},
-\]
-
-kernel：
-
-\[
-K\in\mathbb R^{k_h\times k_w},
-\]
-
-CNN-style cross-correlation 常写：
-
-\[
-Y_{i,j}
-=
-\sum_{u=0}^{k_h-1}
-\sum_{v=0}^{k_w-1}
-K_{u,v}X_{i+u,j+v}.
-\]
-
-每个输出位置读取一个 local patch。
-
-## Convolution 的代数性质
-
-在条件合适时，convolution 满足：
-
-### Commutative
+### Commutativity
 
 \[
 f*g=g*f.
 \]
 
-### Associative
+### Associativity
 
 \[
 (f*g)*h=f*(g*h).
 \]
 
-### Distributive
+### Distributivity
 
 \[
 f*(g+h)=f*g+f*h.
 \]
 
-这些性质解释了为什么连续多个 linear time-invariant filters 可以组合成一个等效 filter。
+这些性质使多个 linear filters 可以组合和重排。
 
-## Convolution 与 Filtering
+## Identity
 
-在 signal processing 中，kernel / impulse response 决定系统如何处理输入。
-
-例如平滑 kernel 会压低快速变化，高通 kernel 会突出局部变化。
-
-因此 convolution 可以理解为：
-
-> 用一个局部 pattern / response function，在所有位置以相同规则处理输入。
-
-## CNN 中的 Convolution
-
-CNN 把 kernel coefficients 从人工指定变成 learned parameters，并扩展到多 channels：
+Dirac delta 在 continuous convolution 中充当 identity：
 
 \[
-X\in\mathbb R^{C_{in}\times H\times W},
+f*\delta=f.
 \]
+
+Discrete case 中 Kronecker delta 具有类似作用。
+
+## Linear Time-Invariant Systems
+
+对于 linear time-invariant（LTI）system，若 impulse response 为 $h$，任意 input $x$ 的 output 可以写成：
 
 \[
-K\in\mathbb R^{C_{out}\times C_{in}\times k_h\times k_w}.
+y=x*h.
 \]
 
-这同时利用：
+因此 convolution 是 LTI systems 的自然 representation。
 
-- local connectivity；
-- weight sharing；
-- channel mixing。
+## Filtering
 
-Stride、padding、dilation、receptive field 等网络级设计放在 [Convolutional Neural Network](/deep-learning/cnn/convolutional-neural-network/) 中展开。
+不同 kernels 可以执行不同 local filtering，例如 smoothing、edge detection 或 differentiation approximation。
 
-## Sources
+例如一维 moving-average kernel：
 
-- Standard signal-processing definition of convolution.
-- Goodfellow, Bengio, Courville. *Deep Learning*, convolutional networks chapter.
+\[
+h=
+\frac13[1,1,1]
+\]
+
+对 signal 做 convolution 会产生 local average。
+
+## Two-Dimensional Convolution
+
+对 image-like data：
+
+\[
+I\in\mathbb R^{H\times W},
+\]
+
+2D convolution：
+
+\[
+Y[i,j]
+=
+\sum_{u,v}
+I[i-u,j-v]K[u,v].
+\]
+
+Kernel 在 spatial grid 上平移，同一 coefficients 在所有 locations 重复使用。
+
+这产生 translation-equivariant local operator。
+
+## Multi-Channel Data
+
+CNN input 常为：
+
+\[
+X\in\mathbb R^{C_{in}\times H\times W}.
+\]
+
+Kernel bank：
+
+\[
+W\in\mathbb R^{C_{out}\times C_{in}\times K_h\times K_w}.
+\]
+
+每个 output channel 对所有 input channels 的 local neighborhoods 做加权求和。
+
+完整 neural-network structure 见 [Convolutional Neural Network](/deep-learning/cnn/convolutional-neural-network/)。
+
+## Probability Convolution
+
+若 independent random variables $X,Y$ 的 densities 为 $f_X,f_Y$，则 sum：
+
+\[
+Z=X+Y
+\]
+
+的 density 为：
+
+\[
+f_Z(z)
+=
+(f_X*f_Y)(z).
+\]
+
+因此 convolution 也描述 independent random variables 相加后的 distribution。
+
+## Frequency-Domain Relation
+
+Fourier transform 把 convolution 转成 multiplication：
+
+\[
+\mathcal F\{f*g\}
+=
+\mathcal F\{f\}
+\mathcal F\{g\}.
+\]
+
+这称为 convolution theorem，是 signal processing 中分析 filtering 与高效 convolution algorithms 的基础。
+
+## Connections
+
+- [Convolutional Neural Network](/deep-learning/cnn/convolutional-neural-network/)：使用 learned spatial kernels。
+- Probability：independent random variables 求和时 distributions 通过 convolution 组合。

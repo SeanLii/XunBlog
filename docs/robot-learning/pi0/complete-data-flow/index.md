@@ -161,7 +161,7 @@ H\text{ action tokens}.
 
 两套 expert weights 共同参与一个 Transformer system。
 
-可以把每一层想成：
+每层中的 expert interaction 可以抽象为：
 
 ```text
 VLM-side hidden states ──┐
@@ -284,7 +284,7 @@ A^1
 A_t=[a_t,\ldots,a_{t+H-1}].
 \]
 
-这时才真正得到机器人动作。
+此时得到最终机器人动作。
 
 ### 7. 执行 chunk 的前一部分
 
@@ -332,7 +332,7 @@ noisy actions ───────────┘        ↓
                               robot executes
 ```
 
-这张图里最重要的分界是：
+该数据流的关键边界是：
 
 - training 知道 ground-truth actions，因此能直接制造任意 noisy intermediate state；
 - inference 不知道 ground truth，只能从 random noise 开始沿 learned vector field 积分。

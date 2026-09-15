@@ -13,7 +13,7 @@ related:
 
 # Covariance
 
-Variance 描述一个 random variable 自己波动多少；Covariance 描述两个 random variables 是否倾向于一起变化。
+Covariance 衡量两个 random variables 相对各自 means 的共同线性变化。
 
 设：
 
@@ -23,47 +23,80 @@ Variance 描述一个 random variable 自己波动多少；Covariance 描述两�
 \mu_Y=\mathbb E[Y].
 \]
 
-Covariance 定义为：
+定义：
 
 \[
 \operatorname{Cov}(X,Y)
-=\mathbb E[(X-\mu_X)(Y-\mu_Y)].
+=
+\mathbb E[(X-\mu_X)(Y-\mu_Y)].
 \]
 
-## 符号在表达什么
+等价地：
 
-如果某次：
+\[
+\operatorname{Cov}(X,Y)
+=
+\mathbb E[XY]
+-
+\mathbb E[X]\mathbb E[Y].
+\]
 
-- $X$ 高于自己的 mean；
-- $Y$ 也高于自己的 mean；
+## Sign
 
-那么两个 centered deviations 的乘积为正。
+- $\operatorname{Cov}(X,Y)>0$：两者倾向于同方向偏离各自 mean；
+- $\operatorname{Cov}(X,Y)<0$：两者倾向于反方向变化；
+- $\operatorname{Cov}(X,Y)=0$：没有线性 covariance。
 
-如果一个高于 mean、另一个低于 mean，乘积为负。
+Zero covariance 不意味着一般意义上的 independence。
 
-所以平均后：
+## Scaling
 
-- covariance > 0：倾向同方向变化；
-- covariance < 0：倾向反方向变化；
-- covariance 接近 0：没有明显的**线性**共同变化。
+对 constants $a,b,c,d$：
 
-注意 covariance 为 0 一般不等于 independent；它只排除了某类线性依赖。
+\[
+\operatorname{Cov}(aX+b,cY+d)
+=
+ac\operatorname{Cov}(X,Y).
+\]
 
-## Variance 是 Covariance 的特殊情况
+因此 covariance 的数值依赖 variables 的单位和尺度。
+
+## Correlation
+
+为了移除 scale，可以定义 Pearson correlation：
+
+\[
+\rho_{X,Y}
+=
+\frac{\operatorname{Cov}(X,Y)}
+{\sigma_X\sigma_Y},
+\]
+
+当两个 standard deviations 非零时成立。
+
+根据 Cauchy–Schwarz inequality：
+
+\[
+-1\le\rho_{X,Y}\le1.
+\]
+
+Correlation 是 normalized covariance，但仍主要反映线性 dependency。
+
+## Variance as Self-Covariance
 
 令 $Y=X$：
 
 \[
 \operatorname{Cov}(X,X)
-=\mathbb E[(X-\mu_X)^2]
-=\operatorname{Var}(X).
+=
+\operatorname{Var}(X).
 \]
 
-所以 covariance 自然扩展了 variance。
+因此 variance 是 covariance 的特殊情况。
 
 ## Covariance Matrix
 
-对于 random vector：
+对 random vector：
 
 \[
 X\in\mathbb R^d,
@@ -71,68 +104,93 @@ X\in\mathbb R^d,
 \mu=\mathbb E[X],
 \]
 
-定义 covariance matrix：
+covariance matrix 定义为：
 
 \[
 \Sigma
-=\mathbb E[(X-\mu)(X-\mu)^\top].
+=
+\mathbb E[(X-\mu)(X-\mu)^\top].
 \]
 
-其第 $(i,j)$ 个元素：
+元素：
 
 \[
 \Sigma_{ij}
-=\operatorname{Cov}(X_i,X_j).
+=
+\operatorname{Cov}(X_i,X_j).
 \]
 
-对角线：
+Diagonal elements 是各 coordinate variance；off-diagonal elements 描述 pairwise covariance。
+
+## Positive Semidefinite Property
+
+对任意 vector $a$：
 
 \[
-\Sigma_{ii}=\operatorname{Var}(X_i).
+a^\top\Sigma a
+=
+\operatorname{Var}(a^\top X)
+\ge0.
 \]
 
-非对角线描述不同 coordinates 的共同变化。
+所以 covariance matrix 一定 positive semidefinite。
 
-## Geometry
+它的 eigenvectors / eigenvalues 可以描述 distribution 在线性 directions 上的主要 variance structure。
 
-二维情况下，如果两个 coordinates independent 且 variance 相同，distribution 的等密度轮廓可能接近圆。
+## Linear Transformation
 
-如果：
-
-- 两个方向 variance 不同；
-- coordinates 之间存在 covariance；
-
-轮廓会拉伸并旋转成 ellipse。
-
-因此 covariance matrix 不只是一个统计表格，它决定 multivariate distribution 的几何尺度和方向。
-
-## Correlation
-
-Covariance 会受到变量本身单位和尺度影响。
-
-标准化后得到 correlation：
+若：
 
 \[
-\rho_{XY}
-=\frac{\operatorname{Cov}(X,Y)}{\sigma_X\sigma_Y}.
+Y=AX+b,
 \]
 
-只要 standard deviations 非零，有：
+则：
 
 \[
--1\le\rho_{XY}\le1.
+\operatorname{Cov}(Y)
+=
+A\Sigma_XA^\top.
 \]
 
-Correlation 更适合比较不同尺度变量之间的线性关系，但它并没有替代 covariance 在概率模型中的作用。
+这条公式在 multivariate Gaussian、Kalman filtering、PCA 与 uncertainty propagation 中非常常见。
 
-## 在 Multivariate Normal 中
+## Independence 与 Gaussian Special Case
 
-[Multivariate Normal Distribution](/mathematics/probability/multivariate-normal-distribution/) 用：
+一般情况下：
 
 \[
-\mathcal N(\mu,\Sigma)
+\operatorname{Cov}(X,Y)=0
 \]
 
-完整表达中心和二阶依赖结构。
+不能推出 $X,Y$ independent。
 
-因此理解 covariance matrix 是理解 multivariate Gaussian、PCA、state estimation 和很多 probabilistic models 的基础。
+但如果 $X,Y$ jointly Gaussian，则 zero covariance 可以推出 independence。
+
+这是 Gaussian family 的特殊性质，不应推广到任意 distributions。
+
+## Sample Covariance
+
+给定 paired observations：
+
+\[
+(x_i,y_i),\quad i=1,\ldots,n,
+\]
+
+常用 sample covariance：
+
+\[
+s_{XY}
+=
+\frac1{n-1}
+\sum_{i=1}^{n}
+(x_i-\bar x)(y_i-\bar y).
+\]
+
+多维数据对应 sample covariance matrix。
+
+## Connections
+
+- [Variance](/mathematics/probability/variance/)：self-covariance。
+- [Multivariate Normal Distribution](/mathematics/probability/multivariate-normal-distribution/)：covariance matrix 决定 Gaussian 的线性 dependency 与 geometry。
+- [Linear Transformation](/mathematics/linear-algebra/linear-transformation/)：covariance 在 linear mapping 下按 $A\Sigma A^\top$ 变换。

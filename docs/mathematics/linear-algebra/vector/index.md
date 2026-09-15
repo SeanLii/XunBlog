@@ -13,7 +13,9 @@ related:
 
 # Vector
 
-Vector 是线性代数最基本的对象之一。它不是“AI 里的特征数组”，也不等同于 Python list。更准确地说，vector 是一个同时支持**相加**和**数乘**的数学对象；在有限维实向量空间里，我们通常把它写成一列数字：
+Vector 是同时具有加法与 scalar multiplication 结构的数学对象。在线性代数中，向量属于某个 vector space；在选定 basis 后，有限维向量可以用一组 coordinates 表示。
+
+最常见的实数向量写成：
 
 \[
 x=
@@ -21,121 +23,176 @@ x=
 x_1\\
 x_2\\
 \vdots\\
-x_d
+x_n
 \end{bmatrix}
-\in \mathbb{R}^d.
+\in\mathbb R^n.
 \]
 
-这里的 $d$ 是 vector 的维度。每一个分量 $x_i$ 都是在某一组坐标基底下的坐标值。
+这里 $n$ 是 vector space 的 dimension，$x_i$ 是相对于当前 basis 的 coordinates。
 
-一个二维 vector 可以画成平面上的箭头；三维 vector 可以画成空间中的箭头。高维以后我们无法直接画出来，但运算规则没有改变。
+## Vector Space Structure
 
-## Vector space 中的两个基本操作
+一个 real vector space $V$ 允许两种基本运算：
 
-对于同一空间中的两个 vectors $x,y\in\mathbb R^d$，可以逐分量相加：
+- vector addition：$u+v$；
+- scalar multiplication：$\alpha v$。
+
+并满足加法交换律、结合律、零向量存在、加法逆元存在以及 scalar multiplication 的分配律等公理。
+
+这些公理保证了 linear combination：
 
 \[
-x+y=
+\alpha_1v_1+\cdots+\alpha_kv_k
+\]
+
+仍然属于同一 vector space。
+
+## Coordinates 与 Basis
+
+Vector 本身与它的 coordinates 不是同一个概念。
+
+给定 basis：
+
+\[
+B=(b_1,\ldots,b_n),
+\]
+
+任意 $v\in V$ 都可以唯一表示为：
+
+\[
+v=x_1b_1+\cdots+x_nb_n.
+\]
+
+coordinate vector 为：
+
+\[
+[v]_B=
 \begin{bmatrix}
-x_1+y_1\\
+x_1\\
 \vdots\\
-x_d+y_d
+x_n
 \end{bmatrix}.
 \]
 
-也可以乘一个 scalar $c$：
+更换 basis 后，同一个抽象 vector 的 coordinate values 会改变，但 vector 本身不变。
+
+## Linear Combination 与 Span
+
+给定 vectors $v_1,\ldots,v_k$，它们所有可能 linear combinations 构成：
 
 \[
-cx=
-\begin{bmatrix}
-cx_1\\
-\vdots\\
-cx_d
-\end{bmatrix}.
+\operatorname{span}(v_1,\ldots,v_k)
+=
+\left\{
+\sum_{i=1}^{k}\alpha_iv_i
+:\alpha_i\in\mathbb R
+\right\}.
 \]
 
-几何上，向量相加可以理解为位移的合成；数乘会改变长度，并在 $c<0$ 时翻转方向。
+Span 描述这些 vectors 能生成的全部 directions / subspace。
 
-这两个操作之所以重要，是因为后面的 [Linear Transformation](/mathematics/linear-algebra/linear-transformation/) 必须保持它们：
+若一组 vectors 中不存在非零 coefficients 使：
 
 \[
-T(x+y)=T(x)+T(y),
+\sum_i\alpha_iv_i=0,
+\]
+
+则它们 linearly independent。
+
+## Length 与 Direction
+
+在 $\mathbb R^n$ 中，最常用长度是 Euclidean norm：
+
+\[
+\|x\|_2
+=
+\sqrt{\sum_{i=1}^{n}x_i^2}.
+\]
+
+非零 vector 的 normalized direction 为：
+
+\[
+\hat x=\frac{x}{\|x\|_2}.
+\]
+
+一般 norm 的定义与性质见 [Vector Norm](/mathematics/linear-algebra/vector-norm/)。
+
+## Dot Product 与 Geometry
+
+Euclidean dot product 定义为：
+
+\[
+x^\top y
+=
+\sum_i x_i y_i.
+\]
+
+它与长度和夹角满足：
+
+\[
+x^\top y
+=
+\|x\|_2\|y\|_2\cos\theta.
+\]
+
+因此 dot product 同时编码 algebraic combination 与 geometric alignment。更完整内容见 [Dot Product](/mathematics/linear-algebra/dot-product/)。
+
+## Vector 与 Matrix
+
+Matrix-vector multiplication 定义从一个 coordinate vector 到另一个 coordinate vector 的映射：
+
+\[
+y=Ax.
+\]
+
+当 $A\in\mathbb R^{m\times n}$ 时：
+
+\[
+x\in\mathbb R^n,
 \qquad
-T(cx)=cT(x).
+y\in\mathbb R^m.
 \]
 
-## 坐标不是 vector 本身
+从 abstract linear algebra 的角度，matrix 是某个 [Linear Transformation](/mathematics/linear-algebra/linear-transformation/) 在选定 bases 下的 coordinate representation。
 
-写成
+## Random Vector
 
-\[
-[2,1]
-\]
-
-时，我们看到的是 vector 在某组 basis 下的坐标，而不是 vector 的全部数学身份。
-
-同一个几何 vector 换一组 basis 后，坐标可以改变；vector 本身没有改变。这一点在以后理解 basis change、eigenvector 或不同 feature space 时很重要。
-
-在很多机器学习问题中，我们直接固定标准 basis，因此常把“vector”和“坐标数组”放在一起说。工程上这样通常没有问题，但概念上要知道两者不是完全同一件事。
-
-## 方向与大小是两类不同信息
-
-一个 vector 可以同时携带：
-
-- **方向**；
-- **大小**。
-
-大小通常用 [Vector Norm](/mathematics/linear-algebra/vector-norm/) 描述，例如 Euclidean norm：
-
-\[
-\|x\|_2=\sqrt{x_1^2+\cdots+x_d^2}.
-\]
-
-把非零 vector 除以自己的长度：
-
-\[
-\hat x=\frac{x}{\|x\|_2},
-\]
-
-得到 unit vector，长度为 1，只保留方向信息。
-
-这个区分会直接影响 [Dot Product](/mathematics/linear-algebra/dot-product/) 与 cosine similarity：dot product 同时受到长度和方向影响，而归一化后的 cosine 主要比较方向。
-
-## 一组 vectors 可以组成更高层结构
-
-多个同维 vectors 可以按行或按列堆成 [Matrix](/mathematics/linear-algebra/matrix/)。
-
-例如三个二维 vectors：
-
-\[
-x_1=[1,2],\quad x_2=[3,4],\quad x_3=[5,6]
-\]
-
-按行组成：
+若 vector 的各分量是 random variables，可写成 random vector：
 
 \[
 X=
 \begin{bmatrix}
-1&2\\
-3&4\\
-5&6
+X_1\\
+\vdots\\
+X_n
 \end{bmatrix}.
 \]
 
-这一步在机器学习里极其常见：一个 token、一个样本、一个关节状态都可能用 vector 表示，而一批这样的 vectors 则自然形成 matrix 或更高阶 tensor。
+它可以具有 mean vector：
 
-## Vector 在机器学习中的角色
+\[
+\mu=\mathbb E[X]
+\]
 
-Vector 本身不属于 AI，但 AI 大量使用 vector 作为统一表示形式。
+和 covariance matrix：
 
-例如：
+\[
+\Sigma=
+\mathbb E[(X-\mu)(X-\mu)^\top].
+\]
 
-- 一个样本的 feature vector；
-- 一个 token 的 embedding；
-- Transformer 的 hidden state；
-- 机器人某时刻的 joint state；
-- VAE 的 latent code。
+这把线性代数结构与 multivariate probability 连接起来。
 
-这些对象语义完全不同，但都可以落到同一个数学空间 $\mathbb R^d$ 中，因此可以使用同一套线性代数运算。
+## Vectors in Machine Learning
 
-这也是 vector 在现代机器学习里如此核心的原因：它提供了一种统一的、可计算的表示空间，而不是因为“神经网络天生只认识向量”。
+Machine learning 中大量对象都以 vector coordinates 表示，例如：
+
+- feature vector；
+- embedding；
+- neural hidden state；
+- gradient；
+- model parameter block；
+- robot joint state；
+- action vector。
+
+这些对象的语义不同，但都可以使用同一套线性代数运算。Vector 本身不属于某个特定模型，它是这些表示方式共享的基础数学结构。

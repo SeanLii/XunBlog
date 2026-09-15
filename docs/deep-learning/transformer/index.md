@@ -15,183 +15,178 @@ related:
 
 # Transformer
 
-Transformer 是一种让一组输入彼此交换信息，再产生一组新的表示的神经网络架构。
+Transformer 是一种以 attention 为主要 token-interaction mechanism，并结合 position information、position-wise nonlinear transformation、residual connection 与 normalization 构成的神经网络架构。
 
-先不要从 Q、K、V 开始。假设输入是一串 token：
+给定一组 input representations
+
+\[
+X=(x_1,\ldots,x_N),
+\qquad x_i\in\mathbb R^{d_{model}},
+\]
+
+Transformer 产生新的 representations
+
+\[
+H=(h_1,\ldots,h_N),
+\]
+
+其中每个 $h_i$ 可以通过 attention 聚合其他 positions 的信息，因此不再只由 $x_i$ 独立决定。
+
+## Transformer Layer
+
+典型 Transformer layer 包含两类主要计算：
+
+1. attention sublayer：在 positions 之间交换信息；
+2. position-wise feed-forward sublayer：对每个 position 独立进行 nonlinear feature transformation。
+
+Encoder layer 的基本结构为
 
 ```text
-x1   x2   x3   x4   x5
-```
-
-每个 $x_i$ 一开始只是当前位置自己的向量。经过 Transformer 后，得到：
-
-```text
-h1   h2   h3   h4   h5
-```
-
-关键变化是：$h_3$ 不再只由 $x_3$ 决定。通过 [Attention](/deep-learning/attention/)，它可以读取其他位置中与自己有关的信息。因此每个输出都成为一个带有上下文的表示。
-
-这就是理解 Transformer 的第一层：
-
-> **Transformer 的核心工作，是让多个表示相互读取信息，然后更新自己。**
-
-## Transformer Layer 的基本数据流
-
-最简单的 encoder layer 可以先看成两步：
-
-```text
-输入表示 X
-   │
-   ↓
-Self-Attention
-   │    每个位置读取其他位置
-   ↓
+input representations
+        ↓
+Multi-Head Self-Attention
+        ↓
+Residual + LayerNorm
+        ↓
 Position-Wise Feed-Forward Network
-   │    每个位置再独立做非线性变换
-   ↓
-输出表示 H
+        ↓
+Residual + LayerNorm
+        ↓
+output representations
 ```
 
-真实结构还会在这些子层周围加入 [Residual Connection](/deep-learning/cnn/resnet/residual-connection/) 与 [Layer Normalization](/deep-learning/core/layer-normalization/)。但如果一开始把所有组件同时塞进图里，很容易失去主线。
+原始 Transformer 使用 post-norm；许多后续模型采用 pre-norm 或其他 normalization placement。
 
-所以先把职责分开：
+## Attention Computation
 
-- Attention 负责 **位置之间的信息交换**；
-- Position-Wise Feed-Forward Network 负责 **每个位置内部的表示变换**；
-- Residual / LayerNorm 帮助深层网络稳定训练。
-
-多个 layer 叠起来，就能反复进行“读别人 → 更新自己”。
-
-## Attention 是 Transformer 的核心，但不等于 Transformer
-
-Attention 的基础计算可以写成
+Transformer 使用 [Scaled Dot-Product Attention](/deep-learning/transformer/scaled-dot-product-attention/)：
 
 \[
 \operatorname{Attention}(Q,K,V)
 =
-\operatorname{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}\right)V.
+\operatorname{softmax}
+\left(
+\frac{QK^\top}{\sqrt{d_k}}
+\right)V.
 \]
 
-这条公式描述的是一次 attention computation，不是整个 Transformer。
+其中 [Query / Key / Value](/deep-learning/attention/qkv/) 分别承担读取请求、匹配索引和内容传输的计算角色。
 
-要理解它，可以先把三个量看成不同职责：
+Transformer 又通过 [Multi-Head Attention](/deep-learning/transformer/multi-head-attention/) 并行建立多个 projection spaces，再将各 heads 的输出合并回 model dimension。
 
-- Query：当前这个位置想找什么；
-- Key：每个候选位置用什么特征表示“我适不适合被你读取”；
-- Value：如果决定读取这个位置，真正拿走什么信息。
+Attention 是 Transformer 的核心组件，但 attention computation 本身不等于完整 Transformer architecture。
 
-完整推导在 [Query / Key / Value](/deep-learning/attention/qkv/) 与 [Scaled Dot-Product Attention](/deep-learning/transformer/scaled-dot-product-attention/) 中展开。
+## Positional Information
 
-## 位置信息的必要性
+标准 self-attention 对 token permutation 具有对应的 permutation-equivariance，因此单独使用 content vectors 时并不编码 sequence order。
 
-标准 self-attention 主要根据内容相似关系决定读取权重。如果只给一组 token vectors，却不提供它们的位置，网络本身不会自动知道“第一个”“前一个”“后一个”这些顺序信息。
+Transformer 必须额外加入 [Positional Encoding](/deep-learning/sequence-modeling/positional-encoding/) 或其他 position mechanism，使 representation 同时包含内容与位置关系。
 
-因此 Transformer 还需要 [Positional Encoding](/deep-learning/sequence-modeling/positional-encoding/) 或其他位置表示，把位置信息加入 token representation。
+原始 Transformer 使用 sinusoidal positional encoding；后续模型发展出 learned absolute positions、relative positions、rotary position embeddings 等不同设计。
 
-于是输入不再只是“词是什么”，而是同时带有“它在哪里”。
+## Position-Wise Nonlinear Transformation
 
-## Encoder 和 Decoder 是两种信息流
-
-原始 Transformer 是一个 encoder-decoder 模型。
-
-### Encoder
-
-Encoder 接收输入序列，并把每个位置变成 contextual representation：
-
-```text
-input tokens
-    │
-    ↓
-Transformer Encoder
-    │
-    ↓
-encoder memory
-```
-
-内部核心是 [Self-Attention](/deep-learning/attention/self-attention/)：Query、Key、Value 都来自同一组输入表示。
-
-### Decoder
-
-Decoder 的任务是产生另一组输出表示。原始机器翻译模型中，它一方面读取已经生成的 target tokens，另一方面通过 [Cross-Attention](/deep-learning/attention/cross-attention/) 读取 encoder memory。
-
-```text
-decoder state ─────┐
-                   ↓
-             Cross-Attention ← encoder memory
-                   │
-                   ↓
-               output state
-```
-
-这里最重要的是理解：
-
-> **在原始 encoder–decoder Transformer 中，Decoder 一边更新 target-side states，一边通过 cross-attention 读取 encoder memory。**
-
-因此后来的 DETR、ACT 也可以使用 Transformer decoder，却不需要把任务写成语言生成。
-
-## Transformer 在不同任务中可以长得很不一样
-
-“Transformer”不是一张固定不变的网络图。
-
-原始论文使用 encoder-decoder 结构；BERT 主要使用 encoder stack；GPT 类模型主要使用带 causal mask 的 decoder-style stack；DETR 使用 learned object queries；ACT 又把 learned action queries 用来产生未来多个动作位置。
-
-这些模型共享 Attention、FFN、Residual 等基本机制，但数据流和训练目标不同。
-
-所以学习 Transformer 时应把两层知识分开：
-
-1. **通用机制**：Attention、QKV、MLP / nonlinear transformation、position information；
-2. **Transformer-specific 设计**：Scaled Dot-Product Attention、Multi-Head Attention、Position-Wise FFN，以及 Encoder / Decoder stack。
-
-Attention、positional representation、residual connection 与 LayerNorm 等基础机制并非 Transformer 首创；Transformer 论文的具体设计重点包括 Scaled Dot-Product Attention、Multi-Head Attention、Position-Wise Feed-Forward Network，以及完整的 Encoder / Decoder stack。
-
-## 一个具体 shape 例子
-
-设输入有 $n=5$ 个 token，每个 token 的 hidden dimension 是 $d=512$：
+Attention 完成跨位置的信息交换后，[Position-Wise Feed-Forward Network](/deep-learning/transformer/position-wise-feed-forward-network/) 对每个 token 独立执行同一组 MLP parameters：
 
 \[
-X\in\mathbb R^{5\times512}.
+\operatorname{FFN}(x)=W_2\phi(W_1x+b_1)+b_2.
 \]
 
-Self-attention 不需要把序列压成一个向量。它仍然输出 5 个位置：
+因此 Transformer layer 将两类操作分离：
+
+- token mixing：attention；
+- feature transformation：position-wise FFN。
+
+多层堆叠使 representations 反复进行跨位置读取与局部 nonlinear transformation。
+
+## Residual Connection and Layer Normalization
+
+每个主要 sublayer 周围通常使用 [Residual Connection](/deep-learning/cnn/resnet/residual-connection/) 与 [Layer Normalization](/deep-learning/core/layer-normalization/)。
+
+Residual path 提供 identity information path；LayerNorm 调整 feature statistics。它们共同影响深层 Transformer 的 optimization stability，但都不是 attention score computation 的一部分。
+
+## Transformer Encoder
+
+[Transformer Encoder](/deep-learning/transformer/transformer-encoder/) 由多层 encoder layers 堆叠而成。原始结构中的 encoder self-attention 对输入 positions 使用全局可见性，因此每个位置可以形成 contextual representation。
+
+输入
 
 \[
-H\in\mathbb R^{5\times512}.
+X\in\mathbb R^{N\times d_{model}}
 \]
 
-区别不在 shape，而在每一行的含义。输入的第 3 行主要表示 token 3 自己；输出的第 3 行则已经混合了它从其他位置读取的信息。
+经过 encoder stack 后通常仍保持
 
-这也是 Transformer 特别适合处理 token set / sequence 的原因之一：**位置数量可以保持不变，但每个位置逐层获得更丰富的上下文。**
+\[
+H\in\mathbb R^{N\times d_{model}}.
+\]
 
-## 与 ACT 的连接
+sequence length 可以不变，但每个位置所编码的信息已经发生变化。
 
-ACT 中的视觉 features、proprioception 等会形成一组 representations，进入 Transformer encoder 形成 memory；随后一组 action query slots 通过 decoder 从 memory 中读取信息，分别对应 future action chunk 中的多个输出位置。
+## Transformer Decoder
 
-这种 learned output-query 设计并不是原始 Transformer 的标准组件。ACT 的实现直接继承了 DETR-style query slots；其来源见 [DETR](/deep-learning/detr/) 与 [Object Query](/deep-learning/detr/object-query/)。
+原始 [Transformer Decoder](/deep-learning/transformer/transformer-decoder/) 包含：
 
-因此在 ACT 中：
+1. masked self-attention；
+2. cross-attention to encoder memory；
+3. position-wise FFN。
 
-```text
-observation features
-        │
-        ↓
-Transformer Encoder
-        │
-        ↓
-      memory
-        ↑
-        │
-action queries
-        │
-        ↓
-Transformer Decoder
-        │
-        ↓
-future action representations
-```
+在 machine translation 中，causal mask 保证 target position 不能读取未来 target tokens；cross-attention 则让 target states 读取 source encoder representations。
 
-这和“逐词翻译句子”已经是不同任务，但 Transformer 的核心信息流没有变。
+Decoder 这一 architecture 后来被扩展到不同信息流：GPT-style decoder-only models 删除 encoder cross-attention；DETR 与 ACT 则使用 learned query slots 并行读取 encoder memory，而不是逐 token autoregressive generation。
+
+## Encoder-Only, Decoder-Only, and Encoder–Decoder Models
+
+Transformer 并不要求固定使用原始 encoder–decoder 组合。
+
+- BERT：encoder-only stack；
+- GPT-style language models：causal decoder-style stack；
+- T5 等 sequence-to-sequence models：encoder–decoder；
+- DETR：encoder–decoder with learned object queries；
+- ACT：encoder–decoder with learned action queries。
+
+这些模型共享部分 Transformer building blocks，但 mask、query source、training objective 与 output structure 不同。
+
+## Tensor Shapes
+
+设
+
+\[
+X\in\mathbb R^{B\times N\times d_{model}}.
+\]
+
+标准 encoder layer 通常保持 shape：
+
+\[
+X\rightarrow H,
+\qquad
+H\in\mathbb R^{B\times N\times d_{model}}.
+\]
+
+在 attention 内部，multi-head projection 会暂时拆分 head dimension；FFN 会将 feature dimension扩展到 $d_{ff}$ 后再投影回 $d_{model}$。因此 layer 的外部 shape 可以保持不变，而内部 representation 与 pairwise information flow 持续变化。
+
+## Computational Characteristics
+
+Full self-attention 的 pairwise score matrix 大小为
+
+\[
+N\times N,
+\]
+
+因此对长 sequence 会带来 quadratic time / memory cost。另一方面，self-attention 中任意两个 positions 可以在一层内直接建立 interaction path，这也是 Transformer 与固定局部 receptive field architecture 的重要差异之一。
+
+Transformer 的整体计算成本还包括 FFN、projection、KV cache 等部分；在不同 sequence length 与 model dimension 下，瓶颈可能不同。
+
+## Relation to ACT
+
+ACT 将视觉 features、proprioception 与 latent-conditioned information 编码为 memory，再使用 learned action queries 经过 Transformer decoder 并行产生 future action representations。
+
+其中 learned output-query pattern 直接继承自 [DETR](/deep-learning/detr/) 风格的 decoder queries，而不是原始 Transformer 的固定标准输入。
+
+Transformer 在 ACT 中提供的是一种信息交互架构；Action Chunking、CVAE branch、Temporal Ensemble 等仍属于 ACT 自身的 policy design。
 
 ## Sources
 
-- Vaswani et al., **Attention Is All You Need**, 2017. https://arxiv.org/abs/1706.03762
-- Carion et al., **End-to-End Object Detection with Transformers**, 2020. https://arxiv.org/abs/2005.12872
+- Vaswani et al. *Attention Is All You Need*. 2017. https://arxiv.org/abs/1706.03762
+- Devlin et al. *BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding*. 2018.
+- Carion et al. *End-to-End Object Detection with Transformers*. 2020.

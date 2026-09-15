@@ -12,124 +12,124 @@ related:
 
 # ResNet
 
-ResNet（Residual Network）是 He 等人在 2015 年提出的 deep convolutional network family。它的核心设计是把网络 block 从“直接学习目标 mapping”改成“在 identity path 上学习 residual correction”。
-
-最基本形式：
+ResNet（Residual Network）是 He 等人提出的 deep convolutional network family。它通过 **residual learning** 将一个 block 的目标 mapping 写成
 
 \[
-y=x+F(x).
+H(x)=x+F(x),
 \]
 
-ResNet 的重要性不只是发明了 skip connection，而是它让非常深的 CNN 在实践中变得明显更容易优化。
+使 identity mapping 成为 architecture 中的显式 shortcut path，并让很深的 convolutional networks 更容易优化。
 
-## Depth 与 Degradation Problem
+## Degradation Problem
 
-直觉上，更深网络至少应该能模拟较浅网络：多出来的 layers 如果什么都不做，保持 identity 就行。
+在 plain deep networks 中，增加层数并不总会降低 training error。ResNet 论文观察到：当网络变得更深时，training error 可能反而升高，即使新增层理论上可以表示 identity mapping。
 
-但 He 等人在 plain networks 中观察到 degradation problem：网络变深后 training error 反而可能升高。
+这类 **degradation problem** 与单纯 overfitting 不同，因为更深网络在训练集上本身就优化得更差。
 
-这不是单纯 overfitting，因为更深模型连 training set 都优化得更差。
-
-因此问题落在 optimization：即使理论上存在一个不差的 solution，普通 parameterization 也不容易找到它。
+ResNet 的设计目标因此不是只增加 model capacity，而是改变深层 network 的 parameterization，使接近 identity 的 mapping 更容易表达和优化。
 
 ## Residual Learning
 
-假设想学习目标 mapping：
+若目标 mapping 为
 
 \[
-H(x).
+H(x),
 \]
 
-ResNet 改为让 learned branch 学：
+ResNet 让 learned branch 学习 residual
 
 \[
 F(x)=H(x)-x.
 \]
 
-于是：
+于是
 
 \[
 H(x)=x+F(x).
 \]
 
-如果理想 mapping 接近 identity，只需让 $F(x)\approx0$。
+当目标 mapping 接近 identity 时，只需学习
 
-这就是 residual learning 的核心。
+\[
+F(x)\approx0.
+\]
+
+这与要求一组 nonlinear layers 直接逼近 identity mapping 的 optimization geometry 不同。
 
 ## Basic Block
 
-ResNet-18 / ResNet-34 常使用 Basic Block：
+ResNet-18 / ResNet-34 使用 Basic Block。典型结构为
 
 ```text
-x ────────────────────┐
-│                     │
-Conv 3×3               │
- ↓                     │
-Norm + ReLU            │
- ↓                     │
-Conv 3×3               │
- ↓                     │
-Norm                    │
-│                     │
-└──────── add ─────────┘
-          ↓
-         ReLU
+x ──────────────────────────┐
+│                           │
+├→ 3×3 Conv → Norm → ReLU   │
+│              ↓            │
+│          3×3 Conv → Norm  │
+│                           │
+└──────────── add ───────────┘
+              ↓
+             ReLU
 ```
 
-简化写成：
+简化表示为
 
 \[
 y=\operatorname{ReLU}(x+F(x)).
 \]
 
+原论文使用 Batch Normalization；不同后续实现可能改变 normalization 与 activation placement。
+
 ## Bottleneck Block
 
-更深的 ResNet-50 / 101 / 152 使用 Bottleneck Block：
+ResNet-50 / 101 / 152 使用 Bottleneck Block：
 
 ```text
-1×1 Conv   reduce / transform channels
+1×1 Conv
    ↓
-3×3 Conv   spatial processing
+3×3 Conv
    ↓
-1×1 Conv   expand channels
+1×1 Conv
 ```
 
-然后与 shortcut 相加。
+第一层 1×1 convolution 调整 channel dimension，中间 3×3 convolution 处理 spatial interaction，最后 1×1 convolution 恢复 / 扩展 output channels。
 
-1×1 convolutions 让 block 在控制计算量的同时使用较宽的 intermediate representation strategy。
+这种设计在增加 depth 的同时控制 3×3 convolution 的计算成本。
 
-## Projection Shortcut
+## Identity and Projection Shortcuts
 
-如果 spatial size 或 channel count 改变：
+当
 
 \[
-\operatorname{shape}(x)
-\ne
-\operatorname{shape}(F(x)),
+\operatorname{shape}(x)=\operatorname{shape}(F(x)),
 \]
 
-不能直接 addition。
+可以直接使用 identity shortcut：
 
-于是使用 learned projection：
+\[
+y=x+F(x).
+\]
+
+当 spatial resolution 或 channel dimension 改变时，需要 projection：
 
 \[
 y=W_sx+F(x),
 \]
 
-常由 1×1 convolution 完成，同时可能带 stride。
+常由带 stride 的 1×1 convolution 实现。
+
+更详细的数学结构见 [Residual Connection](/deep-learning/cnn/resnet/residual-connection/)。
 
 ## Stage Structure
 
-典型 ResNet 将 blocks 分成多个 stages。
+ResNet 通常由 stem 与多个 residual stages 组成。随着 stage 向后：
 
-随着 stage 向后：
-
-- spatial resolution 下降；
-- channel count 增加；
+- spatial resolution 降低；
+- channel dimension 增加；
 - receptive field 增大；
-- representation 更适合高层 visual task。
+- representation 逐渐从局部视觉 features 转向更高层 task-relevant features。
 
-例如 ResNet-50 常见主干可以概括成：
+典型 ResNet-50 主干可概括为
 
 ```text
 stem
@@ -145,47 +145,44 @@ conv5_x
 global pooling / downstream head
 ```
 
-## ResNet-18、34、50 的数字表示什么
+stage transition 通常通过 stride 与 projection shortcut 同时完成 spatial downsampling 和 channel change。
 
-这些数字大致对应有 learnable weights 的 network depth convention。
+## ResNet Depth Naming
 
-ResNet-18 / 34 使用 Basic Blocks；ResNet-50 / 101 / 152 使用 Bottleneck Blocks。
+ResNet-18、34、50、101、152 的数字遵循原论文对有 learnable weights layers 的计数 convention。
 
-所以 “ResNet-50 比 ResNet-34 多 16 层” 不是简单在同一 block 后面继续复制几次，而是 block type 和 stage configuration 也不同。
+ResNet-18 / 34 主要使用 Basic Blocks；ResNet-50 及更深版本主要使用 Bottleneck Blocks。因此不同深度并不只是简单复制同一种 block 更多次，block type 与 stage configuration 也会改变。
 
-## Residual Path 的 Optimization Effect
+## Optimization Effect
 
-对：
+对 residual mapping
 
 \[
 y=x+F(x),
 \]
 
-Jacobian 包含 identity term：
+Jacobian 为
 
 \[
 \frac{\partial y}{\partial x}
 =I+\frac{\partial F}{\partial x}.
 \]
 
-这为 forward information 与 backward gradient 提供直接路径。
+identity term 为 forward information 与 backward gradient 提供直接路径。它改变了深层网络的 optimization landscape，但不应简化为“完全解决 vanishing gradient”。Initialization、normalization、activation、optimizer 与整体 architecture 仍然共同决定训练稳定性。
 
-但不要把它简化成“skip connection 彻底解决 vanishing gradient”。ResNet 的训练优势来自 parameterization、normalization、architecture design 等共同作用。
+## ResNet as a Backbone
 
-## ResNet 作为 Backbone
-
-ResNet 不只用于 ImageNet classification。
-
-去掉最终 classifier 后，中间 feature maps 可以作为 backbone output，供：
+去掉 classification head 后，ResNet 的 intermediate feature maps 可以作为通用视觉 backbone，服务于：
 
 - object detection；
-- segmentation；
-- multimodal model；
-- robot policy；
+- semantic / instance segmentation；
+- multimodal models；
+- robot perception；
 - metric learning。
 
-ACT 使用 ResNet 作为视觉特征提取器只是其中一个 downstream application。
+ACT 使用 ResNet 提取视觉 features 是其中一个 downstream application，而不是 ResNet 的定义范围。
 
 ## Sources
 
 - He et al. *Deep Residual Learning for Image Recognition*. 2015/2016.
+- He et al. *Identity Mappings in Deep Residual Networks*. 2016.

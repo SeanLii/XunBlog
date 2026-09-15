@@ -6,7 +6,7 @@
 
 当前内容覆盖 ACT、π0 以及理解它们所需的前置知识，共 82 个 canonical knowledge pages：
 
-完整 v4 归属树见 `research/corpus-v4/KNOWLEDGE_TREE.md`。Attention、Sequence Modeling、BERT、DETR 与 Representation Learning 为独立分支；变分推断归属 Probability；Residual Connection 归属 ResNet。
+完整 v6 归属树见 `research/corpus-v6/KNOWLEDGE_TREE.md`。Attention、Sequence Modeling、BERT、DETR 与 Representation Learning 为独立分支；变分推断归属 Probability；Residual Connection 归属 ResNet。
 
 不在当前 corpus 中的 LLM、Embodied AI、Projects、π0-FAST、π0.5 等栏目不创建占位页面。
 

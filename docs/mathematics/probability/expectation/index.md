@@ -13,114 +13,188 @@ related:
 
 # Expectation
 
-Expectation 是对 random variable 的所有可能取值按其概率进行加权后得到的平均位置。
+Expectation（期望）是 random variable 在其 probability distribution 下的概率加权平均。
 
-它描述的是 distribution 的整体中心趋势，而不是某一次 observation。
-
-对于 discrete random variable $X$：
+对 discrete random variable：
 
 \[
 \mathbb E[X]
-=\sum_x x\,P(X=x).
+=
+\sum_x x\,p_X(x).
 \]
 
-对于 continuous random variable：
+对 continuous random variable：
 
 \[
 \mathbb E[X]
-=\int_{-\infty}^{\infty}x\,p(x)\,dx.
+=
+\int_{-\infty}^{\infty}x f_X(x)\,dx,
 \]
 
-## 一个离散例子
+前提是相应积分存在。
 
-公平骰子：
-
-\[
-X\in\{1,2,3,4,5,6\},
-\qquad P(X=x)=\frac16.
-\]
-
-因此：
-
-\[
-\mathbb E[X]
-=\frac{1+2+3+4+5+6}{6}
-=3.5.
-\]
-
-3.5 并不是骰子能实际掷出的点数。Expectation 不要求是可能 observation，它描述的是长期平均位置。
+Expectation 描述 distribution 的平均位置，但不意味着 random variable 必须实际取到这个值。
 
 ## Expectation of a Function
 
-如果关心的不是 $X$ 本身，而是函数 $g(X)$：
+对 function $g$：
 
 \[
 \mathbb E[g(X)]
-=\sum_x g(x)p(x)
+=
+\sum_x g(x)p_X(x)
 \]
 
-或 continuous 情形：
+或：
 
 \[
 \mathbb E[g(X)]
-=\int g(x)p(x)\,dx.
+=
+\int g(x)f_X(x)\,dx.
 \]
 
-这比 $\mathbb E[X]$ 更一般。
+这称为 law of the unconscious statistician（LOTUS）：不需要先求 $Y=g(X)$ 的完整 distribution 就能计算 $\mathbb E[g(X)]$。
 
-例如 variance 就依赖：
+## Linearity
 
-\[
-\mathbb E[(X-\mu)^2].
-\]
-
-机器学习中的 expected loss 也是同一个结构：
-
-\[
-\mathbb E_{(x,y)\sim p_{data}}
-[\ell(f(x),y)].
-\]
-
-## Linearity of Expectation
-
-Expectation 最重要的性质之一：
+Expectation 最重要的性质之一是 linearity：
 
 \[
 \mathbb E[aX+bY]
-=a\mathbb E[X]+b\mathbb E[Y].
+=
+a\mathbb E[X]+b\mathbb E[Y].
 \]
 
-这里不要求 $X$ 与 $Y$ independent。
+它不要求 $X,Y$ independent。
 
-特别地：
+进一步：
 
 \[
-\mathbb E\left[\sum_i X_i\right]
-=\sum_i\mathbb E[X_i].
+\mathbb E\left[\sum_iX_i\right]
+=
+\sum_i\mathbb E[X_i].
 \]
 
-这一性质让很多复杂随机量的平均值分析变得简单。
+## Indicator Variables
 
-## Sample Mean 与 Expectation
-
-Dataset 中的 sample mean：
+对 event $A$，定义 indicator：
 
 \[
-\bar x=\frac1N\sum_{i=1}^{N}x_i
+\mathbf 1_A=
+\begin{cases}
+1,&A\text{ occurs},\\
+0,&\text{otherwise}.
+\end{cases}
 \]
 
-是用有限 observations 对 population expectation 的估计。
+则：
 
-两者概念不同：
+\[
+\mathbb E[\mathbf 1_A]
+=P(A).
+\]
 
-- expectation 属于 probability distribution；
-- sample mean 属于一组已经观察到的数据。
+这个性质常用于把 counting problem 转成 expectation problem。
 
-样本足够多并满足适当条件时，sample mean 会靠近 expectation，这由 law of large numbers 描述。
+## Conditional Expectation
 
-## Vector-valued Expectation
+给定 $Y=y$：
 
-如果 $X\in\mathbb R^d$ 是 random vector，则：
+\[
+\mathbb E[X\mid Y=y]
+\]
+
+是在 conditional distribution $p(x\mid y)$ 下对 $X$ 求 expectation。
+
+Random-variable form：
+
+\[
+\mathbb E[X\mid Y]
+\]
+
+是 $Y$ 的函数。
+
+## Tower Property
+
+Conditional expectation 满足：
+
+\[
+\mathbb E[
+\mathbb E[X\mid Y]
+]
+=
+\mathbb E[X].
+\]
+
+更一般地，若 $\mathcal G\subseteq\mathcal H$ 是 information structures：
+
+\[
+\mathbb E[
+\mathbb E[X\mid\mathcal H]
+\mid\mathcal G]
+=
+\mathbb E[X\mid\mathcal G].
+\]
+
+## Expectation of Products
+
+一般情况下：
+
+\[
+\mathbb E[XY]
+\neq
+\mathbb E[X]\mathbb E[Y].
+\]
+
+若 $X,Y$ independent 且 expectations 存在，则：
+
+\[
+\mathbb E[XY]
+=
+\mathbb E[X]\mathbb E[Y].
+\]
+
+这个区别与 covariance 直接相关。
+
+## Sample Mean 与 Population Expectation
+
+给定 i.i.d. samples：
+
+\[
+X_1,\ldots,X_N,
+\]
+
+sample mean：
+
+\[
+\bar X
+=
+\frac1N\sum_{i=1}^{N}X_i
+\]
+
+用于估计 population mean：
+
+\[
+\mu=\mathbb E[X].
+\]
+
+在适当条件下，law of large numbers 给出：
+
+\[
+\bar X\rightarrow\mathbb E[X]
+\]
+
+随着 sample size 增大成立相应收敛。
+
+## Vector-Valued Expectation
+
+对 random vector：
+
+\[
+X\in\mathbb R^d,
+\]
+
+expectation 按 component 定义：
 
 \[
 \mathbb E[X]
@@ -132,6 +206,31 @@ Dataset 中的 sample mean：
 \end{bmatrix}.
 \]
 
-这就是 multivariate distribution 的 mean vector。
+这称为 mean vector。
 
-Expectation 因此不仅是“求平均”的计算技巧，而是概率论中把整个 distribution 压缩为一个中心位置的基本运算。
+## Expectation in Machine Learning
+
+很多 learning objectives 都写成 population expectation：
+
+\[
+\mathcal L(\theta)
+=
+\mathbb E_{(x,y)\sim p_{data}}
+[\ell(f_\theta(x),y)].
+\]
+
+实际训练使用 finite-sample average 或 minibatch estimate：
+
+\[
+\hat{\mathcal L}
+=
+\frac1B\sum_{i=1}^{B}\ell_i.
+\]
+
+Stochastic optimization 中常需要估计 expectation 及其 gradient。
+
+## Connections
+
+- [Variance](/mathematics/probability/variance/)：以 expectation 定义 centered second moment。
+- [Entropy](/mathematics/information-theory/entropy/)：是 self-information 的 expectation。
+- [Evidence Lower Bound](/mathematics/probability/variational-inference/evidence-lower-bound/)：包含对 variational posterior 的 expectation。

@@ -13,188 +13,255 @@ related:
 
 # Evidence Lower Bound
 
-Evidence Lower Bound（ELBO）是对 log evidence：
+Evidence Lower Bound（ELBO）是 marginal log-likelihood：
 
 \[
-\log p(x)
+\log p_\theta(x)
 \]
 
-的一个可优化 lower bound。
+的一个 lower bound，也是 Variational Inference 中最常用的 optimization objective。
 
-它在 Variational Inference 中承担关键角色：我们原本想让 approximate posterior $q(z)$ 靠近真实 posterior $p(z\mid x)$，但真实 posterior 中包含难算的 evidence。ELBO 把这个目标改写成只依赖 joint model 与 $q$ 的形式。
-
-## 从一个恒等式开始
-
-考虑：
+设 latent-variable model：
 
 \[
-D_{KL}(q(z)\|p(z\mid x)).
+p_\theta(x,z),
 \]
 
-展开：
+以及 variational distribution：
 
 \[
-D_{KL}
+q_\phi(z\mid x).
+\]
+
+ELBO 定义为：
+
+\[
+\mathcal L(\theta,\phi;x)
 =
-\mathbb E_q
+\mathbb E_{q_\phi(z\mid x)}
 \left[
-\log q(z)-\log p(z\mid x)
+\log p_\theta(x,z)
+-
+\log q_\phi(z\mid x)
 \right].
 \]
 
-使用 Bayes：
+## Jensen Derivation
+
+从 evidence 开始：
 
 \[
-\log p(z\mid x)
+\log p_\theta(x)
 =
-\log p(x,z)-\log p(x).
+\log
+\int p_\theta(x,z)\,dz.
 \]
 
-代入：
+乘除 $q_\phi(z\mid x)$：
 
 \[
-D_{KL}
+\log p_\theta(x)
 =
-\mathbb E_q[
-\log q(z)-\log p(x,z)
-]
+\log
+\int
+q_\phi(z\mid x)
+\frac{p_\theta(x,z)}{q_\phi(z\mid x)}
+\,dz.
+\]
+
+写成 expectation：
+
+\[
+\log p_\theta(x)
+=
+\log
+\mathbb E_{q_\phi}
+\left[
+\frac{p_\theta(x,z)}{q_\phi(z\mid x)}
+\right].
+\]
+
+由于 $\log$ concave，Jensen inequality 给出：
+
+\[
+\log p_\theta(x)
+\ge
+\mathbb E_{q_\phi}
+\left[
+\log p_\theta(x,z)
+-
+\log q_\phi(z\mid x)
+\right].
+\]
+
+右侧就是 ELBO。
+
+## Posterior-KL Identity
+
+ELBO 与 true posterior 的精确关系是：
+
+\[
+\log p_\theta(x)
+=
+\mathcal L(\theta,\phi;x)
 +
-\log p(x).
+D_{KL}(
+q_\phi(z\mid x)
+\|
+p_\theta(z\mid x)
+).
 \]
 
-整理：
+因此：
 
 \[
-\log p(x)
-=
-\underbrace{
-\mathbb E_q[
-\log p(x,z)-\log q(z)
-]
-}_{\operatorname{ELBO}}
-+
-D_{KL}(q(z)\|p(z\mid x)).
+\mathcal L\le\log p_\theta(x).
 \]
 
-## Lower-Bound Property
-
-因为：
-
-\[
-D_{KL}(q\|p)\ge0,
-\]
-
-所以：
-
-\[
-\operatorname{ELBO}
-\le
-\log p(x).
-\]
+Bound 的 gap 恰好是 posterior KL。
 
 当：
 
 \[
-q(z)=p(z\mid x),
+q_\phi(z\mid x)=p_\theta(z\mid x),
 \]
 
-KL 为 0，ELBO 恰好等于 log evidence。
+KL 为 0，ELBO 与 log evidence 相等。
 
-因此 bound 的 gap 就是 approximate posterior 与 true posterior 的 KL divergence。
+## Likelihood–Prior Decomposition
 
-## Latent Model 中的另一种写法
-
-若：
+若 generative model factorizes：
 
 \[
-p(x,z)=p(z)p(x\mid z),
+p_\theta(x,z)
+=
+p_\theta(x\mid z)p(z),
+\]
+
+则 ELBO 可以写成：
+
+\[
+\boxed{
+\mathcal L
+=
+\mathbb E_{q_\phi(z\mid x)}
+[\log p_\theta(x\mid z)]
+-
+D_{KL}(
+q_\phi(z\mid x)
+\|
+p(z)
+)
+}
+\]
+
+第一项是 expected log-likelihood；第二项约束 approximate posterior 与 prior 的差异。
+
+在某些 VAE likelihood parameterization 下，第一项可以表现为 MSE 或 BCE-like reconstruction term，但“ELBO = reconstruction loss + KL”不是 ELBO 的一般定义。
+
+## ELBO as Model-Learning Objective
+
+若 $\theta$ 也参与优化：
+
+\[
+\max_{\theta,\phi}
+\mathcal L(\theta,\phi;x),
 \]
 
 则：
 
-\[
-\operatorname{ELBO}
-=
-\mathbb E_{q(z)}[
-\log p(x\mid z)
-]
--
-D_{KL}(q(z)\|p(z)).
-\]
+- $\phi$ 改善 approximate posterior；
+- $\theta$ 提高 model 对 data 的 likelihood。
 
-这分成两部分。
-
-第一项：
-
-\[
-\mathbb E_q[\log p(x\mid z)]
-\]
-
-要求 sampled latent 能让 generative model 对 observed $x$ 给出高 likelihood。
-
-第二项：
-
-\[
--D_{KL}(q(z)\|p(z))
-\]
-
-限制 approximate posterior 不要任意偏离 prior。
-
-## ELBO 不是“Reconstruction Loss + KL”的定义
-
-在 VAE 中，如果 decoder likelihood 选 Gaussian，negative expected log-likelihood 常可以对应到 MSE-like reconstruction term；若选 Bernoulli，则会出现 binary cross-entropy-like term。
-
-所以“reconstruction + KL”是特定 likelihood parameterization 下的训练形式。
-
-更根本的定义仍然是：
-
-\[
-\mathbb E_q[
-\log p(x,z)-\log q(z)
-].
-\]
+因此 ELBO 同时服务 inference 与 generative-model learning。
 
 ## Conditional ELBO
 
-如果建模：
+若模型有 observed condition $c$：
 
 \[
-p(y,z\mid x)
-=p(z\mid x)p(y\mid x,z),
+p_\theta(y,z\mid c)
+=
+p_\theta(y\mid c,z)p(z\mid c),
 \]
 
-使用 variational posterior：
+则 conditional ELBO 为：
 
 \[
-q(z\mid x,y),
-\]
-
-则 conditional ELBO：
-
-\[
-\log p(y\mid x)
+\log p_\theta(y\mid c)
 \ge
-\mathbb E_{q(z\mid x,y)}
+\mathbb E_{q_\phi(z\mid c,y)}
 [
-\log p(y\mid x,z)
+\log p_\theta(y\mid c,z)
 ]
 -
 D_{KL}
-(q(z\mid x,y)\|p(z\mid x)).
+(q_\phi(z\mid c,y)\|p(z\mid c)).
 \]
 
-这就是 Conditional VAE 等模型的数学基础。
+这是 CVAE 的基础 objective。
 
-## ELBO 的两个角色
+## Tightness
 
-ELBO 同时在做：
+ELBO tightness 取决于：
 
-1. **model learning**：提高 observed data likelihood 的 lower bound；
-2. **inference learning**：缩小 $q$ 与 true posterior 的 gap。
+\[
+D_{KL}(q_\phi(z\mid x)\|p_\theta(z\mid x)).
+\]
 
-所以它不是单纯 regularizer，也不是为了让 latent “长得好看”而加的 penalty。
+若 variational family 过于简单，即使 optimization 完美，bound 也可能较松。
 
-## Sources
+因此低 ELBO gap 需要：
 
-- Blei, Kucukelbir, McAuliffe. *Variational Inference: A Review for Statisticians*. 2017.
-- Kingma & Welling. *Auto-Encoding Variational Bayes*. 2013/2014.
+1. variational family 有足够表达能力；
+2. inference optimization / amortized encoder 能找到好的 approximation。
+
+## Monte Carlo Estimation
+
+Expected log-likelihood：
+
+\[
+\mathbb E_q[
+\log p_\theta(x\mid z)
+]
+\]
+
+通常使用 samples：
+
+\[
+z^{(l)}\sim q_\phi(z\mid x)
+\]
+
+估计：
+
+\[
+\frac1L
+\sum_{l=1}^{L}
+\log p_\theta(x\mid z^{(l)}).
+\]
+
+若 KL term 有 analytic form，可以精确计算；否则也可能需要 sampling estimator。
+
+## Importance-Weighted Bounds
+
+使用多个 importance samples 可以构造 tighter lower bound，例如 IWAE objective：
+
+\[
+\mathcal L_K
+=
+\mathbb E
+\left[
+\log
+\frac1K
+\sum_{k=1}^{K}
+\frac{p(x,z_k)}{q(z_k\mid x)}
+\right].
+\]
+
+随着 $K$ 增大，bound 通常可以更接近 $\log p(x)$。这说明 ELBO 并不是唯一 possible variational lower bound。
+
+## Connections
+
+- [Variational Inference](/mathematics/probability/variational-inference/)：ELBO 的 inference interpretation。
+- [KL Divergence](/mathematics/information-theory/kl-divergence/)：ELBO gap 与 regularization term 的核心 quantity。
+- [Variational Autoencoder](/generative-models/variational-autoencoder/)：用 neural networks 优化 ELBO。

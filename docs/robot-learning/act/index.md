@@ -15,223 +15,235 @@ related:
 
 # ACT
 
-ACT（Action Chunking with Transformers）是一种从机器人当前观测直接预测未来一段动作的 imitation-learning policy。它最容易被理解成下面这个系统：
+ACT（Action Chunking with Transformers）是一种面向机器人 imitation learning 的 policy architecture。给定当前多路视觉观测与机器人 proprioception，ACT 一次预测未来一段连续动作，而不是只输出下一个 control action。
+
+在时刻 $t$，可以抽象写成
+
+\[
+\hat A_t
+=
+(\hat a_t,\hat a_{t+1},\ldots,\hat a_{t+k-1})
+=
+\pi_\theta(o_t),
+\]
+
+其中 $k$ 是 action chunk length。
+
+整体数据流为
 
 ```text
-当前时刻 t
-
-多路相机图像 ───────┐
-                    │
-当前关节位置 q_t ───┤
-                    ↓
-                   ACT
-                    ↓
-        未来一段连续动作
+multi-camera images ─┐
+                     │
+current joint state ─┤
+                     ↓
+                    ACT
+                     ↓
+           future action chunk
 [a_t, a_{t+1}, ..., a_{t+k-1}]
 ```
 
-如果机器人有 14 个需要控制的关节，并且 chunk size 为 100，那么 ACT 一次输出的不是一个 14 维动作，而是一个大约为
+在 ALOHA 的双臂设置中，action 表示 absolute joint-position targets。若 action dimension 为 14、chunk size 为 100，则单次 policy output 的主要 action tensor 为
 
 \[
-100\times 14
+100\times14.
 \]
 
-的动作序列。每一行对应未来一个 timestep 的 joint target。
+Transformer、CVAE 与 ResNet 都是 ACT architecture 的组成或依赖机制；ACT 的核心 policy design 是围绕 action-chunk prediction、latent-conditioned imitation learning 与 closed-loop chunk execution 组织这些组件。
 
-这件事——**一次预测一段动作，而不是只预测下一步**——是理解 ACT 的起点。Transformer、CVAE、ResNet 都是帮助它完成这件事的组件，不是 ACT 本身的定义。
+## Action Chunk Prediction
 
-## 从单步控制到动作片段
-
-最简单的 single-step [Behavior Cloning](/robot-learning/behavior-cloning/) policy 可以写成
+一个 single-step [Behavior Cloning](/robot-learning/behavior-cloning/) policy 可以写成
 
 \[
-\hat a_t=\pi_\theta(o_t),
+\hat a_t=\pi_\theta(o_t).
 \]
 
-其中 $o_t$ 是当前观测，$\hat a_t$ 是下一步动作。
-
-这意味着一段 500 步的任务，policy 要连续做大约 500 次彼此衔接的决策。前面某一步只要稍微偏离 demonstration，后面看到的状态就可能越来越不像训练数据，误差也会继续传下去。
-
-ACT 改成
+ACT 改为同时预测连续 $k$ 个动作：
 
 \[
-(\hat a_t,\hat a_{t+1},\ldots,\hat a_{t+k-1})
-=\pi_\theta(o_t).
+\hat a_{t:t+k-1}=\pi_\theta(o_t).
 \]
 
-模型现在一次表达的是一个短时间内完整、连贯的动作片段。例如“手向前移动、夹住物体、开始抬起”可以由同一次预测覆盖，而不必在每一个控制周期重新独立决定下一步。
+这就是 [Action Chunking](/robot-learning/act/action-chunking/)。一个 chunk 内的多个动作被作为联合输出结构建模，因此模型可以直接表示一段局部运动的时间相关性。
 
-这就是 [Action Chunking](/robot-learning/act/action-chunking/)。
+论文将这种设计用于降低 policy 层面的 effective horizon：较长任务不再完全依赖每个 control timestep 的独立 one-step prediction 逐步串联。
 
-## ACT 的运行方式
+## Closed-Loop Execution
 
-“预测 100 步”不等于“预测一次以后 100 步都不再看相机”。ACT 的实际执行仍然可以保持闭环：在下一个 timestep，机器人拿到新的图像和关节状态，再次调用 policy，又得到一个新的 action chunk。
+预测一个长度为 $k$ 的 action chunk 并不要求机器人在接下来 $k$ 步完全 open-loop 执行。
 
-于是会出现重叠：
+ACT 的 temporal aggregation 模式在每个 timestep 都可以根据最新 observation 再次查询 policy：
 
 ```text
-t 时刻预测：      a_t   a_t+1 a_t+2 a_t+3 ...
-t+1 时刻预测：          a_t+1 a_t+2 a_t+3 ...
-t+2 时刻预测：                a_t+2 a_t+3 ...
+t      : [a_t,   a_t+1, a_t+2, ...]
+t + 1  :        [a_t+1, a_t+2, ...]
+t + 2  :               [a_t+2, ...]
 ```
 
-对同一个未来时刻，例如 $t+2$，模型可能已经给出多次预测。ACT 的 [Temporal Ensemble](/robot-learning/act/temporal-ensemble/) 会把这些预测加权融合，而不是只保留其中一个。
+因此同一个实际执行时刻可能拥有多个在不同历史 observations 下产生的预测。[Temporal Ensemble](/robot-learning/act/temporal-ensemble/) 对这些 overlapping predictions 进行加权融合。
 
-因此 ACT 同时保留了两件事：
+ACT 的执行策略由此同时具有：
 
-- **chunk-level prediction**：一次预测较长的动作结构；
-- **closed-loop replanning**：每一步仍能利用最新观测修正后续动作。
+- chunk-level temporal prediction；
+- timestep-level observation feedback；
+- overlapping predictions 的 temporal aggregation。
 
-## 整个模型先看一遍
+## Policy Architecture
 
-先忽略内部细节，ACT policy 可以画成：
+部署时的 policy 主干可以概括为
 
 ```text
-Camera images
-     │
+camera images
      ↓
-   ResNet
-     │
-     ├─────────────┐
-     │             │
-Joint state ───────┤
-                   ↓
-          Transformer Encoder
-                   │
-                   ↓
-                Memory
-                   │
-          Action Queries
-                   │
-                   ↓
-          Transformer Decoder
-                   │
-                   ↓
-           Future action chunk
+ResNet backbone
+     ↓
+spatial visual features ───────┐
+                               │
+current joint state ───────────┤
+                               ↓
+                    Transformer Encoder
+                               ↓
+                            memory
+                               ↑
+                        action queries
+                               ↓
+                    Transformer Decoder
+                               ↓
+                       future action chunk
 ```
 
-视觉图像先经过 [ResNet](/deep-learning/cnn/resnet/) 变成 feature map；当前 joint state 也被映射到同一个 hidden dimension。它们一起进入 Transformer，使模型能够把多个相机区域、机器人自身状态与未来动作槽位联系起来。
+[ResNet](/deep-learning/cnn/resnet/) 把 RGB images 转为 spatial feature maps；current joint state 被投影到 Transformer hidden dimension；Transformer encoder 建立 observation-side memory；decoder 中的 learned action queries 对应 future chunk 的输出 slots。
 
-这里的 Transformer 并不是为了生成文字。它只是一个能够让不同信息相互读取、再并行产生多个输出位置的网络结构。
+ACT 的 query-based decoder pattern 继承自 [DETR](/deep-learning/detr/) 的 learned output queries，而具体输出语义由 object slots 改成 future action positions。
 
-## Training-only latent z
+更详细的 tensor 与模块关系见 [Architecture](/robot-learning/act/architecture/) 和 [Vision Pipeline](/robot-learning/act/vision-pipeline/)。
 
-到目前为止，这个模型看起来像一个普通的确定性网络：给 observation，输出 action chunk。
+## Training-Time Latent Variable
 
-但人类 demonstration 常常不是完全一致的。即使面对相近状态，不同示范也可能有不同的速度、微小轨迹、抓取姿态或操作习惯。ACT 因此在训练阶段再加入一个 latent variable $z$：
+Human demonstrations 即使处于相似 observation，也可能存在动作速度、细微轨迹、操作风格等差异。ACT 在训练阶段使用 Conditional Variational Autoencoder 结构，引入 latent variable $z$。
 
-```text
-                     ┌─ current joint state
-future action chunk ─┤
-                     ↓
-            training-only encoder
-                     ↓
-                     z
-
-camera + joint state + z
-           │
-           ↓
-        ACT decoder
-           │
-           ↓
- reconstructed action chunk
-```
-
-这个结构来自 [Conditional Variational Autoencoder](/generative-models/conditional-variational-autoencoder/)。但在 ACT 中，CVAE 的作用很具体：训练时让 latent $z$ 吸收 demonstration 中难以单靠当前 observation 决定的变化。
-
-因此训练时完整关系可以先记成：
+Training-time recognition branch 使用 current qpos 与 ground-truth future action chunk 估计
 
 \[
-(o_t, a_{t:t+k-1})
-\rightarrow z
-\rightarrow \hat a_{t:t+k-1}.
+q_\phi(z\mid q_t,A_t),
 \]
 
-这里真实的 future action chunk 一方面是监督目标，另一方面也只在训练阶段用于得到 $z$。
+其中
 
-## 推理时模型会变简单
+\[
+A_t=a_{t:t+k-1}.
+\]
 
-机器人真正部署时没有“真实未来动作”可以提供给 encoder。因此 training-only CVAE encoder 会被拿掉。
+得到 $z$ 后，policy predictor 学习
 
-ACT 论文与官方实现采用 standard normal prior，并在推理时使用其均值：
+\[
+p_\theta(A_t\mid o_t,z).
+\]
+
+因此 ground-truth future action 在训练中同时具有两种角色：
+
+1. reconstruction target；
+2. recognition encoder 的输入。
+
+这条 latent branch 只在训练时存在。其具体对应关系见 [CVAE in ACT](/robot-learning/act/cvae-in-act/)。
+
+## Inference-Time Latent Choice
+
+部署时没有 ground-truth future action，因此 recognition encoder 无法运行。ACT 使用 standard normal prior
+
+\[
+p(z)=\mathcal N(0,I)
+\]
+
+并在 released inference 中固定
 
 \[
 z=0.
 \]
 
-于是推理时真正运行的数据流重新变成：
+因此 inference graph 只保留 observation-side policy predictor：
 
 ```text
-当前图像 + 当前关节状态
-            │
-            ↓
-       ACT policy
-            │
-            ↓
-      future action chunk
-            │
-            ↓
-     Temporal Ensemble
-            │
-            ↓
-       当前执行动作
+latest images + latest joint state + z=0
+                  ↓
+               ACT policy
+                  ↓
+          future action chunk
+                  ↓
+          Temporal Ensemble
+                  ↓
+         current executed action
 ```
 
-所以不要把 ACT 理解成“部署时先用未来动作算 z，再预测未来动作”。那条支路只属于 training。
+这使 released ACT 的部署预测是确定性的；CVAE 的 stochastic posterior sampling 属于 training-time latent modeling，而不是 deployment 时必须保留的随机控制策略。
 
-## ACT 组件的职责分工
+## Input and Output Variables
 
-现在可以把整个系统拆成几块：
-
-| 部分 | 在 ACT 中的作用 |
-|---|---|
-| [Behavior Cloning](/robot-learning/behavior-cloning/) | 从 demonstration 学习 robot policy 的基本训练方式 |
-| [Action Chunking](/robot-learning/act/action-chunking/) | 一次预测未来一段动作，缩短 policy 层面的决策链 |
-| [ResNet](/deep-learning/cnn/resnet/) | 把相机图像转成视觉 features |
-| [Transformer](/deep-learning/transformer/) | 融合 observation，并让多个 action query 从 memory 中读取信息 |
-| [CVAE in ACT](/robot-learning/act/cvae-in-act/) | 训练时建模 demonstration 中的 latent variation |
-| [Temporal Ensemble](/robot-learning/act/temporal-ensemble/) | 融合同一执行时刻来自多个 overlapping chunks 的预测 |
-
-这些模块之间的关系比模块名称本身更重要。ACT 的创新不是“发明 Transformer”或“发明 CVAE”，而是把它们围绕 action-chunk prediction 组织成一个适合细粒度机器人操作的 policy。
-
-## 输入和输出的具体含义
-
-在 ALOHA 论文的双臂设置中，observation 包含多路 RGB 图像和双臂关节位置。可以抽象写成
+可将时刻 $t$ 的 observation 写为
 
 \[
-o_t=(I_t^1, I_t^2,\ldots,I_t^C,q_t).
+o_t=(I_t^1,\ldots,I_t^C,q_t),
 \]
 
 其中：
 
-- $I_t^c$：第 $c$ 个相机在时刻 $t$ 的图像；
-- $q_t$：当前 proprioception，在论文设置中主要是 joint positions；
-- $a_t$：机器人需要执行的 action，在该系统中是 absolute joint-position target。
+- $I_t^c$：第 $c$ 个 camera 的 RGB image；
+- $q_t$：当前 proprioceptive state，在 ALOHA 实验中主要是 joint positions；
+- $A_t$：未来 action chunk。
 
-ACT 学到的是
+在论文和 released implementation 的主要 ALOHA 设置中，action 是 absolute joint-position target，而不是 torque command 或 end-effector pose。
+
+## Training Objective
+
+Released ACT implementation 的主要 objective 为
 
 \[
-\pi_\theta(a_{t:t+k-1}\mid o_t),
+\mathcal L
+=
+\mathcal L_{L1}
++
+\beta\mathcal L_{KL},
 \]
 
-更准确地说，训练阶段还通过 latent $z$ 构造一个 conditional generative model，而部署时使用固定 $z=0$ 得到确定性预测。
+其中 $\mathcal L_{L1}$ 比较 predicted chunk 与 demonstration action chunk，$\mathcal L_{KL}$ 约束 approximate posterior 接近 standard normal prior。
 
-## 从这里继续深入
+论文 Algorithm 1、方法正文与 released code 在 reconstruction loss 描述上存在细节差异，见 [Paper and Released Implementation](/robot-learning/act/paper-and-released-implementation/)。
 
-如果现在只记住一句话，可以记成：
+## Component Boundaries
 
-> **ACT 是一个每一步都重新观察机器人状态、但每次一次预测未来一段动作的 imitation-learning policy。训练阶段再用 CVAE latent 建模示范差异，部署阶段通过 temporal ensemble 融合重叠的 action chunks。**
+ACT 使用多项已有机制，但各组件承担不同职责：
 
-接下来可以按模型内部结构继续：
+| Component | Role in ACT |
+|---|---|
+| [Behavior Cloning](/robot-learning/behavior-cloning/) | 从 demonstrations 学习 policy 的监督学习基础 |
+| [Action Chunking](/robot-learning/act/action-chunking/) | 把输出单位扩展为 future action sequence |
+| [ResNet](/deep-learning/cnn/resnet/) | 提取 spatial visual features |
+| [Transformer](/deep-learning/transformer/) | 建立 observation memory 与 query-based action decoding |
+| [CVAE in ACT](/robot-learning/act/cvae-in-act/) | 训练阶段表示 demonstration variation |
+| [Temporal Ensemble](/robot-learning/act/temporal-ensemble/) | 融合 overlapping chunks 对同一 timestep 的预测 |
 
-- [Action Chunking](/robot-learning/act/action-chunking/)：一次预测一段动作具体改变了什么；
-- [Temporal Ensemble](/robot-learning/act/temporal-ensemble/)：重叠预测怎样融合；
-- [Architecture](/robot-learning/act/architecture/)：ACT 网络内部每条数据流；
-- [CVAE in ACT](/robot-learning/act/cvae-in-act/)：latent branch 在 ACT 中如何工作；
-- [Training](/robot-learning/act/training/) 与 [Inference](/robot-learning/act/inference/)：训练和部署为什么不是同一张图；
-- [Complete Data Flow](/robot-learning/act/complete-data-flow/)：把整个过程按 tensor/data flow 重新串起来。
+这些组件共同构成 ACT，但它们各自的通用理论仍属于对应 canonical topics。
+
+## Limitations and Scope
+
+ACT 的 action chunk 能降低 sequential prediction burden，但 chunk 内较远动作仍然更依赖未来未观测信息；chunk size 因此存在 prediction horizon 与 temporal structure 之间的折中。
+
+Temporal Ensemble 可以平滑 overlapping predictions，却不能单独解决严重 distribution shift 或 observation error。CVAE latent 也不保证自动学习出可解释的 human style dimensions。
+
+ACT 的实验重点是 fine-grained bimanual manipulation 与低成本 teleoperation demonstrations，因此把其结果推广到不同 action spaces、control frequencies 或 robot embodiments 时需要重新验证 architecture 与 data assumptions。
+
+## Internal Topics
+
+- [Action Chunking](/robot-learning/act/action-chunking/)
+- [Temporal Ensemble](/robot-learning/act/temporal-ensemble/)
+- [Architecture](/robot-learning/act/architecture/)
+- [CVAE in ACT](/robot-learning/act/cvae-in-act/)
+- [Vision Pipeline](/robot-learning/act/vision-pipeline/)
+- [Training](/robot-learning/act/training/)
+- [Inference](/robot-learning/act/inference/)
+- [Complete Data Flow](/robot-learning/act/complete-data-flow/)
 
 ## Sources
 
-- Zhao et al., **Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware**, 2023. https://arxiv.org/abs/2304.13705
+- Zhao et al. *Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware*. 2023. https://arxiv.org/abs/2304.13705
 - Official ACT implementation. https://github.com/tonyzhaozh/act

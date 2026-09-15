@@ -76,7 +76,7 @@ Policy forward pass 输出
 
 ## 第四步：把当前 chunk 写入历史预测表
 
-可以把所有 chunks 组织成二维表：
+所有 chunks 可以组织为二维 prediction table：
 
 ```text
 query time ↓       action time →

@@ -73,7 +73,7 @@ X → K
 X → V
 ```
 
-attention formula 本身没有变化，变化的是 information ownership。
+attention formula 本身没有变化，区别在于 Query 与 Key / Value 来自不同 representation sources。
 
 ## Output 数量由 Query 决定
 

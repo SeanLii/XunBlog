@@ -92,10 +92,11 @@ p_i=
 
 极限上：
 
-- $T\to0$：趋向 one-hot argmax；
-- $T\to\infty$：趋向 uniform distribution。
+- 当最大 logit 唯一时，$T\to0^+$ 会把全部 probability mass 集中到该最大位置，因此趋向对应的 one-hot distribution；
+- 若存在多个并列最大 logits，$T\to0^+$ 时 probability mass 会只保留在这些最大位置上，并在它们之间平均分配，而不是收敛到唯一 one-hot vector；
+- $T\to\infty$ 时，所有有限 logits 之间的相对差异被压到 0，distribution 趋向 uniform distribution。
 
-这使 Softmax 不只是一个固定归一化公式，还能控制 probability mass 的集中程度。
+因此 temperature 控制的是 logits 差异在归一化前被放大的程度。低 temperature 并不无条件等于“取 argmax”；只有唯一最大值时才得到唯一 one-hot 极限。
 
 ## Numerical Stability
 

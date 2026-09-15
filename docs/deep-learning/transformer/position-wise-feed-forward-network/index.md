@@ -43,7 +43,7 @@ y_i=\operatorname{FFN}(x_i)
 
 对所有 positions 使用同一组 parameters。
 
-## 它在 Transformer Layer 中做什么
+## Role in a Transformer Layer
 
 Attention 负责在 positions 之间交换信息。
 
@@ -137,7 +137,7 @@ W_2(W_1x+b_1)+b_2
 W_2\operatorname{ReLU}(W_1x+b_1)+b_2
 \]
 
-才形成真正的 nonlinear mapping。
+构成 nonlinear mapping。
 
 完整的一般结构见 [Multilayer Perceptron](/deep-learning/core/multilayer-perceptron/)。
 

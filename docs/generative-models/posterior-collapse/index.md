@@ -78,10 +78,10 @@ p(x_t\mid x_{<t},z)
 
 如果某些 data points 本来不需要大量 latent information，较小 KL 不一定有问题。
 
-真正关心的是：
+直接的诊断包括：
 
 - $q(z\mid x)$ 是否随 $x$ 有 meaningful variation；
-- decoder output 是否真正受 $z$ 影响；
+- decoder output 是否显著依赖 $z$；
 - latent 是否携带 task 需要的 information。
 
 所以不能只看一个 scalar KL 数值就判定 collapse。

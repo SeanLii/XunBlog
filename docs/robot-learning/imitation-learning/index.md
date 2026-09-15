@@ -13,204 +13,222 @@ related:
 
 # Imitation Learning
 
-Imitation Learning 是从 expert demonstrations 学习行为策略的一类方法。
+Imitation Learning（模仿学习）研究如何利用 expert demonstrations 学习决策策略。监督信息来自 expert behavior，而不是由 agent 通过 reward trial-and-error 独立发现策略。
 
-与 reinforcement learning 主要依赖 reward signal 不同，imitation learning 的核心 supervision 来自“expert 在什么状态下采取了什么行为”。
-
-一条 demonstration trajectory 可以写成：
+在 sequential decision process 中，一条 demonstration trajectory 可以写成：
 
 \[
-\tau=
+\tau
+=
 (o_1,a_1,o_2,a_2,\ldots,o_T,a_T),
 \]
 
 其中：
 
-- $o_t$：agent 在时刻 $t$ 能观察到的信息；
-- $a_t$：expert 执行的 action。
+- $o_t$ 是时刻 $t$ 的 observation；
+- $a_t$ 是 expert action；
+- $T$ 是 trajectory horizon。
 
 目标是学习 policy：
 
 \[
-\pi(a\mid o)
+\pi_\theta(a_t\mid o_{\le t}),
 \]
 
-或 history-conditioned policy，使 learned agent 在环境中产生接近 expert 的行为。
+使其在环境中执行时产生与 expert 相近的行为。
 
-## “模仿”真正意味着什么
+## Demonstration Distribution
 
-表面上看，demonstration dataset 和 supervised learning dataset 很像：
+设 expert policy 为 $\pi^*$。当 expert 与环境交互时，会诱导出自己的 state / observation distribution：
 
 \[
-(o_t,a_t).
+d_{\pi^*}.
 \]
 
-但 sequential decision-making 有一个关键不同：
+demonstration dataset 是从这一 distribution 上得到的 trajectories。因此 imitation learning 的监督不仅包含“正确 action 是什么”，还隐含了 expert 通常访问哪些 states。
 
-> **agent 的 action 会改变未来自己看到的 observations。**
+## Policy-Induced Distribution
 
-所以 prediction error 不是只影响当前 sample；错误 action 会把系统带到新的 state，改变后续 input distribution。
+部署 learned policy $\pi_\theta$ 后，环境中的 observation distribution 由 learner 自己的行为决定：
 
-这也是 imitation learning 不能完全当成普通 i.i.d. supervised learning 的原因。
+\[
+d_{\pi_\theta}.
+\]
 
-## Expert Demonstration
+环境 transition 可写为：
 
-Demonstrations 可以来自：
+\[
+s_{t+1}\sim P(\cdot\mid s_t,a_t).
+\]
 
-- 人类直接控制机器人；
-- teleoperation；
-- scripted / planning expert；
-- another policy；
-- simulation expert；
-- offline logged trajectories。
+当前 action 会影响未来 state，未来 state 又成为 policy 的新输入。如果：
 
-数据质量不仅取决于数量，还取决于：
+\[
+d_{\pi_\theta}\neq d_{\pi^*},
+\]
 
-- expert 是否稳定；
-- state coverage 是否足够；
-- 是否包含 recovery behavior；
-- observation / action synchronization；
-- action representation 是否适合学习。
+learner 可能进入 demonstrations 很少覆盖的区域。这是 imitation learning 中 distribution shift 与 compounding error 的来源。
 
-因此 imitation learning 的数据问题本身就是算法表现的一部分。
+## Offline 与 Interactive Imitation Learning
+
+根据训练过程中是否还能访问 expert，可以区分两类数据条件。
+
+### Offline imitation
+
+训练只使用预先收集好的 demonstrations：
+
+\[
+\mathcal D=\{\tau_i\}_{i=1}^{N}.
+\]
+
+训练阶段不能针对 learner 新访问的 state 再查询 expert。这种设置适合 real-world robotics 中 expert interaction 昂贵、数据已经离线收集的情况。
+
+### Interactive imitation
+
+learner rollout 过程中可以继续查询 expert：
+
+\[
+o_t\sim d_{\pi_\theta}
+\quad\Rightarrow\quad
+a_t^*=\pi^*(o_t).
+\]
+
+这样可以直接获得 learner-induced states 上的 supervision。[DAgger](/robot-learning/dagger/) 是代表性的 interactive imitation algorithm。
 
 ## Behavior Cloning
 
-最直接的方法是 [Behavior Cloning](/robot-learning/behavior-cloning/)：把 demonstration pairs 当 supervised examples，训练：
+[Behavior Cloning](/robot-learning/behavior-cloning/) 是最直接的 imitation-learning 方法。它把 expert observation-action pairs 作为 supervised data，优化：
 
 \[
-\hat a_t=\pi_\theta(o_t)
+\theta^*
+=
+\arg\min_\theta
+\mathbb E_{(o,a^*)\sim\mathcal D}
+[\ell(\pi_\theta(o),a^*)].
 \]
 
-去匹配 expert action：
+若 policy 输出概率分布，则常用 negative log-likelihood：
 
 \[
-a_t^*.
+\mathcal L_{\text{BC}}
+=
+-\mathbb E_{(o,a^*)\sim\mathcal D}
+\log \pi_\theta(a^*\mid o).
 \]
 
-它简单、可扩展，并且是大量现代 robot policies 的训练基础。
+Behavior Cloning 的优势是简单、可并行、可以完全 offline；主要限制是训练 distribution 与部署 distribution 可能不同。
 
-但 Behavior Cloning 只在 expert visited states 上直接得到监督。
+## Sequential Error Propagation
 
-## Distribution Shift
-
-训练数据来自 expert policy induced distribution：
+单步 prediction error 在 sequential control 中可能改变后续输入。若某次 action 使系统偏离 expert trajectory：
 
 \[
-d_{\pi^*}(o).
+s_t\rightarrow \tilde s_{t+1},
 \]
 
-部署时 observations 来自 learned policy：
+后续 policy 不再面对典型 expert state，而是在新的 distribution 上继续预测。
+
+因此 imitation-learning quality 不能只用 per-step validation error 判断，还需要 closed-loop rollout evaluation，例如 task success、trajectory completion、recovery ability 与 long-horizon stability。
+
+## Demonstration Coverage
+
+Policy 能否在部署中稳定工作，很大程度上取决于 dataset 覆盖哪些 situations。重要维度包括：
+
+- task diversity；
+- initial-state diversity；
+- object / environment variation；
+- recovery trajectories；
+- failure-adjacent states；
+- observation quality；
+- action calibration；
+- temporal synchronization。
+
+对于 offline imitation，dataset coverage 是无法通过训练算法完全消除的限制。
+
+## Multimodal Expert Behavior
+
+同一 observation 下可能存在多个合理 actions，因此：
 
 \[
-d_{\pi_\theta}(o).
+p(a\mid o)
 \]
 
-一旦 learned policy 发生小错误：
+可以是 multimodal distribution。
 
-```text
-expert trajectory
-───────────────→
+若 model 只输出单一 regression mean，可能产生不属于任何 expert mode 的中间 action。更表达性的 imitation policies 可以使用 mixture distributions、latent-variable models、autoregressive models、diffusion / flow models 或 sequence-level action generation。
 
-learned policy
-──────↘
-       new state
-```
-
-它可能进入 training data 很少出现的状态。
-
-此时 prediction 变差，又产生更大 deviation，形成 compounding error。
-
-这不是 BC 的“代码 bug”，而是 sequential imitation 的基本 distribution mismatch。
-
-## Interactive Imitation Learning
-
-一种解决方向是让 learner 在自己会遇到的 states 上获得 expert labels。
-
-[DAgger](/robot-learning/dagger/) 的典型流程：
-
-```text
-current policy rollout
-        ↓
-visit learner-induced states
-        ↓
-expert labels those states
-        ↓
-aggregate into dataset
-        ↓
-retrain policy
-```
-
-这样 training distribution 会逐渐覆盖 learned policy 自己产生的 states。
-
-## Offline 与 Interactive 两种数据条件
-
-现实 robotics 中，expert query 可能昂贵甚至不可用。
-
-因此可以粗分：
-
-- offline imitation：只使用已经收集好的 demonstrations；
-- interactive imitation：训练中还能让 expert 对新 states 提供反馈。
-
-算法选择会受到这个数据条件直接限制。
-
-## Multimodality
-
-同一个 observation 可能存在多种都合理的 expert actions。
-
-例如绕障碍物可以从左边，也可以从右边。
-
-如果用简单 unimodal regression，模型可能预测两种动作的平均，而平均动作反而不可行。
-
-因此 modern imitation policies 会使用：
-
-- latent-variable models；
-- mixture distributions；
-- diffusion / flow generative policies；
-- chunked sequence prediction。
-
-这些是在解决 output distribution structure，不只是提高 network size。
+这些方法改变 policy distribution 的表示，但不改变 imitation learning 的监督来源。
 
 ## Partial Observability
 
-如果 observation $o_t$ 没有包含决策所需全部 state，单步 mapping：
+若 observation $o_t$ 不包含决策所需的全部 state，则：
 
 \[
-a_t=\pi(o_t)
+\pi(a_t\mid o_t)
 \]
 
-可能本身就是 ambiguous。
+可能无法唯一确定正确 action。
 
-可以加入：
+常见处理包括使用 observation history：
 
-- observation history；
-- recurrent state；
-- temporal context；
-- multiple camera views；
-- proprioception。
+\[
+\pi(a_t\mid o_{t-L:t}),
+\]
 
-所以“更多 demonstration”无法自动修复 information 本身缺失的问题。
+或引入 recurrent / state-estimation mechanism。在 robotics 中，多相机视觉、proprioception、force information 与 temporal context 都可能减少 partial observability。
 
-## Policy 表示形式
+## Action Representation
 
-Imitation learning 并不规定 policy 一定输出单个 action。
+Imitation learning 不规定 policy 必须输出哪种 action representation。可能包括：
 
-可以输出：
-
-- one-step action；
-- probability distribution over actions；
-- action sequence / chunk；
-- latent plan；
+- discrete actions；
+- continuous joint / Cartesian commands；
+- probability distributions；
+- action chunks；
 - tokenized actions；
-- continuous generative action trajectory。
+- continuous generative trajectories。
 
-ACT 的 action chunking、π0 的 flow-based action generation 都属于 imitation learning policy design 的不同选择。
+不同 representation 改变 optimization、latency、multimodality 与 closed-loop behavior，但监督仍可以来自 demonstrations。
 
-## 现代 Robot Policy 中的位置
+## Main Method Families
 
-现代 robot imitation policies 会在同一套基本问题上做不同选择：如何表示 action、怎样处理 multimodality、是否预测 action chunk、是否使用 generative objective，以及如何在 closed-loop rollout 中获得恢复能力。
+在当前知识范围内，可以区分三类常见方法：
 
-ACT、π0 等模型只是这些设计空间中的具体实例；demonstration supervision、distribution shift、multimodality 与 closed-loop rollout 本身属于 imitation learning 的一般问题。
+### Direct supervised imitation
+
+直接学习 expert mapping，例如 Behavior Cloning。
+
+### Interactive dataset aggregation
+
+在 learner-induced states 上继续获得 expert labels，例如 DAgger。
+
+### Structured / generative policy modeling
+
+保持 demonstration supervision，但改变 policy output distribution 与 temporal representation，例如 action chunking、latent-variable policy 与 diffusion/flow policy。
+
+更广义的 imitation learning 还包括从 demonstrations 推断 reward / objective 的方法，例如 inverse reinforcement learning；它与直接 policy cloning 的建模目标不同。
+
+## Evaluation
+
+Imitation policy 的评价通常需要同时考虑：
+
+- per-step prediction loss；
+- closed-loop task success；
+- long-horizon reliability；
+- recovery behavior；
+- distribution generalization；
+- sample efficiency；
+- control latency；
+- safety constraints。
+
+训练 loss 降低并不自动意味着 rollout performance 提升。
+
+## Connections
+
+- [Behavior Cloning](/robot-learning/behavior-cloning/)：offline supervised imitation 的基本形式。
+- [DAgger](/robot-learning/dagger/)：通过 learner-induced states 减少 distribution mismatch。
+- [ACT](/robot-learning/act/)：使用 action chunking 与 Transformer 的 robot imitation policy。
+- [Vision-Language-Action Model](/robot-learning/vision-language-action-model/)：将 visual-language representation 与 robot action policy 结合。
 
 ## Sources
 

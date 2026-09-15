@@ -41,7 +41,7 @@ z=\mu+\sigma\odot\epsilon.
 
 ## 但部署时没有 A_t
 
-机器人在真正执行时只知道当前 observation。未来正确动作正是模型要预测的东西，所以不可能先把它送进 latent encoder。
+机器人在执行时只知道当前 observation。未来正确动作正是模型要预测的东西，所以不可能先把它送进 latent encoder。
 
 因此
 

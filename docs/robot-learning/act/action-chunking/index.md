@@ -32,7 +32,7 @@ Action Chunking 是把 policy 的基本预测单位从“一个动作”改成�
 
 ACT 借用了更早的 “action chunking” 名称，并把它具体化为机器人 imitation learning 中“根据当前 observation 一次预测未来 $k$ 步动作”的设计；本文只讨论这一 ACT formulation。
 
-## 预测单位发生了什么变化
+## Prediction Unit
 
 假设一个机器人任务总共需要 400 个 control steps。
 
@@ -134,7 +134,7 @@ ACT 原论文使用 $k=100$ 作为其主要配置，但这属于具体实验设�
 
 ## 与 Temporal Ensemble 的关系
 
-如果只在 $t=0,k,2k,\ldots$ 查询 policy，就会形成真正的 open-loop chunks：一个 chunk 执行完才看新 observation。
+若只在 $t=0,k,2k,\ldots$ 查询 policy，则形成 strict open-loop chunk execution：一个 chunk 执行完后才使用新的 observation。
 
 ACT 更重要的做法是：每一步都重新预测。
 

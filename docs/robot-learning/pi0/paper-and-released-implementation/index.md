@@ -157,7 +157,7 @@ image module 在 JAX implementation 中使用 SigLIP `So400m/14`，与 PaliGemma
 
 核心 `Pi0.sample_actions` 负责生成一个 action chunk，本身并不实现 ACT 的 temporal ensemble。
 
-真正部署时执行 chunk 的多少步、何时重新调用 policy，属于上层 policy serving / robot control loop 的职责。
+部署时执行 chunk 的多少步、何时重新调用 policy，属于上层 policy serving / robot control loop 的职责。
 
 ## Repository 已经不只包含原始 π0
 

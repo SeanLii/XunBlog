@@ -12,137 +12,177 @@ related:
 
 # Cross-Embodiment Learning
 
-Cross-Embodiment Learning 研究如何让一个 learning system 利用来自**不同机器人 embodiment**的数据，并把跨平台的共同经验转化成可迁移能力。
+Cross-Embodiment Learning 研究如何利用来自不同 robot embodiments 的数据学习可以共享、迁移或适配的 policy representations。
 
-不同 embodiment 可能拥有：
+这里的 embodiment 包含与控制相关的 physical interface，例如 kinematics、joint count、morphology、gripper、camera placement、proprioceptive state、control frequency 与 action space。
 
-- 不同 kinematics；
-- 不同 joint counts；
-- 不同 grippers；
-- 不同 camera placement；
-- 不同 control frequencies；
-- 不同 action representations；
-- 不同 workspace 与 morphology。
+因此核心问题是：哪些知识可以跨机器人共享，哪些表示必须保留 embodiment-specific structure。
 
-所以“把所有 robot datasets concat 在一起训练”并不能自动解决 cross-embodiment problem。
+## Formal Setting
 
-## Embodiment 的含义
-
-Embodiment 不只是 robot 外壳长得不同。
-
-对 policy 而言，它决定了 observation 和 action interface。
-
-例如同一个 high-level task：
-
-> 把杯子放进盒子。
-
-Robot A 可能输出 7-DoF joint velocity；Robot B 输出 end-effector delta pose；Robot C 还多一个 gripper scalar。
-
-任务语义可以共享，但 motor realization 不同。
-
-## 可以共享什么
-
-跨机器人数据可能共享：
-
-- object semantics；
-- task language；
-- visual concepts；
-- contact / manipulation patterns；
-- high-level temporal structure；
-- “抓取 → 移动 → 放置”等 abstract skill regularities。
-
-而更低层：
-
-- joint-specific control；
-- torque / velocity ranges；
-- kinematic constraints；
-
-通常更 embodiment-specific。
-
-Cross-embodiment model 的关键是让共享 information 与专属 interface 共存。
-
-## Action Space 是最大的 Alignment 问题之一
-
-如果 action dimensions 不同：
+设不同机器人为：
 
 \[
-a^{(A)}\in\mathbb R^7,
-\qquad
- a^{(B)}\in\mathbb R^{14},
+e\in\mathcal E.
 \]
 
-不能直接要求一个固定 output head 同时解释两者。
+每个 embodiment 可以具有自己的 observation space：
 
-常见策略包括：
+\[
+\mathcal O_e
+\]
 
-- 统一到 common action representation；
-- padding + mask；
-- embodiment-specific action heads；
-- tokenized action spaces；
-- shared backbone + robot-specific adapters；
-- conditioning on embodiment identity / state schema。
+与 action space：
 
-没有一种表示天然适合全部机器人。
+\[
+\mathcal A_e.
+\]
 
-## Observation Alignment
+数据来自：
 
-不同 robots 的 cameras、proprioception 也不同。
+\[
+\mathcal D_e
+=
+\{(o_t^{(e)},a_t^{(e)},\ldots)\}.
+\]
 
-视觉部分相对容易共享，因为 images 具有相似 data type；proprioception 则需要处理不同 state dimensions 与 physical meaning。
+cross-embodiment model 希望利用：
 
-因此 cross-embodiment learning 不只是 action normalization，也涉及 multimodal input alignment。
+\[
+\bigcup_{e\in\mathcal E}\mathcal D_e
+\]
 
-## Positive Transfer 与 Negative Transfer
+学习共享 parameters、shared representations 或 transferable policy，同时正确处理各 embodiment 不同的 interfaces。
 
-共享训练只有在不同 embodiments 存在可复用 structure 时才有价值。
+## Shared 与 Embodiment-Specific Structure
 
-如果共享 representation 帮助某 robot 学得更好，叫 positive transfer。
+不同机器人虽然低层控制接口不同，但仍可能共享高层规律，例如：
 
-如果不相关或冲突数据让 performance 下降，就是 negative transfer。
+- object semantics；
+- visual features；
+- language grounding；
+- manipulation phases；
+- contact patterns；
+- task temporal structure；
+- affordances；
+- goal relationships。
 
-因此“data 越多越好”不能作为 cross-embodiment learning 的无条件结论。
+同一 task 的语义可以跨 embodiments 保持一致，而具体 joint trajectory 与 actuator command 通常不会一致。
+
+因此模型需要同时表示：
+
+\[
+\text{shared task / semantic structure}
+\]
+
+与：
+
+\[
+\text{embodiment-specific control structure}.
+\]
+
+## Action-Space Heterogeneity
+
+不同机器人 action spaces 可能具有不同维度和物理含义：
+
+\[
+a^{(A)}\in\mathbb R^{7},
+\qquad
+a^{(B)}\in\mathbb R^{14}.
+\]
+
+即使维度相同，也可能分别表示 joint position、joint velocity、end-effector delta pose、torque 或 normalized actuator command。
+
+常见对齐策略包括：
+
+- common Cartesian representation；
+- action normalization；
+- padding 与 masks；
+- embodiment-specific output heads；
+- shared backbone + adapters；
+- action tokenization；
+- conditioning on embodiment identity；
+- learned embodiment-specific mappings。
+
+这些方案在共享程度和保留物理差异之间做不同取舍。
+
+## Observation-Space Heterogeneity
+
+视觉输入通常可以使用相似 encoder，但 proprioception 更明显地依赖 embodiment。
+
+不同 robot state 可能包含不同数量的 joints、joint ordering、gripper state、base pose、force/torque 或 end-effector pose。
+
+因此需要定义：
+
+\[
+o^{(e)}\rightarrow h^{(e)}
+\]
+
+如何映射到共享 representation space，并保留各字段的物理语义。
+
+## Positive 与 Negative Transfer
+
+跨机器人联合训练希望获得 positive transfer：
+
+\[
+\text{data from robot A}
+\rightarrow
+\text{better performance on robot B}.
+\]
+
+但若 sensor semantics、control interface、task distribution 或 morphology 差异过大，共享 parameters 也可能产生 negative transfer。
+
+因此 cross-embodiment scaling 不等于简单拼接 datasets。
+
+## Data Standardization
+
+大规模 cross-embodiment training 需要统一 dataset representation，包括：
+
+- observation schema；
+- action schema；
+- timestamps；
+- camera calibration；
+- language/task labels；
+- episode boundaries；
+- metadata；
+- normalization statistics。
+
+如果不同 datasets 中相同数值字段具有不同物理含义，统一 tensor shape 并不等于统一语义。
 
 ## Open X-Embodiment
 
-Open X-Embodiment collaboration 将多个机构、多个 robot platforms 的 datasets 标准化汇总，并训练 RT-X models。
+Open X-Embodiment 将多个机构、多个 robot platforms 的 datasets 组织成标准化 collection，并训练 RT-X models 研究跨机器人联合训练。
 
-其重要意义在于把问题从“一个 robot 一个 dataset”推向：
+该工作展示了多机器人数据可以统一用于高容量 policy training，并观察到跨平台 positive transfer。它把 cross-embodiment learning 从单个 robot 的 transfer problem 推向大规模 heterogeneous data problem。
 
-```text
-many robots
-many tasks
-many environments
-      ↓
-shared generalist training
-```
+## Multi-Task 与 Cross-Embodiment
 
-论文报告跨平台 training 可以为多个 robots 带来 positive transfer，展示了 cross-embodiment scaling 的可行性。
+Multi-task learning 与 cross-embodiment learning 对应两个不同变化轴：
 
-## 与 Multi-Task Learning 的区别
+\[
+\text{task diversity}
+\times
+\text{embodiment diversity}.
+\]
 
-Multi-task learning 强调多个 tasks 共享模型。
+同一 robot 可以执行很多 tasks；同一 task 也可以由很多 robots 完成。generalist robot model 往往需要同时处理两个维度。
 
-Cross-embodiment learning 强调：
+## Generalization Settings
 
-> 即使 task 相似，执行这个 task 的 physical agent interface 也发生了变化。
+Cross-embodiment evaluation 可以包括：
 
-两者可以同时存在，但 axis 不同：
+1. 多个 seen robots 的联合训练；
+2. seen robot 上的新 task；
+3. 少量数据下对新 robot adaptation；
+4. unseen embodiment 上的 zero-shot 或 near-zero-shot transfer。
 
-```text
-task diversity
-×
-embodiment diversity
-```
+这些 setting 的难度与含义不同，不应使用同一个“cross-embodiment generalization”指标笼统概括。
 
-## 与 VLA 的关系
+## Relation to VLA Models
 
-大型 [Vision-Language-Action Model](/robot-learning/vision-language-action-model/) 常希望同时覆盖：
+大型 [Vision-Language-Action Model](/robot-learning/vision-language-action-model/) 经常同时使用多任务、多环境与多机器人 data。
 
-- many language tasks；
-- many visual environments；
-- many robot embodiments。
-
-因此 cross-embodiment data 是 generalist VLA training 的重要组成部分，但 Cross-Embodiment Learning 不是 π0 或 VLA 才出现的概念。
+VLA 描述 vision、language 与 action 的 policy model family；cross-embodiment learning 描述 robot-interface diversity 下的共享与迁移问题。两者相关，但不是同一个概念。
 
 ## Sources
 

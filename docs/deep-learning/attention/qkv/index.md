@@ -12,206 +12,155 @@ related:
 
 # Query / Key / Value
 
-Query、Key、Value 是 Attention 中同一份信息承担的三种**计算角色**。
+Query、Key、Value 是 key-value attention 中的三种计算角色。
 
-它们不是三类固定语义向量，也不是“Query 就是问题句、Key 就是关键词、Value 就是答案”。更准确地说：
-
-- Query 决定当前输出想读取什么；
-- Key 决定每个候选信息怎样被匹配；
-- Value 是匹配完成后真正被汇总的内容。
-
-Query–key–value 的检索结构早于 Transformer；Transformer 将这套角色与 learned projections、dot-product attention 和 multi-head computation 组合成了今天最常见的形式。
-
-## 从一个 Retrieval System 理解
-
-假设 memory 中有三项：
-
-```text
-Key k1 → Value v1
-Key k2 → Value v2
-Key k3 → Value v3
-```
-
-给一个 query $q$，先计算：
+对一个 query $q$ 与 memory entries $(k_i,v_i)$，attention 首先用 $q$ 与每个 $k_i$ 计算匹配 score，再把得到的权重作用于对应 $v_i$：
 
 \[
-s_i=q^\top k_i.
-\]
-
-scores 越大，表示这个 query 与对应 key 在 learned matching space 中越匹配。
-
-再转换为 weights：
-
-\[
-\alpha_i=\operatorname{softmax}(s)_i.
-\]
-
-最后读取：
-
-\[
+s_i=s(q,k_i),
+\qquad
+\alpha_i=\operatorname{softmax}(s)_i,
+\qquad
 o=\sum_i\alpha_i v_i.
 \]
 
-所以 Key 决定“是否应该被读”，Value 决定“被读以后提供什么”。
+因此：
 
-## Q、K、V 往往来自 Learned Projections
+- Query 决定当前读取请求的表示；
+- Key 决定候选信息如何参与匹配；
+- Value 决定该候选被读取时贡献什么内容。
 
-对 input representation：
+这些角色不要求具有人工可解释的固定语义。
 
-\[
-x_i\in\mathbb R^{d_{model}},
-\]
+## Key–Value Memory Formulation
 
-常通过三个不同 Linear Layers：
-
-\[
-q_i=x_iW_Q,
-\]
+设 memory 包含
 
 \[
-k_i=x_iW_K,
+(k_1,v_1),\ldots,(k_N,v_N).
 \]
 
-\[
-v_i=x_iW_V.
-\]
+Key 与 Value 成对出现。对某个 query，score 由 key 计算，但归一化后的权重作用于对应 value。
 
-矩阵形式：
-
-\[
-Q=XW_Q,
-\qquad
-K=XW_K,
-\qquad
-V=XW_V.
-\]
-
-虽然都来自同一个 $X$，parameters 不同，所以它们会学习成适合不同角色的 representation spaces。
-
-## Q、K、V 的独立 Learned Roles
-
-理论上可以构造不带独立 projections 的 attention，但独立 Q/K/V projections 给模型更多自由度。
-
-一个 token 可以：
-
-- 通过 Query 表达“当前需要寻找的关系”；
-- 通过 Key 表达“我在什么条件下应该被别人读取”；
-- 通过 Value 表达“如果被读取，我应该贡献什么内容”。
-
-这三个角色不要求编码同样的 features。
-
-## 一个 Query 怎样读取所有 Keys
-
-单个 query：
-
-\[
-q\in\mathbb R^{d_k}.
-\]
-
-keys：
-
-\[
-K=
-\begin{bmatrix}
-k_1^\top\\
-k_2^\top\\
-\vdots\\
-k_N^\top
-\end{bmatrix}
-\in\mathbb R^{N\times d_k}.
-\]
-
-scores：
-
-\[
-s=qK^\top
-\in\mathbb R^N.
-\]
-
-得到 N 个 matching scores 后，softmax 得到 N 个 weights，再：
-
-\[
-o=\alpha V.
-\]
-
-因此一个 query 产生一个 aggregated output vector。
-
-## 多个 Queries 的 Matrix Form
-
-如果：
-
-\[
-Q\in\mathbb R^{N_q\times d_k},
-\quad
-K\in\mathbb R^{N_k\times d_k},
-\]
-
-则：
-
-\[
-QK^\top
-\in\mathbb R^{N_q\times N_k}.
-\]
-
-第 $(i,j)$ 个元素：
-
-\[
-q_i^\top k_j.
-\]
-
-每一 row 对应一个 query 对所有 keys 的 matching scores。
-
-## Key–Value Pairing
-
-每个 key 对应一个 value：
-
-```text
-k1 ↔ v1
-k2 ↔ v2
-...
-kN ↔ vN
-```
-
-score 是针对 key 算出来的，但 weight 最终作用到对应 value。
-
-因此通常：
+因此通常有相同数量的 keys 与 values：
 
 \[
 N_k=N_v.
 \]
 
-但 query 数量可以不同：
+Query 数量则可以不同于 memory size。
+
+## Learned Projections
+
+Transformer-style attention 通常从输入 representations 通过不同 affine projections 得到 Q/K/V：
 
 \[
-N_q\ne N_k.
+Q=X_QW_Q,
+\qquad
+K=X_KW_K,
+\qquad
+V=X_VW_V.
 \]
 
-这在 Cross-Attention 中尤其重要。
+在 self-attention 中，$X_Q=X_K=X_V=X$；在 cross-attention 中，query source 与 key/value source 不同。
 
-## Self-Attention 与 Cross-Attention 中的 QKV
+独立的 $W_Q,W_K,W_V$ 允许模型分别学习用于匹配请求、匹配索引和内容传输的 representation spaces。
+
+## Single-Query Computation
+
+对
+
+\[
+q\in\mathbb R^{d_k},
+\qquad
+K\in\mathbb R^{N\times d_k},
+\]
+
+scores 为
+
+\[
+s=qK^\top\in\mathbb R^N.
+\]
+
+Softmax 得到
+
+\[
+\alpha\in\mathbb R^N,
+\]
+
+再与
+
+\[
+V\in\mathbb R^{N\times d_v}
+\]
+
+相乘：
+
+\[
+o=\alpha V\in\mathbb R^{d_v}.
+\]
+
+一个 query 因此产生一个 aggregated output vector。
+
+## Multiple Queries
+
+若
+
+\[
+Q\in\mathbb R^{N_q\times d_k},
+\qquad
+K\in\mathbb R^{N_k\times d_k},
+\]
+
+则
+
+\[
+QK^\top\in\mathbb R^{N_q\times N_k}.
+\]
+
+第 $(i,j)$ 个元素对应 $q_i$ 与 $k_j$ 的匹配 score。每一 row 经过 normalization 后成为一个 query 对全部 memory entries 的读取权重。
+
+## Query Count and Output Count
+
+因为每个 query 产生一个 output，attention output 的 slot 数由 $N_q$ 决定，而不是由 key/value 数量决定。
+
+这在 cross-attention 与 learned-query architectures 中尤其重要：
+
+- source memory 可以有 $N_k$ 个 positions；
+- decoder 可以有 $N_q$ 个 learned queries；
+- output 仍有 $N_q$ 个 slots。
+
+## Self-Attention and Cross-Attention
 
 Self-Attention：
 
 \[
-Q,K,V
+Q=XW_Q,
+\quad
+K=XW_K,
+\quad
+V=XW_V.
 \]
-
-都来自同一 sequence。
 
 Cross-Attention：
 
-- Q 来自 target / decoder / query set；
-- K,V 来自 source / encoder memory。
+\[
+Q=YW_Q,
+\quad
+K=XW_K,
+\quad
+V=XW_V.
+\]
 
-因此 QKV 是统一的计算角色，而不是绑定某一种 architecture 的词汇。
+因此 Q/K/V 是统一计算角色，不绑定某一种 architecture。
 
-## QKV 与 Learnable Query Embedding 的区别
+## Query Embedding and Q Matrix
 
-[Object Query](/deep-learning/detr/object-query/) 是某个 learnable input vector / slot。
+Learnable query embedding 与 attention computation 中的 $Q$ 不是同一个概念。
 
-而 Q 矩阵是 attention computation 中经过 projection 后承担 query role 的 vectors。
+例如 [Object Query](/deep-learning/detr/object-query/) 是 decoder 的 learned input / slot representation。它经过网络与 query projection 后，才会在具体 attention layer 中产生承担 query role 的 vectors。
 
-一个 learnable query embedding 进入 decoder 后可以被投影成 Q，但两者不能直接当作同义词。
+因此“query token / query embedding”描述 architecture input identity，而 $Q$ 描述某次 attention computation 的 projected query representation。
 
 ## Sources
 

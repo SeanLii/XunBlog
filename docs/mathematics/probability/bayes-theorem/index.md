@@ -12,108 +12,219 @@ related:
 
 # Bayes' Theorem
 
-Bayes' Theorem 给出一种把“正向条件概率”反过来的方法。
+Bayes' Theorem 描述观察 evidence 后，如何由 likelihood 与 prior 计算 posterior。
 
-对于 events $A,B$：
+对 events：
 
 \[
 P(A\mid B)
-=\frac{P(B\mid A)P(A)}{P(B)},
-\qquad P(B)>0.
+=
+\frac{P(B\mid A)P(A)}{P(B)},
 \]
 
-它之所以成立，不是因为某种特殊 Bayesian 技巧，而是因为 joint probability 可以从两个方向展开：
+前提是：
 
 \[
-P(A\cap B)=P(A\mid B)P(B),
+P(B)>0.
 \]
 
-同时：
-
-\[
-P(A\cap B)=P(B\mid A)P(A).
-\]
-
-把两式相等并整理，就得到 Bayes' theorem。
-
-## Prior、Likelihood、Posterior
-
-在统计建模中常把公式写成：
+对 probability densities，同样写成：
 
 \[
 p(z\mid x)
-=\frac{p(x\mid z)p(z)}{p(x)}.
+=
+\frac{p(x\mid z)p(z)}{p(x)}.
 \]
 
-这里：
+## Prior, Likelihood, Posterior, Evidence
 
-- $p(z)$：prior，在看到 observation 前对 $z$ 的分布；
-- $p(x\mid z)$：likelihood，假设 $z$ 已知时产生 $x$ 的规律；
-- $p(z\mid x)$：posterior，看到 $x$ 后对 $z$ 的更新判断；
-- $p(x)$：evidence / marginal likelihood，用于归一化。
-
-这个结构是 Bayesian inference 的核心。
-
-## Evidence 从哪里来
-
-若 $z$ 是 discrete：
+在：
 
 \[
-p(x)=\sum_z p(x\mid z)p(z).
+p(z\mid x)
+=
+\frac{p(x\mid z)p(z)}{p(x)},
 \]
 
-若 $z$ 是 continuous：
+各部分分别是：
+
+### Prior
+
+\[
+p(z)
+\]
+
+表示观察 $x$ 之前对 $z$ 的 distribution。
+
+### Likelihood
+
+\[
+p(x\mid z)
+\]
+
+表示假设 $z$ 给定时，observed data $x$ 的概率或 density。
+
+### Posterior
+
+\[
+p(z\mid x)
+\]
+
+表示观察 $x$ 后对 $z$ 更新后的 distribution。
+
+### Evidence / Marginal Likelihood
+
+\[
+p(x)
+=
+\int p(x\mid z)p(z)\,dz
+\]
+
+或离散情况：
+
+\[
+p(x)
+=
+\sum_z p(x\mid z)p(z).
+\]
+
+Evidence 负责使 posterior 归一化。
+
+## Derivation
+
+由 joint probability 的两种 factorization：
+
+\[
+p(x,z)=p(x\mid z)p(z),
+\]
+
+\[
+p(x,z)=p(z\mid x)p(x),
+\]
+
+令两者相等：
+
+\[
+p(z\mid x)p(x)
+=
+p(x\mid z)p(z),
+\]
+
+得到 Bayes' theorem。
+
+## Posterior Is Proportional to Likelihood Times Prior
+
+对固定 observation $x$，$p(x)$ 与 $z$ 无关，因此：
+
+\[
+p(z\mid x)
+\propto
+p(x\mid z)p(z).
+\]
+
+这常用于只关心 posterior relative shape 或 MAP optimization 的场景。
+
+但若需要 normalized posterior probability、marginal likelihood 或 model comparison，不能忽略 evidence。
+
+## Posterior Odds
+
+对两个 hypotheses $H_1,H_2$：
+
+\[
+\frac{P(H_1\mid D)}{P(H_2\mid D)}
+=
+\frac{P(D\mid H_1)}{P(D\mid H_2)}
+\frac{P(H_1)}{P(H_2)}.
+\]
+
+即：
+
+\[
+\text{posterior odds}
+=
+\text{Bayes factor}
+\times
+\text{prior odds}.
+\]
+
+这直接展示 evidence 如何修改 prior belief。
+
+## Sequential Bayesian Update
+
+若 observations $x_1,\ldots,x_n$ 在给定 parameter $\theta$ 后 conditionally independent：
+
+\[
+p(\theta\mid x_{1:n})
+\propto
+p(\theta)
+\prod_{i=1}^{n}p(x_i\mid\theta).
+\]
+
+也可以递归更新：
+
+\[
+p(\theta\mid x_{1:t})
+\propto
+p(x_t\mid\theta)
+ p(\theta\mid x_{1:t-1}).
+\]
+
+前一步 posterior 成为下一步 prior。
+
+## MAP 与 Maximum Likelihood
+
+Maximum likelihood：
+
+\[
+\theta_{ML}
+=
+\arg\max_\theta p(D\mid\theta).
+\]
+
+Maximum a posteriori：
+
+\[
+\theta_{MAP}
+=
+\arg\max_\theta p(\theta\mid D)
+=
+\arg\max_\theta p(D\mid\theta)p(\theta).
+\]
+
+MAP 比 maximum likelihood 多使用 prior information。
+
+## Latent-Variable Inference
+
+在 latent-variable model 中：
+
+\[
+p(z\mid x)
+=
+\frac{p(x\mid z)p(z)}{p(x)}.
+\]
+
+困难通常集中在 evidence：
 
 \[
 p(x)=\int p(x\mid z)p(z)\,dz.
 \]
 
-所以 Bayes' theorem 真正困难的地方常常不是公式本身，而是 denominator：要对所有可能 latent states 做 sum 或 integral。
+当该积分难以计算时，需要 approximate inference，例如 [Variational Inference](/mathematics/probability/variational-inference/)。
 
-这正是 [Variational Inference](/mathematics/probability/variational-inference/) 等 approximate inference 方法出现的重要背景。
+## Conditional Bayes' Theorem
 
-## 一个数值例子
-
-假设某事件 $D$ 的 prior probability 为：
+在给定 condition $c$ 后：
 
 \[
-P(D)=0.01.
+p(z\mid x,c)
+=
+\frac{p(x\mid z,c)p(z\mid c)}{p(x\mid c)}.
 \]
 
-某测试结果 $T$ 满足：
+这是 conditional latent-variable models 中常见的形式。
 
-\[
-P(T\mid D)=0.95,
-\qquad
-P(T\mid \neg D)=0.05.
-\]
+## Connections
 
-则：
-
-\[
-P(T)=0.95\times0.01+0.05\times0.99=0.059.
-\]
-
-所以：
-
-\[
-P(D\mid T)
-=\frac{0.95\times0.01}{0.059}
-\approx0.161.
-\]
-
-虽然测试在 $D$ 发生时很容易为 positive，但由于 prior 很低，positive 后的 posterior 也不是 95%。
-
-这说明 Bayes' theorem 把**先验发生率**和**观测证据强度**一起考虑。
-
-## Bayes' Theorem 与机器学习
-
-它出现在：
-
-- Bayesian parameter inference；
-- latent-variable models；
-- probabilistic graphical models；
-- filtering 与 state estimation；
-- VAE 中真实 posterior $p(z\mid x)$ 的定义。
-
-这些应用彼此不同，但都使用同一个概率反演结构。
+- [Conditional Probability](/mathematics/probability/conditional-probability/)：Bayes' theorem 的直接基础。
+- [Variational Inference](/mathematics/probability/variational-inference/)：posterior intractable 时的 approximate inference。
+- [Variational Autoencoder](/generative-models/variational-autoencoder/)：用 amortized inference 近似 latent posterior。

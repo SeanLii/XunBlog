@@ -30,9 +30,9 @@ q_N
 
 训练开始时，这些 vectors 没有预先规定“哪一个负责什么类别”。它们的功能由 decoder interaction、matching loss 与 prediction objective 一起塑造。
 
-## Query 是 Output Slot
+## Object Query as Prediction Slot
 
-可以先把每个 object query 理解成一个待填写的预测槽位：
+每个 object query 对应一个 learned prediction slot：
 
 ```text
 query 1 ─┐
@@ -49,31 +49,45 @@ decoder 结束后，每个 slot 进入 prediction heads，输出：
 
 这和普通 token embedding 的角色不同：object query 的主要职责是定义输出 slots。
 
-## Query 如何读取 Image Memory
+## Reading Image Memory
 
-DETR decoder 中，queries 通过 cross-attention 读取 encoder memory。
+DETR decoder 中，object queries 为固定数量的 prediction slots 提供 learned query identity，decoder hidden states 再通过 cross-attention 读取 encoder memory。
 
-抽象写成：
-
-\[
-H=
-\operatorname{Decoder}(Q_0,M),
-\]
-
-其中 $M$ 是 image memory。
-
-attention 内部真正的 query vectors 仍由 hidden states 投影得到：
+从 architecture 层面可以简写为
 
 \[
-Q=HW_Q.
+H=\operatorname{Decoder}(Q_0,M),
 \]
 
-所以要区分：
+其中 $Q_0$ 表示 learned object-query information，$M$ 是 image memory。但这个写法只是概念级简写；**原始 DETR 官方实现并不是把 $Q_0$ 直接当作普通 decoder content state。**
 
-- **Object Query embedding**：decoder 的 learned input / positional slot；
-- **Attention Q**：每层通过 projection 得到的计算向量。
+官方实现先建立
 
-它们不是同一层级概念。
+\[
+T_0=0,
+\]
+
+再把 learned query embeddings 作为 `query_pos` 传入 decoder：
+
+\[
+H=\operatorname{Decoder}(T_0,M;Q_{pos}=Q_0).
+\]
+
+在 decoder layer 的 self-attention 中，query / key 由当前 content state 加上 query position 得到；在 cross-attention 中，decoder query 也加入 $Q_0$，encoder key 则加入 image positional encoding。以 cross-attention 为例，可抽象写成
+
+\[
+Q=(T+Q_0)W_Q,\qquad
+K=(M+P_M)W_K,\qquad
+V=MW_V.
+\]
+
+因此需要区分三个层级：
+
+- **Object Query embedding $Q_0$**：learned slot identity，在原始官方实现中作为 `query_pos` 使用；
+- **Decoder content state $T$**：第一层从零开始，随后被 attention 与 feed-forward updates 逐层写入 image/object information；
+- **Attention query matrix $Q$**：某一 attention layer 内部经过 projection 后真正参与 dot-product attention 的计算向量。
+
+三者相关，但不是同一个对象。尤其不能把“object query”与 attention 公式中的 $Q$ 直接视为同义词。
 
 ## 一对一 Set Prediction
 

@@ -13,112 +13,167 @@ related:
 
 # Vision-Language Model
 
-Vision-Language Model（VLM）是一类同时处理 visual information 与 natural language 的模型。它的核心不是简单“把图片和文字都塞进 Transformer”，而是建立两种 modality 之间可以共同学习、对齐或交互的 representation 与 prediction mechanism。
+Vision-Language Model（VLM）是一类联合建模 visual input 与 natural language 的模型。它们学习两种 modality 之间的对应关系，使图像与文本能够被对齐、融合、检索或用于条件生成。
 
-一个 VLM 可能完成：
+VLM 不是单一 architecture。不同模型可以采用完全不同的信息流：dual encoders、cross-attention fusion、vision encoder + language decoder、multimodal decoder-only Transformer 等都属于这一范围。
 
-- image-text matching；
-- image captioning；
-- visual question answering；
-- multimodal dialogue；
-- visual grounding；
-- zero-shot visual classification。
+## Modal Representations
 
-因此 VLM 是一个 model family，而不是某一种固定 architecture。
-
-## 两种 Modality 最开始并不在同一个表示空间
-
-文本通常先变成 token embeddings：
+图像通常先由 visual encoder 转换成 feature vectors：
 
 \[
-t_1,\ldots,t_N\in\mathbb R^{d_t}.
+V=(v_1,\ldots,v_M),
+\qquad v_i\in\mathbb R^{d_v}.
 \]
 
-图像则可能经过 CNN 或 Vision Transformer 得到 visual features：
+文本由 tokenizer 与 text encoder / language model 转换成
 
 \[
-v_1,\ldots,v_M\in\mathbb R^{d_v}.
+T=(t_1,\ldots,t_N),
+\qquad t_j\in\mathbb R^{d_t}.
 \]
 
-问题是：这些 features 的数量、dimension、统计性质和语义来源都可能不同。
+两种 modality 在 token 数量、hidden dimension、统计分布与语义结构上都可能不同。VLM architecture 必须规定它们如何进入可联合学习的 representation space。
 
-所以 multimodal model 需要解决至少两件事：
+## Dual-Encoder Models
 
-1. 怎样把 vision / language 表示成模型可联合处理的形式；
-2. 怎样让两种 representations 建立语义对应关系。
-
-## Dual-Encoder 路线
-
-CLIP 是典型 dual-encoder 思路：
+Dual-encoder architecture 分别编码 image 与 text：
 
 ```text
 image → image encoder → image embedding
 text  → text encoder  → text embedding
 ```
 
-训练目标让 matching image-text pairs 的 embeddings 更接近，不匹配 pairs 更远。
+CLIP 是代表性模型。它对一个 batch 中 matching image-text pairs 提高 similarity，同时降低 mismatched pairs 的 similarity。
 
-这类模型非常适合 retrieval 与 zero-shot classification，因为 image / text 可以分别编码再比较。
+设 normalized image embedding 为 $u_i$，text embedding 为 $v_j$，相似度 logits 可以写成
 
-但两个 modalities 在 encoder 内部并没有进行 token-level deep interaction。
+\[
+s_{ij}=\frac{u_i^\top v_j}{\tau},
+\]
 
-## Fusion 路线
+再对 image-to-text 与 text-to-image 两个方向使用 cross-entropy objective。
 
-另一类模型会让 visual tokens 与 language tokens 在 joint Transformer 或 cross-attention 中直接交互：
+Dual encoders 的优势是 image / text 可以离线独立编码，因此适合 large-scale retrieval 与 zero-shot classification；限制是两种 modality 在 encoder 内部没有进行细粒度 token-level interaction。
 
-```text
-visual tokens ─┐
-               ├→ multimodal fusion → output
-text tokens ───┘
-```
+## Fusion Models
 
-这样语言可以针对具体 visual regions 读取信息，视觉表示也可以被语言 context 调整。
+Fusion architecture 允许 visual tokens 与 text tokens 在网络内部直接交互。常见方式包括：
 
-现代 multimodal LLM 常把 visual encoder output 通过 projector 映射到 language model hidden space，再与 text tokens 一起处理。
+- concatenation 后使用 joint self-attention；
+- text queries cross-attend visual features；
+- visual features 通过 gated cross-attention 注入 language model；
+- 用 multimodal connector 把视觉表示转换为 language-model-compatible tokens。
+
+这类模型能够根据语言 context 动态读取不同 image regions，更适合 visual question answering、captioning 与 multimodal dialogue。
+
+## Visual Encoder and Projector
+
+现代 generative VLM 常把预训练 visual encoder 与 language model 连接起来。若 visual output dimension 与 language-model hidden size 不同，需要 projector / adapter：
+
+\[
+V' = g_\phi(V),
+\qquad
+V'\in\mathbb R^{M\times d_{LM}}.
+\]
+
+Projector 可以是 Linear Layer、MLP、cross-attention resampler 或更复杂 connector。它的作用是建立 compatible representation interface，而不是单独完成全部 visual-language alignment。
 
 ## Training Objectives
 
-不同 VLM 使用不同 objectives，例如：
+VLM 的 objective 取决于 architecture 与任务。
 
-- contrastive image-text alignment；
-- image-text matching；
-- masked language / masked image modeling；
-- caption generation；
-- next-token prediction on multimodal sequences。
+### Contrastive Alignment
 
-因此不能用一个 loss 定义全部 VLM。
+学习 matching image-text pairs 的 shared embedding geometry，例如 CLIP。
 
-更稳定的定义是：
+### Image–Text Matching
 
-> **模型同时接收或学习 vision 与 language，并通过联合训练使两种 modality 在同一个任务中建立可利用的关系。**
+给定 image 与 text，预测它们是否匹配。
 
-## VLM 输出不一定是 Text
+### Captioning / Autoregressive Language Modeling
 
-有些 VLM 输出 text tokens；有些输出 similarity score；有些产生 multimodal embedding；还有些输出 region grounding 或其他 structured predictions。
+以 image features 为 condition，最大化 text sequence likelihood：
 
-所以“VLM = 看图说话模型”太窄。
+\[
+\log p(y_1,\ldots,y_T\mid I)
+=
+\sum_t
+\log p(y_t\mid y_{<t},I).
+\]
 
-## 从 VLM 到 VLA
+### Masked Multimodal Objectives
 
-[Vision-Language-Action Model](/robot-learning/vision-language-action-model/) 进一步要求模型不仅理解图像和语言，还要产生 robot actions。
+对文本或视觉 representations 做 masked prediction，使模型利用 cross-modal context 恢复缺失信息。
 
-VLM 已经提供：
+没有单一 loss 可以定义全部 VLM；关键是 objective 是否使 vision 与 language 建立可用于下游任务的联合结构。
 
-- visual semantics；
-- language grounding；
-- cross-modal representation。
+## Generative and Non-Generative VLMs
 
-但这不自动等于 motor control。VLA 还需要处理：
+VLM 的输出不一定是 text。
 
-- robot state；
-- continuous / discrete action space；
-- temporal control；
-- embodiment differences；
-- closed-loop interaction。
+非生成式模型可以输出：
 
-因此 VLA 可以建立在 VLM backbone 上，但 VLM 自身是更广泛的 multimodal learning topic。
+- image-text similarity；
+- retrieval embedding；
+- classification score；
+- grounding score。
+
+生成式 VLM 则通常通过 language decoder / LLM 产生自然语言 tokens，用于 captioning、VQA、dialogue 等任务。
+
+因此 “VLM = 看图说话模型” 只覆盖其中一类。
+
+## Language Grounding in Vision
+
+VLM 的核心能力之一是让 language concepts 与 visual evidence 建立对应关系。这个 grounding 可以是 global-level（整图与文本对齐），也可以是 region / token-level interaction。
+
+Global contrastive alignment 能支持 zero-shot classification 与 retrieval，但不保证模型具有精确 object-level grounding；细粒度 grounding 通常需要更强的 token interaction、region supervision 或专门 objective。
+
+## Pretraining and Transfer
+
+大规模 image-text pairs 为 VLM 提供弱监督。预训练可以学习跨任务可迁移的 visual-language representations，再通过 prompting、linear probing 或 fine-tuning 适配下游任务。
+
+CLIP 展示了 natural-language supervision 对 zero-shot visual classification 的可迁移性；Flamingo 等模型进一步展示了 pretrained vision / language components 与 multimodal cross-attention 在 few-shot multimodal generation 中的能力。
+
+## Evaluation
+
+VLM 的 evaluation 必须与输出类型对应，例如：
+
+- image-text retrieval recall；
+- zero-shot classification accuracy；
+- VQA accuracy；
+- caption metrics；
+- grounding accuracy；
+- multimodal reasoning benchmarks。
+
+单一 benchmark 无法完整表示 VLM 的视觉识别、语言生成、grounding 与 reasoning 能力。
+
+## Limitations
+
+VLM 的主要限制包括：
+
+- image-text web data 中的噪声与偏差；
+- global alignment 不等于细粒度 grounding；
+- generative VLM 可能产生与视觉证据不一致的 hallucination；
+- high-resolution images 与 long multimodal context 带来显著计算成本；
+- language prior 可能在视觉证据不足时主导输出。
+
+因此“接入一个视觉 encoder”并不自动得到可靠的 multimodal reasoning system。
+
+## From VLM to VLA
+
+[Vision-Language-Action Model](/robot-learning/vision-language-action-model/) 在 vision-language modeling 之外增加 robot state、action representation、temporal control 与 embodiment constraints。
+
+VLM 可以提供 visual semantics 与 language grounding，但 motor control 还需要学习
+
+\[
+p(a_{t:t+H}\mid o_t,l,\ldots),
+\]
+
+或其他 action-generation objective。VLA 因此是建立在 multimodal representation 上、面向 embodied control 的模型 family，而不是 VLM 的同义词。
 
 ## Sources
 
-- Radford et al. *Learning Transferable Visual Models From Natural Language Supervision (CLIP)*. 2021.
-- Dosovitskiy et al. *An Image Is Worth 16×16 Words*. 2021.（视觉 tokenization 的重要基础之一）
+- Radford et al. *Learning Transferable Visual Models From Natural Language Supervision*. 2021. https://arxiv.org/abs/2103.00020
+- Alayrac et al. *Flamingo: a Visual Language Model for Few-Shot Learning*. 2022. https://arxiv.org/abs/2204.14198
+- Li et al. *BLIP: Bootstrapping Language-Image Pre-training for Unified Vision-Language Understanding and Generation*. 2022.

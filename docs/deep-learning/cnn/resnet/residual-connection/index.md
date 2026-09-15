@@ -58,7 +58,7 @@ H(x)=x+F(x).
 
 ## Identity Shortcut
 
-最简单的 residual block：
+Basic identity residual block 可以写成：
 
 ```text
 x ────────────────────┐

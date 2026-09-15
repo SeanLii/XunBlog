@@ -12,125 +12,173 @@ related:
 
 # Activation Function
 
-Activation Function 是施加在 neural network intermediate values 上的 nonlinear function。
-
-最简单的 layer 可以写成：
+Activation Function 是神经网络中对 intermediate representation 施加的函数。对一个 affine transformation
 
 \[
-h=\phi(Wx+b),
+z=Wx+b,
 \]
 
-其中 $\phi$ 就是 activation function。
+常见的神经网络层写成
 
-它最重要的作用不是“模拟神经元是否激活”，而是给网络加入 **nonlinearity**。如果没有 nonlinear activation，多层 Linear Layers 仍然只能合并成一个 affine mapping。
+\[
+h=\phi(z),
+\]
+
+其中 $\phi$ 是 activation function。
+
+Activation Function 的核心作用是引入 **nonlinearity**。如果连续多层都只有 affine transformation，那么
+
+\[
+W_2(W_1x+b_1)+b_2
+\]
+
+仍可合并为一个新的 affine transformation，因此增加层数不会扩展到一般的 nonlinear function family。
+
+## Element-Wise Activation
+
+很多 activation 对每个 scalar 独立作用：
+
+\[
+h_i=\phi(z_i).
+\]
+
+它不会直接在不同 features 之间交换信息；feature mixing 通常由 Linear Layer、Convolution、Attention 等操作完成，activation 则改变每个位置的 nonlinear response。
 
 ## ReLU
 
-Rectified Linear Unit：
+Rectified Linear Unit 定义为
 
 \[
 \operatorname{ReLU}(x)=\max(0,x).
 \]
 
-也就是：
+即
 
 \[
 \operatorname{ReLU}(x)=
 \begin{cases}
-0,&x<0\\
+0,&x<0,\\
 x,&x\ge0.
 \end{cases}
 \]
 
-ReLU 的优点是简单、正区间 gradient 为常数 1，并且不会像 sigmoid 那样在大正值区域自动饱和。
+它在正区间导数为 1，在负区间导数为 0。ReLU 计算简单，也避免了 sigmoid 在大正值区域的饱和，但长期处于负区间的 unit 可能持续得到零梯度，这通常称为 **dead ReLU**。
 
-但当输入长期落在负区间时，gradient 为 0，可能出现所谓 dead ReLU。
+Leaky ReLU 等变体在负区间保留一个小斜率，以减弱这一问题。
 
 ## Sigmoid
 
-\[
-\sigma(x)=\frac1{1+e^{-x}}.
-\]
-
-输出范围：
+Logistic sigmoid：
 
 \[
-0<\sigma(x)<1.
+\sigma(x)=\frac{1}{1+e^{-x}}.
 \]
 
-因此它适合把 scalar logit 转成 Bernoulli probability，也常出现在 gates 中。
-
-但作为深层 hidden activation 时，极大或极小输入会进入 saturation：
+其输出满足
 
 \[
-\sigma'(x)=\sigma(x)(1-\sigma(x))
+0<\sigma(x)<1,
 \]
 
-接近 0，导致 gradient 传播困难。
+导数为
+
+\[
+\sigma'(x)=\sigma(x)(1-\sigma(x)).
+\]
+
+当 $|x|$ 很大时，导数趋近 0，因此深层网络若大量使用 sigmoid hidden activations，容易出现梯度衰减。Sigmoid 仍适合表示 Bernoulli probability，也常用于 gating mechanism。
 
 ## Tanh
 
 \[
-\tanh(x)
-=\frac{e^x-e^{-x}}{e^x+e^{-x}}.
+\tanh(x)=\frac{e^x-e^{-x}}{e^x+e^{-x}}.
 \]
 
-输出范围：
+输出范围为
 
 \[
 -1<\tanh(x)<1.
 \]
 
-相比 sigmoid，它以 0 为中心，但同样会在绝对值很大的区域饱和。
+Tanh 以 0 为中心，但同样在大绝对值区域饱和。它在 recurrent networks 与某些 bounded-state models 中仍然常见。
 
 ## GELU
 
-Gaussian Error Linear Unit 常用于 Transformer：
+Gaussian Error Linear Unit 定义为
 
 \[
 \operatorname{GELU}(x)=x\Phi(x),
 \]
 
-其中 $\Phi(x)$ 是 standard normal CDF。
+其中 $\Phi(x)$ 是 standard normal CDF。GELU 是平滑的非线性函数，并允许小的负输入保留非零输出。BERT 等 Transformer 模型使用 GELU，而原始 Transformer 使用 ReLU。
 
-直觉上它不像 ReLU 那样在 0 处硬截断，而是根据输入大小平滑地控制保留比例。
-
-实际实现常使用近似形式。
-
-## Activation 改变的是函数族
-
-考虑两层网络：
+工程实现常使用近似形式，例如
 
 \[
-f(x)=W_2\phi(W_1x+b_1)+b_2.
+\operatorname{GELU}(x)
+\approx
+\frac{x}{2}
+\left[
+1+\tanh\left(
+\sqrt{\frac{2}{\pi}}
+\left(x+0.044715x^3\right)
+\right)
+\right].
 \]
 
-只要 $\phi$ 是合适的 nonlinear function，网络就不再能被折叠成一个单一 affine transformation。
+## SiLU / Swish
 
-深度的价值由此开始出现：不同层可以逐步构造更复杂的 piecewise / smooth nonlinear mappings。
+SiLU（Sigmoid Linear Unit）定义为
 
-## 输出层的 Activation 取决于建模对象
+\[
+\operatorname{SiLU}(x)=x\sigma(x).
+\]
 
-Hidden activation 与 output transformation 不应该混在一起。
+它与 Swish 的常用形式等价，是另一类平滑、非单调的 activation。在现代卷积网络和部分 Transformer-style blocks 中较常见。
 
-例如：
+## Saturation and Gradient Flow
+
+Activation Function 会直接影响 local derivative：
+
+\[
+\frac{\partial h}{\partial z}=\phi'(z).
+\]
+
+深层网络的 gradient 需要经过很多这样的 Jacobian factors。若 activation 在大范围内导数接近 0，梯度可能快速衰减；若导数和权重组合长期导致放大，也可能产生 exploding gradients。
+
+因此 activation 的选择不仅决定 forward function family，也会影响 optimization dynamics。
+
+## Hidden Activation and Output Transformation
+
+Hidden activation 与输出层 transformation 的职责不同。输出层应由建模对象决定，例如：
 
 - binary probability：sigmoid；
 - categorical probability：[Softmax](/deep-learning/core/softmax/)；
-- unrestricted regression：可能不使用 bounded activation；
-- positive scale：可能使用 softplus 或 exponential。
+- unrestricted real-valued regression：常直接输出实数；
+- positive scalar：可使用 softplus 或 exponential；
+- bounded interval：可按目标范围选择 sigmoid、tanh 或重新缩放。
 
-选择 activation 的依据是输出对象需要满足什么数学约束，而不是固定模板。
+因此不存在适用于所有 layer 的固定 activation。
 
-## Transformer 中的位置
+## Function Approximation
 
-Transformer 的 [Position-Wise Feed-Forward Network](/deep-learning/transformer/position-wise-feed-forward-network/) 通常具有：
+带 nonlinear activation 的 [Multilayer Perceptron](/deep-learning/core/multilayer-perceptron/) 可以表示远比单个 affine mapping 更复杂的函数。Universal approximation results 说明，在一定条件下，具有足够 hidden units 的前馈网络可以逼近很广泛的连续函数类别。
+
+这类定理说明了非线性网络的表达能力，但不意味着任意 architecture 都容易训练，也不说明所需宽度、数据量或 optimization cost 很小。
+
+## Transformer 中的使用
+
+Transformer 的 [Position-Wise Feed-Forward Network](/deep-learning/transformer/position-wise-feed-forward-network/) 通常写成
 
 \[
-\operatorname{FFN}(x)
-=W_2\phi(W_1x+b_1)+b_2.
+\operatorname{FFN}(x)=W_2\phi(W_1x+b_1)+b_2.
 \]
 
-原始 Transformer 使用 ReLU，许多后续模型使用 GELU、SwiGLU 等。
+原始 Transformer 使用 ReLU，BERT 使用 GELU；后续模型还广泛使用 gated variants，例如 GLU / SwiGLU。Activation Function 在这里仍承担同一个基本职责：在两次 learned affine transformations 之间提供 nonlinearity。
 
-这只是 Activation Function 的一个应用环境；activation 本身是 neural network 非线性建模的基础机制。
+## Sources
+
+- Nair, Hinton. *Rectified Linear Units Improve Restricted Boltzmann Machines*. 2010.
+- Hendrycks, Gimpel. *Gaussian Error Linear Units (GELUs)*. 2016.
+- Ramachandran, Zoph, Le. *Searching for Activation Functions*. 2017.
+- Cybenko. *Approximation by Superpositions of a Sigmoidal Function*. 1989.

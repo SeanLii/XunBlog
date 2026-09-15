@@ -14,102 +14,114 @@ related:
 
 # Transformer Decoder
 
-Transformer Decoder 是以一组 target-side states / queries 为中心，通过 self-attention、可选 cross-attention 和 feed-forward transformation 产生输出 representations 的 Transformer stack。
+Transformer Decoder 是一种以 target-side states 或 query states 为中心，通过 self-attention、可选 cross-attention 与 position-wise feed-forward transformation 产生输出 representations 的 Transformer stack。
 
-“Decoder”这个名字容易让人误以为它一定是 autoregressive text generator。实际上 decoder layer 是一种 information-flow architecture；是否 autoregressive 取决于 query source、mask 与 output procedure。
+“Decoder”描述的是 architecture lineage 与信息流，不等同于“逐 token 生成文字”。是否 autoregressive 由 mask、input/query construction 与 output procedure 决定。
 
-## 原始 Encoder-Decoder Transformer
+## Original Encoder–Decoder Transformer
 
-原始 machine translation Transformer 中，一个 decoder layer 有三类 sublayers：
+原始 Transformer 的 decoder layer 包含三类 sublayers：
 
 ```text
 target states
     ↓
-Masked Self-Attention
+Masked Multi-Head Self-Attention
+    ↓
+Residual + LayerNorm
     ↓
 Cross-Attention to Encoder Memory
     ↓
+Residual + LayerNorm
+    ↓
 Position-Wise Feed-Forward Network
+    ↓
+Residual + LayerNorm
     ↓
 output states
 ```
 
-每个 sublayer 外还有 [Residual Connection](/deep-learning/cnn/resnet/residual-connection/) 与 [Layer Normalization](/deep-learning/core/layer-normalization/)。
+其中 self-attention 建模 target-side dependencies，cross-attention 连接 source encoder 与 target decoder。
 
 ## Masked Self-Attention
 
-目标 sequence 在 autoregressive training 中使用 [Causal Mask](/deep-learning/sequence-modeling/causal-mask/)：
+在 autoregressive sequence modeling 中，第 $i$ 个 target position 只能读取
 
 \[
-position\ i
-\text{ 只能读取 } j\le i.
+j\le i
 \]
 
-这防止 target position 直接看到未来 ground-truth tokens。
+的位置。通过 [Causal Mask](/deep-learning/sequence-modeling/causal-mask/)，训练时可以并行计算整个 target sequence，同时防止当前位置直接访问 future ground-truth tokens。
 
-## Cross-Attention 是 Source–Target 的连接点
+## Cross-Attention to Encoder Memory
 
-Encoder 产生 memory：
+设 encoder 输出
 
 \[
-M\in\mathbb R^{N_s\times d}.
+M\in\mathbb R^{N_s\times d_{model}},
 \]
 
-Decoder hidden states 产生 queries：
+decoder states 为
 
 \[
-Q\in\mathbb R^{N_t\times d_k}.
+Y\in\mathbb R^{N_t\times d_{model}}.
 \]
 
-memory 提供 keys / values：
+Cross-attention 中通常有
 
 \[
+Q=YW_Q,
+\qquad
 K=MW_K,
 \qquad
 V=MW_V.
 \]
 
-因此 decoder 中每个 target position 都可以动态读取 source sequence。
+因此 target-side query slots 动态读取 source memory。Cross-attention output 数量由 target/query positions 决定，而 memory length 可以不同。
+
+## Decoder Output
+
+Decoder stack 输出的仍然是 hidden representations，而不是任务最终预测本身。Machine translation 中，hidden state 还需要经过 vocabulary projection 与 Softmax 得到 next-token distribution；DETR 中需要分类与 box heads；ACT 中需要 action head。
+
+因此 decoder architecture 与 task-specific output head 应分开理解。
 
 ## Decoder-Only Transformer
 
-GPT-style architecture 常被叫 decoder-only Transformer。
+GPT-style architecture 通常被称为 decoder-only Transformer。它保留 causal self-attention、FFN、residual 与 normalization stack，但删除 encoder memory 与 cross-attention。
 
-它保留 causal self-attention + FFN stack，但没有 encoder memory cross-attention。
+这里“decoder-only”强调其 causal Transformer block lineage，而不是存在一个未显示的 encoder。
 
-所以 “decoder” 在这个语境中主要强调 causal autoregressive stack lineage，而不是一定存在一个单独 encoder。
+## Non-Autoregressive Query Decoder
 
-## Non-Autoregressive Decoder
+Decoder 也可以接收一组并行 query slots，并在一次 forward 中形成多个 output representations。
 
-Decoder 也可以使用一组 learnable queries，一次并行输出多个 slots。
-
-例如 [DETR](/deep-learning/detr/)：
+[DETR](/deep-learning/detr/) 使用 learned object queries：
 
 ```text
-learnable object queries
-        ↓
-Transformer Decoder
-        ↓
-set of object representations
+object queries
+      ↓
+Transformer Decoder ← image memory
+      ↓
+object representations
 ```
 
-这些 queries 可以互相 self-attend，再 cross-attend image encoder memory。
+[ACT](/robot-learning/act/) 使用 learned action queries，对 future action positions 进行并行预测。
 
-没有 token-by-token causal generation。
+这些 architecture 可以包含 query self-attention 与 cross-attention，却不进行逐 token causal generation。
 
-所以：
+## Query Source and Mask Define Behavior
 
-> **Transformer Decoder 不等于 autoregressive decoding。**
+同一个 Transformer Decoder abstraction 可以对应不同系统行为。关键设计变量包括：
 
-## ACT 中的 Decoder
+- query states 从哪里来；
+- self-attention 是否 causal；
+- 是否存在 encoder memory；
+- cross-attention 读取什么 source；
+- outputs 如何映射到 task predictions。
 
-ACT 使用 action queries 作为 decoder-side slots，从 encoder memory 中读取视觉、proprioception 与 latent-conditioned information，并行产生 action chunk representations。
-
-这是 non-autoregressive decoder 的一个例子。
-
-因此理解 ACT decoder 时，应该从“queries 读取 memory”的 decoder architecture 出发，而不是套用语言模型“每次生成一个 token”的 mental model。
+因此判断一个 decoder 的功能，应检查这些具体结构，而不是仅依据 “Decoder” 名称推断生成方式。
 
 ## Sources
 
 - Vaswani et al. *Attention Is All You Need*. 2017.
+- Radford et al. *Language Models are Unsupervised Multitask Learners*. 2019.
 - Carion et al. *End-to-End Object Detection with Transformers*. 2020.

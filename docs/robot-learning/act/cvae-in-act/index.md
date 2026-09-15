@@ -13,13 +13,13 @@ related:
 
 # CVAE in ACT
 
-ACT 使用 CVAE 的目的不是“生成随机机器人动作”，而是在训练阶段给 action-chunk predictor 加一个 latent variable $z$，让它能够表示 demonstration 中没有被当前 observation 完全决定的变化。
+ACT 在训练阶段使用 Conditional Variational Autoencoder 结构，为 action-chunk predictor 引入 latent variable $z$。该 latent 用于表示在当前 observation 条件下，demonstration action 中仍然存在的变化。
 
-这页只解释 **CVAE 在 ACT 里具体对应什么**。通用的 conditional ELBO、prior、posterior 与 generation 关系见 [Conditional Variational Autoencoder](/generative-models/conditional-variational-autoencoder/)。
+通用 CVAE 的 conditional ELBO、prior、posterior 与 generation 结构见 [Conditional Variational Autoencoder](/generative-models/conditional-variational-autoencoder/)。本页只描述这些变量在 ACT 中的具体对应。
 
-## ACT 中的 x、y、z 对应关系
+## Variable Correspondence
 
-把通用 CVAE 写成
+通用 CVAE 可以写成
 
 \[
 q_\phi(z\mid x,y),
@@ -27,47 +27,45 @@ q_\phi(z\mid x,y),
 p_\theta(y\mid x,z).
 \]
 
-在 ACT 中可以对应为：
+在 ACT 中：
 
-- condition $x$：当前 robot observation，尤其包括 image 与 current qpos；
-- output $y$：未来 action chunk；
-- latent $z$：用于表示 demonstration style / variation 的隐藏变量。
+- condition $x$：当前 robot observation；
+- output $y$：future action chunk $A_t$；
+- latent $z$：demonstration variation 的隐藏表示。
 
-因此 training-time recognition path 近似为
+ACT released model 的 recognition encoder 实际使用 current qpos 与 ground-truth actions：
 
 \[
-q_\phi(z\mid q_t,a_{t:t+k-1}).
+q_\phi(z\mid q_t,A_t).
 \]
 
-注意官方 latent encoder 并没有把 camera images 送进去；它使用 qpos 与 ground-truth action sequence 推断 $z$。
+Camera images 不进入这条 training-only latent encoder。
 
-## Training branch 怎样得到 z
+## Recognition Encoder
 
-官方模型先把 action sequence 与 qpos 投影到 Transformer hidden dimension，并在最前面加入一个 [CLS Token](/deep-learning/bert/cls-token/)：
+Ground-truth action sequence 与 qpos 先被投影到 latent Transformer hidden dimension，并与 learned CLS-like token 组成 sequence：
 
 ```text
 [CLS]  q_t  a_t  a_t+1  ...  a_t+k-1
-  │      │    │     │             │
-  └──────┴────┴─────┴─────────────┘
                     ↓
           Transformer Encoder
                     ↓
-             CLS representation
+               h_CLS
                     ↓
-              Linear layer
-              ↙          ↘
-             μ            log σ²
+             Linear projection
+             ↙              ↘
+            μ              log σ²
 ```
 
-于是 approximate posterior 写成
+由此定义
 
 \[
-q_\phi(z\mid q_t,a_{t:t+k-1})
+q_\phi(z\mid q_t,A_t)
 =
 \mathcal N(\mu,\operatorname{diag}(\sigma^2)).
 \]
 
-然后使用 reparameterization：
+随后通过 reparameterization
 
 \[
 z=\mu+\sigma\odot\epsilon,
@@ -75,84 +73,89 @@ z=\mu+\sigma\odot\epsilon,
 \epsilon\sim\mathcal N(0,I).
 \]
 
-## z 怎样进入 action predictor
+## Latent Conditioning of the Policy
 
-Sampled $z$ 不直接当作 32 维 action。它先经过 linear projection 变成 Transformer hidden dimension 的 feature，再和 proprioception、visual features 一起进入 policy Transformer。
+Sampled $z$ 不直接表示 action vector。released code 先将 latent projection 到 policy Transformer hidden dimension，再与 proprioception feature、visual memory 一起条件化 action prediction：
 
 ```text
-z (latent_dim=32 in released code)
-          │
-          ↓ linear projection
-latent feature (hidden_dim)
-          │
-          ├─────────────┐
-qpos feature ───────────┤
-visual features ────────┤
-                        ↓
-                policy Transformer
-                        ↓
-                 action chunk
+z
+↓ latent projection
+latent feature ────────┐
+qpos feature ──────────┤
+visual features ───────┤
+                       ↓
+               policy Transformer
+                       ↓
+                  action chunk
 ```
 
-因此 $z$ 是一个 condition signal，而不是未来轨迹本身。
+因此 $z$ 是 policy condition，而不是 future trajectory 本身。
 
-## KL 对 latent posterior 的约束
+## KL Regularization
 
-ACT 使用 standard normal prior：
-
-\[
-p(z)=\mathcal N(0,I).
-\]
-
-训练时加入
+ACT 使用 standard normal prior
 
 \[
-D_{KL}\left(q_\phi(z\mid q_t,a_{t:t+k-1})\|\mathcal N(0,I)\right).
+p(z)=\mathcal N(0,I)
 \]
 
-它推动 training-time posterior 不要任意远离 standard normal。
+并在训练 objective 中加入
 
-这件事对 inference 很重要，因为部署时没有真实 future action，不能再运行 recognition encoder。模型只能从 prior 侧决定 $z$。
+\[
+D_{KL}
+\left(
+q_\phi(z\mid q_t,A_t)
+\|\mathcal N(0,I)
+\right).
+\]
 
-## ACT 的确定性推理选择
+这一项限制 training-time posterior 与 prior 的偏离程度，使 inference 阶段可以在没有 ground-truth future actions 时从 prior side 选择 latent condition。
 
-通用 CVAE 在 generation 时完全可以从 prior 采样不同 $z$，得到多样输出。
+## Deterministic Inference Choice
 
-ACT 的 released inference 不是这么做。它直接令
+通用 CVAE generation 可以从 prior 随机采样 $z$，产生多个可能输出。ACT 的 released inference 没有采用这种 stochastic policy；它固定
 
 \[
 z=0,
 \]
 
-也就是 standard normal 的 mean，并得到 deterministic action prediction。
+即 standard normal prior 的 mean。
 
-所以 ACT 使用 CVAE training，不意味着部署时 robot policy 必然是 stochastic 的。
+因此 ACT 使用 CVAE-style training 并不意味着 deployment policy 必然随机。固定 latent 的具体含义见 [为什么 ACT 推理时令 z = 0？](/robot-learning/act/why-z-zero-at-inference/)。
 
-更完整解释见 [为什么 ACT 推理时令 z = 0？](/robot-learning/act/why-z-zero-at-inference/)。
-
-## 这条支路什么时候存在
-
-最容易画错的一点可以用两张图固定下来。
+## Training and Inference Graphs
 
 Training：
 
 ```text
-true action chunk ─┐
-current qpos ──────┤→ latent encoder → z
-                   │
-images + qpos ─────┴──────────────→ policy → reconstructed chunk
+ground-truth action chunk ─┐
+current qpos ──────────────┤
+                           ↓
+                    latent encoder
+                           ↓
+                           z
+                           │
+images + qpos ─────────────┤
+                           ↓
+                      ACT policy
+                           ↓
+                 reconstructed chunk
 ```
 
 Inference：
 
 ```text
-z = 0 ─────────────┐
-images + qpos ─────┴──────────────→ policy → predicted chunk
+z = 0 ───────────────┐
+images + qpos ───────┤
+                     ↓
+                ACT policy
+                     ↓
+              predicted chunk
 ```
 
-部署时 ground-truth future action 根本不存在，因此任何把它放进 inference graph 的解释都是错误的。
+Ground-truth future action 只属于 training graph；deployment 时该变量尚未发生，因此不会进入 inference computation。
 
 ## Sources
 
-- Zhao et al., **Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware**, 2023. https://arxiv.org/abs/2304.13705
+- Zhao et al. *Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware*. 2023. https://arxiv.org/abs/2304.13705
 - Official implementation: https://github.com/tonyzhaozh/act/blob/main/detr/models/detr_vae.py

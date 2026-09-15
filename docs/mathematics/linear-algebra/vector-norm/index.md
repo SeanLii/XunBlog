@@ -12,114 +12,167 @@ related:
 
 # Vector Norm
 
-Vector Norm 用一个非负 scalar 描述 vector 的“大小”。最熟悉的是二维或三维空间里的几何长度，但 norm 是一个更一般的概念。
-
-对于 $x\in\mathbb R^d$，Euclidean norm，也就是 $L_2$ norm：
+Vector Norm 是衡量 vector 大小的函数。对 vector space 中的 $x$，norm 记作：
 
 \[
-\|x\|_2=\sqrt{\sum_{i=1}^{d}x_i^2}.
+\|x\|.
 \]
 
-例如
+一个函数 $\|\cdot\|$ 要成为 norm，需要满足三条性质：
+
+1. **positive definiteness**
 
 \[
-x=[3,4],
-\]
-
-则
-
-\[
-\|x\|_2=5.
-\]
-
-## Norm 必须满足的性质
-
-一个函数 $\|\cdot\|$ 要成为 norm，需要满足三类核心性质。
-
-第一，非负并且只有零向量长度为零：
-
-\[
-\|x\|\ge 0,
+\|x\|\ge0,
 \qquad
-\|x\|=0\iff x=0.
+\|x\|=0\iff x=0;
 \]
 
-第二，数乘会按绝对值缩放长度：
+2. **absolute homogeneity**
 
 \[
-\|cx\|=|c|\|x\|.
+\|\alpha x\|=|\alpha|\|x\|;
 \]
 
-第三，满足 triangle inequality：
+3. **triangle inequality**
 
 \[
-\|x+y\|\le \|x\|+\|y\|.
+\|x+y\|\le\|x\|+\|y\|.
 \]
 
-最后这条就是“走两段路不会比直接从起点到终点更短”的抽象形式。
+## $L_p$ Norm
 
-## L1、L2 与一般 Lp Norm
-
-更一般地，$p\ge1$ 时：
+对：
 
 \[
-\|x\|_p=
-\left(\sum_i |x_i|^p\right)^{1/p}.
+x=(x_1,\ldots,x_n),
 \]
 
-其中：
+当 $p\ge1$ 时：
 
 \[
-\|x\|_1=\sum_i |x_i|,
+\|x\|_p
+=
+\left(
+\sum_{i=1}^{n}|x_i|^p
+\right)^{1/p}.
 \]
+
+常见情况包括：
+
+### $L_1$ norm
 
 \[
-\|x\|_2=\sqrt{\sum_i x_i^2}.
+\|x\|_1=\sum_i|x_i|.
 \]
 
-它们都在衡量“大小”，但几何形状与优化性质不同。L1 对每个分量的绝对值累加；L2 对大分量的惩罚增长更快。
-
-## Normalization
-
-如果 $x\neq0$，可以构造：
+### $L_2$ norm
 
 \[
-\hat x=\frac{x}{\|x\|_2}.
+\|x\|_2
+=
+\sqrt{\sum_i x_i^2}.
 \]
 
-于是：
+这是 Euclidean length。
+
+### $L_\infty$ norm
+
+\[
+\|x\|_\infty
+=
+\max_i|x_i|.
+\]
+
+不同 norms 对 coordinates 的变化有不同敏感度，因此会定义不同 geometry。
+
+## Norm 与 Distance
+
+任意 norm 都可以诱导 distance：
+
+\[
+d(x,y)=\|x-y\|.
+\]
+
+例如 Euclidean distance：
+
+\[
+d_2(x,y)=\|x-y\|_2.
+\]
+
+因此很多“误差大小”实际上是在某个 norm 所定义的 geometry 中衡量两个 vectors 的差异。
+
+## Unit Vector 与 Normalization
+
+对非零 vector：
+
+\[
+\hat x=\frac{x}{\|x\|_2},
+\]
+
+则：
 
 \[
 \|\hat x\|_2=1.
 \]
 
-这叫 unit normalization。它不是 [Layer Normalization](/deep-learning/core/layer-normalization/)；前者把整个 vector 的长度缩放到 1，后者根据 feature mean 与 variance 做标准化，并带可学习的 affine parameters。
+Normalization 删除 vector 的整体 magnitude，保留其 direction。它常用于 cosine similarity、feature matching 与 representation comparison。
 
-## Norm 与 Dot Product
+## 与 Dot Product 的关系
 
-在 Euclidean space 中：
+在 Euclidean space：
 
 \[
 \|x\|_2^2=x^\top x.
 \]
 
-因此 [Dot Product](/mathematics/linear-algebra/dot-product/) 同时连接了长度与角度：
+进一步：
 
 \[
-x^\top y=\|x\|_2\|y\|_2\cos\theta.
+x^\top y
+=
+\|x\|_2\|y\|_2\cos\theta.
 \]
 
-这说明 dot product 较大可能来自两个原因：方向接近，或者 vectors 本身很长。
+因此 [Dot Product](/mathematics/linear-algebra/dot-product/) 同时给出 vector length 与 angular relationship。
 
-## 在机器学习中的常见位置
+## Norm Equivalence in Finite Dimensions
 
-Norm 会出现在很多互不相同的地方：
+有限维 vector space 中，不同 norms 在拓扑意义上等价：对任意两种 norms $\|\cdot\|_a$ 与 $\|\cdot\|_b$，存在只依赖于这两种 norms 和空间维数的常数 $c,C>0$，使所有 $x$ 都满足
 
-- weight decay 与参数大小；
-- distance / similarity；
+\[
+c\|x\|_a
+\le
+\|x\|_b
+\le
+C\|x\|_a.
+\]
+
+这个不等式意味着两种 norms 不会在有限维空间中对“趋近于 0”给出矛盾判断。例如若
+
+\[
+\|x_n-x\|_a\to0,
+\]
+
+则由上界
+
+\[
+\|x_n-x\|_b\le C\|x_n-x\|_a\to0,
+\]
+
+所以同一个 sequence 也会在 $\|\cdot\|_b$ 下收敛到 $x$。反方向由另一侧不等式同理成立。
+
+因此 finite-dimensional norm equivalence 说的是：这些 norms 诱导相同的 convergence / continuity topology；它**不**意味着数值相同，也不意味着 optimization 中可以任意互换。不同 norms 仍然定义不同的 unit balls、loss geometry、gradient behavior 与 regularization bias。
+
+## Machine Learning 中的使用
+
+常见例子包括：
+
+- $L_1$ / $L_2$ prediction error；
+- parameter regularization；
 - gradient clipping；
 - embedding normalization；
-- error metrics；
-- optimization constraints。
+- distance-based retrieval；
+- robustness constraints。
 
-因此 norm 是独立的线性代数概念，而不是 attention 或 embedding 的附属操作。
+具体选择哪种 norm 应由模型目标与数据结构决定，而不是由“哪个公式更常见”决定。

@@ -79,9 +79,9 @@ e^{-\infty}=0,
 
 所以最终 reading weight 为 0。
 
-## Causal Constraint 下的 Parallel Training
+## Parallel Training under a Causal Constraint
 
-Autoregressive generation 看起来必须一个 token 一个 token 地生成。
+Autoregressive inference 按 sequence order 逐步生成 token。
 
 但 training 时完整 target sequence 已知，可以一次性构造整个 causal mask：
 

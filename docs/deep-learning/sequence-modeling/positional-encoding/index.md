@@ -34,7 +34,7 @@ A B C
 C B A
 ```
 
-如果只提供同样的 token embeddings，而不提供 position，self-attention 面对的只是同一组 vectors 的 permutation。
+在缺少 position information 时，self-attention 只能接收到同一组 content vectors 的不同 permutation。
 
 模型无法凭空知道：
 

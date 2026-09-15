@@ -14,151 +14,136 @@ related:
 
 # Architecture
 
-ACT 的 architecture 最好分成两条数据流理解：
+ACT architecture 包含两条职责不同的数据流：
 
-1. **policy 主干**：当前 observation → future action chunk；
-2. **training-only latent branch**：current qpos + ground-truth action chunk → latent $z$。
+1. **policy predictor**：根据当前 observation 与 latent condition 预测 future action chunk；
+2. **training-only latent encoder**：根据 current qpos 与 ground-truth action chunk 构造 approximate posterior $q_\phi(z\mid\cdot)$。
 
-第二条只在训练时存在。先看部署时真正留下的主干，再把训练分支接回来。
+部署时只保留第一条主干，第二条只参与 training。
 
-## Policy 主干
-
-```text
-多路 RGB images
-      │
-      ↓
-  ResNet backbone
-      │
-      ↓
-spatial visual features ──┐
-                          │
-current qpos ── projection ├──→ Transformer
-                          │
-latent z ───── projection ┘
-                          │
-                          ↓
-                    encoder memory
-                          ↑
-                          │
-                  action queries
-                          │
-                          ↓
-               Transformer decoder
-                          │
-                          ↓
-                  action head
-                          │
-                          ↓
-        [a_hat_t ... a_hat_t+k-1]
-```
-
-这张图里最重要的是“谁提供 memory，谁提供 query”。Observation information 主要被编码成 memory；$k$ 个 learnable action queries 则对应 $k$ 个未来输出槽位。
-
-## 视觉输入
-
-对于每个 camera image，官方实现使用 [ResNet](/deep-learning/cnn/resnet/) backbone 提取 feature map。随后用 $1\times1$ convolution 投影到 Transformer hidden dimension。
-
-多相机 feature maps 在官方代码中沿 spatial width 方向拼接，再和对应 positional features 一起送入 Transformer。
-
-因此 Transformer 看到的不是原始 RGB pixels，而是一组已经具有视觉语义的 spatial features。
-
-更完整的过程见 [Vision Pipeline](/robot-learning/act/vision-pipeline/)。
-
-## Proprioception 与 latent
-
-当前 joint position $q_t$ 通过 linear projection 映射到 hidden dimension。
-
-Latent $z$ 也先通过 linear layer 映射到相同 hidden dimension。官方实现还为 proprioception 与 latent 使用额外 learned position embeddings，使模型能区分这些非图像输入的角色。
-
-因此进入 policy Transformer 的信息可以抽象成：
-
-\[
-\{\text{visual features},\text{proprio feature},\text{latent feature}\}.
-\]
-
-## Action queries
-
-ACT 从 [DETR](/deep-learning/detr/) 借用了 [Object Query](/deep-learning/detr/object-query/) 的 learnable output-slot 思路。模型维护 $k$ 个 learnable embeddings：
-
-\[
-Q_{action}\in\mathbb R^{k\times d}.
-\]
-
-它们不是过去的真实动作，也不是未来动作数值本身，而是 $k$ 个输出槽位的 learned query states。
-
-第 1 个 query 对应 chunk 中第 1 个动作位置，第 2 个对应第 2 个，以此类推。经过 Transformer decoder 后，每个 query 得到一个 contextual representation，再经过 linear action head 变成 joint target。
-
-如果 state dimension 为 14：
-
-\[
-H_{dec}\in\mathbb R^{B\times k\times d}
-\]
-
-经过 action head 后：
-
-\[
-\hat A\in\mathbb R^{B\times k\times14}.
-\]
-
-## Training-only latent branch
-
-训练时，模型已知真实 action chunk。ACT 使用另一套 Transformer encoder 来从
-
-- 一个 learnable [CLS Token](/deep-learning/bert/cls-token/)；
-- current qpos；
-- ground-truth action sequence
-
-中提取一个 summary representation：
+## Policy Predictor
 
 ```text
-[CLS] , q_t , a_t , a_t+1 , ... , a_t+k-1
-                     │
-                     ↓
-          latent Transformer encoder
-                     │
-                     ↓
-               CLS output
-                     │
-                     ↓
-              linear projection
-                ↙          ↘
-              μ              log σ²
-                     │
-                     ↓
-                 sample z
+multi-camera RGB images
+          ↓
+     ResNet backbone
+          ↓
+spatial visual features ────────┐
+                                │
+current qpos → projection ──────┤
+                                │
+latent z → projection ──────────┤
+                                ↓
+                     Transformer encoder
+                                ↓
+                             memory
+                                ↑
+                        action queries
+                                ↓
+                     Transformer decoder
+                                ↓
+                         action head
+                                ↓
+                 [a_t ... a_t+k-1]
 ```
 
-官方实现的 latent dimension 是 32。这个 32 是 released code 的设计选择，不是 CVAE 的通用要求。
+Observation-side features 构成 encoder memory，$k$ 个 learned action queries 则定义 decoder 的 $k$ 个 future output slots。
 
-## 两个 Transformer 模块的不同职责
+## Visual Features
 
-容易混淆的一点是：ACT 里不只有一个“Transformer”。
+每个 camera image 由 [ResNet](/deep-learning/cnn/resnet/) backbone 提取 feature map，再用 1×1 convolution 投影到 Transformer hidden dimension。
 
-- latent encoder Transformer：训练时从 qpos + action sequence 得到 $q_\phi(z\mid\cdot)$；
-- policy Transformer encoder-decoder：根据 observation + latent 预测 action chunk。
+多相机 features 与相应 positional representations 在 released code 中沿 spatial width 方向拼接。Transformer 因此接收具有空间结构的 visual feature grid，而不是单个 global image vector。
 
-前者部署时消失；后者是真正执行 policy 的主干。
+完整视觉路径见 [Vision Pipeline](/robot-learning/act/vision-pipeline/)。
 
-## Architecture 与算法思想的边界
+## Proprioception and Latent Conditioning
 
-[ResNet](/deep-learning/cnn/resnet/)、[Transformer](/deep-learning/transformer/)、[CLS Token](/deep-learning/bert/cls-token/) 与 [Object Query](/deep-learning/detr/object-query/) 都来自 ACT 之前的模型或机制。ACT 的模型设计价值在于它如何把这些组件放到 action-chunk imitation learning 中：
+Current joint positions $q_t$ 经 Linear Layer 投影到 hidden dimension。Latent $z$ 也由独立 projection 映射到相同 dimension。
+
+官方实现为 proprioception feature 与 latent feature 配置额外 learned position embeddings，使 Transformer 能区分这两类非图像 input tokens 的结构身份。
+
+Policy encoder 的信息源可以抽象为
+
+\[
+\{\text{visual features},\text{proprioceptive feature},\text{latent feature}\}.
+\]
+
+## Action Queries
+
+ACT 继承 [DETR](/deep-learning/detr/) 的 learned output-query pattern。设 chunk length 为 $k$，模型维护
+
+\[
+Q_{action}\in\mathbb R^{k\times d_{model}}.
+\]
+
+这些 embeddings 不是 future action values，而是 decoder 的 learned output slots。经过 decoder 后得到
+
+\[
+H_{dec}\in\mathbb R^{B\times k\times d_{model}},
+\]
+
+再通过 action head 映射到
+
+\[
+\hat A\in\mathbb R^{B\times k\times d_a}.
+\]
+
+第 $j$ 个 output slot 对应 action chunk 中第 $j$ 个 temporal position。
+
+## Training-Only Latent Encoder
+
+训练时 ground-truth future action chunk 已知。ACT 将以下 sequence 输入另一套 Transformer encoder：
 
 ```text
-human demonstration variation
-          ↓
-     CVAE latent
-          ↓
-observation + z
-          ↓
-Transformer memory/query architecture
-          ↓
-future action chunk
-          ↓
-temporal aggregation during execution
+[CLS] , current qpos , a_t , a_t+1 , ... , a_t+k-1
 ```
+
+这些 inputs 先分别投影到 latent encoder hidden dimension。Encoder 最终取 [CLS Token](/deep-learning/bert/cls-token/) representation，并通过 Linear Layer 输出
+
+\[
+(\mu,\log\sigma^2).
+\]
+
+由此定义 diagonal Gaussian approximate posterior：
+
+\[
+q_\phi(z\mid q_t,A_t)
+=
+\mathcal N(\mu,\operatorname{diag}(\sigma^2)).
+\]
+
+released code 的 latent dimension 为 32。该数值属于具体 implementation configuration，不是 CVAE 的理论要求。
+
+## Two Transformer Modules
+
+ACT 中存在两套不同 Transformer computations：
+
+- **latent encoder Transformer**：只在训练时运行，用 qpos 与 ground-truth actions 推断 latent posterior；
+- **policy Transformer encoder–decoder**：训练和 inference 都运行，根据 observation 与 latent condition 预测 action chunk。
+
+二者 parameters 与职责不同。Deployment graph 删除 latent encoder，只保留 policy predictor，并设置 $z=0$。
+
+## Architecture Boundaries
+
+ACT 复用了 ResNet、Transformer、CLS-like summary token 与 DETR-style output queries，但这些通用机制不是 ACT 的独立理论贡献。
+
+ACT architecture 的特定组合关系是：
+
+\[
+\text{demonstration latent modeling}
++
+\text{observation memory}
++
+\text{learned action queries}
+\rightarrow
+\text{future action chunk}.
+\]
+
+Action Chunking 与 Temporal Ensemble 又分别规定了 prediction unit 与 deployment-time aggregation，因此 architecture 只是完整 ACT policy 的一个层面。
 
 ## Sources
 
-- Zhao et al., **Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware**, 2023. https://arxiv.org/abs/2304.13705
+- Zhao et al. *Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware*. 2023. https://arxiv.org/abs/2304.13705
 - Official model implementation: https://github.com/tonyzhaozh/act/blob/main/detr/models/detr_vae.py
-- Carion et al., **DETR**, 2020. https://arxiv.org/abs/2005.12872
+- Carion et al. *End-to-End Object Detection with Transformers*. 2020.

@@ -16,27 +16,31 @@ related:
 
 # Variational Autoencoder
 
-Variational Autoencoder（VAE）是一种把**deep latent-variable generative model**和**amortized variational inference**结合起来的模型框架。
+Variational Autoencoder（VAE）是将 **latent-variable generative model** 与 **amortized variational inference** 结合起来的概率生成模型框架。
 
-它不是“普通 Autoencoder 加噪声”。
-
-最重要的 mental model 是两条方向：
-
-```text
-Generative direction:
-z → x
-
-Inference direction:
-x → approximate distribution over z
-```
-
-Generative model 想描述：
+它同时包含两个方向：
 
 \[
-p_\theta(x,z)=p(z)p_\theta(x\mid z).
+\text{generative model:}
+\qquad
+z\rightarrow x,
 \]
 
-Inference network 则近似难算 posterior：
+\[
+\text{inference model:}
+\qquad
+x\rightarrow q_\phi(z\mid x).
+\]
+
+Generative model 定义：
+
+\[
+p_\theta(x,z)
+=
+p(z)p_\theta(x\mid z),
+\]
+
+Inference network 定义 approximate posterior：
 
 \[
 q_\phi(z\mid x)
@@ -44,86 +48,83 @@ q_\phi(z\mid x)
 p_\theta(z\mid x).
 \]
 
-## 先看完整数据流
-
-对一个 training sample $x$：
-
-```text
-x
-↓
-Encoder / Inference Network
-↓
-μ(x), log σ²(x)
-↓
-qφ(z|x)
-↓
-sample z
-↓
-Decoder / Generative Network
-↓
-parameters of pθ(x|z)
-↓
-ELBO objective
-```
-
-这里 encoder 输出的不是“最终 latent vector”，而是 approximate posterior distribution 的 parameters。
+VAE 的目标不是把输入压缩后再简单重建，而是学习一个可以通过 latent prior 采样的概率模型，同时训练一个神经网络近似 latent posterior。
 
 ## Generative Model
 
-常见 prior：
+VAE 首先假设 latent variable：
+
+\[
+z\sim p(z).
+\]
+
+常见 prior 为：
 
 \[
 p(z)=\mathcal N(0,I).
 \]
 
-Decoder 定义 likelihood：
+给定 $z$，Decoder 参数化 observation likelihood：
 
 \[
 p_\theta(x\mid z).
 \]
 
-生成时：
+因此 joint distribution 为：
 
 \[
-z\sim p(z),
+p_\theta(x,z)
+=
+p(z)p_\theta(x\mid z).
 \]
 
-再：
+Observed-data distribution 需要 marginalize latent variable：
 
 \[
-x\sim p_\theta(x\mid z).
+p_\theta(x)
+=
+\int p_\theta(x\mid z)p(z)\,dz.
 \]
 
-这才是 VAE 作为 generative model 的正向过程。
+这一步通常没有可直接计算的 closed form，是 VAE 需要 approximate inference 的根本原因。
 
-## Encoder / Recognition Model
+## Posterior Inference
 
-真实 posterior：
+观察到 $x$ 后，真实 latent posterior 为：
 
 \[
 p_\theta(z\mid x)
+=
+\frac{p_\theta(x\mid z)p(z)}{p_\theta(x)}.
 \]
 
-通常难以直接计算。
+由于 denominator：
 
-VAE 使用 neural network 产生：
+\[
+p_\theta(x)
+=
+\int p_\theta(x\mid z)p(z)\,dz
+\]
+
+通常难以计算，VAE 引入 inference network：
 
 \[
 q_\phi(z\mid x).
 \]
 
-常设 diagonal Gaussian：
+对于常见 diagonal Gaussian posterior：
 
 \[
 q_\phi(z\mid x)
 =
-\mathcal N(
+\mathcal N
+\left(
 \mu_\phi(x),
 \operatorname{diag}(\sigma_\phi^2(x))
-).
+\right).
 \]
 
-encoder 因而输出：
+Encoder 因此不直接输出一个 latent point，而是输出 distribution parameters，例如：
 
 \[
 \mu_\phi(x),
@@ -131,116 +132,316 @@ encoder 因而输出：
 \log\sigma_\phi^2(x).
 \]
 
-## Reparameterized Sampling
+## Amortized Inference
 
-直接写：
+传统 variational inference 可以为每个 observation 单独优化 variational parameters。VAE 改为用共享 neural network：
 
 \[
-z\sim
-\mathcal N(\mu,\sigma^2)
+x
+\mapsto
+\phi(x),
 \]
 
-会让 stochastic sampling node 难以直接用普通 backpropagation 表达 parameter gradient。
+直接得到该 observation 的 posterior approximation。
 
-VAE 使用 [Reparameterization Trick](/mathematics/probability/variational-inference/reparameterization-trick/)：
+这种方法称为 amortized inference：训练阶段学习一个通用 inference function，新 observation 到来时不需要重新从头优化 posterior。
+
+代价是可能出现 amortization gap：共享 Encoder 未必能对每个 sample 都达到 variational family 内的最优 posterior approximation。
+
+## Evidence Lower Bound
+
+VAE 希望最大化 marginal likelihood：
+
+\[
+\log p_\theta(x),
+\]
+
+但该量通常不可直接计算。于是优化 [Evidence Lower Bound](/mathematics/probability/variational-inference/evidence-lower-bound/)：
+
+\[
+\boxed{
+\mathcal L(x)
+=
+\mathbb E_{q_\phi(z\mid x)}
+[\log p_\theta(x\mid z)]
+-
+D_{KL}
+\left(
+q_\phi(z\mid x)
+\|p(z)
+\right)
+}
+\]
+
+并且：
+
+\[
+\log p_\theta(x)
+=
+\mathcal L(x)
++
+D_{KL}
+\left(
+q_\phi(z\mid x)
+\|p_\theta(z\mid x)
+\right).
+\]
+
+因此 ELBO 与 log evidence 之间的 gap 恰好是 approximate posterior 与 true posterior 的 KL divergence。
+
+## Expected Log-Likelihood
+
+第一项：
+
+\[
+\mathbb E_{q_\phi(z\mid x)}
+[\log p_\theta(x\mid z)]
+\]
+
+要求从 approximate posterior 采样得到的 latent variable 能让 Decoder 对 observation 赋予较高 likelihood。
+
+它经常被称为 reconstruction term，但其正式含义是 **expected log-likelihood**。
+
+具体 loss 形式取决于 likelihood family。
+
+### Gaussian Likelihood
+
+若：
+
+\[
+p_\theta(x\mid z)
+=
+\mathcal N
+(\mu_\theta(z),\sigma_x^2I),
+\]
+
+且 $\sigma_x$ 固定，则 negative log-likelihood 与 squared reconstruction error 只差常数和 scale。
+
+### Bernoulli Likelihood
+
+对于适合 Bernoulli observation model 的数据，negative log-likelihood 具有 binary cross-entropy 形式。
+
+因此 VAE 的 reconstruction term 并不固定为 MSE；其形式由 likelihood $p_\theta(x\mid z)$ 决定。
+
+## KL Term
+
+第二项：
+
+\[
+D_{KL}
+\left(
+q_\phi(z\mid x)
+\|p(z)
+\right)
+\]
+
+约束每个 observation 的 approximate posterior 与 prior 之间的差异。
+
+对：
+
+\[
+p(z)=\mathcal N(0,I),
+\]
+
+以及 diagonal Gaussian posterior，有 closed form：
+
+\[
+D_{KL}(q\|p)
+=
+\frac12
+\sum_j
+\left(
+\mu_j^2
++
+\sigma_j^2
+-
+1
+-
+\log\sigma_j^2
+\right).
+\]
+
+这项约束使 latent codes 不能任意散布在没有统一概率结构的空间中，但它也限制 posterior 能携带的信息量。
+
+## Reparameterized Sampling
+
+ELBO 的 likelihood term 需要从：
+
+\[
+z\sim q_\phi(z\mid x)
+\]
+
+采样。为了对 $\phi$ 使用低方差 pathwise gradient，VAE 使用 [Reparameterization Trick](/mathematics/probability/variational-inference/reparameterization-trick/)：
 
 \[
 \epsilon\sim\mathcal N(0,I),
 \]
 
 \[
-z=\mu+\sigma\odot\epsilon.
-\]
-
-随机性被移到 parameter-independent noise $\epsilon$ 中。
-
-## Training Objective
-
-VAE maximize ELBO：
-
-\[
-\mathcal L(x)
+z
 =
-\mathbb E_{q_\phi(z\mid x)}
-[
-\log p_\theta(x\mid z)
-]
--
-D_{KL}
-(q_\phi(z\mid x)\|p(z)).
+\mu_\phi(x)
++
+\sigma_\phi(x)\odot\epsilon.
 \]
 
-第一项要求 sampled latent 能解释 observation；第二项让 approximate posterior 不要任意偏离 prior。
+随机性被隔离到与 $\phi$ 无关的 $\epsilon$，而 $z$ 对 $\mu,\sigma$ 的变换保持可微。
 
-这两个 terms 共同来自概率推导，不是经验上随意拼出的两个 losses。
+## Complete Training Flow
 
-## Reconstruction Term 取决于 Likelihood
+一条训练样本的数据流为：
 
-如果：
+```text
+x
+│
+↓
+Inference Network / Encoder
+│
+├── μ(x)
+└── log σ²(x)
+       │
+       ↓
+qφ(z|x)
+       │
+ε ~ N(0,I)
+       │
+       ↓
+z = μ + σ ⊙ ε
+       │
+       ↓
+Generative Network / Decoder
+       │
+       ↓
+parameters of pθ(x|z)
+       │
+       ├── expected log-likelihood
+       └── KL(qφ(z|x) || p(z))
+```
 
-\[
-p_\theta(x\mid z)
-=
-\mathcal N(
-\mu_\theta(z),
-\sigma_x^2 I
-)
-\]
-
-并固定 $\sigma_x$，negative log-likelihood 与 squared error 只差 scale / constants。
-
-如果是 Bernoulli likelihood，则对应不同 reconstruction form。
-
-所以 VAE 的根本对象是 likelihood，而不是固定“必须用 MSE”。
+Encoder 与 Decoder 通过同一个 ELBO 联合优化。
 
 ## Generation
 
-训练完成后不需要先给一个真实 $x$ 才能生成。
+训练完成后，生成过程不需要真实 observation 作为 Encoder 输入。
 
-可以：
+直接从 prior 采样：
 
 \[
-z\sim\mathcal N(0,I),
+z\sim p(z),
 \]
 
-然后 decoder：
+再从 likelihood 生成：
 
 \[
+x\sim p_\theta(x\mid z).
+\]
+
+若 Decoder 输出 likelihood mean，也可以使用该 mean 作为 deterministic reconstruction / visualization；但这与从完整 likelihood 采样是不同操作。
+
+## Reconstruction 与 Generation
+
+Reconstruction 使用：
+
+\[
+x
+\rightarrow
+q_\phi(z\mid x)
+\rightarrow
+z
+\rightarrow
 p_\theta(x\mid z).
 \]
 
-这就是 VAE 相比 deterministic Autoencoder 的重要区别：prior 定义了 latent sampling mechanism。
+Generation 使用：
 
-## Latent Space Geometry
+\[
+z\sim p(z)
+\rightarrow
+p_\theta(x\mid z).
+\]
 
-KL term 让各 observations 的 approximate posteriors 与共同 prior 建立约束，使 latent regions 不至于任意碎裂。
+因此 reconstruction quality 主要测试 inference + decoding；prior generation 则测试 learned generative model 在 prior samples 上的行为。
 
-但“VAE latent 一定平滑、一定 disentangled”不是理论保证。具体 geometry 取决于 objective、capacity 与 data。
+## Latent Geometry
 
-## Posterior Collapse
+KL regularization 让 approximate posteriors 受到共同 prior 的约束，因此 latent space 通常比普通 deterministic Autoencoder 更适合 interpolation 与 prior sampling。
 
-如果 decoder 很强，model 可能学会不使用 $z$：
+但以下性质都不是 VAE 自动保证的：
+
+- disentanglement；
+- semantic axis alignment；
+- uniform perceptual interpolation；
+- every prior point corresponds to equally realistic data。
+
+这些性质受 prior、likelihood、architecture、ELBO weighting 与 data distribution 共同影响。
+
+## Posterior Family
+
+Diagonal Gaussian 是常见但受限的 variational family：
 
 \[
 q_\phi(z\mid x)
-\approx p(z),
+=
+\prod_j q_\phi(z_j\mid x).
 \]
 
-而 decoder 主要依靠自身能力解释 data。
+它无法直接表达复杂 posterior correlations 或 multimodality。
 
-这叫 [Posterior Collapse](/generative-models/posterior-collapse/)，是 VAE training 中的重要 failure mode。
+更灵活的 approximate posterior 可以通过 full covariance、normalizing flows、hierarchical latent variables 等方式构造。更强 posterior family 可以缩小 approximation gap，但会增加 inference 和 optimization complexity。
 
-## 从 VAE 到 CVAE
+## Posterior Collapse
 
-如果生成结果还需要由 observed condition $c$ 控制，可以建立：
+如果 Decoder 能在很少使用 $z$ 的情况下获得较高 likelihood，模型可能出现：
 
 \[
-p(y,z\mid c).
+q_\phi(z\mid x)
+\approx
+p(z).
 \]
 
-这进入 [Conditional Variational Autoencoder](/generative-models/conditional-variational-autoencoder/)。
+此时 latent variable 与 observation 的依赖显著减弱。这称为 [Posterior Collapse](/generative-models/posterior-collapse/)。
+
+Posterior collapse 与 Decoder capacity、optimization dynamics、KL pressure、data structure 等因素有关，并不是“VAE 必然发生”的现象。
+
+## Variants and Objective Modifications
+
+VAE framework 可以改变：
+
+- prior；
+- posterior family；
+- likelihood family；
+- latent hierarchy；
+- ELBO weighting；
+- Decoder / Encoder architecture。
+
+例如 $\beta$-VAE 使用：
+
+\[
+\mathcal L_{\beta}
+=
+\mathbb E_q[\log p_\theta(x\mid z)]
+-
+\beta D_{KL}(q\|p),
+\]
+
+改变 reconstruction 与 latent regularization 的权衡。这样的 modified objectives 不再与标准 ELBO 完全相同，需要单独理解其建模目标。
+
+## Relationship to Autoencoder
+
+普通 Autoencoder 与 VAE 都包含 Encoder / Decoder，因此表面结构相似，但概率含义不同：
+
+| | Autoencoder | VAE |
+|---|---|---|
+| Encoder output | deterministic code $h$ | distribution $q_\phi(z\mid x)$ |
+| Latent prior | 不要求 | 明确定义 $p(z)$ |
+| Decoder | reconstruction function | likelihood model $p_\theta(x\mid z)$ |
+| Objective | reconstruction / regularized reconstruction | ELBO |
+| prior sampling | 没有统一定义 | 是标准生成过程 |
+
+VAE 因此不是“Autoencoder 加随机噪声”，而是一个 probabilistic latent-variable model 加 amortized inference network。
 
 ## Sources
 
-- Kingma & Welling. *Auto-Encoding Variational Bayes*. ICLR 2014.
+- Kingma & Welling. *Auto-Encoding Variational Bayes*. ICLR, 2014.
+- Rezende, Mohamed, Wierstra. *Stochastic Backpropagation and Approximate Inference in Deep Generative Models*. ICML, 2014.
 - Kingma & Welling. *An Introduction to Variational Autoencoders*. 2019.

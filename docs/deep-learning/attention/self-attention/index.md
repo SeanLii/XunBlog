@@ -45,7 +45,7 @@ O=
 
 Self-Attention 的形式早于 Transformer；Transformer 的关键变化是把它提升为 encoder / decoder 的主要计算并与自己的 attention 设计组合。
 
-## 一个位置在做什么
+## Single-Position Computation
 
 对 position $i$：
 

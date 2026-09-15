@@ -15,69 +15,59 @@ related:
 
 # Training
 
-π0 的单个训练样本可以先理解成：
-
-```text
-当前 observation o_t
-+
-真实未来 action chunk A_t
-```
-
-其中 observation 包含 images、language instruction 与 robot state：
+π0 training converts a demonstrated future action chunk into a conditional Flow Matching regression problem. Each sample contains current observation
 
 \[
-o_t=[I_t^1,\ldots,I_t^n,\ell_t,q_t],
+o_t=[I_t^1,\ldots,I_t^n,\ell_t,q_t]
 \]
 
-真实 action chunk 为
+and future action chunk
 
 \[
 A_t=[a_t,\ldots,a_{t+H-1}].
 \]
 
-训练的目标不是直接让网络输出 $A_t$，而是把真实 action 与随机 noise 混合，构造一个 Flow Matching regression problem。
+The model does not train by directly regressing final actions from observation. Instead it constructs noisy intermediate actions and predicts the velocity field that transports them toward the demonstrated action distribution.
 
-## Step 1：得到真实 action chunk
+## Action-Chunk Target
 
-从 robot demonstration 的时间序列中，以当前时刻 $t$ 为起点截取：
-
-\[
-A_t=[a_t,a_{t+1},\ldots,a_{t+H-1}].
-\]
-
-论文使用 $H=50$。
-
-所以一个训练 target 本身就是二维结构：
+From a robot trajectory, training selects a current timestep and future horizon
 
 \[
 A_t\in\mathbb R^{H\times d_a}.
 \]
 
-## Step 2：采样随机 noise
-
-采样与 action chunk shape 完全相同的 Gaussian noise：
+The π0 paper uses
 
 \[
-\epsilon\sim\mathcal N(0,I).
+H=50.
 \]
 
-直观上，它是“完全不像正确动作”的起点。
+All action positions are treated jointly as one sample from the conditional action distribution.
 
-## Step 3：采样 flow timestep
+## Gaussian Noise
 
-再采样
+Sample
+
+\[
+\epsilon\sim\mathcal N(0,I)
+\]
+
+with the same shape as $A_t$. This supplies the base-distribution sample for the flow path.
+
+## Flow Timestep
+
+Sample a scalar flow time
 
 \[
 \tau\in[0,1].
 \]
 
-π0 论文不是 uniform sampling，而使用 shifted beta distribution，强调更 noisy 的区域。
+The π0 paper uses a shifted beta distribution rather than uniform timestep sampling, placing more mass in the noisier part of the path. This is a π0-specific training choice, not a general requirement of Flow Matching.
 
-$\tau$ 决定当前训练样本离真实动作有多远。
+## Noisy Intermediate Action
 
-## Step 4：构造 noisy action
-
-论文 convention 下：
+Under the paper convention,
 
 \[
 A_t^\tau
@@ -85,146 +75,97 @@ A_t^\tau
 \tau A_t+(1-\tau)\epsilon.
 \]
 
-例如 $\tau=0.2$ 时，noise 占比仍然很高；$\tau=0.9$ 时，当前 action 已经非常接近 ground truth。
+At $\tau=0$, the sample is pure noise; at $\tau=1$, it equals the demonstrated action chunk.
 
-训练不是只看“轻微加噪”或“完全 noise”，而是在不同 flow stages 上学习 vector field。
-
-## Step 5：构造 target velocity
-
-这条线性 path 的速度是：
+The derivative of this linear path is
 
 \[
 u_t=A_t-\epsilon.
 \]
 
-注意 target 是一个与 $A_t$ 同 shape 的向量场：
+This velocity has the same shape as the action chunk.
+
+## Observation Prefix Encoding
+
+Images are converted to visual tokens and language is embedded by the VLM pathway. Robot state is projected through robotics-specific parameters.
+
+The observation-side inputs form the fixed conditioning context for the vector field:
 
 \[
-u_t\in\mathbb R^{H\times d_a}.
+v_\theta(A_t^\tau,o_t).
 \]
 
-模型每个 action position 都要预测相应 velocity。
+## Action and Time Embedding
 
-## Step 6：编码 observation prefix
+Each noisy action vector is projected into Action Expert hidden space and combined with an embedding of $\tau$. The resulting $H$ action tokens enter the Transformer under π0's blockwise attention mask.
 
-Images 经过 vision encoder 得到 visual tokens；language prompt 得到 text embeddings。
+The network therefore receives both:
 
-它们进入 VLM weights：
+- the current point $A_t^\tau$ on the action path；
+- the flow-time coordinate $\tau$。
 
-```text
-images ─→ visual tokens ─┐
-                         ├──→ VLM prefix
-language ─→ text tokens ─┘
-```
+## Vector-Field Prediction
 
-Robot state $q_t$ 则通过 robotics-specific projection 进入 Action Expert 一侧。
-
-## Step 7：把 noisy actions 与 τ 送入 Action Expert
-
-每个 action vector 先投影到 expert hidden dimension，再与 timestep embedding 组合：
-
-```text
-A_t^τ ─→ action projection ─┐
-                            ├─→ MLP ─→ action tokens
-τ ─────→ time embedding ────┘
-```
-
-然后 image/language/state/action tokens 按 π0 的 blockwise mask 一起进入 Transformer computation。
-
-## Step 8：只读取 action positions 的输出
-
-模型最后只取 action block 的 $H$ 个 hidden states：
-
-\[
-h^{action}
-\in\mathbb R^{H\times d_h}.
-\]
-
-再通过 output projection：
+After Transformer interaction, π0 selects the hidden states corresponding to the $H$ action positions and projects them back to action dimension:
 
 \[
 v_\theta
-=
-W_{out}h^{action}
-\in\mathbb R^{H\times d_a}.
+\in
+\mathbb R^{H\times d_a}.
 \]
 
-这个输出就是预测 vector field。
+The output represents velocity, not final action values.
 
-## Step 9：Flow Matching Loss
+## Flow Matching Objective
 
-论文形式：
+The paper objective is
 
 \[
 \mathcal L(\theta)
 =
 \mathbb E
 \left[
-\|v_\theta(A_t^\tau,o_t)-(A_t-\epsilon)\|_2^2
+\lVert
+v_\theta(A_t^\tau,o_t)
+-(A_t-\epsilon)
+\rVert_2^2
 \right].
 \]
 
-因此一次训练 forward 的本质是：
+Training can evaluate this objective in one network forward for a sampled $\tau$. It does not need to numerically integrate ten flow steps during each training example.
+
+## Released openpi Time Convention
+
+Current openpi parameterizes the same path in the opposite direction:
 
 ```text
-(o_t, A_t)
-  │
-  ├─ sample ε, τ
-  │
-  ├─ build A_t^τ
-  │
-  ↓
- π0 predicts vθ
-  │
-  ↓
-MSE with target velocity
+t = 1 : noise
+t = 0 : data
 ```
 
-网络没有在这一次训练中真的运行 10 个 denoising steps。那是 inference 的事情。
-
-## 当前 openpi implementation 的符号方向
-
-当前官方 openpi 采用与论文相反的 time convention：
-
-```text
-code t = 1 → noise
-code t = 0 → data
-```
-
-因此代码构造：
+and constructs
 
 \[
 x_t=t\epsilon+(1-t)A,
 \]
 
-目标是：
+with target
 
 \[
 u_t=\epsilon-A.
 \]
 
-loss 仍然是 predicted velocity 与 target velocity 的 squared error。
+The squared vector-field regression objective is unchanged up to path orientation. Paper equations and code equations should therefore not be mixed without first fixing the time convention.
 
-这不是训练目标发生了本质变化，而是同一条 flow path 的参数方向反过来了。
+## Training versus Inference
 
-## Training 与 Inference 的关键区别
+Training has access to the demonstrated $A_t$, so it can sample any intermediate point directly from $(A_t,\epsilon,\tau)$.
 
-训练时真实 action chunk 存在，所以能直接构造任意中间状态和 target velocity。
+Inference has no target action chunk. It must begin from noise and repeatedly apply the learned vector field through numerical integration until it reaches the data end of the path.
 
-推理时没有真实 $A_t$，只能：
-
-```text
-从 noise 开始
-→ 预测 velocity
-→ 更新 action
-→ 再预测 velocity
-→ ...
-→ 最终 action
-```
-
-因此“训练一次 forward，推理多次 forward”是 Flow Matching 架构的自然结果。
+This difference explains why training uses a single sampled flow time per example while inference uses multiple sequential network evaluations.
 
 ## Sources
 
-- Black et al., **π0: A Vision-Language-Action Flow Model for General Robot Control**, Section IV. https://arxiv.org/abs/2410.24164
+- Black et al. *π0: A Vision-Language-Action Flow Model for General Robot Control*. 2024, Section IV. https://arxiv.org/abs/2410.24164
 - Official openpi `Pi0.compute_loss`. https://github.com/Physical-Intelligence/openpi/blob/main/src/openpi/models/pi0.py

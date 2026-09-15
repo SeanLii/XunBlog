@@ -14,13 +14,15 @@ related:
 
 # Multivariate Normal Distribution
 
-一维 Normal Distribution 描述一个 scalar random variable；Multivariate Normal Distribution 把它扩展到 random vector：
+Multivariate Normal Distribution 将一维 Normal distribution 推广到 random vector。
+
+设：
 
 \[
 X\in\mathbb R^d.
 \]
 
-写作：
+若：
 
 \[
 X\sim\mathcal N(\mu,\Sigma),
@@ -29,157 +31,254 @@ X\sim\mathcal N(\mu,\Sigma),
 其中：
 
 \[
-\mu\in\mathbb R^d
+\mu\in\mathbb R^d,
+\qquad
+\Sigma\in\mathbb R^{d\times d},
 \]
 
-是 mean vector，
-
-\[
-\Sigma\in\mathbb R^{d\times d}
-\]
-
-是 covariance matrix。
-
-## Mean Vector 决定中心
-
-\[
-\mu=\mathbb E[X]
-\]
-
-逐维给出 distribution 的中心：
-
-\[
-\mu=
-\begin{bmatrix}
-\mathbb E[X_1]\\
-\vdots\\
-\mathbb E[X_d]
-\end{bmatrix}.
-\]
-
-二维时，$\mu$ 就是 density ellipse 的中心位置。
-
-## Covariance Matrix 决定尺度与方向
-
-\[
-\Sigma
-=\mathbb E[(X-\mu)(X-\mu)^\top].
-\]
-
-对角线元素：
-
-\[
-\Sigma_{ii}=\operatorname{Var}(X_i)
-\]
-
-控制各 coordinate 的 spread。
-
-非对角线：
-
-\[
-\Sigma_{ij}=\operatorname{Cov}(X_i,X_j)
-\]
-
-描述 coordinates 之间的线性共同变化。
-
-因此 multivariate Gaussian 的几何形状不仅有“宽窄”，还有“朝哪个方向拉伸”。
+则 $\mu$ 是 mean vector，$\Sigma$ 是 covariance matrix。
 
 ## Density
 
 当 $\Sigma$ positive definite 时：
 
 \[
-p(x)=
+p(x)
+=
 \frac{1}{(2\pi)^{d/2}|\Sigma|^{1/2}}
 \exp\left(
--\frac12(x-\mu)^\top
+-\frac12
+(x-\mu)^\top
 \Sigma^{-1}
 (x-\mu)
 \right).
 \]
 
-其中：
+Quadratic term：
 
 \[
 (x-\mu)^\top\Sigma^{-1}(x-\mu)
 \]
 
-可以看作考虑 covariance 后的“标准化平方距离”。
+是 squared Mahalanobis distance。
 
-如果某个方向 variance 很大，那么同样的 Euclidean displacement 在那个方向上不会被认为特别罕见。
-
-## 等密度面的 Geometry
-
-满足：
+## Mean 与 Covariance
 
 \[
-(x-\mu)^\top\Sigma^{-1}(x-\mu)=c
+\mathbb E[X]=\mu,
 \]
-
-的点形成 ellipse / ellipsoid。
-
-Covariance matrix 的 eigenvectors 给出主轴方向，eigenvalues 控制各主轴尺度。
-
-这把 probability distribution 与 linear algebra 直接连接起来。
-
-## Diagonal Gaussian
-
-如果：
 
 \[
-\Sigma=
-\operatorname{diag}(\sigma_1^2,\ldots,\sigma_d^2),
+\operatorname{Cov}(X)=\Sigma.
 \]
 
-则不同 dimensions 的 covariance 为 0。
-
-在 Gaussian 情况下，diagonal covariance 还意味着这些 coordinates independent。
-
-此时 density 可以 factorize：
+Diagonal elements：
 
 \[
-p(x)=\prod_{i=1}^d
-\mathcal N(x_i;\mu_i,\sigma_i^2).
+\Sigma_{ii}=\operatorname{Var}(X_i),
 \]
 
-这极大简化了参数量和计算，因此很多 latent-variable models 使用 diagonal Gaussian approximate posterior。
-
-## Standard Multivariate Normal
-
-当：
+off-diagonal elements：
 
 \[
-\mu=0,
-\qquad
-\Sigma=I,
+\Sigma_{ij}=\operatorname{Cov}(X_i,X_j).
 \]
 
-得到：
+因此 covariance matrix 同时控制各 dimensions 的 scale 与 linear dependency。
+
+## Geometry
+
+等 density contours 满足：
 
 \[
-Z\sim\mathcal N(0,I).
+(x-\mu)^\top\Sigma^{-1}(x-\mu)=c.
 \]
 
-各 coordinates 都是 standard normal，并且互相 independent。
+它们在二维中是 ellipses，在高维中是 ellipsoids。
 
-这正是许多 generative models 选择的简单 prior，但它首先是一个独立的 probability distribution。
+若 eigendecomposition：
 
-## Affine Transformation
+\[
+\Sigma=Q\Lambda Q^\top,
+\]
+
+则 eigenvectors 给出 principal directions，eigenvalues 给出这些 directions 上的 variances。
+
+## Diagonal Covariance
 
 若：
 
 \[
-X\sim\mathcal N(\mu,\Sigma),
-\qquad
+\Sigma
+=
+\operatorname{diag}(
+\sigma_1^2,\ldots,\sigma_d^2
+),
+\]
+
+则 Gaussian factorizes：
+
+\[
+p(x)
+=
+\prod_{i=1}^{d}
+\mathcal N(x_i;\mu_i,\sigma_i^2).
+\]
+
+在 multivariate Gaussian 中，diagonal covariance 表示 coordinates mutually independent。
+
+## Standard Multivariate Normal
+
+若：
+
+\[
+Z\sim\mathcal N(0,I),
+\]
+
+称为 standard multivariate normal。
+
+若 $L$ 满足：
+
+\[
+LL^\top=\Sigma,
+\]
+
+例如 Cholesky factor，则：
+
+\[
+X=\mu+LZ
+\]
+
+满足：
+
+\[
+X\sim\mathcal N(\mu,\Sigma).
+\]
+
+这给出 multivariate Gaussian sampling 与 reparameterization 的基础。
+
+## Linear Transformation
+
+若：
+
+\[
+X\sim\mathcal N(\mu,\Sigma)
+\]
+
+且：
+
+\[
 Y=AX+b,
 \]
 
 则：
 
 \[
-Y\sim
-\mathcal N(A\mu+b,
-A\Sigma A^\top).
+Y
+\sim
+\mathcal N(
+A\mu+b,
+A\Sigma A^\top
+).
 \]
 
-Gaussian 对 affine transformation 的这种封闭性，是它在统计推断、控制、state estimation 和 generative modeling 中非常重要的原因。
+因此 multivariate Gaussian 对 affine transformation 封闭。
+
+## Marginal Distribution
+
+将 vector 分为：
+
+\[
+X=
+\begin{bmatrix}
+X_1\\X_2
+\end{bmatrix},
+\qquad
+\mu=
+\begin{bmatrix}
+\mu_1\\\mu_2
+\end{bmatrix},
+\]
+
+\[
+\Sigma=
+\begin{bmatrix}
+\Sigma_{11}&\Sigma_{12}\\
+\Sigma_{21}&\Sigma_{22}
+\end{bmatrix}.
+\]
+
+则 marginal：
+
+\[
+X_1
+\sim
+\mathcal N(\mu_1,\Sigma_{11}).
+\]
+
+Gaussian marginal 仍然是 Gaussian。
+
+## Conditional Distribution
+
+Conditional distribution 同样为 Gaussian：
+
+\[
+X_1\mid X_2=x_2
+\sim
+\mathcal N(
+\mu_{1\mid2},
+\Sigma_{1\mid2}
+),
+\]
+
+其中：
+
+\[
+\mu_{1\mid2}
+=
+\mu_1+
+\Sigma_{12}\Sigma_{22}^{-1}(x_2-\mu_2),
+\]
+
+\[
+\Sigma_{1\mid2}
+=
+\Sigma_{11}
+-
+\Sigma_{12}\Sigma_{22}^{-1}\Sigma_{21}.
+\]
+
+Conditional mean 对 observed variable 是 affine function。
+
+## Zero Covariance and Independence
+
+对于 jointly Gaussian variables：
+
+\[
+\operatorname{Cov}(X_i,X_j)=0
+\]
+
+可以推出 $X_i,X_j$ independent。
+
+这一性质不是任意 distribution 都成立；它是 Gaussian family 的特殊结构。
+
+## Linear Combinations
+
+对任意 vector $a$：
+
+\[
+a^\top X
+\sim
+\mathcal N(
+a^\top\mu,
+a^\top\Sigma a
+).
+\]
+
+事实上，一个 random vector 是 multivariate Gaussian 的等价刻画之一，就是所有 linear combinations 都是一维 Gaussian。
+
+## Connections
+
+- [Covariance](/mathematics/probability/covariance/)：$\Sigma$ 决定 multivariate Gaussian geometry。
+- [Reparameterization Trick](/mathematics/probability/variational-inference/reparameterization-trick/)：Gaussian latent sampling 的常用 gradient construction。
+- [Variational Autoencoder](/generative-models/variational-autoencoder/)：常使用 diagonal multivariate Gaussian posterior。

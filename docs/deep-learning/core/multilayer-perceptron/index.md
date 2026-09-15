@@ -13,9 +13,7 @@ related:
 
 # Multilayer Perceptron
 
-Multilayer Perceptron（MLP）是把多个 affine transformation 与 nonlinear activation 串联起来的前馈神经网络。
-
-最简单的两层形式可以写成：
+Multilayer Perceptron（MLP）是由多层 affine transformations 与 nonlinear activation functions 组成的前馈神经网络。对两层 MLP，常写成
 
 \[
 h=\phi(W_1x+b_1),
@@ -25,122 +23,107 @@ h=\phi(W_1x+b_1),
 y=W_2h+b_2.
 \]
 
-这里 $x$ 是输入，$h$ 是 hidden representation，$\phi$ 是 activation function。它和单个 Linear Layer 的关键区别不是“层数更多”，而是中间加入了 nonlinearity。
+其中 $h$ 是 hidden representation，$\phi$ 提供非线性。
 
-## 从 Linear Mapping 到 Nonlinear Function
+## Feed-Forward Structure
 
-如果没有 activation：
+MLP 的计算图没有循环反馈：信息从输入依次经过 hidden layers 到达输出。
+
+一个深度为 $L$ 的 MLP 可写为
 
 \[
-y=W_2(W_1x+b_1)+b_2,
+h^{(0)}=x,
 \]
 
-两层 affine mapping 仍然可以合并成一层 affine mapping：
-
 \[
-y=W'x+b'.
+h^{(l)}=\phi_l(W_lh^{(l-1)}+b_l),
+\qquad l=1,\ldots,L-1,
 \]
 
-因此单纯堆很多 linear layers 并不会得到更复杂的函数族。MLP 的表达能力来自：
+最后一层根据任务需要产生 output。
 
-```text
-Linear
-  ↓
-Nonlinearity
-  ↓
-Linear
-  ↓
-Nonlinearity
-  ↓
-...
-```
+如果删除所有 nonlinear activations，多层 affine mappings 会合并成单个 affine mapping，因此 nonlinearity 是 MLP 表达复杂函数的关键。
 
-每一层先改变坐标与 feature combination，再由非线性打破“所有层最终仍等价于一个线性映射”的限制。
+## Width and Depth
 
-## Width 与 Depth
+**Width** 描述 hidden layer 的 feature dimension，**depth** 描述连续 learned transformations 的层数。
 
-MLP 的两个基本尺度是：
-
-- **width**：某层有多少 hidden units；
-- **depth**：有多少连续的 learned layers / nonlinear stages。
-
-例如：
+例如
 
 \[
-x\in\mathbb R^{128}
+\mathbb R^{128}
 \rightarrow
-h_1\in\mathbb R^{512}
+\mathbb R^{512}
 \rightarrow
-h_2\in\mathbb R^{512}
+\mathbb R^{512}
 \rightarrow
-y\in\mathbb R^{10}.
+\mathbb R^{10}
 \]
 
-更宽通常提供更大的同层表示容量；更深则允许函数被分解成更多级组合。两者都会影响参数量、优化难度和可表达的函数结构。
+表示两个 512-dimensional hidden stages 与一个 10-dimensional output。
 
-## Hidden Representation
+增加 width 与增加 depth 都可能提升 representation capacity，但会以不同方式改变参数量、optimization difficulty 与 function composition structure。
 
-MLP 中间层不是必须对应人工定义的语义。
+## Hidden Representations
 
-训练时，loss 只约束最终任务目标；hidden units 会形成对任务有用的中间表示：
+Hidden units 不需要对应人工预先定义的概念。网络只受到 training objective、data distribution 与 architecture constraints 的约束，因此 hidden representation 的结构是学习结果。
+
+对
 
 \[
-h=\phi(Wx+b).
+h=\phi(Wx+b),
 \]
 
-因此“hidden layer 学到了什么”取决于数据、objective、architecture 与 optimization，而不是由某个 neuron 的名字预先决定。
+weight matrix 先组合输入 features，activation 再施加非线性。多层重复后，后层可以基于前层构造的 features 形成更复杂的函数表示。
 
-## Batch 与高维输入
+## Universal Approximation
 
-对 batch：
+经典 universal approximation results 表明，在一定 activation 与 regularity 条件下，具有足够 hidden units 的前馈网络可以在紧致域上逼近广泛的连续函数。
 
-\[
-X\in\mathbb R^{B\times d_{in}},
-\]
+这些结果说明 MLP 具有很强的表示能力，但不保证：
 
-Linear Layer 可以写成：
+- 需要的宽度很小；
+- gradient-based optimization 一定容易找到目标函数；
+- 有限数据下具有良好 generalization；
+- 某个具体 MLP 是给定任务最有效的 architecture。
 
-\[
-H=XW^\top+b.
-\]
+表达能力与可训练性、sample efficiency 是不同问题。
 
-MLP 只是继续沿最后一个 feature dimension 做变换，所以也可以直接作用于：
+## Output Layer
+
+MLP 的最后一层由建模对象决定。例如：
+
+- categorical classification：输出 logits，再接 Softmax / cross-entropy；
+- binary classification：输出 scalar logit；
+- regression：直接输出 real-valued vector；
+- positive parameter：使用合适的 positive transformation。
+
+因此“MLP 必须在输出层使用某种固定 activation”不是定义的一部分。
+
+## High-Dimensional Inputs
+
+Linear Layer 通常作用于 tensor 的最后一个 feature dimension，因此 MLP 也可以直接应用于
 
 \[
 X\in\mathbb R^{B\times N\times d}.
 \]
 
-此时相同 MLP 被应用到每个 $(B,N)$ 位置。
+只要每个 $(b,n)$ 位置共享同一组 MLP parameters，就会得到 position-wise transformation，而不在不同 positions 之间交换信息。
 
-这正是 Transformer 中 position-wise feed-forward sublayer 的基础，但 MLP 本身远早于 Transformer，也广泛存在于分类器、autoencoder、policy network 与各种 prediction head 中。
+## Optimization and Regularization
 
-## Output Layer 由任务决定
+MLP 的训练行为取决于 activation、initialization、normalization、optimizer 与 regularization。常见 regularization 包括 weight decay、dropout、early stopping 等。
 
-MLP 最后一层是否使用 activation 取决于输出语义。
+深层 MLP 也可能遇到 vanishing / exploding gradients，因此 residual connections、normalization 与现代 initialization methods 常用于更大网络。
 
-例如分类 logits 可以直接输出实数：
+## Relation to Transformer FFN
 
-\[
-z=W_oh+b_o,
-\]
+Transformer 的 [Position-Wise Feed-Forward Network](/deep-learning/transformer/position-wise-feed-forward-network/) 是 MLP 的具体应用：同一组 MLP parameters 独立作用于 sequence 中每个 token position。
 
-再由 Softmax 转成概率。
-
-回归任务可能直接输出：
-
-\[
-\hat y=W_oh+b_o.
-\]
-
-所以“MLP 必须以某个 activation 结束”并不是定义的一部分。
-
-## 与 Transformer FFN 的关系
-
-Transformer 的 [Position-Wise Feed-Forward Network](/deep-learning/transformer/position-wise-feed-forward-network/) 是 MLP 的一个具体使用方式：同一个小型 MLP 独立作用于 sequence 中每个 token position。
-
-MLP 是更一般的神经网络结构；Transformer 中的 Position-Wise Feed-Forward Network 则是把同一个 MLP 独立应用到每个 sequence position 的具体 architecture 子层。
+MLP 是更一般的 feed-forward neural network；Position-Wise FFN 则规定了它在 Transformer layer 中的输入组织、共享方式与 dimension expansion pattern。
 
 ## Sources
 
 - Goodfellow, Bengio, Courville. *Deep Learning*, Chapter 6.
 - Cybenko. *Approximation by Superpositions of a Sigmoidal Function*. 1989.
+- Hornik, Stinchcombe, White. *Multilayer Feedforward Networks Are Universal Approximators*. 1989.

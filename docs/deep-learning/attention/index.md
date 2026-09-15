@@ -13,113 +13,97 @@ related:
 
 # Attention
 
-Attention 是一种**根据当前 query，动态从一组信息中读取内容**的机制。
+Attention 是一种根据当前 query 与候选信息之间的匹配关系，动态计算读取权重并聚合 values 的机制。
 
-Attention 作为机制早于 Transformer；Transformer 后来把它提升为网络的核心计算，并定义了 Scaled Dot-Product Attention 与 Multi-Head Attention 等具体形式。
+Attention 在 Transformer 之前已经用于 neural machine translation；Transformer 后来把 attention 提升为主要网络计算，并提出 Scaled Dot-Product Attention 与 Multi-Head Attention 等具体形式。
 
-它最核心的结构可以写成：
-
-```text
-Query
-  ↓
-和每个 Key 计算匹配程度
-  ↓
-得到 weights
-  ↓
-对对应 Values 做 weighted sum
-  ↓
-Output
-```
-
-因此 attention 并不是“让模型关注重要位置”的一句抽象口号。它有一个非常具体的计算对象：
-
-- Query：当前想读取什么；
-- Key：每个候选位置拿什么来参与匹配；
-- Value：真正被读取和汇总的内容。
-
-完整角色见 [Query / Key / Value](/deep-learning/attention/qkv/)。
-
-## 从 Weighted Sum 开始
-
-假设有三个 value vectors：
+一般地，给定 query $q$、keys $k_i$ 与对应 values $v_i$，attention 可以写成
 
 \[
-v_1,v_2,v_3.
+s_i=s(q,k_i),
 \]
 
-如果已经有 weights：
+\[
+\alpha_i=\operatorname{Normalize}(s_1,\ldots,s_N)_i,
+\]
 
 \[
-\alpha_1,\alpha_2,\alpha_3,
+o=\sum_{i=1}^{N}\alpha_i v_i.
+\]
+
+这里 score function 决定匹配方式，normalization 决定如何把 scores 转换为权重，weighted aggregation 决定最终读取结果。
+
+## Weighted Aggregation
+
+若权重已知，
+
+\[
+\alpha_i\ge0,
 \qquad
 \sum_i\alpha_i=1,
 \]
 
-可以得到：
+则
 
 \[
-o=
-\alpha_1v_1+
-\alpha_2v_2+
-\alpha_3v_3.
+o=\sum_i\alpha_i v_i
 \]
 
-这一步只是普通 weighted sum。
+是 values 的加权组合。
 
-Attention 真正特别的地方是：这些 weights 不是固定 parameters，而是根据当前 query 和 keys **动态计算**：
+Attention 的关键不在 weighted sum 本身，而在于 $\alpha_i$ 由当前输入动态产生。不同 query 面对同一组 memory 可以得到不同权重，因此读取模式随内容变化。
+
+## Query, Key, and Value Roles
+
+在常见 key-value formulation 中：
+
+- Query 表示当前读取请求；
+- Key 表示候选信息用于匹配的表示；
+- Value 表示匹配后被聚合的内容。
+
+这三者是计算角色，而不是固定语义类别。完整结构见 [Query / Key / Value](/deep-learning/attention/qkv/)。
+
+## Score Functions
+
+不同 attention mechanisms 使用不同 score functions。
+
+Bahdanau additive attention 使用 learned nonlinear scoring function；dot-product attention 使用
 
 \[
-\alpha_i
-=
-\operatorname{softmax}(s(q,k_i)).
+s(q,k)=q^\top k.
 \]
 
-因此同一组 values 面对不同 query，会得到不同 reading pattern。
-
-## Attention 是 Content-Dependent Routing
-
-普通 Linear Layer 使用固定 weights：
+Transformer 的 [Scaled Dot-Product Attention](/deep-learning/transformer/scaled-dot-product-attention/) 则使用
 
 \[
-y=Wx.
+s(q,k)=\frac{q^\top k}{\sqrt{d_k}}.
 \]
 
-parameters $W$ 训练完后，对所有输入使用同一套 mapping。
+因此 Attention 是更一般的机制，具体 score function 属于特定实现。
 
-Attention 中，真正用于 mixing values 的 coefficients $\alpha_i$ 会随输入变化。
+## Normalization
 
-所以可以把 attention 看成一种 content-dependent information routing：
-
-> **输入内容决定这一次应该从哪些位置读取多少信息。**
-
-## Score Function
-
-Attention 并不只存在 dot-product 一种形式。
-
-Bahdanau attention 使用 learned additive scoring function；Transformer 使用 [Scaled Dot-Product Attention](/deep-learning/transformer/scaled-dot-product-attention/)：
+Transformer-style attention 通常对 scores 使用 Softmax：
 
 \[
-s(q,k_i)
-=\frac{q^\top k_i}{\sqrt{d_k}}.
+\alpha_i=\frac{e^{s_i}}{\sum_j e^{s_j}}.
 \]
 
-然后通过 Softmax 得到 normalized weights。
-
-因此 attention 是更上层的机制；scaled dot-product 是其中一种具体 score / aggregation implementation。
+这使权重为正并总和为 1。其他 attention formulations 也可能使用不同 normalization 或 sparse weighting mechanism，因此 Softmax 不是 Attention 的逻辑定义所必需，但它是现代 Transformer attention 的标准组成。
 
 ## Matrix Form
 
-若：
+对多个 queries，设
 
 \[
 Q\in\mathbb R^{N_q\times d_k},
 \quad
 K\in\mathbb R^{N_k\times d_k},
 \quad
-V\in\mathbb R^{N_k\times d_v},
+V\in\mathbb R^{N_k\times d_v}.
 \]
 
-Transformer-style attention：
+Transformer-style attention 为
 
 \[
 \operatorname{Attention}(Q,K,V)
@@ -130,95 +114,60 @@ Transformer-style attention：
 \right)V.
 \]
 
-Shape 逐步变化：
+其中
 
 \[
-QK^\top
-\in\mathbb R^{N_q\times N_k},
+QK^\top\in\mathbb R^{N_q\times N_k}
 \]
 
-表示每个 query 对每个 key 的 score。
-
-Softmax 后 shape 不变，再乘：
+包含每个 query 与每个 key 的 pairwise scores。最终输出
 
 \[
-V\in\mathbb R^{N_k\times d_v},
+O\in\mathbb R^{N_q\times d_v},
 \]
 
-得到：
+因此 output slot 数由 query 数量 $N_q$ 决定。
 
-\[
-O\in\mathbb R^{N_q\times d_v}.
-\]
+## Self-Attention and Cross-Attention
 
-因此 output 数量由 query 数量 $N_q$ 决定。
+若 queries、keys、values 都由同一组 representations 产生，则得到 [Self-Attention](/deep-learning/attention/self-attention/)。
 
-## Self-Attention 与 Cross-Attention
+若 queries 来自一组 representations，而 keys / values 来自另一组，则得到 [Cross-Attention](/deep-learning/attention/cross-attention/)。
 
-如果 Q/K/V 都来自同一组 input representations：
+二者的核心 readout mechanism 相同，区别在于 information source 与 connectivity。
 
-\[
-Q=XW_Q,\quad K=XW_K,\quad V=XW_V,
-\]
+## Masking
 
-得到 [Self-Attention](/deep-learning/attention/self-attention/)。
+Attention scores 可以在 normalization 前加入 mask。被屏蔽位置通常被赋予极大的负值，使 Softmax 后对应权重接近 0。
 
-如果 queries 来自一组 representations，而 keys / values 来自另一组：
+Mask 可以表达不同约束，例如：
 
-\[
-Q=YW_Q,
-\qquad
-K=XW_K,
-\qquad
-V=XW_V,
-\]
+- padding positions 不参与读取；
+- [Causal Mask](/deep-learning/sequence-modeling/causal-mask/) 禁止读取未来位置；
+- blockwise mask 规定不同 token groups 之间的可见性。
 
-得到 [Cross-Attention](/deep-learning/attention/cross-attention/)。
+因此 attention connectivity 不只由 Q/K/V 决定，也受到 mask structure 约束。
 
-它们的核心 attention computation 相同，区别是 information source。
+## Position Information
+
+标准 self-attention 对输入 permutation 具有对应的 permutation-equivariance。若没有额外 position signal，机制本身无法区分“第一个”“前一个”或“相距多远”。
+
+Sequence models 通常通过 [Positional Encoding](/deep-learning/sequence-modeling/positional-encoding/) 或 relative-position mechanism 提供顺序信息。
 
 ## Multi-Head Attention
 
-单次 attention 在一个 learned projection space 中计算 matching 与 aggregation。
+[Multi-Head Attention](/deep-learning/transformer/multi-head-attention/) 并行建立多个 learned projection spaces，在每个 head 中独立计算 attention，再将结果合并。
 
-[Multi-Head Attention](/deep-learning/transformer/multi-head-attention/) 并行建立多个 projection spaces：
+这允许同一层同时学习多组 interaction patterns，但具体 head 并不保证对应可人工命名的唯一语义。
 
-\[
-head_1,\ldots,head_h,
-\]
+## Computational Complexity
 
-再 concat / project 回 model dimension。
+Full self-attention 对长度为 $N$ 的 sequence 需要构造 $N\times N$ score matrix，因此 pairwise attention 的主要时间与显存成本通常随 $N^2$ 增长。
 
-这让同一层可以并行建立多组不同的 reading relationships。
-
-## Attention 不自动理解顺序
-
-如果没有 positional information，并且我们同时对 token order 做一致 permutation，self-attention 的计算会对应地 permutation-equivariant。
-
-所以 attention 本身没有“第一个 token / 第二个 token”的固有顺序概念。
-
-Transformer 需要额外的 [Positional Encoding](/deep-learning/sequence-modeling/positional-encoding/) 或 position-dependent mechanism。
-
-## Attention 的计算成本
-
-Full self-attention 对 $N$ 个 tokens 构造：
-
-\[
-N\times N
-\]
-
-score matrix。
-
-因此 score computation / memory 对 sequence length 常表现为：
-
-\[
-O(N^2).
-\]
-
-长序列模型中大量 efficient attention methods，本质上都在尝试改变或近似这张 pairwise interaction matrix。
+Efficient attention、sparse attention、linear attention 与 block attention 等方法，主要针对这类 pairwise interaction cost 进行结构化或近似化处理。
 
 ## Sources
 
 - Bahdanau, Cho, Bengio. *Neural Machine Translation by Jointly Learning to Align and Translate*. 2014.
-- Vaswani et al. *Attention Is All You Need*. 2017.
+- Luong, Pham, Manning. *Effective Approaches to Attention-based Neural Machine Translation*. 2015.
 - Vaswani et al. *Attention Is All You Need*. 2017.

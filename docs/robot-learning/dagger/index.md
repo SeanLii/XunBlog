@@ -12,161 +12,157 @@ related:
 
 # DAgger
 
-DAgger（Dataset Aggregation）是 Ross、Gordon 与 Bagnell 在 2011 年提出的 interactive imitation learning algorithm。
+DAgger（Dataset Aggregation）是 Ross、Gordon 与 Bagnell 提出的 interactive imitation-learning algorithm。它的核心目标是让 training data 覆盖 learner 自己在部署时会访问的 states。
 
-它针对 Behavior Cloning 的核心问题：训练数据来自 expert states，但部署时 policy 会访问自己诱导出的 states。
-
-DAgger 的关键改变是：
-
-> **让当前 policy 自己 rollout，然后请 expert 给这些 learner-visited states 标注正确 action，并把新数据不断加入 training set。**
-
-## Behavior Cloning 的 Coverage Problem
-
-普通 BC dataset：
+Behavior Cloning 主要在 expert distribution：
 
 \[
-\mathcal D_0
-\sim d_{\pi^*}.
+d_{\pi^*}
 \]
 
-learner 训练后 deployment distribution：
+上训练，而 learned policy 实际运行时产生：
 
 \[
-d_{\pi_1}.
+d_{\pi_\theta}.
 \]
 
-如果 $d_{\pi_1}$ 包含 expert dataset 很少覆盖的 states，policy 的 supervised accuracy 就没有充分保证。
+DAgger 通过反复执行 learner、在 learner-induced states 上查询 expert，并把新 supervision 聚合回 dataset 来缩小这一 distribution mismatch。
 
-DAgger 不试图只在固定 expert dataset 上把 model 做得更复杂，而是改变**数据收集 distribution**。
+## Problem Setting
 
-## Algorithm Data Flow
-
-初始化 expert demonstration dataset：
+设 expert policy 为：
 
 \[
-\mathcal D\leftarrow\mathcal D_0.
+\pi^*,
 \]
 
-每一轮 $i$：
-
-```text
-1. 在聚合数据集 D 上训练 policy π_i
-
-2. 用 π_i 在环境中 rollout
-
-3. 记录 learner 实际访问的 states o
-
-4. 对这些 states 查询 expert action π*(o)
-
-5. 把 (o, π*(o)) 加入 D
-
-6. 继续下一轮
-```
-
-最终 dataset 逐渐包含：
+当前 learner 为：
 
 \[
-d_{\pi_1},
- d_{\pi_2},
- \ldots
+\hat\pi_i.
 \]
 
-下 learner 真正会访问的 states。
-
-## Expert Query 与 Behavior Execution 是两件事
-
-在某个 state $o_t$，expert 可以提供：
+若只使用初始 expert demonstrations：
 
 \[
-a_t^*=\pi^*(o_t)
+\mathcal D_0,
 \]
 
-作为 label，但实际环境中执行的 action 不一定必须完全来自 expert。
-
-原始 DAgger framework 可以使用 expert / learner mixture policy 进行 rollout，以控制早期 learner 太差带来的风险。
-
-随着训练进行，mixing coefficient 可以逐渐让 learner 承担更多控制。
+learner 可能在 rollout 中进入 $\mathcal D_0$ 很少覆盖的 state。DAgger 直接把这些 states 变成新的 supervised training examples。
 
 ## Dataset Aggregation
 
-名字中的“Aggregation”很重要。
+第 $i$ 轮的基本流程为：
 
-DAgger 不是每轮只用最新 rollout data，而是持续聚合：
+1. 在当前 aggregated dataset $\mathcal D_{i-1}$ 上训练 learner $\hat\pi_i$；
+2. 使用 learner 或 expert/learner mixture policy 在环境中 rollout；
+3. 记录 rollout 访问的 states $s$；
+4. 对这些 states 查询 expert action $\pi^*(s)$；
+5. 将新 pairs 加入 dataset：
 
 \[
 \mathcal D_i
 =
 \mathcal D_{i-1}
 \cup
-\{(o,\pi^*(o))
-:\ o\sim d_{\pi_i}\}.
+\{(s,\pi^*(s))\}.
 \]
 
-这让 training data 同时覆盖早期 expert-like states 和 later learner-induced states。
+经过多轮后，dataset 不再只描述 expert trajectory，而开始覆盖 learner 的实际 state distribution。
 
-## 理论动机
+## Rollout Policy
 
-Ross 等把 imitation learning 与 online learning / no-regret learning 联系起来。
-
-Vanilla supervised imitation 在 sequential setting 中可能出现 roughly quadratic horizon dependence：
+原始 DAgger 可以使用 mixture policy：
 
 \[
-O(T^2\epsilon).
+\pi_i
+=
+\beta_i\pi^*
++
+(1-\beta_i)\hat\pi_i,
 \]
 
-DAgger 通过在 learner-induced state distribution 上训练，可以在相应 assumptions 下把 performance degradation 改善到 roughly linear horizon dependence：
+其中 $\beta_i$ 随 iteration 下降。
+
+早期 learner 较差时，expert contribution 可以减少危险或完全失控的 rollout；随后逐渐让 learner 决定更多行为。具体 schedule 可以不同，但 collected states 必须逐渐接近 learner deployment distribution。
+
+## Expert Label 与 Executed Action
+
+在某个 visited state $s$ 上，expert label 为：
 
 \[
-O(T\epsilon).
+a^*=\pi^*(s).
 \]
 
-具体 bound 有前提，但结论背后的 intuition 非常清楚：
+这与环境中实际执行的 action 是两个概念。learner 可以负责执行并进入新的 states，同时 expert 只负责提供这些 states 上的监督标签。
 
-> 如果训练时已经见过自己会犯错后到达的 states，就不必在 rollout 中一直靠 extrapolation 生存。
+因此 DAgger 的核心资源要求是能够对 learner 访问的 state 查询 expert。
 
-## Recovery Behavior
+## No-Regret Interpretation
 
-DAgger 收集的数据天然可能包含“偏离 expert trajectory 后怎么回来”。
+DAgger 把 imitation learning 与 online learning / no-regret learning 联系起来。每轮 learner 面对由当前 policy 引出的 state distribution，并在这些 states 上产生 supervised loss。
 
-例如：
+当 base learner 具有相应 no-regret property 时，aggregated training process 可以得到比固定 expert dataset 上 supervised imitation 更好的 sequential performance guarantee。
 
-```text
-normal expert path
-────────────→
+经典分析的重要结果之一是：在相应 assumptions 下，DAgger 可以把 vanilla supervised imitation 中不利的 horizon dependence 从 roughly quadratic behavior 改善到 roughly linear behavior。
 
-learner drifts away
-        ↘
-         state not in original BC data
-         ↓
-expert provides recovery action
-```
+理论 bound 的意义在于揭示 distribution mismatch，而不是为所有实际任务提供固定数值预测。
 
-这类 labels 对 closed-loop robustness 很有价值。
+## Recovery States
 
-## Practical Cost
+DAgger 的 dataset 往往自然包含 expert trajectory 之外的 states。learner 偏离目标路径后产生的状态可以获得 expert recovery label，这类 supervision 对 closed-loop robustness 很重要，因为普通 expert demonstrations 通常集中在成功轨迹附近。
 
-DAgger 的缺点也来自 interactive nature：
+## Relation to Behavior Cloning
 
-- 需要训练中持续访问 expert；
-- human expert labeling 可能昂贵；
-- learner early rollout 可能不安全；
-- real robot online iteration 成本高；
-- expert 对 off-distribution states 也未必容易提供稳定 action。
+DAgger 并没有规定最终 policy 必须如何表示。每轮重新训练时仍可以使用普通 Behavior Cloning objective：
 
-所以大规模 robotics dataset 时代，纯 DAgger 并不总是最实际方案。
+\[
+\mathcal L
+=
+\mathbb E_{(s,a^*)\sim\mathcal D_i}
+[\ell(\pi_\theta(s),a^*)].
+\]
 
-## DAgger 与 Offline Data Expansion
+它改变的是 training data distribution。
 
-如果不能在线 query expert，可以通过：
+因此 DAgger 可以概括为：
 
-- recovery demonstrations；
-- perturbation data；
-- broader teleoperation coverage；
-- simulation augmentation；
+\[
+\text{Behavior Cloning}
++
+\text{learner-state collection}
++
+\text{expert relabeling}
++
+\text{dataset aggregation}.
+\]
 
-尝试获得类似 coverage improvement。
+## Practical Constraints
 
-但这些不是严格意义上的 DAgger，因为 DAgger 的核心是 policy-induced states 上的 iterative expert relabeling / aggregation。
+DAgger 的主要成本来自 online interaction：
+
+- expert 必须在训练过程中持续可用；
+- human labeling 可能昂贵；
+- real robot rollout 有 safety risk；
+- early learner 可能访问非常差的 states；
+- expert 对极端 off-distribution state 也可能难以给出稳定 action；
+- 多轮 deploy–label–retrain pipeline 成本高。
+
+这些限制解释了为什么 offline robotics 常通过更广泛 demonstrations、recovery data、perturbation collection 或 simulation coverage 来改善 coverage，而不是严格执行 DAgger。
+
+## Definition Boundary
+
+一次性增加 recovery demonstrations、random perturbation augmentation、固定 offline dataset 上 oversampling rare states 或 domain randomization 都可能改善 coverage，但它们不自动构成 DAgger。
+
+DAgger 的定义性结构是：
+
+\[
+\text{learner-induced states}
+\rightarrow
+\text{expert query}
+\rightarrow
+\text{dataset aggregation}.
+\]
 
 ## Sources
 

@@ -127,7 +127,7 @@ o_i=
 \sum_{j=1}^{N_k}A_{ij}v_j.
 \]
 
-因此 scores 只决定读取比例；真正被加权汇总的是 Values。
+因此 scores 决定读取权重，被加权汇总的内容来自 Values。
 
 ## Mask 加在哪里
 
@@ -149,7 +149,7 @@ M_{ij}=-\infty.
 \operatorname{softmax}(-\infty)=0.
 \]
 
-[ Causal Mask ](/deep-learning/sequence-modeling/causal-mask/) 与 padding masks 都可通过这个机制进入 attention。
+[Causal Mask](/deep-learning/sequence-modeling/causal-mask/) 与 padding masks 都可通过这个机制进入 attention。
 
 ## Shape 总结
 

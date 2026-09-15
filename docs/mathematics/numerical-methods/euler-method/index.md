@@ -12,161 +12,176 @@ related:
 
 # Euler Method
 
-Euler Method 是求解 ordinary differential equation 的最简单 numerical integration 方法之一。
+Euler Method 是求解 initial-value ODE 的最基本显式 numerical integration 方法。
 
-给定 initial value problem：
+给定：
 
 \[
-\frac{dx}{dt}=f(t,x),
+\dot x(t)=f(t,x(t)),
 \qquad
 x(t_0)=x_0,
 \]
 
-Euler Method 使用当前位置的 derivative，向前走一个小 step：
+选 step size $h$，Euler update 为：
 
 \[
 \boxed{
-x_{k+1}=x_k+h f(t_k,x_k)
+x_{n+1}
+=
+x_n+h f(t_n,x_n)
 }
 \]
 
-同时：
+其中：
 
 \[
-t_{k+1}=t_k+h.
+t_{n+1}=t_n+h.
 \]
 
-其中 $h$ 是 step size。
+## Derivation
 
-## 从 Tangent Line 得到公式
-
-对足够小的 $h$，Taylor expansion：
+Taylor expansion：
 
 \[
 x(t+h)
-=x(t)+h x'(t)+O(h^2).
+=
+x(t)
++h\dot x(t)
++O(h^2).
 \]
 
-因为：
+由 ODE：
 
 \[
-x'(t)=f(t,x(t)),
+\dot x(t)=f(t,x(t)),
 \]
 
-忽略 higher-order terms：
+得到：
 
 \[
 x(t+h)
-\approx x(t)+h f(t,x(t)).
+=
+x(t)
++h f(t,x(t))
++O(h^2).
 \]
 
-这正是 Euler update。
+忽略 $O(h^2)$ term，就得到 forward Euler。
 
-所以 Euler Method 的本质是：
+## Geometric Interpretation
 
-> **假设当前 tangent slope 在这一小步里近似不变。**
-
-## 一个数值例子
-
-考虑：
+在 $(t_n,x_n)$ 处，ODE 给出 local tangent / velocity：
 
 \[
-\frac{dx}{dt}=x,
-\qquad
-x(0)=1.
+f(t_n,x_n).
 \]
 
-真实解：
+Euler method 假设在长度为 $h$ 的小区间内保持该 velocity：
 
 \[
-x(t)=e^t.
+\Delta x
+\approx
+h f(t_n,x_n).
 \]
 
-取：
+然后在新位置重新计算 vector field。
+
+## Local and Global Error
+
+Forward Euler 的 local truncation error 为：
 
 \[
-h=0.1.
+O(h^2),
 \]
 
-第一步：
-
-\[
-x_1=1+0.1\times1=1.1.
-\]
-
-第二步：
-
-\[
-x_2=1.1+0.1\times1.1=1.21.
-\]
-
-继续迭代，在 $t=1$ 时会得到一个对 $e$ 的近似。
-
-## Local Error 与 Global Error
-
-Euler Method 每一步忽略了 Taylor expansion 中的二阶及以上项，因此 local truncation error 是：
-
-\[
-O(h^2).
-\]
-
-累积很多步后，global error 通常为：
+在固定 total integration interval 上，其 global error 通常为：
 
 \[
 O(h).
 \]
 
-所以 step size 减半时，整体误差通常大约按一阶比例下降。
+因此它是一阶 method。
 
-## Step Size 的取舍
+减小 $h$ 通常提高 accuracy，但需要更多 function evaluations。
 
-更小的 $h$：
+## Vector ODE
 
-- 通常更精确；
-- 需要更多 steps；
-- 计算更慢。
-
-更大的 $h$：
-
-- 计算更快；
-- approximation 更粗；
-- 对某些 ODE 甚至可能 numerical instability。
-
-因此 numerical integration 不只是“多跑几次 update”，而是在 accuracy、stability 与 compute 之间取舍。
-
-## 高维状态
-
-如果：
+若：
 
 \[
-x_k\in\mathbb R^d,
+x\in\mathbb R^d,
 \]
 
-公式完全相同：
+update 形式不变：
 
 \[
-x_{k+1}
-=x_k+h f(t_k,x_k).
+x_{n+1}
+=
+x_n+h f(t_n,x_n).
 \]
 
-只是 $f$ 输出一个 $d$-dimensional velocity vector。
+所有 dimensions 同时沿 vector field 更新。
 
-所以 Euler Method 可以直接用于 neural ODE、continuous normalizing flow 或 action-space flow。
+## Stability Example
 
-## 与 Flow Matching 的关系
-
-[Flow Matching](/generative-models/flow-matching/) 学习的是 vector field。Sampling 时需要把：
+考虑 test equation：
 
 \[
-\frac{dx_t}{dt}=v_\theta(x_t,t)
+\dot x=\lambda x,
+\qquad
+\lambda<0.
 \]
 
-沿时间积分。
-
-Euler Method 是最直接的 solver：
+Euler update：
 
 \[
-x_{k+1}=x_k+h v_\theta(x_k,t_k).
+x_{n+1}
+=(1+h\lambda)x_n.
 \]
 
-一些模型会使用固定少量 Euler steps；另一些会使用更高阶 ODE solver。Euler 是其中一种数值求解方法，而不是 Flow Matching 自己定义出来的更新规则。
+为了 numerical decay，需要：
+
+\[
+|1+h\lambda|<1.
+\]
+
+因此即使真实 ODE stable，step size 太大也可能导致 numerical solution oscillate 或 diverge。
+
+这说明 numerical stability 与 truncation error 是不同问题。
+
+## Step Size Trade-Off
+
+较小 $h$：
+
+- 更高 accuracy；
+- 通常更稳定；
+- 更多 model / vector-field evaluations。
+
+较大 $h$：
+
+- compute 更少；
+- discretization error 更大；
+- 可能产生 instability。
+
+实际 solver 选择需要同时考虑 accuracy、stability 与 computation cost。
+
+## Use in Flow Matching
+
+Flow-based generative model 可以定义：
+
+\[
+\frac{dx_t}{dt}
+=v_\theta(t,x_t).
+\]
+
+Euler sampling：
+
+\[
+x_{t+h}
+=
+x_t+h v_\theta(t,x_t).
+\]
+
+[π0](/robot-learning/pi0/) 的 flow-matching action inference 使用有限次 Euler steps 生成 action chunk。
+
+Euler Method 在这里仍然只是 ODE solver；它不属于 π0 或 Flow Matching 本身的定义。

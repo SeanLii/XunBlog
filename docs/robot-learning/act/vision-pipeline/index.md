@@ -51,7 +51,7 @@ F'\in\mathbb R^{d\times H'\times W'}.
 
 Transformer attention 只看 feature 内容时，不天然知道 feature 来自图像哪个位置。因此 backbone 同时提供 positional representation。
 
-可以把每个视觉 token 想成：
+每个视觉 token 可以表示为：
 
 ```text
 视觉内容 feature
