@@ -9,9 +9,13 @@ prerequisites:
 related:
   - "/mathematics/numerical-methods/euler-method/"
   - "/generative-models/flow-matching/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Ordinary Differential Equation
+
+> **知识边界**：本文的 canonical 对象是 **Ordinary Differential Equation**。依赖机制由 [Vector](/mathematics/linear-algebra/vector/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Ordinary Differential Equation（ODE）描述未知函数与其一个或多个 derivatives 之间的关系。
 

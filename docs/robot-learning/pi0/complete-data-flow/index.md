@@ -11,9 +11,13 @@ prerequisites:
 related:
   - "/robot-learning/pi0/action-expert/"
   - "/robot-learning/pi0/flow-matching-in-pi0/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Complete Data Flow
+
+> **知识边界**：本文的 canonical 对象是 **Complete Data Flow**。依赖机制由 [Architecture](/robot-learning/pi0/architecture/)、[Training](/robot-learning/pi0/training/)、[Inference](/robot-learning/pi0/inference/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 这一页不再引入新的 π0 模块，而是把 training 与 inference 从原始输入一路走到最终动作。
 

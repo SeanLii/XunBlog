@@ -10,9 +10,13 @@ prerequisites:
 related:
   - "/robot-learning/act/inference/"
   - "/robot-learning/act/paper-and-released-implementation/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Training
+
+> **知识边界**：本文的 canonical 对象是 **Training**。依赖机制由 [Architecture](/robot-learning/act/architecture/)、[CVAE in ACT](/robot-learning/act/cvae-in-act/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 ACT training 同时优化 action reconstruction 与 latent regularization。每个样本包含当前 observation 和 demonstration 中从该时刻开始的 future action chunk；ground-truth chunk 既是 prediction target，也参与 training-only latent posterior inference。
 

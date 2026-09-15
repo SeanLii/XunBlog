@@ -9,9 +9,13 @@ related:
   - "/robot-learning/behavior-cloning/"
   - "/robot-learning/dagger/"
   - "/robot-learning/act/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Imitation Learning
+
+> **知识边界**：本文的 canonical 对象是 **Imitation Learning**。本文从自身定义出发，不在这里扩展与当前对象无直接作用关系的背景知识。
+
 
 Imitation Learning（模仿学习）研究如何利用 expert demonstrations 学习决策策略。监督信息来自 expert behavior，而不是由 agent 通过 reward trial-and-error 独立发现策略。
 

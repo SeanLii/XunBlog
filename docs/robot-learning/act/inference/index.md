@@ -10,9 +10,13 @@ prerequisites:
 related:
   - "/robot-learning/act/temporal-ensemble/"
   - "/robot-learning/act/why-z-zero-at-inference/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Inference
+
+> **知识边界**：本文的 canonical 对象是 **Inference**。依赖机制由 [Architecture](/robot-learning/act/architecture/)、[Action Chunking](/robot-learning/act/action-chunking/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 ACT inference 比 training graph 简单，因为真实 future action 不存在，training-only latent encoder 也随之消失。
 

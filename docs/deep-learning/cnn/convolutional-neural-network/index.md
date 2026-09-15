@@ -9,9 +9,13 @@ prerequisites:
   - "/deep-learning/core/activation-function/"
 related:
   - "/deep-learning/cnn/resnet/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Convolutional Neural Network
+
+> **知识边界**：本文的 canonical 对象是 **Convolutional Neural Network**。依赖机制由 [Convolution](/mathematics/analysis/convolution/)、[Activation Function](/deep-learning/core/activation-function/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Convolutional Neural Network（CNN / ConvNet）是一类利用局部连接与参数共享处理具有空间或网格结构数据的 neural network architecture。图像是最典型的输入：
 
@@ -262,7 +266,7 @@ CNN family 包含许多对基本 convolutional architecture 的扩展，例如�
 
 [ResNet](/deep-learning/cnn/resnet/) 是其中影响最大的 architecture families 之一，它通过 residual learning 改善 very-deep CNN 的 optimization。
 
-## Limitations
+## 由机制产生的边界
 
 CNN 的局部性和参数共享带来有效 inductive bias，但也形成相应限制：
 

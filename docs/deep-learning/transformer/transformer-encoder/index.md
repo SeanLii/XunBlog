@@ -11,9 +11,13 @@ prerequisites:
   - "/deep-learning/core/layer-normalization/"
 related:
   - "/deep-learning/transformer/transformer-decoder/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Transformer Encoder
+
+> **知识边界**：本文的 canonical 对象是 **Transformer Encoder**。依赖机制由 [Self-Attention](/deep-learning/attention/self-attention/)、[Position-Wise Feed-Forward Network](/deep-learning/transformer/position-wise-feed-forward-network/)、[Residual Connection](/deep-learning/cnn/resnet/residual-connection/)、[Layer Normalization](/deep-learning/core/layer-normalization/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Transformer Encoder 接收一组 input representations，通过多层 self-attention 与 feed-forward transformation，把它们变成一组 contextual representations。
 

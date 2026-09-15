@@ -1,4 +1,3 @@
-import { routeMigrations } from './route-migrations.mjs'
 const originalGraph = {
   '/robot-learning/act/': [
     '/robot-learning/behavior-cloning/',
@@ -11,33 +10,33 @@ const originalGraph = {
   '/robot-learning/act/architecture/': [
     '/deep-learning/transformer/transformer-encoder/',
     '/deep-learning/transformer/transformer-decoder/',
-    '/deep-learning/transformer/cls-token/',
-    '/deep-learning/transformer/learnable-query-embedding/',
-    '/deep-learning/transformer/attention/cross-attention/'
+    '/deep-learning/bert/cls-token/',
+    '/deep-learning/detr/object-query/',
+    '/deep-learning/attention/cross-attention/'
   ],
   '/robot-learning/act/cvae-in-act/': [
     '/generative-models/conditional-variational-autoencoder/',
     '/mathematics/probability/normal-distribution/',
     '/mathematics/information-theory/kl-divergence/',
-    '/generative-models/reparameterization-trick/'
+    '/mathematics/probability/variational-inference/reparameterization-trick/'
   ],
   '/deep-learning/transformer/': [
-    '/deep-learning/transformer/attention/'
+    '/deep-learning/attention/'
   ],
-  '/deep-learning/transformer/attention/': [
-    '/deep-learning/transformer/attention/qkv/'
+  '/deep-learning/attention/': [
+    '/deep-learning/attention/qkv/'
   ],
-  '/deep-learning/transformer/attention/scaled-dot-product-attention/': [
+  '/deep-learning/transformer/scaled-dot-product-attention/': [
     '/mathematics/linear-algebra/dot-product/',
     '/deep-learning/core/softmax/'
   ],
   '/generative-models/variational-autoencoder/': [
-    '/generative-models/latent-variable/',
-    '/generative-models/variational-inference/',
-    '/generative-models/evidence-lower-bound/',
-    '/generative-models/reparameterization-trick/'
+    '/mathematics/probability/latent-variable/',
+    '/mathematics/probability/variational-inference/',
+    '/mathematics/probability/variational-inference/evidence-lower-bound/',
+    '/mathematics/probability/variational-inference/reparameterization-trick/'
   ],
-  '/generative-models/evidence-lower-bound/': [
+  '/mathematics/probability/variational-inference/evidence-lower-bound/': [
     '/mathematics/information-theory/kl-divergence/'
   ],
   '/robot-learning/act/vision-pipeline/': [
@@ -47,8 +46,8 @@ const originalGraph = {
     '/deep-learning/cnn/convolutional-neural-network/'
   ],
   '/deep-learning/cnn/convolutional-neural-network/': [
-    '/deep-learning/cnn/convolution/'
+    '/mathematics/analysis/convolution/'
   ]
 }
 
-export const navigationGraph = Object.fromEntries(Object.entries(originalGraph).map(([source, targets]) => [routeMigrations[source] || source, targets.map(target => routeMigrations[target] || target)]))
+export const navigationGraph = originalGraph

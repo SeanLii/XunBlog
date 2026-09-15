@@ -9,9 +9,13 @@ prerequisites:
 related:
   - "/robot-learning/act/why-z-zero-at-inference/"
   - "/robot-learning/act/training/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # CVAE in ACT
+
+> **知识边界**：本文的 canonical 对象是 **CVAE in ACT**。依赖机制由 [Conditional Variational Autoencoder](/generative-models/conditional-variational-autoencoder/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 ACT 在训练阶段使用 Conditional Variational Autoencoder 结构，为 action-chunk predictor 引入 latent variable $z$。该 latent 用于表示在当前 observation 条件下，demonstration action 中仍然存在的变化。
 

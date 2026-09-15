@@ -10,9 +10,13 @@ related:
   - "/robot-learning/act/cvae-in-act/"
   - "/robot-learning/act/vision-pipeline/"
   - "/robot-learning/act/training/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Architecture
+
+> **知识边界**：本文的 canonical 对象是 **Architecture**。依赖机制由 [ACT](/robot-learning/act/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 ACT architecture 包含两条职责不同的数据流：
 

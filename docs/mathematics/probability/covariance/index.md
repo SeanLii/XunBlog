@@ -9,9 +9,13 @@ prerequisites:
   - "/mathematics/probability/variance/"
 related:
   - "/mathematics/probability/multivariate-normal-distribution/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Covariance
+
+> **知识边界**：本文的 canonical 对象是 **Covariance**。依赖机制由 [Expectation](/mathematics/probability/expectation/)、[Variance](/mathematics/probability/variance/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Covariance 衡量两个 random variables 相对各自 means 的共同线性变化。
 

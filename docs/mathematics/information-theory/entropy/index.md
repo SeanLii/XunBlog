@@ -9,9 +9,13 @@ prerequisites:
 related:
   - "/mathematics/information-theory/cross-entropy/"
   - "/mathematics/information-theory/kl-divergence/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Entropy
+
+> **知识边界**：本文的 canonical 对象是 **Entropy**。依赖机制由 [Probability Distribution](/mathematics/probability/probability-distribution/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Entropy 衡量 probability distribution 的平均 information content 或 uncertainty。
 

@@ -9,9 +9,13 @@ prerequisites:
   - "/deep-learning/transformer/"
 related:
   - "/robot-learning/vision-language-action-model/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Vision-Language Model
+
+> **知识边界**：本文的 canonical 对象是 **Vision-Language Model**。依赖机制由 [Embedding](/deep-learning/core/embedding/)、[Transformer](/deep-learning/transformer/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Vision-Language Model（VLM）是一类联合建模 visual input 与 natural language 的模型。它们学习两种 modality 之间的对应关系，使图像与文本能够被对齐、融合、检索或用于条件生成。
 
@@ -148,7 +152,7 @@ VLM 的 evaluation 必须与输出类型对应，例如：
 
 单一 benchmark 无法完整表示 VLM 的视觉识别、语言生成、grounding 与 reasoning 能力。
 
-## Limitations
+## 由机制产生的边界
 
 VLM 的主要限制包括：
 

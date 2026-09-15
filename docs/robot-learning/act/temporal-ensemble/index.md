@@ -8,9 +8,13 @@ prerequisites:
   - "/robot-learning/act/action-chunking/"
 related:
   - "/robot-learning/act/inference/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Temporal Ensemble
+
+> **知识边界**：本文的 canonical 对象是 **Temporal Ensemble**。依赖机制由 [Action Chunking](/robot-learning/act/action-chunking/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Temporal Ensemble 是 ACT 在推理时融合 overlapping action chunks 的方法。
 

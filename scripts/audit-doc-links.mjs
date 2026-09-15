@@ -146,6 +146,18 @@ for (const file of files) {
   const canonicalMatch = source.match(/^canonical:\s*["']([^"']+)["']\s*$/m)
   if (canonicalMatch) {
     canonicalPages += 1
+    if (!/^standard:\s*["']XunBlog Content & Knowledge Architecture v1\.0["']\s*$/m.test(source)) {
+      errors.push(`${sourceName} is not bound to the v1.0 content standard`)
+    }
+    if (!/^rebuilt:\s*["']2026-09-15["']\s*$/m.test(source)) {
+      errors.push(`${sourceName} is missing the current rebuild marker`)
+    }
+    if (!source.includes('> **知识边界**')) {
+      errors.push(`${sourceName} does not declare its knowledge boundary`)
+    }
+    if (/^## (?:Limitations|Scope and Limitations|Limitations and Scope|Applications and Limitations)$/m.test(source)) {
+      errors.push(`${sourceName} separates limitations from their mechanism`)
+    }
     const canonical = canonicalMatch[1]
     const relativeFile = path.relative(docsRoot, file).split(path.sep).join('/')
     const expectedCanonical = relativeFile.endsWith('/index.md')

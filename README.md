@@ -1,15 +1,8 @@
-# AI Learning Notes
+# XunBlog
 
-围绕 ACT（Action Chunking with Transformers）、π0 以及理解它们所需前置知识构建的结构化知识库。
+以 ACT（Action Chunking with Transformers）与 π0 为入口，递归连接理解两者所需的机器人学习、生成模型、深度学习与数学知识。每个概念只拥有一个 canonical page；归属树负责稳定导航，依赖链接负责跨分支复用。
 
-## 内容范围
-
-- Mathematics：Linear Algebra、Probability、Information Theory
-- Deep Learning：Core、Transformer、Attention、Convolutional Neural Networks
-- Generative Models：Latent Variable、Variational Inference、ELBO、VAE、CVAE
-- Robot Learning：Imitation Learning、Behavior Cloning、VLA、Cross-Embodiment Learning、ACT、π0
-
-当前站点正文已完整更新为 XunBlog Knowledge Corpus v6，由 82 个独立 canonical knowledge pages 构成。知识归属由目录树决定，跨页面链接只负责导航。
+全站内容以 [`standards/XunBlog_知识内容创作与知识架构规范_v1.0.html`](standards/XunBlog_知识内容创作与知识架构规范_v1.0.html) 为唯一创作与架构标准。
 
 ## Local development
 
@@ -27,7 +20,7 @@ npm run docs:build         # 生产构建
 npm run docs:audit:render  # 构建产物中的公式、图表与样式
 ```
 
-## Repository structure
+## 内容结构
 
 ```text
 docs/
@@ -39,14 +32,10 @@ docs/
 └── .vitepress/
 ```
 
-每个知识页面的目录路径与 frontmatter 中的 canonical URL 一致。VitePress 配置、知识图和视觉主题位于 `docs/.vitepress/`。
+82 个 canonical knowledge pages 共同构成当前知识系统。每篇文章只展开当前对象的知识增量；依赖概念通过 canonical link 下钻，不在多篇文章中重复定义。
 
 ## Deployment
 
 `.github/workflows/deploy.yml` 在每次推送到 `main` 后构建并发布 GitHub Pages。项目站点的 `/XunBlog/` base path 由工作流自动注入。
 
-第二版配套索引、知识树、来源说明和原包验收记录保存在 `research/act/corpus-v2/`。站点正文仅将行内公式分隔符转换为现有渲染器支持的 `$...$` 格式。
-
-π0 专题与 6 篇通用前置知识已从 v3 导入，原 53 篇正文不变。v3 配套说明见 `research/corpus-v3/`。
-
-v6 已完整导入 82 篇知识页面，并按新版归属迁移路由。旧路径由构建阶段生成兼容跳转页；完整索引、归属与迁移表见 `research/corpus-v6/`。
+部署目标为 GitHub Pages；推送到 `main` 后由 GitHub Actions 构建并发布。

@@ -9,9 +9,13 @@ related:
   - "/mathematics/probability/probability-distribution/"
   - "/mathematics/probability/expectation/"
   - "/mathematics/probability/variance/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Random Variable
+
+> **知识边界**：本文的 canonical 对象是 **Random Variable**。本文从自身定义出发，不在这里扩展与当前对象无直接作用关系的背景知识。
+
 
 Random Variable 是把随机实验的 outcome 映射为数值的函数。
 

@@ -3,7 +3,6 @@ import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { navigationGraph } from './knowledge-graph.mjs'
-import { routeMigrations } from './route-migrations.mjs'
 import { canonicalRoute } from './routes.mjs'
 
 const root = fileURLToPath(new URL('../../', import.meta.url))
@@ -60,7 +59,7 @@ const originalUses = {
   '/deep-learning/cnn/resnet/': ['/deep-learning/cnn/convolutional-neural-network/'],
   '/deep-learning/cnn/convolutional-neural-network/': ['/mathematics/analysis/convolution/']
 }
-const uses = Object.fromEntries(Object.entries(originalUses).map(([source, targets]) => [routeMigrations[source] || source, targets.map(target => routeMigrations[target] || target)]))
+const uses = originalUses
 function walk(dir) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => {
     if (e.name.startsWith('.')) return []
@@ -138,5 +137,21 @@ export function buildKnowledgeModel() {
     page.searchText = [page.title, ...page.aliases, page.route.replaceAll('/', ' ').replaceAll('-', ' '), ...page.breadcrumbs.map(r => nodes[r].title)].join(' ').toLowerCase()
   }
   const recent = pages.filter(p => p.updated).sort((a,b) => b.updated.localeCompare(a.updated) || a.route.localeCompare(b.route)).slice(0, 5).map(p => p.route)
-  return { nodes, roots, recent, focus: '/robot-learning/pi0/', focusDescription: 'Vision-Language-Action robot policy with Flow Matching.', focusLinks: ['architecture', 'action-expert', 'training', 'inference'] }
+  return {
+    nodes,
+    roots,
+    recent,
+    startingPoints: [
+      {
+        route: '/robot-learning/act/',
+        description: '从模仿学习、动作分块与 CVAE 出发，理解精细双臂操作策略。',
+        links: ['action-chunking', 'architecture', 'training', 'inference']
+      },
+      {
+        route: '/robot-learning/pi0/',
+        description: '从 VLA、Flow Matching 与 Action Expert 出发，理解通用机器人策略。',
+        links: ['architecture', 'action-expert', 'training', 'inference']
+      }
+    ]
+  }
 }

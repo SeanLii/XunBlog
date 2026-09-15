@@ -11,9 +11,13 @@ related:
   - "/robot-learning/pi0/pretraining-and-posttraining/"
   - "/robot-learning/pi0/inference/"
   - "/robot-learning/pi0/complete-data-flow/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Training
+
+> **知识边界**：本文的 canonical 对象是 **Training**。依赖机制由 [Flow Matching in π0](/robot-learning/pi0/flow-matching-in-pi0/)、[Architecture](/robot-learning/pi0/architecture/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 π0 training converts a demonstrated future action chunk into a conditional Flow Matching regression problem. Each sample contains current observation
 

@@ -10,9 +10,13 @@ prerequisites:
 related:
   - "/deep-learning/core/linear-layer/"
   - "/deep-learning/sequence-modeling/positional-encoding/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Embedding
+
+> **知识边界**：本文的 canonical 对象是 **Embedding**。依赖机制由 [Vector](/mathematics/linear-algebra/vector/)、[Matrix](/mathematics/linear-algebra/matrix/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Embedding 是把离散对象、类别或结构中的实体映射到连续向量空间的表示方法。对离散集合
 
@@ -128,7 +132,7 @@ z=Eh
 
 或等价形式产生 vocabulary logits，这种 **weight tying** 会减少参数量，并把输入与输出 token representation 置于相关参数空间中。它是 embedding 的一种 architecture design，并非 embedding 的必要条件。
 
-## Limitations
+## 由机制产生的边界
 
 Embedding table 本身存在若干边界：
 

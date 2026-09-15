@@ -9,9 +9,13 @@ prerequisites:
   - "/deep-learning/sequence-modeling/positional-encoding/"
 related:
   - "/robot-learning/act/architecture/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Vision Pipeline
+
+> **知识边界**：本文的 canonical 对象是 **Vision Pipeline**。依赖机制由 [ResNet](/deep-learning/cnn/resnet/)、[Positional Encoding](/deep-learning/sequence-modeling/positional-encoding/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 ACT 的视觉部分负责把多路 RGB images 转成 Transformer 可以处理的 spatial features。
 

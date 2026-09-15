@@ -8,9 +8,13 @@ prerequisites:
   - "/robot-learning/behavior-cloning/"
 related:
   - "/robot-learning/imitation-learning/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # DAgger
+
+> **知识边界**：本文的 canonical 对象是 **DAgger**。依赖机制由 [Behavior Cloning](/robot-learning/behavior-cloning/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 DAgger（Dataset Aggregation）是 Ross、Gordon 与 Bagnell 提出的 interactive imitation-learning algorithm。它的核心目标是让 training data 覆盖 learner 自己在部署时会访问的 states。
 

@@ -8,9 +8,13 @@ prerequisites:
   - "/deep-learning/bert/"
 related:
   - "/robot-learning/act/cvae-in-act/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # CLS Token
+
+> **知识边界**：本文的 canonical 对象是 **CLS Token**。依赖机制由 [BERT](/deep-learning/bert/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 `[CLS]` 是 BERT 在输入 sequence 开头加入的 special token。它没有天然携带“整句话摘要”，而是提供一个可以在多层 self-attention 中不断读取其他 token、并被下游 loss 直接使用的专门位置。
 

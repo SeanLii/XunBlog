@@ -11,9 +11,13 @@ prerequisites:
 related:
   - "/robot-learning/pi0/blockwise-causal-attention-mask/"
   - "/robot-learning/pi0/complete-data-flow/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Inference
+
+> **知识边界**：本文的 canonical 对象是 **Inference**。依赖机制由 [KV Cache](/deep-learning/transformer/kv-cache/)、[Flow Matching in π0](/robot-learning/pi0/flow-matching-in-pi0/)、[Euler Method](/mathematics/numerical-methods/euler-method/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 π0 inference generates an action chunk by numerically integrating a learned conditional vector field from Gaussian noise toward the action-data distribution. A single robot policy call therefore contains multiple internal flow steps.
 

@@ -9,9 +9,13 @@ prerequisites:
   - "/deep-learning/attention/cross-attention/"
 related:
   - "/robot-learning/act/architecture/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Object Query
+
+> **知识边界**：本文的 canonical 对象是 **Object Query**。依赖机制由 [DETR](/deep-learning/detr/)、[Cross-Attention](/deep-learning/attention/cross-attention/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Object Query 是 DETR decoder 中的一组 learned output slots。它们作为模型参数被学习，而不是由某个输入 token 直接产生。
 

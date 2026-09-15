@@ -10,9 +10,13 @@ prerequisites:
 related:
   - "/robot-learning/pi0/flow-matching-in-pi0/"
   - "/robot-learning/pi0/blockwise-causal-attention-mask/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Action Expert
+
+> **知识边界**：本文的 canonical 对象是 **Action Expert**。依赖机制由 [Architecture](/robot-learning/pi0/architecture/)、[Self-Attention](/deep-learning/attention/self-attention/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Action Expert is π0's robotics-specific Transformer parameter set for robot state and continuous action tokens. It extends a pretrained VLM with parameters specialized for modalities that were not part of the VLM's original image-language pretraining interface.
 

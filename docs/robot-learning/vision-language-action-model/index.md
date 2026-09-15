@@ -10,9 +10,13 @@ prerequisites:
 related:
   - "/robot-learning/cross-embodiment-learning/"
   - "/robot-learning/pi0/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Vision-Language-Action Model
+
+> **知识边界**：本文的 canonical 对象是 **Vision-Language-Action Model**。依赖机制由 [Vision-Language Model](/deep-learning/multimodal/vision-language-model/)、[Imitation Learning](/robot-learning/imitation-learning/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Vision-Language-Action Model（VLA）是一类同时利用 visual observations、language conditions 与 robot-control supervision 学习 action policy 的模型。
 
@@ -196,7 +200,7 @@ RT-2 展示了将 VLM 与 robot trajectories co-fine-tune 后，对未在 robot 
 
 这些问题属于 model interface 与 data representation 的一部分，而不是简单扩大 backbone 就会自动消失的问题。
 
-## Limitations
+## 由机制产生的边界
 
 当前 VLA 仍受到多方面限制：
 

@@ -10,9 +10,13 @@ related:
   - "/robot-learning/pi0/training/"
   - "/robot-learning/pi0/inference/"
   - "/robot-learning/pi0/action-expert/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Paper and Released Implementation
+
+> **知识边界**：本文的 canonical 对象是 **Paper and Released Implementation**。依赖机制由 [π0](/robot-learning/pi0/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 π0 的论文与当前官方 openpi repository 并不是逐行相同的静态版本。理解模型时应把 **paper description** 与 **released implementation** 分开记录，尤其不要直接混用 flow-time 符号。
 

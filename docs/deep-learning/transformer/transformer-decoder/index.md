@@ -10,9 +10,13 @@ prerequisites:
   - "/deep-learning/transformer/position-wise-feed-forward-network/"
 related:
   - "/deep-learning/transformer/transformer-encoder/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Transformer Decoder
+
+> **知识边界**：本文的 canonical 对象是 **Transformer Decoder**。依赖机制由 [Self-Attention](/deep-learning/attention/self-attention/)、[Cross-Attention](/deep-learning/attention/cross-attention/)、[Position-Wise Feed-Forward Network](/deep-learning/transformer/position-wise-feed-forward-network/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Transformer Decoder 是一种以 target-side states 或 query states 为中心，通过 self-attention、可选 cross-attention 与 position-wise feed-forward transformation 产生输出 representations 的 Transformer stack。
 

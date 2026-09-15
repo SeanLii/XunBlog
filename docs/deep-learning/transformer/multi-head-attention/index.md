@@ -9,9 +9,13 @@ prerequisites:
 related:
   - "/deep-learning/attention/self-attention/"
   - "/deep-learning/attention/cross-attention/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Multi-Head Attention
+
+> **知识边界**：本文的 canonical 对象是 **Multi-Head Attention**。依赖机制由 [Scaled Dot-Product Attention](/deep-learning/transformer/scaled-dot-product-attention/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Multi-Head Attention 把一次 attention 拆成多个并行 heads。每个 head 都有自己的 Q/K/V projections，因此可以在不同 learned subspaces 中建立不同的信息读取关系。
 

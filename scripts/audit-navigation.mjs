@@ -2,12 +2,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { buildKnowledgeModel } from '../docs/.vitepress/knowledge-model.mjs'
 import { canonicalRoute, pageHref, routeFromPath } from '../docs/.vitepress/routes.mjs'
-import { routeMigrations } from '../docs/.vitepress/route-migrations.mjs'
 const model = buildKnowledgeModel()
-for (const [oldRoute, target] of Object.entries(routeMigrations)) {
-  assert(!model.nodes[oldRoute], `Legacy route is still a canonical node: ${oldRoute}`)
-  assert.equal(model.nodes[target]?.kind, 'canonical', `Missing migration target: ${target}`)
-}
 assert.deepEqual(model.nodes['/deep-learning/attention/qkv/'].breadcrumbs, ['/deep-learning/', '/deep-learning/attention/', '/deep-learning/attention/qkv/'])
 assert.equal(model.nodes['/deep-learning/bert/cls-token/'].parent, '/deep-learning/bert/')
 let links = 0
@@ -43,10 +38,15 @@ assert(model.nodes['/mathematics/probability/normal-distribution/'])
 assert.equal(model.nodes['/robot-learning/pi0/'].kind, 'canonical')
 assert.equal(model.nodes['/robot-learning/pi0/'].children.length, 9)
 for (const alias of ['pi0', 'pi 0', 'pi-zero', 'π₀']) assert(model.nodes['/robot-learning/pi0/'].searchText.includes(alias))
-for (const slug of model.focusLinks) assert(model.nodes[model.focus + slug + '/'])
-for (const route of [model.focus, ...model.recent]) assert.equal(model.nodes[route]?.kind, 'canonical')
+assert.deepEqual(model.startingPoints.map(entry => entry.route), ['/robot-learning/act/', '/robot-learning/pi0/'])
+for (const entry of model.startingPoints) {
+  assert.equal(model.nodes[entry.route]?.kind, 'canonical')
+  assert(entry.description)
+  for (const slug of entry.links) assert(model.nodes[entry.route + slug + '/'])
+}
+for (const route of model.recent) assert.equal(model.nodes[route]?.kind, 'canonical')
 for (const route of model.recent) assert(!Number.isNaN(Date.parse(model.nodes[route].updated)))
 const homepage = fs.readFileSync('docs/.vitepress/theme/components/HomePage.vue', 'utf8')
-assert.equal((homepage.match(/class="home-section current-focus"/g) || []).length, 1)
-assert(!/Learning Path|FEATURED|Explore|hero-actions|area-card/.test(homepage))
+assert.equal((homepage.match(/class="starting-card"/g) || []).length, 1)
+assert(/model\.startingPoints/.test(homepage))
 console.log(`Navigation audit: ${Object.keys(model.nodes).length} nodes, ${links} tree/graph links; ownership, deduplication, real update dates, root/base routes and malformed-route rejection passed.`)

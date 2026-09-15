@@ -10,9 +10,13 @@ prerequisites:
 related:
   - "/mathematics/numerical-methods/euler-method/"
   - "/robot-learning/pi0/flow-matching-in-pi0/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Flow Matching
+
+> **知识边界**：本文的 canonical 对象是 **Flow Matching**。依赖机制由 [Ordinary Differential Equation](/mathematics/calculus/ordinary-differential-equation/)、[Probability Distribution](/mathematics/probability/probability-distribution/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Flow Matching 是训练 Continuous Normalizing Flow（CNF）的一类方法。它学习一个 time-dependent vector field
 
@@ -340,7 +344,7 @@ p(x\mid c).
 
 条件可以是 class label、text embedding、image context、robot observation 等。π0 就把当前 robot observation 作为 condition，把未来 action chunk 作为需要运输到 data distribution 的连续变量。
 
-## Limitations
+## 由机制产生的边界
 
 Flow Matching 并不消除生成模型的所有难点：
 

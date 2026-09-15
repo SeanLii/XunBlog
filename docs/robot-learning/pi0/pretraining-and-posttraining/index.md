@@ -9,9 +9,13 @@ prerequisites:
   - "/robot-learning/cross-embodiment-learning/"
 related:
   - "/robot-learning/pi0/training/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Pre-training and Post-training in π0
+
+> **知识边界**：本文的 canonical 对象是 **Pre-training and Post-training in π0**。依赖机制由 [π0](/robot-learning/pi0/)、[Cross-Embodiment Learning](/robot-learning/cross-embodiment-learning/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 π0 separates broad generalist policy learning from task-focused specialization. Pre-training uses large, heterogeneous data to expand state, task and embodiment coverage; post-training uses narrower high-quality data to improve execution quality on demanding downstream tasks.
 

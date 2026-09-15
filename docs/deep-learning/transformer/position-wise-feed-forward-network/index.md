@@ -8,9 +8,13 @@ prerequisites:
   - "/deep-learning/core/multilayer-perceptron/"
 related:
   - "/deep-learning/transformer/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Position-Wise Feed-Forward Network
+
+> **知识边界**：本文的 canonical 对象是 **Position-Wise Feed-Forward Network**。依赖机制由 [Multilayer Perceptron](/deep-learning/core/multilayer-perceptron/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Position-Wise Feed-Forward Network 是原始 Transformer layer 中的一个子层。它对 sequence 中**每个 position 独立应用同一个 MLP**。
 

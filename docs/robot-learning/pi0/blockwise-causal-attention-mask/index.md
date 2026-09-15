@@ -12,9 +12,13 @@ related:
   - "/deep-learning/transformer/kv-cache/"
   - "/robot-learning/pi0/inference/"
   - "/robot-learning/pi0/action-expert/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Blockwise Causal Attention Mask in π0
+
+> **知识边界**：本文的 canonical 对象是 **Blockwise Causal Attention Mask in π0**。依赖机制由 [Causal Mask](/deep-learning/sequence-modeling/causal-mask/)、[Self-Attention](/deep-learning/attention/self-attention/)、[Architecture](/robot-learning/pi0/architecture/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 π0 partitions the input sequence into three functional blocks and uses a blockwise mask to control information flow:
 

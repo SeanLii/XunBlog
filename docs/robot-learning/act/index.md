@@ -11,9 +11,13 @@ related:
   - "/robot-learning/act/temporal-ensemble/"
   - "/robot-learning/act/architecture/"
   - "/robot-learning/act/cvae-in-act/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # ACT
+
+> **知识边界**：本文的 canonical 对象是 **ACT**。依赖机制由 [Behavior Cloning](/robot-learning/behavior-cloning/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 ACT（Action Chunking with Transformers）是一种面向机器人 imitation learning 的 policy architecture。给定当前多路视觉观测与机器人 proprioception，ACT 一次预测未来一段连续动作，而不是只输出下一个 control action。
 
@@ -224,7 +228,7 @@ ACT 使用多项已有机制，但各组件承担不同职责：
 
 这些组件共同构成 ACT，但它们各自的通用理论仍属于对应 canonical topics。
 
-## Limitations and Scope
+## 机制导出的能力边界
 
 ACT 的 action chunk 能降低 sequential prediction burden，但 chunk 内较远动作仍然更依赖未来未观测信息；chunk size 因此存在 prediction horizon 与 temporal structure 之间的折中。
 

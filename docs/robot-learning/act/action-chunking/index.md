@@ -9,9 +9,13 @@ prerequisites:
 related:
   - "/robot-learning/act/temporal-ensemble/"
   - "/robot-learning/act/inference/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Action Chunking
+
+> **知识边界**：本文的 canonical 对象是 **Action Chunking**。依赖机制由 [Behavior Cloning](/robot-learning/behavior-cloning/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Action Chunking 是把 policy 的基本预测单位从“一个动作”改成“未来一段连续动作”。
 

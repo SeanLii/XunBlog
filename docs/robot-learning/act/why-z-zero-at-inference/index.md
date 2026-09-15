@@ -9,9 +9,13 @@ prerequisites:
   - "/mathematics/probability/normal-distribution/"
 related:
   - "/robot-learning/act/inference/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # 为什么 ACT 推理时令 z = 0？
+
+> **知识边界**：本文的 canonical 对象是 **为什么 ACT 推理时令 z = 0？**。依赖机制由 [CVAE in ACT](/robot-learning/act/cvae-in-act/)、[Normal Distribution](/mathematics/probability/normal-distribution/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 ACT 的训练阶段会从 demonstration action chunk 推断 latent $z$，但推理阶段直接令
 

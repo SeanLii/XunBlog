@@ -10,9 +10,13 @@ prerequisites:
 related:
   - "/deep-learning/cnn/resnet/residual-connection/"
   - "/deep-learning/transformer/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Layer Normalization
+
+> **知识边界**：本文的 canonical 对象是 **Layer Normalization**。依赖机制由 [Expectation](/mathematics/probability/expectation/)、[Variance](/mathematics/probability/variance/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Layer Normalization（LayerNorm）对单个样本内部指定的一组 features 计算 mean 与 variance，完成标准化后再施加可学习的 affine transformation。
 
@@ -141,7 +145,7 @@ y=x+F(\operatorname{LN}(x)).
 
 RMSNorm 等方法保留了“按单个 token / sample feature group 归一化”的思想，但不减去 mean，而只使用 root mean square 进行 scaling。它们与 LayerNorm 相关，但不是同一个 operation。
 
-## Limitations
+## 由机制产生的边界
 
 LayerNorm 也会改变 representation 的绝对尺度信息。如果某个任务需要显式保留这类尺度，architecture 必须通过 residual path、learned affine parameters 或其他分支重新表达。
 

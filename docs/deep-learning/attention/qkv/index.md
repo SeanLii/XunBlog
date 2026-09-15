@@ -8,9 +8,13 @@ prerequisites:
   - "/deep-learning/attention/"
 related:
   - "/deep-learning/transformer/scaled-dot-product-attention/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Query / Key / Value
+
+> **知识边界**：本文的 canonical 对象是 **Query / Key / Value**。依赖机制由 [Attention](/deep-learning/attention/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Query、Key、Value 是 key-value attention 中的三种计算角色。
 

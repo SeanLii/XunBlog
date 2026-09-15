@@ -8,9 +8,13 @@ prerequisites:
   - "/mathematics/probability/variational-inference/"
 related:
   - "/mathematics/probability/variational-inference/evidence-lower-bound/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Reparameterization Trick
+
+> **知识边界**：本文的 canonical 对象是 **Reparameterization Trick**。依赖机制由 [Variational Inference](/mathematics/probability/variational-inference/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Reparameterization Trick 把 parameter-dependent random sampling 写成“parameter-free noise + differentiable deterministic transformation”，从而使 Monte Carlo expectation 可以使用 pathwise gradients。
 

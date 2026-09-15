@@ -8,9 +8,13 @@ prerequisites:
   - "/generative-models/variational-autoencoder/"
 related:
   - "/robot-learning/act/cvae-in-act/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Conditional Variational Autoencoder
+
+> **知识边界**：本文的 canonical 对象是 **Conditional Variational Autoencoder**。依赖机制由 [Variational Autoencoder](/generative-models/variational-autoencoder/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Conditional Variational Autoencoder（CVAE）是对 VAE 的条件化扩展。它建模的不是无条件 data distribution $p(x)$，而是给定 observed condition $c$ 后的 conditional distribution：
 
@@ -276,7 +280,7 @@ q_\phi(z\mid c,y).
 
 因此 CVAE 不是简单把额外 feature 拼接到 VAE 输入；条件变量进入了整个概率模型的定义。
 
-## Limitations
+## 由机制产生的边界
 
 CVAE 的常见限制包括：
 

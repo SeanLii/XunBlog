@@ -9,9 +9,13 @@ prerequisites:
   - "/deep-learning/sequence-modeling/causal-mask/"
 related:
   - "/robot-learning/pi0/inference/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # KV Cache
+
+> **知识边界**：本文的 canonical 对象是 **KV Cache**。依赖机制由 [Query / Key / Value](/deep-learning/attention/qkv/)、[Causal Mask](/deep-learning/sequence-modeling/causal-mask/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 KV Cache 是 Transformer inference 中复用已经计算过的 Key / Value tensors 的机制。
 

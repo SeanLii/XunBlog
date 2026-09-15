@@ -9,9 +9,13 @@ prerequisites:
   - "/mathematics/probability/probability-distribution/"
 related:
   - "/mathematics/probability/variance/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Expectation
+
+> **知识边界**：本文的 canonical 对象是 **Expectation**。依赖机制由 [Random Variable](/mathematics/probability/random-variable/)、[Probability Distribution](/mathematics/probability/probability-distribution/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Expectation（期望）是 random variable 在其 probability distribution 下的概率加权平均。
 

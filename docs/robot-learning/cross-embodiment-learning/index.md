@@ -8,9 +8,13 @@ prerequisites:
   - "/robot-learning/imitation-learning/"
 related:
   - "/robot-learning/vision-language-action-model/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Cross-Embodiment Learning
+
+> **知识边界**：本文的 canonical 对象是 **Cross-Embodiment Learning**。依赖机制由 [Imitation Learning](/robot-learning/imitation-learning/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Cross-Embodiment Learning 研究如何利用来自不同 robot embodiments 的数据学习可以共享、迁移或适配的 policy representations。
 

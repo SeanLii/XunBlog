@@ -12,9 +12,13 @@ related:
   - "/robot-learning/pi0/action-expert/"
   - "/robot-learning/pi0/blockwise-causal-attention-mask/"
   - "/robot-learning/pi0/complete-data-flow/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Architecture
+
+> **知识边界**：本文的 canonical 对象是 **Architecture**。依赖机制由 [π0](/robot-learning/pi0/)、[Vision-Language Model](/deep-learning/multimodal/vision-language-model/)、[Self-Attention](/deep-learning/attention/self-attention/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 π0 combines a pretrained vision-language backbone with a smaller robotics-specific Action Expert inside a shared attention computation. Image and language tokens use VLM parameters; robot state and noisy action tokens use Action Expert parameters. The token groups interact through a structured attention mask.
 

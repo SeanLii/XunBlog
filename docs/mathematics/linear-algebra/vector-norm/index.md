@@ -8,9 +8,13 @@ prerequisites:
   - "/mathematics/linear-algebra/vector/"
 related:
   - "/mathematics/linear-algebra/dot-product/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Vector Norm
+
+> **知识边界**：本文的 canonical 对象是 **Vector Norm**。依赖机制由 [Vector](/mathematics/linear-algebra/vector/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Vector Norm 是衡量 vector 大小的函数。对 vector space 中的 $x$，norm 记作：
 

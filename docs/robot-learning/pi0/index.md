@@ -13,9 +13,13 @@ related:
   - "/robot-learning/pi0/action-expert/"
   - "/robot-learning/pi0/training/"
   - "/robot-learning/pi0/inference/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # π0
+
+> **知识边界**：本文的 canonical 对象是 **π0**。依赖机制由 [Vision-Language-Action Model](/robot-learning/vision-language-action-model/)、[Flow Matching](/generative-models/flow-matching/)、[Action Chunking](/robot-learning/act/action-chunking/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 π0（pi-zero）是 Physical Intelligence 提出的 Vision-Language-Action（VLA）robot policy。它以预训练 Vision-Language Model 为语义 backbone，加入机器人专用 Action Expert，并通过 conditional Flow Matching 生成连续 action chunks。
 
@@ -182,7 +186,7 @@ Robot pre-training data 覆盖多种 single-arm、dual-arm 与 mobile manipulati
 
 π0 因此不是 ACT 的语言扩展版。二者共享 action-chunk control idea，但 probabilistic modeling、backbone 与 inference computation 都不同。
 
-## Scope and Limitations
+## 机制边界与适用范围
 
 π0 的 generalist training 扩大了任务与 robot coverage，但并不消除 embodiment-specific action interfaces、camera setup、state representation 与 data quality differences。Cross-embodiment transfer 仍依赖 data transforms、shared representation 与 sufficiently compatible tasks。
 

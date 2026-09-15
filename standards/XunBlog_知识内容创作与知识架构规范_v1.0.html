@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light" />
+<title>XunBlog 知识内容创作与知识架构规范 · 版本 1.0</title>
+<style>
+:root {
+  --bg:#f5f7f8;
+  --paper:#ffffff;
+  --ink:#152027;
+  --muted:#62717a;
+  --line:#dfe6e9;
+  --soft:#eef3f5;
+  --accent:#0f6975;
+  --accent-soft:#e8f3f4;
+  --code:#f4f7f8;
+  --shadow:0 14px 40px rgba(21,32,39,.07);
+  --max:920px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",Arial,sans-serif;line-height:1.82;font-size:16px}
+a{color:var(--accent);text-decoration:none}
+.layout{display:grid;grid-template-columns:280px minmax(0,1fr);min-height:100vh}
+.sidebar{position:sticky;top:0;height:100vh;overflow:auto;border-right:1px solid var(--line);background:rgba(255,255,255,.82);backdrop-filter:blur(14px);padding:30px 24px}
+.brand{font-weight:800;font-size:16px;letter-spacing:-.02em;margin-bottom:5px}
+.brand-sub{font-size:12px;color:var(--muted);margin-bottom:24px}
+.toc-title{font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:#87959c;margin:16px 0 9px}
+.sidebar nav{display:flex;flex-direction:column;gap:2px}
+.sidebar nav a{display:block;color:#53636c;border-radius:8px;padding:6px 8px;font-size:13px;line-height:1.4}
+.sidebar nav a:hover{background:var(--accent-soft);color:var(--accent)}
+.sidebar .toc-l2{padding-left:20px;font-size:12.5px}
+.sidebar .toc-l3{padding-left:34px;font-size:12px}
+.main{min-width:0;padding:56px 7vw 80px}
+.article{max-width:var(--max);margin:0 auto;background:var(--paper);box-shadow:var(--shadow);border:1px solid rgba(223,230,233,.7);border-radius:22px;overflow:hidden}
+.hero{padding:58px 64px 46px;background:linear-gradient(145deg,#fff 0%,#f7fbfb 100%);border-bottom:1px solid var(--line)}
+.eyebrow{font-size:12px;color:var(--accent);font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px}
+h1{font-size:36px;line-height:1.18;letter-spacing:-.035em;margin:0 0 12px}
+.subtitle{font-size:16px;color:#3d5059;font-weight:650;letter-spacing:.02em;margin-bottom:22px}
+.meta{display:flex;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:13px;margin-bottom:22px}
+.hero-note{margin-top:22px;padding:18px 20px;border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 12px 12px 0;color:#28464d}
+.content{padding:48px 64px 64px}
+h2{font-size:26px;line-height:1.35;margin:54px 0 16px;padding-top:10px;letter-spacing:-.02em}
+h3{font-size:20px;line-height:1.4;margin:38px 0 13px;letter-spacing:-.015em}
+h4{font-size:17px;margin:30px 0 10px}
+h2:first-child{margin-top:0}
+.anchor{opacity:0;margin-left:8px;font-size:.72em;font-weight:500}
+h2:hover .anchor,h3:hover .anchor,h4:hover .anchor{opacity:.55}
+p{margin:0 0 16px;color:#26343b}
+ul,ol{padding-left:1.4em;margin:8px 0 20px}
+li{padding-left:.25em;margin:6px 0}
+li::marker{color:#829298}
+.equation{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;letter-spacing:.01em;text-align:center;overflow-x:auto;white-space:pre-wrap;padding:15px 18px;margin:18px 0 22px;background:var(--code);border:1px solid #e3e9ec;border-radius:12px;color:#17282e}
+.note{display:flex;gap:13px;padding:18px 20px;margin:20px 0 24px;background:#eef7f7;border:1px solid #d8ebed;border-radius:13px;color:#29474e}
+.note-mark{color:var(--accent);font-size:11px;padding-top:6px}
+.table-wrap{overflow-x:auto;margin:20px 0 28px;border:1px solid var(--line);border-radius:13px}
+table{width:100%;border-collapse:collapse;min-width:620px;background:#fff}
+th,td{padding:13px 15px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);font-size:14px;line-height:1.6}
+th{background:#f2f6f7;color:#34464e;font-weight:750}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:650;color:#273940}
+.term{border-bottom:1px dashed #8bb9bf}
+.footer{max-width:var(--max);margin:22px auto 0;text-align:center;color:#8a969c;font-size:12px}
+@media (max-width:1050px){.layout{grid-template-columns:1fr}.sidebar{display:none}.main{padding:28px 18px 54px}.hero{padding:40px 28px 32px}.content{padding:34px 28px 46px}h1{font-size:30px}}
+@media (max-width:560px){body{font-size:15px}.article{border-radius:14px}.hero{padding:32px 20px 27px}.content{padding:28px 20px 38px}h1{font-size:27px}h2{font-size:23px}h3{font-size:18px}.equation{font-size:16px}}
+@media print{body{background:#fff}.layout{display:block}.sidebar{display:none}.main{padding:0}.article{box-shadow:none;border:0;border-radius:0}.hero,.content{padding-left:0;padding-right:0}a{color:inherit}}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">XunBlog</div>
+    <div class="brand-sub">Knowledge Architecture Spec</div>
+    <div class="toc-title">Contents</div>
+    <nav><a class="toc-l1" href="#总体目标">1. 总体目标</a><a class="toc-l1" href="#知识系统的形式化模型">2. 知识系统的形式化模型</a><a class="toc-l2" href="#归属树">2.1 归属树</a><a class="toc-l2" href="#依赖图">2.2 依赖图</a><a class="toc-l2" href="#为避免术语混乱">2.3 为避免术语混乱</a><a class="toc-l1" href="#递归知识与模块化复用">3. 递归知识与模块化复用</a><a class="toc-l1" href="#复用-改造-规则">4. “复用 + 改造”规则</a><a class="toc-l1" href="#单篇文章的知识边界">5. 单篇文章的知识边界</a><a class="toc-l2" href="#什么应该留在当前文章">5.1 什么应该留在当前文章</a><a class="toc-l2" href="#什么不应该重新展开">5.2 什么不应该重新展开</a><a class="toc-l1" href="#文章内部必须是-递进链-不是知识点清单">6. 文章内部必须是“递进链”，不是知识点清单</a><a class="toc-l2" href="#不采用课堂式组织">6.1 不采用课堂式组织</a><a class="toc-l1" href="#数学表达规范">7. 数学表达规范</a><a class="toc-l2" href="#notation-一致性">7.1 Notation 一致性</a><a class="toc-l2" href="#公式只承担必要的数学职责">7.2 公式只承担必要的数学职责</a><a class="toc-l2" href="#推导采用连续形式">7.3 推导采用连续形式</a><a class="toc-l2" href="#shape-与编号">7.4 Shape 与编号</a><a class="toc-l1" href="#原理-性质与限制的组织方式">8. 原理、性质与限制的组织方式</a><a class="toc-l1" href="#语言与术语规范">9. 语言与术语规范</a><a class="toc-l2" href="#风格目标">9.1 风格目标</a><a class="toc-l1" href="#原始来源与事实边界">10. 原始来源与事实边界</a><a class="toc-l1" href="#canonical-page-与链接规则">11. Canonical page 与链接规则</a><a class="toc-l1" href="#每篇文章创作前的内部工作流">12. 每篇文章创作前的内部工作流</a><a class="toc-l1" href="#审稿与验收标准">13. 审稿与验收标准</a><a class="toc-l1" href="#典型反模式">14. 典型反模式</a><a class="toc-l2" href="#把当前文章写成-从零开始-的大教程">14.1 把当前文章写成“从零开始”的大教程</a><a class="toc-l2" href="#把相关知识全部塞进当前文章">14.2 把相关知识全部塞进当前文章</a><a class="toc-l2" href="#variant-重新讲-base-model">14.3 Variant 重新讲 Base Model</a><a class="toc-l2" href="#先写-优点-缺点-再找理由">14.4 先写“优点 / 缺点”，再找理由</a><a class="toc-l2" href="#为了硬核而堆数学">14.5 为了硬核而堆数学</a><a class="toc-l1" href="#一个抽象示例">15. 一个抽象示例</a><a class="toc-l1" href="#最终原则">16. 最终原则</a></nav>
+  </aside>
+  <main class="main">
+    <article class="article">
+      <header class="hero">
+        <div class="eyebrow">Content & Knowledge Architecture</div>
+        <h1>XunBlog 知识内容创作与知识架构规范</h1>
+        <div class="subtitle">Recursive · Modular · Canonical · Progressive · Rigorous</div>
+        <div class="meta"><span>版本 1.0</span><span>用途：用于后续批量创作、审稿、重构与网站层级导航设计。</span></div>
+        <div class="hero-note">核心目标：把每一个知识点写成知识系统中的“可复用模块”，而不是一篇孤立教程。文章只负责当前知识新增的内容；已有机制通过链接递归复用；知识之间同时维护唯一归属关系与可交叉的依赖关系。</div>
+      </header>
+      <div class="content"><h2 id="总体目标">1. 总体目标<a class="anchor" href="#总体目标" aria-label="链接到本节">#</a></h2><p>XunBlog 的内容体系不是一本线性教材，也不是若干相互独立的文章集合，而是一套可以递归展开的知识系统。读者可以从任意知识节点进入；当正文使用到更基础的概念时，可以沿链接继续下钻，学习该概念自己的 canonical page，再返回当前文章。</p><p>因此，每篇文章必须同时满足两类要求：一是它自身要形成完整、连续、层层递进的理解路径；二是它不能重复承担已经属于其他知识节点的完整教学职责。</p><div class="equation" role="math">Article(K) = ΔK + Contextual Use of Dependencies</div><p>其中，ΔK 表示当前知识 K 相对于其依赖知识真正新增的定义、结构、机制、性质、变化与限制；依赖知识只在当前语境中被必要地调用，不在本文重新完整教学。</p><h2 id="知识系统的形式化模型">2. 知识系统的形式化模型<a class="anchor" href="#知识系统的形式化模型" aria-label="链接到本节">#</a></h2><p>为了同时支持层级导航与跨知识复用，知识系统不应只建一棵树，也不应只建一个无层级的图。更合适的表示是：</p><div class="equation" role="math">G = (V, E_own, E_dep, E_ref)</div><ul><li>V：全部 canonical knowledge nodes。每个节点对应一个独立、唯一、可复用的知识对象。</li><li>E_own：归属关系（ownership）。用于决定网站的层级导航。</li><li>E_dep：依赖关系（dependency）。表示理解当前知识会调用哪些更基础知识。</li><li>E_ref：关联 / 引用关系（reference）。表示相关但非必要前置的横向连接。</li></ul><p>其中，归属关系必须形成稳定的层级结构；依赖关系和引用关系则可以跨越层级自由连接。</p><h3 id="归属树">2.1 归属树<a class="anchor" href="#归属树" aria-label="链接到本节">#</a></h3><p>若知识 B 首次在知识 A 的体系中被提出，并且 B 可以独立形成 canonical knowledge page，则 B 归属于 A。</p><div class="equation" role="math">parent(B) = A</div><p>归属关系用于导航，因此原则上每个非根节点只有一个主要 parent。其他文章即使大量使用 B，也不会改变 B 的归属。</p><aside class="note"><span class="note-mark">◆</span><div>“谁使用 B”与“B 属于谁”是两件不同的事。归属解决导航；依赖解决复用。</div></aside><h3 id="依赖图">2.2 依赖图<a class="anchor" href="#依赖图" aria-label="链接到本节">#</a></h3><p>如果知识 C 在解释自身时需要调用 B，则存在依赖边：</p><div class="equation" role="math">C →dep B</div><p>这条边只表示 C 的理解依赖 B，不表示 B 应挂到 C 的导航层级下。一个节点可以依赖多个位于不同分支的知识。</p><h3 id="为避免术语混乱">2.3 为避免术语混乱<a class="anchor" href="#为避免术语混乱" aria-label="链接到本节">#</a></h3><div class="table-wrap"><table><thead><tr><th>名称</th><th>含义</th><th>是否决定导航层级</th></tr></thead><tbody><tr><td>归属子知识</td><td>在某知识体系中首次独立提出、并归属于该 parent 的节点</td><td>是</td></tr><tr><td>依赖知识</td><td>当前文章理解时调用的更基础模块</td><td>否</td></tr><tr><td>关联知识</td><td>有助于扩展理解，但不是理解本文的必要条件</td><td>否</td></tr></tbody></table></div><h2 id="递归知识与模块化复用">3. 递归知识与模块化复用<a class="anchor" href="#递归知识与模块化复用" aria-label="链接到本节">#</a></h2><p>每个知识节点都可以继续递归分解其依赖。假设知识 K 依赖 C₁, C₂, …, Cₙ：</p><div class="equation" role="math">Dep(K) = {C₁, C₂, …, Cₙ}</div><p>而任意 Cᵢ 也可以继续拥有自己的依赖集合 Dep(Cᵢ)。因此，读者遇到不理解的术语时，应通过链接进入该知识自己的页面，而不是要求当前文章从最底层重新解释。</p><p>这种机制带来的直接结果是：知识只被完整定义一次。</p><div class="equation" role="math">One concept → One canonical page</div><p>如果知识 B 被 A、C、D 同时使用，则 A、C、D 都引用 B，而不是各自复制一份 B 的完整原理。这样可以避免重复、版本漂移和不同文章之间的表述冲突。</p><h2 id="复用-改造-规则">4. “复用 + 改造”规则<a class="anchor" href="#复用-改造-规则" aria-label="链接到本节">#</a></h2><p>当知识 C 直接复用了知识 B，但对 B 做了修改、扩展、约束或特化时，C 不应重新解释 B 的完整原理，而应重点解释变化本身。</p><div class="equation" role="math">C = B + ΔC</div><p>正文的重点应放在 ΔC：改了什么、为什么改、数学形式如何变化、行为或性质发生了什么变化、代价和限制如何改变。</p><ul><li>B 中未改变的机制：链接并直接复用，不重复展开。</li><li>C 相对 B 的新增结构：详细解释。</li><li>C 相对 B 的删减或约束：详细解释。</li><li>改变导致的新性质、新优势、新限制：在对应机制处自然说明。</li></ul><aside class="note"><span class="note-mark">◆</span><div>这条规则是整个网站避免重复内容的关键。一个 variant 页面的价值不在于重新讲 base model，而在于精确说明它相对于 base model 的 delta。</div></aside><h2 id="单篇文章的知识边界">5. 单篇文章的知识边界<a class="anchor" href="#单篇文章的知识边界" aria-label="链接到本节">#</a></h2><p>写一个知识 K 时，必须先识别它的知识边界。文章需要回答的不是“和 K 有关的一切”，而是“K 相对于它所复用的知识，究竟新增了什么”。</p><div class="equation" role="math">Knowledge(K) = Reused Knowledge + ΔK</div><p>文章正文应集中在 ΔK。对于 Reused Knowledge，只保留理解当前推理所必需的接口信息。</p><h3 id="什么应该留在当前文章">5.1 什么应该留在当前文章<a class="anchor" href="#什么应该留在当前文章" aria-label="链接到本节">#</a></h3><ul><li>K 的精确定义与它在更大知识体系中的位置。</li><li>K 自己新增的结构、机制、目标或约束。</li><li>这些新增部分对应的数学表达。</li><li>新增机制直接产生的性质、能力、代价和限制。</li><li>K 与其 base knowledge、variants、后续知识之间的关系。</li></ul><h3 id="什么不应该重新展开">5.2 什么不应该重新展开<a class="anchor" href="#什么不应该重新展开" aria-label="链接到本节">#</a></h3><ul><li>已经属于某个独立 canonical concept 的完整原理。</li><li>仅为了照顾零基础读者而重复的底层数学教学。</li><li>和当前知识没有直接作用关系的扩展知识。</li><li>为了显得“硬核”而加入、但不服务当前推理链的公式或定理。</li></ul><h2 id="文章内部必须是-递进链-不是知识点清单">6. 文章内部必须是“递进链”，不是知识点清单<a class="anchor" href="#文章内部必须是-递进链-不是知识点清单" aria-label="链接到本节">#</a></h2><p>模块化解决文章之间的边界；递进结构解决单篇文章内部的学习路径。文章不应以“定义、优点、缺点、训练、应用”这类固定模板机械拼装，而应根据知识本身的逻辑关系确定顺序。</p><p>理想结构可以抽象为：</p><div class="equation" role="math">Position → Core Structure → Mechanism → Consequence → Limitation → Extension</div><p>更严格地说，正文中的第 i+1 部分应尽可能由第 i 部分自然产生。读者在读完上一部分后，应该自然理解为什么下一部分必须出现。</p><p>例如，一个机制 M 导致性质 P，同时引出限制 L：</p><div class="equation" role="math">M ⇒ P,    M ⇒ L</div><p>那么 P 与 L 应在解释 M 时或紧随其后出现，而不是把所有“缺点”集中在文章末尾。这样限制是由原理自然推出的，而不是附加评价。</p><h3 id="不采用课堂式组织">6.1 不采用课堂式组织<a class="anchor" href="#不采用课堂式组织" aria-label="链接到本节">#</a></h3><p>文章应像严谨的 technical exposition，而不是教师逐步提问、学生逐步回答的课堂记录。避免把章节组织成大量“为什么……？”“那接下来怎么办？”“假设有一个……”式的教学话术。</p><p>例子、直觉和类比可以辅助理解，但不能成为文章的组织骨架。主线必须由知识对象自身的定义、结构、机制与数学关系推动。</p><h2 id="数学表达规范">7. 数学表达规范<a class="anchor" href="#数学表达规范" aria-label="链接到本节">#</a></h2><p>数学风格应接近 NeurIPS、ICML、ICLR、CVPR 等主流 ML 论文：notation 统一、定义先行、推导紧凑、公式服务论证，而不是把公式当视觉装饰。</p><h3 id="notation-一致性">7.1 Notation 一致性<a class="anchor" href="#notation-一致性" aria-label="链接到本节">#</a></h3><div class="table-wrap"><table><thead><tr><th>对象</th><th>推荐记法</th><th>说明</th></tr></thead><tbody><tr><td>scalar</td><td>x, α, η, L</td><td>普通斜体</td></tr><tr><td>vector</td><td>𝐱, 𝐡, 𝐛</td><td>统一使用粗体向量</td></tr><tr><td>matrix</td><td>𝐖, 𝐀</td><td>统一使用粗体矩阵</td></tr><tr><td>set / dataset</td><td>𝒟, 𝒳, 𝒴</td><td>calligraphic notation</td></tr><tr><td>function</td><td>fθ, φ, σ</td><td>函数符号保持一致</td></tr><tr><td>layer index</td><td>𝐡⁽ˡ⁾, 𝐖⁽ˡ⁾</td><td>用带括号上标明确表示 layer index</td></tr></tbody></table></div><p>当使用上标表示 layer index 时，优先采用带括号形式，例如 𝐡⁽ˡ⁾、𝐖⁽ˡ⁾，避免与幂运算混淆。</p><h3 id="公式只承担必要的数学职责">7.2 公式只承担必要的数学职责<a class="anchor" href="#公式只承担必要的数学职责" aria-label="链接到本节">#</a></h3><ul><li>定义：明确对象是什么。</li><li>推导：证明或导出下一步结论。</li><li>目标函数：精确定义 optimization objective。</li><li>性质：给出定理、边界、复杂度或结构关系。</li></ul><h3 id="推导采用连续形式">7.3 推导采用连续形式<a class="anchor" href="#推导采用连续形式" aria-label="链接到本节">#</a></h3><p>同一段 algebraic reasoning 应尽量连续展示，而不是一句话配一个碎公式。例如：</p><div class="equation" role="math">y = W₂(W₁x + b₁) + b₂ = (W₂W₁)x + (W₂b₁ + b₂)</div><p>随后正文只解释这个推导对当前知识意味着什么。前置的 matrix multiplication、function composition 等概念默认由其自己的知识页负责。</p><h3 id="shape-与编号">7.4 Shape 与编号<a class="anchor" href="#shape-与编号" aria-label="链接到本节">#</a></h3><ul><li>变量首次定义且 shape 对当前机制重要时给出 shape；之后不要机械重复。</li><li>只有后文需要交叉引用的核心公式才编号；临时推导不必编号。</li><li>数学表达要与正文 notation 完全一致，禁止同一对象在不同段落随意换符号。</li></ul><h2 id="原理-性质与限制的组织方式">8. 原理、性质与限制的组织方式<a class="anchor" href="#原理-性质与限制的组织方式" aria-label="链接到本节">#</a></h2><p>文章不应单独堆出一个“优点 / 缺点”清单。能力与限制应从机制本身推出。</p><div class="equation" role="math">Mechanism M → Property P → Cost / Limitation L</div><p>例如，如果某结构采用 dense connectivity，那么文章应在解释 dense connectivity 后自然说明它带来的全局 feature interaction、参数规模与缺少特定 structural bias，而不是最后再补一句“缺点：参数多”。</p><p>这种写法要求每一个评价都能回溯到对应的结构或数学事实，避免空泛描述。</p><h2 id="语言与术语规范">9. 语言与术语规范<a class="anchor" href="#语言与术语规范" aria-label="链接到本节">#</a></h2><p>整体语言应以中文承担解释、推理和连接，同时保留真正具有领域意义的 English technical terms。目标是提高连续阅读体验，而不是追求“全中文”或“全英文”。</p><p>首次出现的关键术语应确保语义清楚，但不要因为一个术语是英文就强行翻译，也不要在全文重复“中文（英文）”造成阅读负担。</p><h3 id="风格目标">9.1 风格目标<a class="anchor" href="#风格目标" aria-label="链接到本节">#</a></h3><ul><li>正式、技术性、可读，但不是科普故事。</li><li>避免过度口语化和教师式提示语。</li><li>避免抽象、文学化、故作高深的措辞。</li><li>技术难度可以高，但语言本身不应无谓增加理解成本。</li><li>标题应以知识对象和自然结构为主，避免大量问句式标题。</li></ul><h2 id="原始来源与事实边界">10. 原始来源与事实边界<a class="anchor" href="#原始来源与事实边界" aria-label="链接到本节">#</a></h2><p>涉及具体模型、算法或论文贡献时，核心机制必须以原论文为第一依据。官方代码、官方项目页和作者补充材料可用于确认实现细节，但应区分“论文定义”“官方实现”“常见后续做法”。</p><p>若某个结论来自后续工作，而不是原始论文，不应把它写成原论文自身的设计。对于存在多个版本的模型，应明确当前文章讲的是哪一个版本，以及相对前一版本的 Δ。</p><h2 id="canonical-page-与链接规则">11. Canonical page 与链接规则<a class="anchor" href="#canonical-page-与链接规则" aria-label="链接到本节">#</a></h2><p>每个具有独立定义、机制和复用价值的概念，应有且只有一个 canonical page。文章中第一次需要该概念时，通过术语链接指向该 page。</p><p>是否应该独立成页，可用下面的问题判断：</p><ul><li>它能否脱离当前文章，形成独立、完整的知识对象？</li><li>它是否会被多个其他知识复用？</li><li>它是否具有自己的定义、机制、数学性质或重要变体？</li><li>把它拆出去后，当前文章是否仍能保持连续，而不会丢失自己的核心知识？</li></ul><p>如果多数答案为“是”，它通常应该成为独立 canonical node。</p><h2 id="每篇文章创作前的内部工作流">12. 每篇文章创作前的内部工作流<a class="anchor" href="#每篇文章创作前的内部工作流" aria-label="链接到本节">#</a></h2><p>在真正开始写正文前，作者必须先完成知识建模，而不是边写边决定边界。推荐流程如下。</p><ol><li>确定当前知识 K 的精确定义：它是什么，不是什么。</li><li>确定 K 在知识体系中的唯一 owner / parent，用于层级导航。</li><li>识别 Dep(K)：理解 K 所调用的依赖知识。</li><li>识别 K 是否复用了某个 base knowledge；如果是，明确 ΔK。</li><li>识别 K 内部是否首次提出新的可独立知识节点，并为这些节点建立归属关系。</li><li>规划正文递进链：每一节为什么在这里出现，下一节如何由上一节自然推出。</li><li>确定必要的数学 notation、核心公式和需要链接的术语。</li><li>写正文，只展开 K 自身的知识增量；依赖知识只保留当前语境需要的接口。</li><li>检查性质与限制是否已经在对应机制处自然说明。</li><li>检查是否存在重复教学、越界展开、无意义公式、知识归属冲突或断裂的推理链。</li></ol><h2 id="审稿与验收标准">13. 审稿与验收标准<a class="anchor" href="#审稿与验收标准" aria-label="链接到本节">#</a></h2><div class="table-wrap"><table><thead><tr><th>维度</th><th>通过标准</th></tr></thead><tbody><tr><td>知识边界</td><td>文章详细解释的内容确实属于当前知识；依赖知识没有被重新完整教学。</td></tr><tr><td>归属关系</td><td>当前节点有明确 parent；新提出的独立知识有清楚、唯一的归属。</td></tr><tr><td>模块复用</td><td>已有知识通过链接复用；variant 重点解释 delta，而不是复制 base。</td></tr><tr><td>递进结构</td><td>章节之间存在明确的逻辑 / 因果关系，不是知识点列表。</td></tr><tr><td>数学严谨性</td><td>notation 统一、定义明确、公式必要、推导与结论匹配。</td></tr><tr><td>解释性</td><td>公式之后能说明它对当前知识意味着什么，但不重新教授 prerequisite。</td></tr><tr><td>性质与限制</td><td>限制能从对应机制自然推出，不是文章末尾附加的优缺点清单。</td></tr><tr><td>可读性</td><td>中文叙述连贯；必要 technical terms 保留英文；无明显课堂式或科普式腔调。</td></tr><tr><td>事实依据</td><td>模型与算法内容以原论文 / 官方来源为核心，不混淆原始设计和后续变体。</td></tr><tr><td>链接完整性</td><td>正文中被依赖且值得独立成页的知识都有 canonical link 入口。</td></tr></tbody></table></div><h2 id="典型反模式">14. 典型反模式<a class="anchor" href="#典型反模式" aria-label="链接到本节">#</a></h2><h3 id="把当前文章写成-从零开始-的大教程">14.1 把当前文章写成“从零开始”的大教程<a class="anchor" href="#把当前文章写成-从零开始-的大教程" aria-label="链接到本节">#</a></h3><p>错误：为了让任何读者都能直接看懂，在 MLP 页面重新完整讲 neural network、matrix multiplication、activation、backpropagation。</p><p>正确：当前文章只保留这些知识在 MLP 中的必要接口；读者不会时通过链接下钻。</p><h3 id="把相关知识全部塞进当前文章">14.2 把相关知识全部塞进当前文章<a class="anchor" href="#把相关知识全部塞进当前文章" aria-label="链接到本节">#</a></h3><p>错误：认为“和当前主题相关”就应该详细讲。结果是页面边界不断膨胀，同一概念在多篇文章重复出现。</p><p>正确：判断它是否属于 ΔK；如果不是，则链接到它自己的 canonical page。</p><h3 id="variant-重新讲-base-model">14.3 Variant 重新讲 Base Model<a class="anchor" href="#variant-重新讲-base-model" aria-label="链接到本节">#</a></h3><p>错误：C 是 B 的改进版，却先花一半篇幅重讲 B。</p><p>正确：把 B 当作已定义模块，正文集中于 ΔC。</p><h3 id="先写-优点-缺点-再找理由">14.4 先写“优点 / 缺点”，再找理由<a class="anchor" href="#先写-优点-缺点-再找理由" aria-label="链接到本节">#</a></h3><p>错误：把评价和机制分离。</p><p>正确：让结构、公式或设计选择先出现，再自然推出它带来的能力和限制。</p><h3 id="为了硬核而堆数学">14.5 为了硬核而堆数学<a class="anchor" href="#为了硬核而堆数学" aria-label="链接到本节">#</a></h3><p>错误：加入与主线无关的复杂公式。</p><p>正确：数学只用于定义、推导、证明或刻画当前知识的必要性质。</p><h2 id="一个抽象示例">15. 一个抽象示例<a class="anchor" href="#一个抽象示例" aria-label="链接到本节">#</a></h2><p>假设知识 A 首次提出独立知识 B，因此：</p><div class="equation" role="math">parent(B) = A</div><p>后来知识 C 使用 B，并对 B 做修改 ΔC：</p><div class="equation" role="math">C = B + ΔC</div><p>则 C 的文章应：</p><ul><li>链接到 B，默认 B 的原理已经由其 canonical page 定义。</li><li>详细定义 ΔC。</li><li>说明 ΔC 为什么需要出现。</li><li>给出 ΔC 对原有数学结构、数据流、参数、training / inference 行为或性质的改变。</li><li>从这些变化自然推出新的能力、代价和限制。</li><li>B 仍然归属于 A；C 对 B 的依赖不会改变 B 的导航位置。</li></ul><h2 id="最终原则">16. 最终原则<a class="anchor" href="#最终原则" aria-label="链接到本节">#</a></h2><aside class="note"><span class="note-mark">◆</span><div>每篇文章不是一篇孤立教程，而是知识图中的一个 canonical module。归属树决定“这个知识属于哪里”，依赖图决定“这个知识需要调用什么”，ΔK 决定“这篇文章真正应该详细讲什么”，递进链决定“读者如何顺着正文真正学会它”。</div></aside><div class="equation" role="math">Good Article = Correct Boundary + Recursive Reuse + Clear ΔK + Progressive Reasoning + Rigorous Math</div><p>后续批量创作时，应先建模知识，再写文章；先确定 ownership / dependency / delta，再决定正文结构。只要知识边界和依赖结构正确，网站内容才能长期保持一致、可维护、可扩展。</p></div>
+    </article>
+    <div class="footer">XunBlog · Knowledge Content Specification · v1.0</div>
+  </main>
+</div>
+</body>
+</html>

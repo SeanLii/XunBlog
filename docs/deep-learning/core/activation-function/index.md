@@ -8,9 +8,13 @@ prerequisites:
   - "/deep-learning/core/linear-layer/"
 related:
   - "/deep-learning/transformer/position-wise-feed-forward-network/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Activation Function
+
+> **知识边界**：本文的 canonical 对象是 **Activation Function**。依赖机制由 [Linear Layer](/deep-learning/core/linear-layer/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Activation Function 是神经网络中对 intermediate representation 施加的函数。对一个 affine transformation
 

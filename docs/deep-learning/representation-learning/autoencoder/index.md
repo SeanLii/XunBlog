@@ -8,9 +8,13 @@ prerequisites:
   - "/deep-learning/core/multilayer-perceptron/"
 related:
   - "/generative-models/variational-autoencoder/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Autoencoder
+
+> **知识边界**：本文的 canonical 对象是 **Autoencoder**。依赖机制由 [Multilayer Perceptron](/deep-learning/core/multilayer-perceptron/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Autoencoder 是通过**重建输入**学习中间表示的神经网络框架。它由 Encoder 与 Decoder 两部分组成：
 
@@ -248,7 +252,7 @@ q_\phi(z\mid x),
 
 从而把 representation learning 与概率生成模型结合起来。
 
-## Applications and Limitations
+## 表示能力导出的用途与边界
 
 Autoencoder 可以用于：
 

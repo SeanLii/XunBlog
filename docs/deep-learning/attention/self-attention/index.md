@@ -9,9 +9,13 @@ prerequisites:
   - "/deep-learning/attention/qkv/"
 related:
   - "/deep-learning/transformer/"
+standard: "XunBlog Content & Knowledge Architecture v1.0"
+rebuilt: "2026-09-15"
 ---
-
 # Self-Attention
+
+> **知识边界**：本文的 canonical 对象是 **Self-Attention**。依赖机制由 [Attention](/deep-learning/attention/)、[Query / Key / Value](/deep-learning/attention/qkv/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+
 
 Self-Attention 是 Attention 的一种使用方式：Queries、Keys、Values 都来自**同一组 input representations**。
 
