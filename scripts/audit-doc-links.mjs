@@ -152,9 +152,6 @@ for (const file of files) {
     if (!/^rebuilt:\s*["']2026-09-15["']\s*$/m.test(source)) {
       errors.push(`${sourceName} is missing the current rebuild marker`)
     }
-    if (!source.includes('> **知识边界**')) {
-      errors.push(`${sourceName} does not declare its knowledge boundary`)
-    }
     if (/^## (?:Limitations|Scope and Limitations|Limitations and Scope|Applications and Limitations)$/m.test(source)) {
       errors.push(`${sourceName} separates limitations from their mechanism`)
     }

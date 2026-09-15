@@ -13,9 +13,6 @@ rebuilt: "2026-09-15"
 ---
 # Conditional Probability
 
-> **知识边界**：本文的 canonical 对象是 **Conditional Probability**。依赖机制由 [Probability Distribution](/mathematics/probability/probability-distribution/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 Conditional Probability 描述在已知事件 $B$ 发生的条件下，事件 $A$ 的概率。
 
 若：

@@ -14,9 +14,6 @@ rebuilt: "2026-09-15"
 ---
 # Behavior Cloning
 
-> **知识边界**：本文的 canonical 对象是 **Behavior Cloning**。依赖机制由 [Imitation Learning](/robot-learning/imitation-learning/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 Behavior Cloning（BC）是把 expert demonstrations 直接转化为 supervised policy-learning problem 的 imitation-learning 方法。
 
 给定 demonstration dataset：

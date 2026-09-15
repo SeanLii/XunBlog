@@ -13,10 +13,7 @@ rebuilt: "2026-09-15"
 ---
 # Causal Mask
 
-> **知识边界**：本文的 canonical 对象是 **Causal Mask**。依赖机制由 [Attention](/deep-learning/attention/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
-Causal Mask 限制 sequence 中 position $i$ 只能读取自己以及过去位置，不能读取未来位置。
+Causal Mask 通过改变 [Attention](/deep-learning/attention/) 的可见性，限制 sequence 中 position $i$ 只能读取自己以及过去位置，不能读取未来位置。
 
 如果 sequence positions 为：
 

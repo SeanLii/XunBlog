@@ -14,9 +14,6 @@ rebuilt: "2026-09-15"
 ---
 # KV Cache
 
-> **知识边界**：本文的 canonical 对象是 **KV Cache**。依赖机制由 [Query / Key / Value](/deep-learning/attention/qkv/)、[Causal Mask](/deep-learning/sequence-modeling/causal-mask/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 KV Cache 是 Transformer inference 中复用已经计算过的 Key / Value tensors 的机制。
 
 它解决的问题很直接：如果一部分 context 在后续计算中不会改变，就没有必要每一步都重新把这部分 tokens 投影成 K 和 V。

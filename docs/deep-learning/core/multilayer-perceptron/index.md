@@ -14,9 +14,6 @@ rebuilt: "2026-09-15"
 ---
 # Multilayer Perceptron
 
-> **知识边界**：本文的 canonical 对象是 **Multilayer Perceptron**。依赖机制由 [Linear Layer](/deep-learning/core/linear-layer/)、[Activation Function](/deep-learning/core/activation-function/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 Multilayer Perceptron（MLP）是由多层 affine transformations 与 nonlinear activation functions 组成的前馈神经网络。对两层 MLP，常写成
 
 \[

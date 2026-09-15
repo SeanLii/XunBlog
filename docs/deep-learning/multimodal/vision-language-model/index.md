@@ -14,9 +14,6 @@ rebuilt: "2026-09-15"
 ---
 # Vision-Language Model
 
-> **知识边界**：本文的 canonical 对象是 **Vision-Language Model**。依赖机制由 [Embedding](/deep-learning/core/embedding/)、[Transformer](/deep-learning/transformer/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 Vision-Language Model（VLM）是一类联合建模 visual input 与 natural language 的模型。它们学习两种 modality 之间的对应关系，使图像与文本能够被对齐、融合、检索或用于条件生成。
 
 VLM 不是单一 architecture。不同模型可以采用完全不同的信息流：dual encoders、cross-attention fusion、vision encoder + language decoder、multimodal decoder-only Transformer 等都属于这一范围。

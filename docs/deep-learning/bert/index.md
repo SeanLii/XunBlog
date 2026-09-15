@@ -15,9 +15,6 @@ rebuilt: "2026-09-15"
 ---
 # BERT
 
-> **知识边界**：本文的 canonical 对象是 **BERT**。依赖机制由 [Transformer Encoder](/deep-learning/transformer/transformer-encoder/)、[Self-Attention](/deep-learning/attention/self-attention/)、[Positional Encoding](/deep-learning/sequence-modeling/positional-encoding/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 BERT（Bidirectional Encoder Representations from Transformers）是一个基于 Transformer Encoder 的预训练语言表示模型。它通过在大规模无标注文本上进行预训练，学习能够同时利用左右上下文的 token-level representations，再通过少量 task-specific parameters 与 fine-tuning 适配分类、序列标注、自然语言推断和问答等任务。
 
 BERT 的整体结构可以写成

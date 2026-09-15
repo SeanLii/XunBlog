@@ -15,10 +15,7 @@ rebuilt: "2026-09-15"
 ---
 # Layer Normalization
 
-> **知识边界**：本文的 canonical 对象是 **Layer Normalization**。依赖机制由 [Expectation](/mathematics/probability/expectation/)、[Variance](/mathematics/probability/variance/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
-Layer Normalization（LayerNorm）对单个样本内部指定的一组 features 计算 mean 与 variance，完成标准化后再施加可学习的 affine transformation。
+Layer Normalization（LayerNorm）对单个样本内部指定的一组 features 计算 [Expectation](/mathematics/probability/expectation/) 与 [Variance](/mathematics/probability/variance/)，完成标准化后再施加可学习的 affine transformation。
 
 对 feature vector
 

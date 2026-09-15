@@ -14,162 +14,97 @@ related:
 standard: "XunBlog Content & Knowledge Architecture v1.0"
 rebuilt: "2026-09-15"
 ---
-# Training
+# π0 Training
 
-> **知识边界**：本文的 canonical 对象是 **Training**。依赖机制由 [Flow Matching in π0](/robot-learning/pi0/flow-matching-in-pi0/)、[Architecture](/robot-learning/pi0/architecture/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+π0 把一条机器人示范切成“当前条件—未来动作块”样本，再把动作块转换为 conditional Flow Matching 的速度回归目标。训练阶段可以直接使用真实未来动作构造任意中间状态，因此一次样本只评估一个随机 flow time；推理阶段没有真实动作，才需要沿速度场连续积分。
 
+## 从轨迹截取监督样本
 
-π0 training converts a demonstrated future action chunk into a conditional Flow Matching regression problem. Each sample contains current observation
+对轨迹中的时刻 $t$，条件为
 
 \[
-o_t=[I_t^1,\ldots,I_t^n,\ell_t,q_t]
+o_t=(I_t^1,\ldots,I_t^n,\ell_t,q_t),
 \]
 
-and future action chunk
+监督目标是未来 $H$ 步动作
 
 \[
-A_t=[a_t,\ldots,a_{t+H-1}].
+A_t=[a_t,\ldots,a_{t+H-1}]\in\mathbb R^{H\times d_a}.
 \]
 
-The model does not train by directly regressing final actions from observation. Instead it constructs noisy intermediate actions and predicts the velocity field that transports them toward the demonstrated action distribution.
+论文取 $H=50$。数据管线必须处理轨迹尾部 padding、无效动作 mask、不同 embodiment 的维度适配与数值归一化；否则相同 loss scale 会对应不同物理幅度。
 
-## Action-Chunk Target
+## 采样 Noise 与 Flow Time
 
-From a robot trajectory, training selects a current timestep and future horizon
+训练为每个 $A_t$ 采样同 shape 的 Gaussian noise：
 
 \[
-A_t\in\mathbb R^{H\times d_a}.
+\epsilon\sim\mathcal N(0,I),
 \]
 
-The π0 paper uses
+再采样 $\tau\in[0,1]$。π0 使用 shifted beta distribution，使训练更频繁覆盖路径中特定噪声区域；这属于 π0 的优化选择，并非 [Flow Matching in π0](/robot-learning/pi0/flow-matching-in-pi0/) 成立的必要条件。
+
+论文时间方向下，中间动作与监督速度为
 
 \[
-H=50.
-\]
-
-All action positions are treated jointly as one sample from the conditional action distribution.
-
-## Gaussian Noise
-
-Sample
-
-\[
-\epsilon\sim\mathcal N(0,I)
-\]
-
-with the same shape as $A_t$. This supplies the base-distribution sample for the flow path.
-
-## Flow Timestep
-
-Sample a scalar flow time
-
-\[
-\tau\in[0,1].
-\]
-
-The π0 paper uses a shifted beta distribution rather than uniform timestep sampling, placing more mass in the noisier part of the path. This is a π0-specific training choice, not a general requirement of Flow Matching.
-
-## Noisy Intermediate Action
-
-Under the paper convention,
-
-\[
-A_t^\tau
-=
-\tau A_t+(1-\tau)\epsilon.
-\]
-
-At $\tau=0$, the sample is pure noise; at $\tau=1$, it equals the demonstrated action chunk.
-
-The derivative of this linear path is
-
-\[
+A_t^\tau=\tau A_t+(1-\tau)\epsilon,
+\qquad
 u_t=A_t-\epsilon.
 \]
 
-This velocity has the same shape as the action chunk.
+## 条件编码与动作编码汇合
 
-## Observation Prefix Encoding
+图像、语言和机器人状态经 [π0 Architecture](/robot-learning/pi0/architecture/) 形成 observation prefix。每个 $a_i^\tau$ 与 $\tau$ 的 embedding 组成 action token。blockwise mask 允许 action 读取全部条件以及其他 action positions，使输出速度对场景、指令、当前构型和整段未来轨迹同时条件化。
 
-Images are converted to visual tokens and language is embedded by the VLM pathway. Robot state is projected through robotics-specific parameters.
+## 速度场回归
 
-The observation-side inputs form the fixed conditioning context for the vector field:
+模型在 $H$ 个动作位置输出
 
 \[
-v_\theta(A_t^\tau,o_t).
+v_\theta(A_t^\tau,\tau,o_t)\in\mathbb R^{H\times d_a},
 \]
 
-## Action and Time Embedding
-
-Each noisy action vector is projected into Action Expert hidden space and combined with an embedding of $\tau$. The resulting $H$ action tokens enter the Transformer under π0's blockwise attention mask.
-
-The network therefore receives both:
-
-- the current point $A_t^\tau$ on the action path；
-- the flow-time coordinate $\tau$。
-
-## Vector-Field Prediction
-
-After Transformer interaction, π0 selects the hidden states corresponding to the $H$ action positions and projects them back to action dimension:
+并最小化
 
 \[
-v_\theta
-\in
-\mathbb R^{H\times d_a}.
-\]
-
-The output represents velocity, not final action values.
-
-## Flow Matching Objective
-
-The paper objective is
-
-\[
-\mathcal L(\theta)
-=
-\mathbb E
-\left[
-\lVert
-v_\theta(A_t^\tau,o_t)
--(A_t-\epsilon)
-\rVert_2^2
+\mathcal L(\theta)=
+\mathbb E\left[
+\left\|
+v_\theta(A_t^\tau,\tau,o_t)-(A_t-\epsilon)
+\right\|_2^2
 \right].
 \]
 
-Training can evaluate this objective in one network forward for a sampled $\tau$. It does not need to numerically integrate ten flow steps during each training example.
+真实 $A_t$ 只用于构造 noisy input 与 target velocity，不会作为网络条件泄漏到 prediction branch。一次 forward 即可得到无偏的随机时间训练目标，无需在每个 batch 内执行完整 ODE solver。
 
-## Released openpi Time Convention
+## Mask 与 Padding 如何进入 Loss
 
-Current openpi parameterizes the same path in the opposite direction:
-
-```text
-t = 1 : noise
-t = 0 : data
-```
-
-and constructs
+短轨迹末端或低维机器人接口产生的 padding 不能参与同等监督。设有效位置 mask 为 $m\in\{0,1\}^{H\times d_a}$，实际 reduction 应只覆盖有效元素：
 
 \[
-x_t=t\epsilon+(1-t)A,
+\mathcal L_{masked}
+=
+\frac{\sum m\odot\lVert v_\theta-u\rVert_2^2}
+{\sum m}.
 \]
 
-with target
+否则模型会浪费容量学习输出 padding 常数，且不同 action dimension 的数据源会获得不合理的相对权重。
+
+## openpi 的反向时间记号
+
+released openpi 写作
 
 \[
-u_t=\epsilon-A.
+x_t=t\epsilon+(1-t)A,\qquad u_t=\epsilon-A,
 \]
 
-The squared vector-field regression objective is unchanged up to path orientation. Paper equations and code equations should therefore not be mixed without first fixing the time convention.
+其中 $t=1$ 为 noise，$t=0$ 为 data。它与论文写法在路径方向和 target sign 上同时相反，平方回归问题等价。核对实现时应追踪端点、速度符号和 inference update 三者，而不能只比较单条公式。
 
-## Training versus Inference
+## 训练分布决定策略边界
 
-Training has access to the demonstrated $A_t$, so it can sample any intermediate point directly from $(A_t,\epsilon,\tau)$.
-
-Inference has no target action chunk. It must begin from noise and repeatedly apply the learned vector field through numerical integration until it reaches the data end of the path.
-
-This difference explains why training uses a single sampled flow time per example while inference uses multiple sequential network evaluations.
+损失只要求模型拟合示范分布中的条件速度。数据未覆盖的相机视角、机器人构型或接触状态不会因 Flow Matching 自动得到正确控制。pre-training/post-training 的数据混合、归一化统计与任务采样权重，因此共同决定模型最终能在哪些条件下生成可靠动作。
 
 ## Sources
 
 - Black et al. *π0: A Vision-Language-Action Flow Model for General Robot Control*. 2024, Section IV. https://arxiv.org/abs/2410.24164
-- Official openpi `Pi0.compute_loss`. https://github.com/Physical-Intelligence/openpi/blob/main/src/openpi/models/pi0.py
+- Physical Intelligence. *openpi*, `Pi0.compute_loss`. https://github.com/Physical-Intelligence/openpi/blob/main/src/openpi/models/pi0.py

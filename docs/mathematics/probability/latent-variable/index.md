@@ -15,9 +15,6 @@ rebuilt: "2026-09-15"
 ---
 # Latent Variable
 
-> **知识边界**：本文的 canonical 对象是 **Latent Variable**。依赖机制由 [Random Variable](/mathematics/probability/random-variable/)、[Probability Distribution](/mathematics/probability/probability-distribution/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 Latent Variable（潜变量）是概率模型中没有被直接观测、但参与数据生成或概率结构的随机变量。
 
 设 observed variable 为 $x$，latent variable 为 $z$。一个基本 latent-variable model 可以写成：

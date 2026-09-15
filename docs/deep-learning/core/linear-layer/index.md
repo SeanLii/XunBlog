@@ -14,9 +14,6 @@ rebuilt: "2026-09-15"
 ---
 # Linear Layer
 
-> **知识边界**：本文的 canonical 对象是 **Linear Layer**。依赖机制由 [Linear Transformation](/mathematics/linear-algebra/linear-transformation/)、[Matrix](/mathematics/linear-algebra/matrix/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 Linear Layer 是神经网络中最基本的可学习 affine mapping。对输入
 
 \[

@@ -16,10 +16,7 @@ rebuilt: "2026-09-15"
 ---
 # Complete Data Flow
 
-> **知识边界**：本文的 canonical 对象是 **Complete Data Flow**。依赖机制由 [Architecture](/robot-learning/pi0/architecture/)、[Training](/robot-learning/pi0/training/)、[Inference](/robot-learning/pi0/inference/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
-这一页不再引入新的 π0 模块，而是把 training 与 inference 从原始输入一路走到最终动作。
+[π0 Architecture](/robot-learning/pi0/architecture/) 定义模块，[Training](/robot-learning/pi0/training/) 与 [Inference](/robot-learning/pi0/inference/) 定义两种运行过程；把它们放回同一条数据流，才能看到原始输入怎样逐步变成最终动作。
 
 先固定符号：
 

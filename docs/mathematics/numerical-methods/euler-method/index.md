@@ -13,9 +13,6 @@ rebuilt: "2026-09-15"
 ---
 # Euler Method
 
-> **知识边界**：本文的 canonical 对象是 **Euler Method**。依赖机制由 [Ordinary Differential Equation](/mathematics/calculus/ordinary-differential-equation/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 Euler Method 是求解 initial-value ODE 的最基本显式 numerical integration 方法。
 
 给定：

@@ -15,9 +15,6 @@ rebuilt: "2026-09-15"
 ---
 # Normal Distribution
 
-> **知识边界**：本文的 canonical 对象是 **Normal Distribution**。依赖机制由 [Probability Distribution](/mathematics/probability/probability-distribution/)、[Expectation](/mathematics/probability/expectation/)、[Variance](/mathematics/probability/variance/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 Normal Distribution（Gaussian Distribution）是由 mean 与 variance 参数化的连续 probability distribution。
 
 记作：

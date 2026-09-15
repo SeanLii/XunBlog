@@ -13,9 +13,6 @@ rebuilt: "2026-09-15"
 ---
 # Bayes' Theorem
 
-> **知识边界**：本文的 canonical 对象是 **undefined**。依赖机制由 [Conditional Probability](/mathematics/probability/conditional-probability/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 Bayes' Theorem 描述观察 evidence 后，如何由 likelihood 与 prior 计算 posterior。
 
 对 events：

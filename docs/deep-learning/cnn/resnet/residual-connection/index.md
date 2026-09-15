@@ -13,10 +13,7 @@ rebuilt: "2026-09-15"
 ---
 # Residual Connection
 
-> **知识边界**：本文的 canonical 对象是 **Residual Connection**。依赖机制由 [ResNet](/deep-learning/cnn/resnet/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
-Residual Connection 是 ResNet 中最核心的结构之一：
+Residual Connection 是 [ResNet](/deep-learning/cnn/resnet/) 中最核心的结构之一：
 
 \[
 y=x+F(x).

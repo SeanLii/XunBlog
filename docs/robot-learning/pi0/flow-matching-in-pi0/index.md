@@ -10,158 +10,85 @@ prerequisites:
 related:
   - "/robot-learning/pi0/training/"
   - "/robot-learning/pi0/inference/"
-  - "/mathematics/numerical-methods/euler-method/"
 standard: "XunBlog Content & Knowledge Architecture v1.0"
 rebuilt: "2026-09-15"
 ---
 # Flow Matching in π0
 
-> **知识边界**：本文的 canonical 对象是 **Flow Matching in π0**。依赖机制由 [Flow Matching](/generative-models/flow-matching/)、[Architecture](/robot-learning/pi0/architecture/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+[Flow Matching](/generative-models/flow-matching/) 给出从简单 base distribution 到数据分布的连续运输方法。π0 把其中的数据样本替换为整段机器人动作，并让速度场以图像、语言和状态为条件。它由此学习的不是单个平均动作，而是条件动作分布上的运输方向。
 
+## 动作块是一个联合随机变量
 
-π0 applies conditional Flow Matching to the entire future action chunk. The modeled object is
+令示范中的未来动作块为
 
 \[
-A_t=[a_t,\ldots,a_{t+H-1}]
-\in\mathbb R^{H\times d_a},
+A=[a_t,\ldots,a_{t+H-1}]\in\mathbb R^{H\times d_a},
 \]
 
-conditioned on observation $o_t$. The policy therefore learns a conditional action distribution
+噪声样本为 $\epsilon\sim\mathcal N(0,I)$，shape 与 $A$ 相同。π0 论文取 $H=50$。把整块视为一个随机变量意味着 flow 同时改变所有未来位置，动作间的时间协调进入联合分布，而不是被拆成 $H$ 个互不相关的回归目标。
+
+## 线性 Probability Path
+
+论文把 noise end 记为 $\tau=0$，data end 记为 $\tau=1$：
 
 \[
-p(A_t\mid o_t)
+A^\tau=\tau A+(1-\tau)\epsilon.
 \]
 
-through a learned vector field rather than direct one-pass action regression.
-
-## Linear Conditional Path
-
-Let
+沿 $\tau$ 求导得到常量 target velocity：
 
 \[
-\epsilon\sim\mathcal N(0,I)
+u(A^\tau\mid A,\epsilon)=\frac{dA^\tau}{d\tau}=A-\epsilon.
 \]
 
-be an action-shaped Gaussian sample and $A_t$ a demonstrated action chunk. Under the paper convention, define
+这一步只定义训练路径；它不声称真实动作分布沿直线形成。网络在许多数据、噪声与时间样本上学习条件期望后，得到的整体 vector field 可以把 Gaussian mass 弯曲成复杂、多峰的动作分布。
+
+## Observation 把无条件运输变成策略
+
+π0 的网络输入还包括
 
 \[
-A_t^\tau
-=
-\tau A_t+(1-\tau)\epsilon,
-\qquad \tau\in[0,1].
+o_t=(I_t^1,\ldots,I_t^n,\ell_t,q_t).
 \]
 
-The endpoints are
+[π0 Architecture](/robot-learning/pi0/architecture/) 将 observation 编码成固定 prefix，将 $A^\tau$ 与 $\tau$ 编码成 action suffix。模型预测
 
 \[
-A_t^0=\epsilon,
-\qquad
-A_t^1=A_t.
+v_\theta(A^\tau,\tau,o_t)\approx A-\epsilon.
 \]
 
-Thus the path interpolates between the base noise sample and the demonstrated action sample.
+同一份噪声在“把杯子放到左侧”和“把杯子放到右侧”的指令下会获得不同速度，因此生成分布由当前视觉、语言与机器人构型共同决定。
 
-## Target Vector Field
+## 回归目标为何能够训练速度场
 
-Differentiating the path gives
-
-\[
-\frac{dA_t^\tau}{d\tau}
-=A_t-\epsilon.
-\]
-
-π0 predicts
+目标函数为
 
 \[
-v_\theta(A_t^\tau,o_t)
-\]
-
-and minimizes
-
-\[
-\mathcal L(\theta)
-=
-\mathbb E
+\mathcal L(\theta)=
+\mathbb E_{A,o,\epsilon,\tau}
 \left[
-\left\|
- v_\theta(A_t^\tau,o_t)
--(A_t-\epsilon)
-\right\|_2^2
+\left\|v_\theta(A^\tau,\tau,o)-(A-\epsilon)\right\|_2^2
 \right].
 \]
 
-The target is a velocity field, not the final action itself.
+训练时已知 $A$ 与 $\epsilon$，所以可直接构造任意 $\tau$ 的中间点和监督速度，不需要先解 ODE。一次样本只需在随机时间上做一次 vector-field regression；多步积分只出现在 inference。
 
-## Observation Conditioning
+## Paper 与 openpi 的时间方向
 
-Without observation, the vector field would model the marginal distribution of robot action chunks. A policy requires the conditional distribution for the current visual scene, instruction and robot state.
-
-π0 therefore evaluates
+released openpi 使用相反记号：
 
 \[
-v_\theta(A_t^\tau,o_t),
+x_t=t\epsilon+(1-t)A,\qquad u_t=\epsilon-A,
 \]
 
-so the same noisy action state can receive different update directions under different observations.
+此时 $t=1$ 是 noise，$t=0$ 是 data。两种写法描述同一条路径，只是积分方向与速度符号同时反转。阅读公式或实现时必须成对比较 path 和 target；只替换时间变量而不替换速度符号会让采样朝噪声端移动。
 
-## Chunk-Level Generation
+## 从速度场到动作的计算代价
 
-The paper uses
-
-\[
-H=50.
-\]
-
-All action positions are noised, represented and denoised jointly. The action block uses bidirectional attention, so future positions can interact inside the same flow step.
-
-Flow Matching therefore generates a structured $H\times d_a$ trajectory sample, not 50 independent scalar/vector generations.
-
-## Timestep Sampling
-
-π0 does not sample $\tau$ uniformly. The paper uses a shifted beta distribution that emphasizes noisier regions and avoids sampling exactly at the final endpoint.
-
-This changes the training distribution over vector-field states, placing more optimization weight on regions where the model must infer plausible actions from relatively corrupted action inputs.
-
-The sampling choice is π0-specific; standard Flow Matching does not require this exact beta distribution.
-
-## Numerical Sampling
-
-At inference, ground-truth $A_t$ is unavailable. The model starts from Gaussian noise and solves the learned ODE numerically:
-
-\[
-\frac{dA^\tau}{d\tau}
-=v_\theta(A^\tau,o_t).
-\]
-
-π0 uses [Euler Method](/mathematics/numerical-methods/euler-method/) with ten steps in the paper experiments. Each step evaluates the vector field on the current action sample and advances it along the flow trajectory.
-
-## Paper and openpi Time Directions
-
-The paper uses
-
-```text
-τ = 0 : noise
-τ = 1 : data
-```
-
-whereas current openpi uses
-
-```text
-t = 1 : noise
-t = 0 : data
-```
-
-and constructs
-
-\[
-x_t=t\epsilon+(1-t)A,
-\qquad
-u_t=\epsilon-A.
-\]
-
-These are opposite parameterizations of the same path. When comparing equations, both interpolation formula and velocity sign must be converted together.
+推理从 Gaussian noise 出发，用数值积分反复调用 $v_\theta$。多次评估使 π0 能表达比单次 L2 regression 更丰富的条件分布，但也直接增加 policy latency。Action Expert 的较小规模、blockwise mask 与 prefix caching 都是对这项成本的结构性回应。
 
 ## Sources
 
-- Black et al. *π0: A Vision-Language-Action Flow Model for General Robot Control*. 2024, Section IV and Appendix B. https://arxiv.org/abs/2410.24164
-- Official openpi `pi0.py`. https://github.com/Physical-Intelligence/openpi
+- Black et al. *π0: A Vision-Language-Action Flow Model for General Robot Control*. 2024, Section IV. https://arxiv.org/abs/2410.24164
+- Lipman et al. *Flow Matching for Generative Modeling*. ICLR 2023. https://arxiv.org/abs/2210.02747
+- Physical Intelligence. *openpi*, `Pi0.compute_loss` and sampling code. https://github.com/Physical-Intelligence/openpi

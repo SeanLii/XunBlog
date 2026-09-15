@@ -16,10 +16,7 @@ rebuilt: "2026-09-15"
 ---
 # Complete Data Flow
 
-> **知识边界**：本文的 canonical 对象是 **Complete Data Flow**。依赖机制由 [Architecture](/robot-learning/act/architecture/)、[Training](/robot-learning/act/training/)、[Inference](/robot-learning/act/inference/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
-这一页把 ACT 从 dataset sample 到 robot execution 完整串起来。前面的页面分别解释了局部机制；这里的目标是让所有变量回到同一条数据流中。
+ACT 的 [Architecture](/robot-learning/act/architecture/)、[Training](/robot-learning/act/training/) 与 [Inference](/robot-learning/act/inference/) 分别描述静态结构和两个运行阶段；把三者串联后，才能追踪一个 dataset sample 如何最终变成机器人执行的动作。
 
 ## Training Data Flow
 

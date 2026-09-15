@@ -14,10 +14,7 @@ rebuilt: "2026-09-15"
 ---
 # Paper and Released Implementation
 
-> **知识边界**：本文的 canonical 对象是 **Paper and Released Implementation**。依赖机制由 [ACT](/robot-learning/act/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
-ACT 的论文描述与官方 released code 大体对应，但有几处值得单独记录。这个页面不重新解释 ACT，只记录“论文写了什么、公开实现实际做了什么”。
+[ACT](/robot-learning/act/) 的论文描述与官方 released code 大体对应，但若干差异会直接影响复现。下面沿 reconstruction loss、KL reduction、observation history 与 action interface 逐项对齐两套定义。
 
 ## Reconstruction loss
 

@@ -13,9 +13,6 @@ rebuilt: "2026-09-15"
 ---
 # Convolution
 
-> **知识边界**：本文的 canonical 对象是 **Convolution**。依赖机制由 [Vector](/mathematics/linear-algebra/vector/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 Convolution 是把两个 functions / sequences 按相对位移进行乘积累积的运算。它在 signal processing、probability、differential equations 与 convolutional neural networks 中都有独立意义。
 
 ## Continuous Convolution

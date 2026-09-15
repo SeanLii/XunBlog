@@ -14,9 +14,6 @@ rebuilt: "2026-09-15"
 ---
 # Vision Pipeline
 
-> **知识边界**：本文的 canonical 对象是 **Vision Pipeline**。依赖机制由 [ResNet](/deep-learning/cnn/resnet/)、[Positional Encoding](/deep-learning/sequence-modeling/positional-encoding/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 ACT 的视觉部分负责把多路 RGB images 转成 Transformer 可以处理的 spatial features。
 
 它不是“把整张图压成一个向量再交给 Transformer”，而是保留 feature map 的空间结构，让后续 attention 仍能读取不同图像位置。

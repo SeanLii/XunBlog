@@ -53,14 +53,7 @@ for (const page of pages) {
     .replace(/^## Limitations and Scope$/gm, '## 机制导出的能力边界')
     .replace(/^## Limitations$/gm, '## 由机制产生的边界')
 
-  if (!body.includes('> **知识边界**')) {
-    const prerequisites = frontmatterLinks(frontmatter, 'prerequisites')
-    const dependencyText = prerequisites.length
-      ? `依赖机制由 ${prerequisites.map((route) => `[${titleByRoute.get(route) || route}](${route})`).join('、')} 的 canonical page 定义；本文只在当前语境中调用其接口。`
-      : '本文从自身定义出发，不在这里扩展与当前对象无直接作用关系的背景知识。'
-    const boundary = `\n\n> **知识边界**：本文的 canonical 对象是 **${page.title}**。${dependencyText}\n`
-    body = body.replace(heading, heading + boundary)
-  }
+  body = body.replace(/\n*> \*\*知识边界\*\*：[^\n]+\n*/g, '\n\n')
 
   fs.writeFileSync(page.file, `---\n${frontmatter}\n---\n${body.replace(/\s+$/, '')}\n`)
 }

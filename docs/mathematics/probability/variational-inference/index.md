@@ -16,9 +16,6 @@ rebuilt: "2026-09-15"
 ---
 # Variational Inference
 
-> **知识边界**：本文的 canonical 对象是 **Variational Inference**。依赖机制由 [/mathematics/probability/bayes-theorem/](/mathematics/probability/bayes-theorem/)、[KL Divergence](/mathematics/information-theory/kl-divergence/)、[Latent Variable](/mathematics/probability/latent-variable/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 Variational Inference（VI）是一类 approximate inference 方法。它把难以直接计算的 posterior inference 转化为 optimization problem：选择一个 tractable distribution family $q_\phi(z)$，并寻找其中最接近目标 posterior 的成员。
 
 在 latent-variable model：

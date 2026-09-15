@@ -17,9 +17,6 @@ rebuilt: "2026-09-15"
 ---
 # Variational Autoencoder
 
-> **知识边界**：本文的 canonical 对象是 **Variational Autoencoder**。依赖机制由 [Autoencoder](/deep-learning/representation-learning/autoencoder/)、[Latent Variable](/mathematics/probability/latent-variable/)、[Evidence Lower Bound](/mathematics/probability/variational-inference/evidence-lower-bound/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 Variational Autoencoder（VAE）是将 **latent-variable generative model** 与 **amortized variational inference** 结合起来的概率生成模型框架。
 
 它同时包含两个方向：

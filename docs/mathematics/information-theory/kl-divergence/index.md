@@ -15,9 +15,6 @@ rebuilt: "2026-09-15"
 ---
 # KL Divergence
 
-> **知识边界**：本文的 canonical 对象是 **KL Divergence**。依赖机制由 [Entropy](/mathematics/information-theory/entropy/)、[Cross-Entropy](/mathematics/information-theory/cross-entropy/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 Kullback–Leibler Divergence 衡量一个 probability distribution $q$ 相对于 reference distribution $p$ 的 relative information difference。
 
 Discrete case：

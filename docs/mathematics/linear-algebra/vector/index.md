@@ -14,9 +14,6 @@ rebuilt: "2026-09-15"
 ---
 # Vector
 
-> **知识边界**：本文的 canonical 对象是 **Vector**。本文从自身定义出发，不在这里扩展与当前对象无直接作用关系的背景知识。
-
-
 Vector 是同时具有加法与 scalar multiplication 结构的数学对象。在线性代数中，向量属于某个 vector space；在选定 basis 后，有限维向量可以用一组 coordinates 表示。
 
 最常见的实数向量写成：

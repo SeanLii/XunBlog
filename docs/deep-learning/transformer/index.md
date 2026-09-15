@@ -16,9 +16,6 @@ rebuilt: "2026-09-15"
 ---
 # Transformer
 
-> **知识边界**：本文的 canonical 对象是 **Transformer**。依赖机制由 [Attention](/deep-learning/attention/)、[Positional Encoding](/deep-learning/sequence-modeling/positional-encoding/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 Transformer 是一种以 attention 为主要 token-interaction mechanism，并结合 position information、position-wise nonlinear transformation、residual connection 与 normalization 构成的神经网络架构。
 
 给定一组 input representations

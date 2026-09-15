@@ -14,9 +14,6 @@ rebuilt: "2026-09-15"
 ---
 # Cross-Entropy
 
-> **知识边界**：本文的 canonical 对象是 **Cross-Entropy**。依赖机制由 [Entropy](/mathematics/information-theory/entropy/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 Cross-Entropy 衡量使用 model distribution $q$ 描述来自 target distribution $p$ 的 samples 时的 expected negative log-probability。
 
 Discrete case：

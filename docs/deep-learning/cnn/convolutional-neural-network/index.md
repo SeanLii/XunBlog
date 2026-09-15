@@ -14,9 +14,6 @@ rebuilt: "2026-09-15"
 ---
 # Convolutional Neural Network
 
-> **知识边界**：本文的 canonical 对象是 **Convolutional Neural Network**。依赖机制由 [Convolution](/mathematics/analysis/convolution/)、[Activation Function](/deep-learning/core/activation-function/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 Convolutional Neural Network（CNN / ConvNet）是一类利用局部连接与参数共享处理具有空间或网格结构数据的 neural network architecture。图像是最典型的输入：
 
 \[

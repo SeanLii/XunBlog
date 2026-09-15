@@ -15,136 +15,87 @@ related:
 standard: "XunBlog Content & Knowledge Architecture v1.0"
 rebuilt: "2026-09-15"
 ---
-# Architecture
+# π0 Architecture
 
-> **知识边界**：本文的 canonical 对象是 **Architecture**。依赖机制由 [π0](/robot-learning/pi0/)、[Vision-Language Model](/deep-learning/multimodal/vision-language-model/)、[Self-Attention](/deep-learning/attention/self-attention/) 的 canonical page 定义；本文只在当前语境中调用其接口。
+[π0](/robot-learning/pi0/) 需要在一个网络中联合处理相机图像、语言指令、机器人状态和带噪动作。前三者描述条件，最后一项是被逐步生成的对象。架构的关键不是简单拼接四种输入，而是让预训练视觉语言参数与机器人专用参数在受控的信息流中协作。
 
+## 四种输入形成三个功能块
 
-π0 combines a pretrained vision-language backbone with a smaller robotics-specific Action Expert inside a shared attention computation. Image and language tokens use VLM parameters; robot state and noisy action tokens use Action Expert parameters. The token groups interact through a structured attention mask.
+时刻 $t$ 的条件可写为
 
-整体结构为
+\[
+o_t=(I_t^1,\ldots,I_t^n,\ell_t,q_t),
+\]
+
+生成中的动作块为
+
+\[
+A_t^\tau=(a_t^\tau,\ldots,a_{t+H-1}^\tau).
+\]
+
+进入 Transformer 后，它们被组织成：
 
 ```text
-RGB images ─→ vision encoder ─┐
-                              │
-language tokens ──────────────┼→ VLM expert ───────┐
-                              │                     │
-robot state ──────────────────┼→ Action Expert ────┤
-                              │                     │
-noisy action chunk + time ────┘→ Action Expert ────┤
-                                                    ↓
-                                      shared attention interaction
-                                                    ↓
-                                       action-token hidden states
-                                                    ↓
-                                           vector-field output
+[ image + language ] | [ robot state ] | [ noisy actions + flow time ]
+   semantic prefix        state prefix          generated suffix
 ```
 
-## Image Inputs
+图像与语言共同描述任务语境；state 将语义落到当前机器人构型；action suffix 表示正在从噪声演化为动作的整段轨迹。这个划分随后决定参数路由、注意力可见性与缓存边界。
 
-Observation can contain multiple RGB camera views:
+## 图像与语言保留 VLM 接口
 
-\[
-I_t^1,\ldots,I_t^n.
-\]
+每路 RGB 图像先经 PaliGemma 所使用的视觉编码器转换为 visual tokens，语言指令 $ell_t$ 经 tokenizer 与 embedding 进入相同的语义空间。[Vision-Language Model](/deep-learning/multimodal/vision-language-model/) 的预训练参数继续处理这些 token，因此物体、场景与指令之间的对应关系不必仅靠机器人轨迹重新学习。
 
-Each image is processed by the visual encoder associated with the VLM backbone, producing a sequence of visual embeddings. The Transformer does not directly operate on raw pixels; it operates on these encoded visual tokens.
+这一复用只提供语义表征，并不直接给出连续控制。VLM 原有输出空间面向语言或多模态预测，动作生成仍需要新的输入投影、参数与目标函数。
 
-The π0 paper builds on PaliGemma. The released openpi implementation exposes the corresponding vision module through the PaliGemma/SigLIP stack.
+## 状态与动作进入 Action Expert
 
-## Language Inputs
-
-Language instruction $\ell_t$ is tokenized and embedded in the VLM hidden space. Visual and language tokens together form the semantic prefix representing the task and scene.
-
-This prefix preserves the main interface of the pretrained VLM, allowing π0 to reuse visual-language representations rather than relearning semantics solely from robot trajectories.
-
-## Robot State
-
-Robot proprioceptive state $q_t$ is continuous and does not naturally share the VLM token interface. π0 projects state through robotics-specific parameters into the Action Expert hidden dimension.
-
-In the original π0 formulation, state is part of the suffix-side robotics input. Current openpi later added π0.5-related alternatives, so implementation branches for newer models should not be confused with the original π0 paper definition.
-
-## Noisy Action Chunk
-
-At Flow Matching time $\tau$, the model receives
+连续状态 $q_t$ 经 learned projection 变成 state token。每个带噪动作 $a_i^\tau$ 则与 flow-time embedding 组合成 action token：
 
 \[
-A_t^\tau
-=
-[a_t^\tau,\ldots,a_{t+H-1}^\tau].
+e_i^a=g_\phi(W_a a_i^\tau,\varphi(\tau)).
 \]
 
-Each action vector becomes one action token after projection. The paper uses
+这些 token 由 [Action Expert](/robot-learning/pi0/action-expert/) 的参数处理。VLM expert 和 Action Expert 不是串联的两个网络；在每个 Transformer layer 中，token 按类型选用不同参数，同时通过注意力交换信息。
+
+## Blockwise Mask 规定依赖方向
+
+[Blockwise Causal Attention Mask](/robot-learning/pi0/blockwise-causal-attention-mask/) 把允许的信息流写入 attention matrix：
+
+- image-language prefix 只依赖自身；
+- state 可以读取 image-language prefix 与自身；
+- action 可以读取全部 observation token，并在 action block 内双向交互。
+
+因此，未来动作能够条件化于任务与现场观测，而固定条件不会被正在变化的动作噪声反向污染。动作位置之间的双向注意力又使整段 action chunk 被联合生成，不需要按时间位置 autoregressive decoding。
+
+## Hidden State 被投影为条件速度场
+
+最后一层得到动作位置表示
 
 \[
-H=50.
+H_a^{(L)}\in\mathbb R^{H\times d_h}.
 \]
 
-Action tokens therefore preserve the temporal positions of the complete chunk rather than compressing the entire trajectory into a single latent vector.
-
-## Flow-Time Conditioning
-
-The same action value has different meaning at different points along the flow path. π0 therefore conditions action representations on flow timestep $\tau$.
-
-The paper combines projected action features with sinusoidal time embeddings and MLP transformations. Abstractly:
+线性 head 输出同 shape 的动作速度场：
 
 \[
-e(a^\tau,\tau)
-=
-g_\phi(W_a a^\tau,\phi(\tau)).
+v_\theta(A_t^\tau,o_t)=H_a^{(L)}W_o+b_o
+\in\mathbb R^{H\times d_a}.
 \]
 
-This gives Action Expert access to both current noisy action state and its position along the generative flow.
+这里的输出还不是最终 action chunk。[Flow Matching](/generative-models/flow-matching/) 的数值积分用它更新 $A_t^\tau$，重复若干次后才到达数据端。
 
-## Token Blocks
+## 结构同时创造了缓存边界
 
-The complete sequence is partitioned into functional blocks:
+由于 observation prefix 不依赖 action suffix，同一次动作生成期间它的 keys 与 values 保持不变，可以由 [KV Cache](/deep-learning/transformer/kv-cache/) 复用。变化的主要是 action token 及其经较小 Action Expert 得到的表示。
 
-```text
-Block 1              Block 2       Block 3
-images + language | robot state | noisy actions
-```
+这项效率来自因果结构本身：如果 prefix 能读取 action，动作每更新一次就必须重算全部视觉语言 token，较大的 VLM 会成为迭代生成的主要成本。相反，当前设计把大规模语义编码放在一次性计算中，把重复计算集中在较小的机器人 expert 上。
 
-[Blockwise Causal Attention Mask in π0](/robot-learning/pi0/blockwise-causal-attention-mask/) controls which blocks can read which other blocks.
+## 模型规模不是架构定义
 
-Action positions can attend bidirectionally to one another, allowing the entire future chunk to be modeled jointly instead of autoregressively.
-
-## VLM Expert and Action Expert
-
-The architecture is not a serial pipeline in which a VLM first emits a semantic output and a separate controller consumes it. Both experts participate in Transformer layers, with token routing determining which parameter set processes each modality.
-
-The [Action Expert](/robot-learning/pi0/action-expert/) is smaller than the VLM expert. This choice reduces repeated action-side compute during iterative Flow Matching inference.
-
-## Output Representation
-
-The network does not directly emit final actions during a flow step. It takes the hidden states corresponding to action positions and projects them to a vector field:
-
-\[
-v_\theta(A_t^\tau,o_t)
-\in
-\mathbb R^{H\times d_a}.
-\]
-
-A numerical ODE step then updates the current noisy action chunk. Repeating this process produces the final action sample.
-
-## Prefix Caching
-
-The attention dependency structure prevents observation prefix tokens from depending on action tokens. During inference, observation-side keys and values can therefore be cached once while action tokens are repeatedly updated.
-
-This separates compute into:
-
-- fixed observation prefix computation；
-- repeated Action Expert / action-suffix computation。
-
-The resulting KV-cache structure is important because flow generation requires multiple forward evaluations per robot policy call.
-
-## Model Scale
-
-The paper describes a PaliGemma-based VLM with a smaller approximately 300M-parameter Action Expert. The released openpi configuration uses variants named `gemma_2b` and `gemma_300m` for the two expert parameter sets.
-
-These dimensions are implementation/model-scale choices rather than mathematical requirements of the π0 architecture.
+论文使用 PaliGemma-based VLM 与约 300M 参数的 Action Expert，action horizon 为 $H=50$。released openpi 中的 `gemma_2b`、`gemma_300m` 和统一 32 维 action interface 是具体配置；替换宽度、层数或 padding 上限不会改变三块输入、双 expert 路由和 conditional vector-field output 这三项核心关系。
 
 ## Sources
 
 - Black et al. *π0: A Vision-Language-Action Flow Model for General Robot Control*. 2024, especially Appendix B. https://arxiv.org/abs/2410.24164
-- Official openpi implementation. https://github.com/Physical-Intelligence/openpi
+- Physical Intelligence. *openpi*. https://github.com/Physical-Intelligence/openpi

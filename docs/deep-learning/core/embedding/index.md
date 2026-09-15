@@ -15,10 +15,7 @@ rebuilt: "2026-09-15"
 ---
 # Embedding
 
-> **知识边界**：本文的 canonical 对象是 **Embedding**。依赖机制由 [Vector](/mathematics/linear-algebra/vector/)、[Matrix](/mathematics/linear-algebra/matrix/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
-Embedding 是把离散对象、类别或结构中的实体映射到连续向量空间的表示方法。对离散集合
+Embedding 是把离散对象、类别或结构中的实体映射到连续 [Vector](/mathematics/linear-algebra/vector/) 空间的表示方法。对离散集合
 
 \[
 \mathcal V=\{1,\ldots,V\},

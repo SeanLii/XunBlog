@@ -15,9 +15,6 @@ rebuilt: "2026-09-15"
 ---
 # Transformer Decoder
 
-> **知识边界**：本文的 canonical 对象是 **Transformer Decoder**。依赖机制由 [Self-Attention](/deep-learning/attention/self-attention/)、[Cross-Attention](/deep-learning/attention/cross-attention/)、[Position-Wise Feed-Forward Network](/deep-learning/transformer/position-wise-feed-forward-network/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 Transformer Decoder 是一种以 target-side states 或 query states 为中心，通过 self-attention、可选 cross-attention 与 position-wise feed-forward transformation 产生输出 representations 的 Transformer stack。
 
 “Decoder”描述的是 architecture lineage 与信息流，不等同于“逐 token 生成文字”。是否 autoregressive 由 mask、input/query construction 与 output procedure 决定。

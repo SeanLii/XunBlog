@@ -13,10 +13,7 @@ rebuilt: "2026-09-15"
 ---
 # Temporal Ensemble
 
-> **知识边界**：本文的 canonical 对象是 **Temporal Ensemble**。依赖机制由 [Action Chunking](/robot-learning/act/action-chunking/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
-Temporal Ensemble 是 ACT 在推理时融合 overlapping action chunks 的方法。
+Temporal Ensemble 是 [Action Chunking](/robot-learning/act/action-chunking/) 在 ACT 推理阶段产生的融合机制，用来合并 overlapping action chunks。
 
 它出现的前提是：ACT 虽然每次预测未来 $k$ 步，但仍然可以在**每个 timestep 都重新查询 policy**。于是同一个执行时刻会收到来自不同历史 query 的多个预测。
 

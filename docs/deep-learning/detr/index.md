@@ -15,9 +15,6 @@ rebuilt: "2026-09-15"
 ---
 # DETR
 
-> **知识边界**：本文的 canonical 对象是 **DETR**。依赖机制由 [ResNet](/deep-learning/cnn/resnet/)、[Transformer](/deep-learning/transformer/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 DETR（DEtection TRansformer）把 object detection 表述为 **direct set prediction**：模型从一张图像直接输出一个固定大小的预测集合，每个 slot 给出类别与 bounding box，而不再依赖 anchor generation、proposal refinement 与 non-maximum suppression（NMS）构成多阶段检测流程。
 
 整体数据流为

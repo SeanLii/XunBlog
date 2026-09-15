@@ -15,9 +15,6 @@ rebuilt: "2026-09-15"
 ---
 # Flow Matching
 
-> **知识边界**：本文的 canonical 对象是 **Flow Matching**。依赖机制由 [Ordinary Differential Equation](/mathematics/calculus/ordinary-differential-equation/)、[Probability Distribution](/mathematics/probability/probability-distribution/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 Flow Matching 是训练 Continuous Normalizing Flow（CNF）的一类方法。它学习一个 time-dependent vector field
 
 \[

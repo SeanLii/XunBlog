@@ -14,9 +14,6 @@ rebuilt: "2026-09-15"
 ---
 # Attention
 
-> **知识边界**：本文的 canonical 对象是 **Attention**。依赖机制由 [Dot Product](/mathematics/linear-algebra/dot-product/)、[Softmax](/deep-learning/core/softmax/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
 Attention 是一种根据当前 query 与候选信息之间的匹配关系，动态计算读取权重并聚合 values 的机制。
 
 Attention 在 Transformer 之前已经用于 neural machine translation；Transformer 后来把 attention 提升为主要网络计算，并提出 Scaled Dot-Product Attention 与 Multi-Head Attention 等具体形式。

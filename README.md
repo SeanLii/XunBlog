@@ -4,6 +4,8 @@
 
 全站内容以 [`standards/XunBlog_知识内容创作与知识架构规范_v1.0.html`](standards/XunBlog_知识内容创作与知识架构规范_v1.0.html) 为唯一创作与架构标准。
 
+当前全站验收结果见 [`CONTENT_ACCEPTANCE.md`](CONTENT_ACCEPTANCE.md)。
+
 ## Local development
 
 ```bash

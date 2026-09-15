@@ -13,10 +13,7 @@ rebuilt: "2026-09-15"
 ---
 # Positional Encoding
 
-> **知识边界**：本文的 canonical 对象是 **Positional Encoding**。依赖机制由 [Embedding](/deep-learning/core/embedding/) 的 canonical page 定义；本文只在当前语境中调用其接口。
-
-
-Self-Attention 根据 content vectors 建立 pairwise interactions，但 vanilla self-attention 本身不包含 sequence order。
+[Self-Attention](/deep-learning/attention/self-attention/) 根据 content vectors 建立 pairwise interactions，但 vanilla self-attention 本身不包含 sequence order。
 
 因此 Transformer 需要额外把 position information 注入 representation。
 
